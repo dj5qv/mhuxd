@@ -1,9 +1,10 @@
-0.23 alpha
+0.30 
  - Renamed default config file from mhuxd.cfg to mhuxd.conf
  - In mhuxd.cfg changed section name <Device> to <Daemon>
  - Added options Device, DevDir and LogLevel to section <Daemon>
  - Fixed a bug that prevented r1FrBase to be applied to MK1 keyers.
- - Removed command line switched -d and -s
+ - Removed command line switched -d and -s (can be configured in
+   mhuxd.conf now)
  - Name of VSP subdirectory /dev/ can now be configured (DevDir).
  - Debian/Ubuntu packaging, including:
      - start/stop script
