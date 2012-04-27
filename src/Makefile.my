@@ -1,0 +1,38 @@
+PROGRAM = mhuxd
+PROGRAM_S = mhuxd_s
+
+ifeq ($(DESTDIR), )
+	DESTDIR := /usr/local
+endif
+
+CFLAGS = -Wall -O2 
+CFLAGS += $(shell pkg-config --cflags fuse)
+LIBS += $(shell pkg-config --libs fuse)
+LIBS += -ludev
+STATIC = -static
+SOURCES = $(wildcard *.c)
+OBJS = $(SOURCES:.c=.o)
+DEPS = $(SOURCES:.c=.d)
+
+all:$(PROGRAM) $(PROGRAM_S)
+
+$(PROGRAM):$(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
+
+$(PROGRAM_S):$(OBJS)
+	$(CC) $(STATIC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
+
+%.o:%.c
+	$(CC) -c $(CFLAGS) $< -o $@
+
+install: $(PROGRAM)
+	cp $(PROGRAM) $(DESTDIR)/bin
+
+clean:
+	rm -f $(PROGRAM) $(PROGRAM_S) $(OBJS) .depend
+
+.depend:
+	gcc -MM $(CFLAGS) $(SOURCES) > .depend
+
+include .depend
+

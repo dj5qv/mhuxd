@@ -1,0 +1,50 @@
+       mhuxd 0.30,  Multiplexer / Demultiplexer for microHam keyer
+                         with CUSE support
+
+            (C) 2012 Matthias Moeller, DJ5QV, mhuxd@maxec.de
+
+About
+-----
+
+mhuxd implements the microHam keyer protocol and provides virtual serial ports.
+Hamradio applications such as fldigi and cqrlog can use those serial ports
+things like radio control, PTT keying etc.
+
+These keyers should work with mhuxd:
+
+ - CW KEYER
+ - DIGI KEYER
+ - micro KEYER
+ - micro KEYER II
+ - MK2R(+)
+ - micro2R
+
+Testers welcome!
+
+Requirements:
+-------------
+
+Kernel modules:
+
+- ftdi_sio to access the device.
+- cuse to enable mhuxd to create virtual serial devices
+
+These are contained in most Linux distributions.
+
+
+Installation
+-------------
+
+For Debian and Debian based distributions (Ubuntu) the prefered way is to
+download and install mhuxd .deb packages (dpkg -i mhuxd_...deb).
+
+For other distributions you will need to compile the software yourself.
+This requires the development packages of libudev and libfuse.
+
+ ./configure --sysconfdir=/etc
+ make
+ make install
+
+This will install the config file mhuxd.conf into /etc and the daemon
+into /usr/local/sbin.
+

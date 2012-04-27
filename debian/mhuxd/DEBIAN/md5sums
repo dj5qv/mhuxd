@@ -1,0 +1,11 @@
+47e0b6326fbe83887c24792653b59c1f  lib/udev/rules.d/59-mhuxd.rules
+ae1c646e92900c38f70e71b112d1792d  usr/sbin/mhuxd
+09f7b1032195818eb022564638a316bb  usr/share/doc/mhuxd/CHANGES
+eb34c956999432ffed6c2104293e44a6  usr/share/doc/mhuxd/COPYING.gz
+797ff16b10d58dd6bf13da058b7622da  usr/share/doc/mhuxd/README
+914813254f153923fa812dd2a5853a59  usr/share/doc/mhuxd/README.Debian
+a4e3f8eeaa07badf5b7c5025f957db64  usr/share/doc/mhuxd/changelog.Debian.gz
+d0e40d922b5ac98bc39ff28bf0343d69  usr/share/doc/mhuxd/changelog.gz
+d9c7207f884feefadb677d8fabef6c0f  usr/share/doc/mhuxd/copyright
+16bc9f1d11b7c1c397c608e379ed5f73  usr/share/doc/mhuxd/mhuxd.conf.gz
+bf2f1693ac454721212e2860e07b4971  usr/share/man/man8/mhuxd.8.gz

@@ -1,0 +1,2 @@
+shlibs:Depends=libc6 (>= 2.3.2), libc6 (>= 2.3.6-6~), libfuse2 (>= 2.8.1), libudev0 (>= 0.140)
+misc:Depends=

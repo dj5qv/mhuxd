@@ -1,0 +1,4 @@
+# Make sure virtual serial ports create by mhuxd belong to group "mhuxd". 
+
+SUBSYSTEM=="cuse", KERNEL=="mhuxd*", GROUP="mhuxd"
+
