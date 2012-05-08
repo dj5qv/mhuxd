@@ -1,3 +1,9 @@
+mhuxd (0.30-2) unstable; urgency=low
+
+  * Start script did not create /var/run/mhuxd folder.
+
+ -- Matthias Moeller <mhuxd@maxec.de>  Sun, 08 May 2012 21:00:00 +0200
+
 mhuxd (0.30-1) unstable; urgency=low
 
   * Initial Debian/Ubuntu package
