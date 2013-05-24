@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <signal.h>
@@ -22,6 +23,7 @@
 #include <cuse_lowlevel.h>
 #include <fuse.h>
 
+#include "global.h"
 #include "linux_termios.h"
 #include "vsp.h"
 #include "util.h"
@@ -259,12 +261,11 @@ err:
   */
 static void *t_worker(void *arg) {
 	struct vsp *vsp = arg;
-	int r;
 
 	dbg0("VSP %s worker thread start", vsp->devname);
-	r = fuse_session_loop_mt(vsp->se);
+	fuse_session_loop_mt(vsp->se);
 	dbg0("VSP %s worker thread end", vsp->devname);
-	return (void *)r;
+	return NULL;
 }
 
 static void dv_open(fuse_req_t req, struct fuse_file_info *fi)
@@ -291,7 +292,7 @@ static void dv_open(fuse_req_t req, struct fuse_file_info *fi)
                 fuse_reply_err(req, err);
 }
 
-static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
+static void dv_release(fuse_req_t req, struct fuse_file_info* UNUSED(fi))
 {
 	struct vsp *vsp = fuse_req_userdata(req);
 	int err = 0;
@@ -321,19 +322,19 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 	fuse_reply_err(req, err);
 }
 
-static void interrupt_func(fuse_req_t req, void *data) {
+static void interrupt_func(fuse_req_t UNUSED(req), void *data) {
 	pthread_cond_t *tc = data;
 	pthread_cond_signal(tc);
 }
 
-static void dv_read(fuse_req_t req, size_t size, off_t off,
+static void dv_read(fuse_req_t req, size_t size, off_t UNUSED(off),
                          struct fuse_file_info *fi)
 {
 	struct vsp *vsp = fuse_req_userdata(req);
 	struct buffer *b = &vsp->drbuf;
 	size_t size_req = size;
 
-	dbg1("VSP out %s --> App, request size: %d", vsp->devname, size);
+	dbg1("VSP out %s --> App, request size: %zd", vsp->devname, size);
 
 	fuse_req_interrupt_func(req, interrupt_func, &vsp->tc_read);
 
@@ -360,17 +361,17 @@ static void dv_read(fuse_req_t req, size_t size, off_t off,
 		buf_reset(b);
 	pthread_mutex_unlock(&vsp->tm_mutex);
 
-	dbg1("VSP %s --> App, size: %d/%d non-block: %d", vsp->devname, size, size_req, fi->flags & O_NONBLOCK ? 1 : 0);
+	dbg1("VSP %s --> App, size: %zd/%zd non-block: %d", vsp->devname, size, size_req, fi->flags & O_NONBLOCK ? 1 : 0);
 }
 
 static void dv_write(fuse_req_t req, const char *buf, size_t size,
-                          off_t off, struct fuse_file_info *fi)
+                          off_t UNUSED(off), struct fuse_file_info *fi)
 {
 	struct vsp *vsp = fuse_req_userdata(req);
 	struct buffer *b = &vsp->dwbuf;
 	size_t size_req = size;
 
-	dbg1("VSP out %s <-- App, request size: %d", vsp->devname, size);
+	dbg1("VSP out %s <-- App, request size: %zd", vsp->devname, size);
 
 	if(size > BUFFER_CAPACITY) {
 		fuse_reply_err(req, EINVAL);
@@ -400,10 +401,10 @@ static void dv_write(fuse_req_t req, const char *buf, size_t size,
 	if(size)
 		pthread_cond_signal(&vsp->tc_socktx);
 
-	dbg1("VSP %s <-- App, size: %d/%d non-block: %d", vsp->devname, size, size_req, fi->flags & O_NONBLOCK ? 1 : 0);
+	dbg1("VSP %s <-- App, size: %zd/%zd non-block: %d", vsp->devname, size, size_req, fi->flags & O_NONBLOCK ? 1 : 0);
 }
 
-static void dv_poll(fuse_req_t req, struct fuse_file_info *fi,
+static void dv_poll(fuse_req_t req, struct fuse_file_info * UNUSED(fi),
 		    struct fuse_pollhandle *ph) {
 	struct vsp *vsp = fuse_req_userdata(req);
 	unsigned events = 0;
@@ -454,11 +455,12 @@ static int set_bits(struct vsp *vsp, int bits) {
 }
 
 static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
-			struct fuse_file_info *fi, unsigned flags,
+			struct fuse_file_info * UNUSED(fi), unsigned UNUSED(flags),
 			const void *in_buf, size_t in_bufsz, size_t out_bufsz)
 {
 	struct vsp *vsp = fuse_req_userdata(req);
-	dbg1("VSP %s Ioctl, cmd: 0x%0x, arg: 0x%0x, in_buf: 0x%0x, in_buf size: %d, out_bufsz: %d", vsp->devname, cmd, (unsigned)arg, (unsigned)in_buf, in_bufsz, out_bufsz);
+	dbg1("VSP %s Ioctl, cmd: 0x%0x, arg: 0x%"PRIxPTR", in_buf: 0x%"PRIxPTR", in_buf size: %zd, out_bufsz: %zd",
+	     vsp->devname, cmd, (intptr_t)arg, (intptr_t)in_buf, in_bufsz, out_bufsz);
 
 	switch(cmd) {
 	case TCGETS:

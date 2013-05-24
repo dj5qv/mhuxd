@@ -1,5 +1,5 @@
 /*
- *  mhux - mircoHam device mutliplexer/demultiplexer
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
  *  Copyright (C) 2012  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
@@ -98,8 +98,8 @@ struct citem citems_dk2[] = {
 
 struct citem citems_mk2[] = {
 	{ "r1FrMpkExtra_Digital",12, 7, 8,  0, NULL },
-	{ "pwmContrast",	13, 4, 5, 12, NULL },
-	{ "pwmBlight",		14, 4, 5, 12, NULL },
+	{ "pwmContrast",	13, 4, 5, 15, NULL },
+	{ "pwmBlight",		14, 4, 5, 25, NULL },
 	{ "dispBg[0]",		15, 7, 8, 0x06, NULL }, /* RX freq */
 	{ "dispBg[1]",		15, 7, 8, 0x05, NULL }, /* WPM / speed pot */
 	/* off 17 - 25 to be implemented seperately (dispEv / dispEvLn) */
@@ -379,6 +379,7 @@ static int kcfg_set_val(struct kcfg *kcfg, const char *key, int val) {
 	return 0;
 }
 
+#if 0
 static int get_frbase_idx(struct kcfg *kcfg, int mode, int radio) {
 	int idx = -1;
 	switch(kcfg->mhi->type) {
@@ -409,6 +410,7 @@ static int get_frbase_idx(struct kcfg *kcfg, int mode, int radio) {
 	}
 	return idx;
 }
+#endif
 
 #if 0
 /* Set audio switching e.g. AAA, ACA etc.
@@ -543,12 +545,17 @@ int kcfg_apply_cfg(struct kcfg *kcfg, struct config *cfg) {
 		const char *s = cfg_get_str(cfg, key, NULL);
 
 		/* Some unsexy special case handling. */
+#if 1
 		if((!strcasecmp(cp[i].key, "r1FrBase") && !(kcfg->mhi->flags & MHF_HAS_FRBASE)) ||
-		(!strncasecmp(cp[i].key, "r1FrBase_", 9) && !(kcfg->mhi->flags & MHF_HAS_MODE_FRBASE))) {
+		(!strcasecmp(cp[i].key, "r1FrBase_Cw") && !(kcfg->mhi->flags & MHF_HAS_FRBASE_CW)) ||
+		(!strcasecmp(cp[i].key, "r1FrBase_Digital") && !(kcfg->mhi->flags & MHF_HAS_FRBASE_DIGITAL)) ||
+		(!strcasecmp(cp[i].key, "r1FrBase_Voice") && !(kcfg->mhi->flags & MHF_HAS_FRBASE_VOICE))
+		) {
 			if(s)
 				warn("KCFG Ignoring option %s for %s", cp[i].key, kcfg->mhi->type_str);
 			continue;
 		}
+#endif
 
 		if(s == NULL) {
 			kcfg_set_val(kcfg, cp[i].key, val);
@@ -558,6 +565,12 @@ int kcfg_apply_cfg(struct kcfg *kcfg, struct config *cfg) {
 		if(cp[i].conv_func) {
 			if(0 != cp[i].conv_func(s, &val))
 				err("KCFG Invalid value for %s: '%s'", cp[i].key, s);
+			kcfg_set_val(kcfg, cp[i].key, val);
+			continue;
+		}
+
+		if(cp[i].width == 1) {
+			val = cfg_get_bool(cfg, key, cp[i].def);
 		} else {
 			sscanf(s, "%i", &val);
 		}

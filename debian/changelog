@@ -1,3 +1,13 @@
+mhuxd (0.32-1) unstable; urgency=low
+
+  * Fixed bug that prevented PTT usage on DIGI KEYER and CW KEYER
+  * Bad default values for MKII backlight
+  * Fixed compile warning and C99 issues
+  * Default PID file is now /tmp/mhuxd.pid if not specified otherwise
+    in mhuxd.conf
+
+ -- Matthias Moeller <mhuxd@maxec.de>  Sun, 24 May 2012 00:30:00 +0200
+
 mhuxd (0.30-2) unstable; urgency=low
 
   * Start script did not create /var/run/mhuxd folder.

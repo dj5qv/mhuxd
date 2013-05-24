@@ -219,7 +219,7 @@ static void req_done_dealloc(struct cmd_request *req) {
 	free(req);
 }
 
-static void heart_beat(struct timer *t, void *userdata) {
+static void heart_beat(struct timer * UNUSED(t), void *userdata) {
 	struct ctl *ctl = userdata;
 
 	if(ctl->req_heartbeat.state & CRSF_PENDING) {

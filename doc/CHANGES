@@ -1,3 +1,10 @@
+0.32
+ - Fixed bug that prevented PTT usage on DIGI KEYER and CW KEYER
+ - Bad default values for MKII backlight
+ - Fixed compile warning and C99 issues
+ - Default PID file is now /tmp/mhuxd.pid if not specified otherwise
+   in mhuxd.conf
+
 0.30 
  - Renamed default config file from mhuxd.cfg to mhuxd.conf
  - In mhuxd.cfg changed section name <Device> to <Daemon>

@@ -1,6 +1,6 @@
 /*
- *  mhux - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -15,8 +15,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
+#include <errno.h>
 #include "util.h"
+#include "logger.h"
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
@@ -75,8 +76,17 @@ void daemonize(void) {
 	}
 
 	/* Redirect standard files to /dev/null */
-	freopen( "/dev/null", "r", stdin);
-	freopen( "/dev/null", "w", stdout);
-	freopen( "/dev/null", "w", stderr);
+        if(NULL == freopen( "/dev/null", "r", stdin)) {
+                err_e(-errno, "freopen stdin failed, exiting!");
+                exit(EXIT_FAILURE);
+        }
+        if(NULL == freopen( "/dev/null", "w", stdout)) {
+                err_e(-errno, "freopen stdout failed, exiting!");
+                exit(EXIT_FAILURE);
+        }
+        if(NULL == freopen( "/dev/null", "w", stderr)) {
+                err_e(-errno, "freopen stdin failed, exiting!");
+                exit(EXIT_FAILURE);
+        }
 }
 

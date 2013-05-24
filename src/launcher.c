@@ -200,7 +200,7 @@ struct launcher * launch_start_all() {
 	if(!lc->cfg)
 		fatal("Could not load config!");
 
-	lc->pidfile_name = w_strdup(cfg_get_str(lc->cfg, "//Daemon/PidFile", "/var/run/_foo.pid"));
+	lc->pidfile_name = w_strdup(cfg_get_str(lc->cfg, "//Daemon/PidFile", "/tmp/mhuxd.pid"));
 
 	lc->pidfile = pidfile_lock(lc->pidfile_name);
 

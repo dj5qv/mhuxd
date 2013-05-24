@@ -28,7 +28,9 @@ enum {
 	MHF_HAS_FSK1 = (1<<6),
 	MHF_HAS_FSK2 = (1<<7),
 	MHF_HAS_FRBASE = (1<<8),
-	MHF_HAS_MODE_FRBASE = (1<<9),
+	MHF_HAS_FRBASE_CW = (1<<9),
+	MHF_HAS_FRBASE_DIGITAL = (1<<10),
+	MHF_HAS_FRBASE_VOICE = (1<<11),
 };
 
 struct mh_info {
