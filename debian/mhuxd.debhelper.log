@@ -1,4 +1,3 @@
-dh_autotools-dev_updateconfig
 dh_auto_configure
 dh_auto_build
 dh_auto_test
@@ -16,6 +15,7 @@ dh_installdebconf
 dh_installemacsen
 dh_installifupdown
 dh_installinfo
+dh_pysupport
 dh_installinit
 dh_installmenu
 dh_installmime

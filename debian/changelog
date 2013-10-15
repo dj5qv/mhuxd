@@ -1,3 +1,33 @@
+mhuxd (0.33-5) raring; urgency=low
+  * fixed incorrect libudev dependency on Ubuntu 13.04/13.10
+
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2012 18:30:00 +0200
+
+mhuxd (0.33-4) raring; urgency=low
+  * Changed value 8 to 7 in compat file for Ubuntu 10.04 LTS
+
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2012 18:30:00 +0200
+
+mhuxd (0.33-3) raring; urgency=low
+  * Removed autotools-dev dependency from rules file for Ubuntu 10.04 LTS
+
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2012 18:30:00 +0200
+
+mhuxd (0.33-2) raring; urgency=low
+  * Changed dependencies to cover Ubuntu 10.04 LTS
+
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2012 18:00:00 +0200
+
+mhuxd (0.33-1) raring; urgency=low
+  * mhuxd accepted values 0|1 only for DigitalOverVoice.
+  * Changed values for KeepAliveInterval and DeviceTimeout in the default
+    config file
+  * Ubuntu 13.04 comes with libudev1 instead of libudev0. This lead to 
+    unresolvable dependencies with 0.32-1. Package will be integrated
+    into Launchpad PPA to generate distribution specific packages.
+
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2012 15:00:00 +0200
+
 mhuxd (0.32-1) unstable; urgency=low
 
   * Fixed bug that prevented PTT usage on DIGI KEYER and CW KEYER

@@ -8,7 +8,7 @@
 # Short-Description: mhuxd protocol multiplexer for microHam keyers
 ### END INIT INFO
 
-# Author: Matthias Moeller <mhuxd@maxec.de>
+# Author: Matthias Moeller <dj5qv@maxec.de>
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin

@@ -409,7 +409,7 @@ static int apply_cfg(struct ctl *ctl) {
 			buf_append_c(b, cfg_get_int(ctl->cfg, "//Radio:1/RadioType", 0xfe));
 			buf_append_c(b, cfg_get_int(ctl->cfg, "//Radio:1/IcomAddress", 0x00));
 			c = cfg_get_bool(ctl->cfg, "//Radio:1/IcomPW1Connected", 0) << 0;
-			c |= cfg_get_bool(ctl->cfg, "//Radio:1/DigitalOverVoice", 0) << 1;
+			c |= cfg_get_int(ctl->cfg, "//Radio:1/DigitalOverVoice", 0) << 1;
 			c |= cfg_get_bool(ctl->cfg, "//Radio:1/UseDecoderIfConnected", 0) << 3;
 			c |= cfg_get_bool(ctl->cfg, "//Radio:1/DontInterfereUSBControl", 0) << 4;
 			buf_append_c(b, c);
@@ -443,7 +443,7 @@ static int apply_cfg(struct ctl *ctl) {
 			buf_append_c(b, cfg_get_int(ctl->cfg, "//Radio:2/RadioType", 0xfe));
 			buf_append_c(b, cfg_get_int(ctl->cfg, "//Radio:2/IcomAddress", 0x00));
 			c = cfg_get_bool(ctl->cfg, "//Radio:2/IcomPW1Connected", 0) << 0;
-			c |= cfg_get_bool(ctl->cfg, "//Radio:2/DigitalOverVoice", 0) << 1;
+			c |= cfg_get_int(ctl->cfg, "//Radio:2/DigitalOverVoice", 0) << 1;
 			c |= cfg_get_bool(ctl->cfg, "//Radio:2/UseDecoderIfConnected", 0) << 3;
 			c |= cfg_get_bool(ctl->cfg, "//Radio:2/DontInterfereUSBControl", 0) << 4;
 			buf_append_c(b, c);
