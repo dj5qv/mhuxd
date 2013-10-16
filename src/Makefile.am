@@ -5,7 +5,7 @@ mhuxd_CFLAGS = -g -Wall -Wextra -Wno-strict-aliasing -D_GNU_SOURCE -DEV_NO_THREA
 	$(UDEV_CFLAGS) -DLOGDIR=\"$(LOGDIR)\" -DSTATEDIR=\"$(STATEDIR)\" -DRUNDIR=\"$(RUNDIR)\" \
 	-DDATADIR=\"$(datadir)\" -DWEBUIDIR=\"$(WEBUIDIR)\" -DHDFDIR=\"$(HDFDIR)\" -Iclearsilver
 mhuxd_DEPENDENCIES = clearsilver/libclearsilver.a
-mhuxd_LDADD  = $(LIBS) $(FUSE_LIBS) $(UDEV_LIBS) $(EV_LIBS) -Lclearsilver -lclearsilver
+mhuxd_LDADD  = -Lclearsilver -lclearsilver
 mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 		mhcontrol.c mhinfo.c mhrouter.c mux.c net.c opts.c pglist.c tty.c util.c \
 		conmgr.c con_vsp.c con_tcp.c linux_termios.c channel.c cfgmgr.c \

@@ -48,6 +48,7 @@ PKG_CHECK_MODULES(FUSE,fuse,[ have_fuse=true ],[
 FUSE_CFLAGS="$FUSE_CFLAGS -DFUSE_USE_VERSION=28"
 AC_SUBST(FUSE_CFLAGS)
 AC_SUBST(FUSE_LIBS)
+LIBS="${FUSE_LIBS} ${LIBS}"
 
 #UDEV
 PKG_CHECK_MODULES(UDEV,libudev,[ have_udev=true ],[
@@ -57,6 +58,7 @@ PKG_CHECK_MODULES(UDEV,libudev,[ have_udev=true ],[
 UDEV_CFLAGS="$UDEV_CFLAGS"
 AC_SUBST(UDEV_CFLAGS)
 AC_SUBST(UDEV_LIBS) 
+LIBS="${UDEV_LIBS} ${LIBS}"
 
 #EV
 AC_CHECK_HEADERS([ev.h], [], [AC_MSG_ERROR("ev.h not found. Install 'libev-dev'.")])
@@ -71,7 +73,10 @@ EV_LIBS="-lev"
 AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname gettimeofday localtime_r memchr memmove memset mkdir regcomp rmdir socket stpcpy strcasecmp strchr strdup strerror strncasecmp strpbrk strrchr strstr strtol strtoul vsnprintf snprintf mkstemp gmtime_r localtime_r strtok_r])
+AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname gettimeofday localtime_r memchr memmove memset])
+AC_CHECK_FUNCS([mkdir regcomp rmdir socket stpcpy strcasecmp strchr strdup strerror strncasecmp strpbrk])
+AC_CHECK_FUNCS([strrchr strstr strtol strtoul vsnprintf snprintf mkstemp gmtime_r localtime_r strtok_r udev_monitor_filter_add_match_subsystem_devtype])
+
 
 # Add logdir option
 LOGDIR='${localstatedir}/log/mhuxd'

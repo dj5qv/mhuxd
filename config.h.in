@@ -158,6 +158,10 @@
 /* Define to 1 if you have the <termios.h> header file. */
 #undef HAVE_TERMIOS_H
 
+/* Define to 1 if you have the
+   `udev_monitor_filter_add_match_subsystem_devtype' function. */
+#undef HAVE_UDEV_MONITOR_FILTER_ADD_MATCH_SUBSYSTEM_DEVTYPE
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
@@ -279,3 +283,5 @@
 
 /* Define as `fork' if `vfork' does not work. */
 #undef vfork
+
+

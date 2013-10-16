@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <libudev.h>
 #include <ev.h>
+#include "config.h"
 #include "linux_udev.h"
 #include "pglist.h"
 #include "util.h"
@@ -42,20 +43,22 @@ static void mon_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	if(dev == NULL)
 		return;
 
+	const char *type = udev_device_get_subsystem(dev);
+	if(!type || strcmp(type, "tty"))
+		goto out;
+
 	pdev = udev_device_get_parent_with_subsystem_devtype(
 							     dev,
 							     "usb",
 							     "usb_device");
-
 	if(pdev == NULL)
 		goto out;
 
 	const char *vend = udev_device_get_sysattr_value(pdev,"idVendor");
 	const char *serial = udev_device_get_sysattr_value(pdev,"serial");
 	const char *manufacturer = udev_device_get_sysattr_value(pdev,"manufacturer");
-
 	const char *action = udev_device_get_action(dev);
-	printf("action: %s pdev: %ld vend: %ld serial: %ld\n", action, (long)pdev, (long)vend, (long)serial);
+	dbg1("(udev)%s() action: %s pdev: %ld vend: %ld serial: %ld\n", __func__, action, (long)pdev, (long)vend, (long)serial);
 
 	if(vend == NULL || serial == NULL)
 		goto out;
@@ -99,8 +102,9 @@ struct devmon *devmon_create(struct ev_loop *loop, devmon_cb devmon_cb, void *us
 	devmon->udev = udev;
 	devmon->mon = mon;
 	devmon->loop = loop;
-
+#ifdef HAVE_UDEV_MONITOR_FILTER_ADD_MATCH_SUBSYSTEM_DEVTYPE
 	udev_monitor_filter_add_match_subsystem_devtype(devmon->mon, "tty", NULL);
+#endif
 	udev_monitor_enable_receiving(devmon->mon);
 	devmon->fd = udev_monitor_get_fd(devmon->mon);
 
@@ -135,6 +139,7 @@ void devmon_destroy(struct devmon *devmon) {
 	free(devmon);
 }
 
+#if 0
 int test_wait_for_device() {
 	struct udev *udev;
 	struct udev_monitor *mon;
@@ -176,6 +181,7 @@ int test_wait_for_device() {
 
 	return 0;
 }
+#endif
 
 struct PGList *udv_get_device_list() {
 	struct udev *udev;
