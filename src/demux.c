@@ -1,6 +1,6 @@
 /*
- *  mhux - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -11,6 +11,7 @@
 #include "demux.h"
 #include "util.h"
 #include "logger.h"
+#include "channel.h"
 
 struct dmx *dmx_create() {
 	struct dmx *dmx = w_calloc(1, sizeof(*dmx));
@@ -41,7 +42,7 @@ int dmx_demux(struct dmx *dmx, unsigned char c) {
 		return -1;
 
 	if(dmx->frame_no > 3) {
-		warn("DMX Sequence too long (%d frames)!\n", dmx->frame_no);
+		warn("DMX Sequence too long (%d frames)!", dmx->frame_no);
 		dmx->sync_byte = -1;
 		return -1;
 	}
@@ -84,7 +85,7 @@ int dmx_demux(struct dmx *dmx, unsigned char c) {
 				if(byte == (dmx->cmd| (1<<7)))
 					rv = MH_CHANNEL_CONTROL;
 				else
-					warn("DMX Command mismatch: %x / %x\n", dmx->cmd, byte);
+					warn("DMX Command mismatch: %x / %x", dmx->cmd, byte);
 			}
 		}
 

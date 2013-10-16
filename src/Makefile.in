@@ -62,19 +62,23 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 PROGRAMS = $(sbin_PROGRAMS)
-am_mhuxd_OBJECTS = mhuxd-buffer.$(OBJEXT) mhuxd-ctl.$(OBJEXT) \
-	mhuxd-demux.$(OBJEXT) mhuxd-kcfg.$(OBJEXT) \
-	mhuxd-linux_termios.$(OBJEXT) mhuxd-logger.$(OBJEXT) \
-	mhuxd-mhinfo.$(OBJEXT) mhuxd-opts.$(OBJEXT) \
-	mhuxd-radiotypes.$(OBJEXT) mhuxd-util.$(OBJEXT) \
-	mhuxd-cfgfile.$(OBJEXT) mhuxd-ctlmsg.$(OBJEXT) \
-	mhuxd-dispatcher.$(OBJEXT) mhuxd-launcher.$(OBJEXT) \
-	mhuxd-linux_udev.$(OBJEXT) mhuxd-main.$(OBJEXT) \
-	mhuxd-mux.$(OBJEXT) mhuxd-pglist.$(OBJEXT) mhuxd-tty.$(OBJEXT) \
-	mhuxd-vsp.$(OBJEXT)
+am_mhuxd_OBJECTS = mhuxd-buffer.$(OBJEXT) mhuxd-demux.$(OBJEXT) \
+	mhuxd-devmgr.$(OBJEXT) mhuxd-kcfg.$(OBJEXT) \
+	mhuxd-linux_udev.$(OBJEXT) mhuxd-logger.$(OBJEXT) \
+	mhuxd-main.$(OBJEXT) mhuxd-mhcontrol.$(OBJEXT) \
+	mhuxd-mhinfo.$(OBJEXT) mhuxd-mhrouter.$(OBJEXT) \
+	mhuxd-mux.$(OBJEXT) mhuxd-net.$(OBJEXT) mhuxd-opts.$(OBJEXT) \
+	mhuxd-pglist.$(OBJEXT) mhuxd-tty.$(OBJEXT) \
+	mhuxd-util.$(OBJEXT) mhuxd-conmgr.$(OBJEXT) \
+	mhuxd-con_vsp.$(OBJEXT) mhuxd-con_tcp.$(OBJEXT) \
+	mhuxd-linux_termios.$(OBJEXT) mhuxd-channel.$(OBJEXT) \
+	mhuxd-cfgmgr.$(OBJEXT) mhuxd-daemon.$(OBJEXT) \
+	mhuxd-http_parser.$(OBJEXT) mhuxd-http_server.$(OBJEXT) \
+	mhuxd-webui.$(OBJEXT) mhuxd-cfgnod.$(OBJEXT) \
+	mhuxd-version.$(OBJEXT) mhuxd-http_parse_query.$(OBJEXT) \
+	mhuxd-radiotypes.$(OBJEXT) mhuxd-wkman.$(OBJEXT)
 mhuxd_OBJECTS = $(am_mhuxd_OBJECTS)
 am__DEPENDENCIES_1 =
-mhuxd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 mhuxd_LINK = $(CCLD) $(mhuxd_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -87,14 +91,52 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(mhuxd_SOURCES)
 DIST_SOURCES = $(mhuxd_SOURCES)
+RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
+	html-recursive info-recursive install-data-recursive \
+	install-dvi-recursive install-exec-recursive \
+	install-html-recursive install-info-recursive \
+	install-pdf-recursive install-ps-recursive install-recursive \
+	installcheck-recursive installdirs-recursive pdf-recursive \
+	ps-recursive uninstall-recursive
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
+  distclean-recursive maintainer-clean-recursive
+AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
+	$(RECURSIVE_CLEAN_TARGETS:-recursive=) tags TAGS ctags CTAGS \
+	distdir
 ETAGS = etags
 CTAGS = ctags
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+am__relativize = \
+  dir0=`pwd`; \
+  sed_first='s,^\([^/]*\)/.*$$,\1,'; \
+  sed_rest='s,^[^/]*/*,,'; \
+  sed_last='s,^.*/\([^/]*\)$$,\1,'; \
+  sed_butlast='s,/*[^/]*$$,,'; \
+  while test -n "$$dir1"; do \
+    first=`echo "$$dir1" | sed -e "$$sed_first"`; \
+    if test "$$first" != "."; then \
+      if test "$$first" = ".."; then \
+        dir2=`echo "$$dir0" | sed -e "$$sed_last"`/"$$dir2"; \
+        dir0=`echo "$$dir0" | sed -e "$$sed_butlast"`; \
+      else \
+        first2=`echo "$$dir2" | sed -e "$$sed_first"`; \
+        if test "$$first2" = "$$first"; then \
+          dir2=`echo "$$dir2" | sed -e "$$sed_rest"`; \
+        else \
+          dir2="../$$dir2"; \
+        fi; \
+        dir0="$$dir0"/"$$first"; \
+      fi; \
+    fi; \
+    dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
+  done; \
+  reldir="$$dir2"
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AUTOCONF = @AUTOCONF@
@@ -117,6 +159,7 @@ EXEEXT = @EXEEXT@
 FUSE_CFLAGS = @FUSE_CFLAGS@
 FUSE_LIBS = @FUSE_LIBS@
 GREP = @GREP@
+HDFDIR = @HDFDIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -125,6 +168,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LOGDIR = @LOGDIR@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
@@ -137,15 +181,20 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKGCONF = @PKGCONF@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
+RANLIB = @RANLIB@
+RUNDIR = @RUNDIR@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+STATEDIR = @STATEDIR@
 STRIP = @STRIP@
 UDEV_CFLAGS = @UDEV_CFLAGS@
 UDEV_LIBS = @UDEV_LIBS@
 VERSION = @VERSION@
+WEBUIDIR = @WEBUIDIR@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -188,10 +237,25 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-mhuxd_CFLAGS = -D_GNU_SOURCE -pthread $(FUSE_CFLAGS) $(UDEV_CFLAGS) 
-mhuxd_LDADD = $(FUSE_LIBS) $(UDEV_LIBS)
-mhuxd_SOURCES = buffer.c ctl.c demux.c kcfg.c linux_termios.c logger.c mhinfo.c opts.c radiotypes.c util.c cfgfile.c ctlmsg.c dispatcher.c launcher.c linux_udev.c main.c mux.c pglist.c tty.c vsp.c
-all: all-am
+SUBDIRS = clearsilver
+mhuxd_CFLAGS = -g -Wall -Wextra -Wno-strict-aliasing -D_GNU_SOURCE -DEV_NO_THREADS $(FUSE_CFLAGS) \
+	$(UDEV_CFLAGS) -DLOGDIR=\"$(LOGDIR)\" -DSTATEDIR=\"$(STATEDIR)\" -DRUNDIR=\"$(RUNDIR)\" \
+	-DDATADIR=\"$(datadir)\" -DWEBUIDIR=\"$(WEBUIDIR)\" -DHDFDIR=\"$(HDFDIR)\" -Iclearsilver
+
+mhuxd_DEPENDENCIES = clearsilver/libclearsilver.a
+mhuxd_LDADD = $(LIBS) $(FUSE_LIBS) $(UDEV_LIBS) $(EV_LIBS) -Lclearsilver -lclearsilver
+mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
+		mhcontrol.c mhinfo.c mhrouter.c mux.c net.c opts.c pglist.c tty.c util.c \
+		conmgr.c con_vsp.c con_tcp.c linux_termios.c channel.c cfgmgr.c \
+		daemon.c http_parser.c http_server.c webui.c cfgnod.c version.c \
+		http_parse_query.c radiotypes.c wkman.c \
+		buffer.h demux.h devmgr.h kcfg.h linux_udev.h logger.h main.h \
+		mhcontrol.h mhinfo.h mhrouter.h mux.h net.h opts.h pglist.h tty.h util.h \
+		conmgr.h con_vsp.h con_tcp.h linux_termios.h channel.h cfgmgr.h \
+		daemon.h http_parser.h http_server.h http_codes.h webui.h obuf.h cfgnod.h \
+		version.h http_parse_query.h radiotypes.h wkman.h
+
+all: all-recursive
 
 .SUFFIXES:
 .SUFFIXES: .c .o .obj
@@ -276,25 +340,36 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-buffer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-cfgfile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-ctl.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-ctlmsg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-cfgmgr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-cfgnod.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-channel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-con_tcp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-con_vsp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-conmgr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-daemon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-demux.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-dispatcher.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-devmgr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-http_parse_query.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-http_parser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-http_server.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-kcfg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-launcher.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-linux_termios.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-linux_udev.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-logger.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhcontrol.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhinfo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhrouter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mux.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-net.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-opts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-pglist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-radiotypes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-tty.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-util.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-vsp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-version.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-webui.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-wkman.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -324,20 +399,6 @@ mhuxd-buffer.obj: buffer.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-buffer.obj `if test -f 'buffer.c'; then $(CYGPATH_W) 'buffer.c'; else $(CYGPATH_W) '$(srcdir)/buffer.c'; fi`
 
-mhuxd-ctl.o: ctl.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-ctl.o -MD -MP -MF $(DEPDIR)/mhuxd-ctl.Tpo -c -o mhuxd-ctl.o `test -f 'ctl.c' || echo '$(srcdir)/'`ctl.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-ctl.Tpo $(DEPDIR)/mhuxd-ctl.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ctl.c' object='mhuxd-ctl.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-ctl.o `test -f 'ctl.c' || echo '$(srcdir)/'`ctl.c
-
-mhuxd-ctl.obj: ctl.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-ctl.obj -MD -MP -MF $(DEPDIR)/mhuxd-ctl.Tpo -c -o mhuxd-ctl.obj `if test -f 'ctl.c'; then $(CYGPATH_W) 'ctl.c'; else $(CYGPATH_W) '$(srcdir)/ctl.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-ctl.Tpo $(DEPDIR)/mhuxd-ctl.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ctl.c' object='mhuxd-ctl.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-ctl.obj `if test -f 'ctl.c'; then $(CYGPATH_W) 'ctl.c'; else $(CYGPATH_W) '$(srcdir)/ctl.c'; fi`
-
 mhuxd-demux.o: demux.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-demux.o -MD -MP -MF $(DEPDIR)/mhuxd-demux.Tpo -c -o mhuxd-demux.o `test -f 'demux.c' || echo '$(srcdir)/'`demux.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-demux.Tpo $(DEPDIR)/mhuxd-demux.Po
@@ -351,6 +412,20 @@ mhuxd-demux.obj: demux.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='demux.c' object='mhuxd-demux.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-demux.obj `if test -f 'demux.c'; then $(CYGPATH_W) 'demux.c'; else $(CYGPATH_W) '$(srcdir)/demux.c'; fi`
+
+mhuxd-devmgr.o: devmgr.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-devmgr.o -MD -MP -MF $(DEPDIR)/mhuxd-devmgr.Tpo -c -o mhuxd-devmgr.o `test -f 'devmgr.c' || echo '$(srcdir)/'`devmgr.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-devmgr.Tpo $(DEPDIR)/mhuxd-devmgr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='devmgr.c' object='mhuxd-devmgr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-devmgr.o `test -f 'devmgr.c' || echo '$(srcdir)/'`devmgr.c
+
+mhuxd-devmgr.obj: devmgr.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-devmgr.obj -MD -MP -MF $(DEPDIR)/mhuxd-devmgr.Tpo -c -o mhuxd-devmgr.obj `if test -f 'devmgr.c'; then $(CYGPATH_W) 'devmgr.c'; else $(CYGPATH_W) '$(srcdir)/devmgr.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-devmgr.Tpo $(DEPDIR)/mhuxd-devmgr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='devmgr.c' object='mhuxd-devmgr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-devmgr.obj `if test -f 'devmgr.c'; then $(CYGPATH_W) 'devmgr.c'; else $(CYGPATH_W) '$(srcdir)/devmgr.c'; fi`
 
 mhuxd-kcfg.o: kcfg.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-kcfg.o -MD -MP -MF $(DEPDIR)/mhuxd-kcfg.Tpo -c -o mhuxd-kcfg.o `test -f 'kcfg.c' || echo '$(srcdir)/'`kcfg.c
@@ -366,19 +441,19 @@ mhuxd-kcfg.obj: kcfg.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-kcfg.obj `if test -f 'kcfg.c'; then $(CYGPATH_W) 'kcfg.c'; else $(CYGPATH_W) '$(srcdir)/kcfg.c'; fi`
 
-mhuxd-linux_termios.o: linux_termios.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-linux_termios.o -MD -MP -MF $(DEPDIR)/mhuxd-linux_termios.Tpo -c -o mhuxd-linux_termios.o `test -f 'linux_termios.c' || echo '$(srcdir)/'`linux_termios.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-linux_termios.Tpo $(DEPDIR)/mhuxd-linux_termios.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='linux_termios.c' object='mhuxd-linux_termios.o' libtool=no @AMDEPBACKSLASH@
+mhuxd-linux_udev.o: linux_udev.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-linux_udev.o -MD -MP -MF $(DEPDIR)/mhuxd-linux_udev.Tpo -c -o mhuxd-linux_udev.o `test -f 'linux_udev.c' || echo '$(srcdir)/'`linux_udev.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-linux_udev.Tpo $(DEPDIR)/mhuxd-linux_udev.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='linux_udev.c' object='mhuxd-linux_udev.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-linux_termios.o `test -f 'linux_termios.c' || echo '$(srcdir)/'`linux_termios.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-linux_udev.o `test -f 'linux_udev.c' || echo '$(srcdir)/'`linux_udev.c
 
-mhuxd-linux_termios.obj: linux_termios.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-linux_termios.obj -MD -MP -MF $(DEPDIR)/mhuxd-linux_termios.Tpo -c -o mhuxd-linux_termios.obj `if test -f 'linux_termios.c'; then $(CYGPATH_W) 'linux_termios.c'; else $(CYGPATH_W) '$(srcdir)/linux_termios.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-linux_termios.Tpo $(DEPDIR)/mhuxd-linux_termios.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='linux_termios.c' object='mhuxd-linux_termios.obj' libtool=no @AMDEPBACKSLASH@
+mhuxd-linux_udev.obj: linux_udev.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-linux_udev.obj -MD -MP -MF $(DEPDIR)/mhuxd-linux_udev.Tpo -c -o mhuxd-linux_udev.obj `if test -f 'linux_udev.c'; then $(CYGPATH_W) 'linux_udev.c'; else $(CYGPATH_W) '$(srcdir)/linux_udev.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-linux_udev.Tpo $(DEPDIR)/mhuxd-linux_udev.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='linux_udev.c' object='mhuxd-linux_udev.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-linux_termios.obj `if test -f 'linux_termios.c'; then $(CYGPATH_W) 'linux_termios.c'; else $(CYGPATH_W) '$(srcdir)/linux_termios.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-linux_udev.obj `if test -f 'linux_udev.c'; then $(CYGPATH_W) 'linux_udev.c'; else $(CYGPATH_W) '$(srcdir)/linux_udev.c'; fi`
 
 mhuxd-logger.o: logger.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-logger.o -MD -MP -MF $(DEPDIR)/mhuxd-logger.Tpo -c -o mhuxd-logger.o `test -f 'logger.c' || echo '$(srcdir)/'`logger.c
@@ -394,132 +469,6 @@ mhuxd-logger.obj: logger.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-logger.obj `if test -f 'logger.c'; then $(CYGPATH_W) 'logger.c'; else $(CYGPATH_W) '$(srcdir)/logger.c'; fi`
 
-mhuxd-mhinfo.o: mhinfo.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhinfo.o -MD -MP -MF $(DEPDIR)/mhuxd-mhinfo.Tpo -c -o mhuxd-mhinfo.o `test -f 'mhinfo.c' || echo '$(srcdir)/'`mhinfo.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-mhinfo.Tpo $(DEPDIR)/mhuxd-mhinfo.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mhinfo.c' object='mhuxd-mhinfo.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhinfo.o `test -f 'mhinfo.c' || echo '$(srcdir)/'`mhinfo.c
-
-mhuxd-mhinfo.obj: mhinfo.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhinfo.obj -MD -MP -MF $(DEPDIR)/mhuxd-mhinfo.Tpo -c -o mhuxd-mhinfo.obj `if test -f 'mhinfo.c'; then $(CYGPATH_W) 'mhinfo.c'; else $(CYGPATH_W) '$(srcdir)/mhinfo.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-mhinfo.Tpo $(DEPDIR)/mhuxd-mhinfo.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mhinfo.c' object='mhuxd-mhinfo.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhinfo.obj `if test -f 'mhinfo.c'; then $(CYGPATH_W) 'mhinfo.c'; else $(CYGPATH_W) '$(srcdir)/mhinfo.c'; fi`
-
-mhuxd-opts.o: opts.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-opts.o -MD -MP -MF $(DEPDIR)/mhuxd-opts.Tpo -c -o mhuxd-opts.o `test -f 'opts.c' || echo '$(srcdir)/'`opts.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-opts.Tpo $(DEPDIR)/mhuxd-opts.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='opts.c' object='mhuxd-opts.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-opts.o `test -f 'opts.c' || echo '$(srcdir)/'`opts.c
-
-mhuxd-opts.obj: opts.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-opts.obj -MD -MP -MF $(DEPDIR)/mhuxd-opts.Tpo -c -o mhuxd-opts.obj `if test -f 'opts.c'; then $(CYGPATH_W) 'opts.c'; else $(CYGPATH_W) '$(srcdir)/opts.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-opts.Tpo $(DEPDIR)/mhuxd-opts.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='opts.c' object='mhuxd-opts.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-opts.obj `if test -f 'opts.c'; then $(CYGPATH_W) 'opts.c'; else $(CYGPATH_W) '$(srcdir)/opts.c'; fi`
-
-mhuxd-radiotypes.o: radiotypes.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-radiotypes.o -MD -MP -MF $(DEPDIR)/mhuxd-radiotypes.Tpo -c -o mhuxd-radiotypes.o `test -f 'radiotypes.c' || echo '$(srcdir)/'`radiotypes.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-radiotypes.Tpo $(DEPDIR)/mhuxd-radiotypes.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='radiotypes.c' object='mhuxd-radiotypes.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-radiotypes.o `test -f 'radiotypes.c' || echo '$(srcdir)/'`radiotypes.c
-
-mhuxd-radiotypes.obj: radiotypes.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-radiotypes.obj -MD -MP -MF $(DEPDIR)/mhuxd-radiotypes.Tpo -c -o mhuxd-radiotypes.obj `if test -f 'radiotypes.c'; then $(CYGPATH_W) 'radiotypes.c'; else $(CYGPATH_W) '$(srcdir)/radiotypes.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-radiotypes.Tpo $(DEPDIR)/mhuxd-radiotypes.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='radiotypes.c' object='mhuxd-radiotypes.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-radiotypes.obj `if test -f 'radiotypes.c'; then $(CYGPATH_W) 'radiotypes.c'; else $(CYGPATH_W) '$(srcdir)/radiotypes.c'; fi`
-
-mhuxd-util.o: util.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-util.o -MD -MP -MF $(DEPDIR)/mhuxd-util.Tpo -c -o mhuxd-util.o `test -f 'util.c' || echo '$(srcdir)/'`util.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-util.Tpo $(DEPDIR)/mhuxd-util.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='util.c' object='mhuxd-util.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-util.o `test -f 'util.c' || echo '$(srcdir)/'`util.c
-
-mhuxd-util.obj: util.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-util.obj -MD -MP -MF $(DEPDIR)/mhuxd-util.Tpo -c -o mhuxd-util.obj `if test -f 'util.c'; then $(CYGPATH_W) 'util.c'; else $(CYGPATH_W) '$(srcdir)/util.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-util.Tpo $(DEPDIR)/mhuxd-util.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='util.c' object='mhuxd-util.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-util.obj `if test -f 'util.c'; then $(CYGPATH_W) 'util.c'; else $(CYGPATH_W) '$(srcdir)/util.c'; fi`
-
-mhuxd-cfgfile.o: cfgfile.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-cfgfile.o -MD -MP -MF $(DEPDIR)/mhuxd-cfgfile.Tpo -c -o mhuxd-cfgfile.o `test -f 'cfgfile.c' || echo '$(srcdir)/'`cfgfile.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-cfgfile.Tpo $(DEPDIR)/mhuxd-cfgfile.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cfgfile.c' object='mhuxd-cfgfile.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-cfgfile.o `test -f 'cfgfile.c' || echo '$(srcdir)/'`cfgfile.c
-
-mhuxd-cfgfile.obj: cfgfile.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-cfgfile.obj -MD -MP -MF $(DEPDIR)/mhuxd-cfgfile.Tpo -c -o mhuxd-cfgfile.obj `if test -f 'cfgfile.c'; then $(CYGPATH_W) 'cfgfile.c'; else $(CYGPATH_W) '$(srcdir)/cfgfile.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-cfgfile.Tpo $(DEPDIR)/mhuxd-cfgfile.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cfgfile.c' object='mhuxd-cfgfile.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-cfgfile.obj `if test -f 'cfgfile.c'; then $(CYGPATH_W) 'cfgfile.c'; else $(CYGPATH_W) '$(srcdir)/cfgfile.c'; fi`
-
-mhuxd-ctlmsg.o: ctlmsg.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-ctlmsg.o -MD -MP -MF $(DEPDIR)/mhuxd-ctlmsg.Tpo -c -o mhuxd-ctlmsg.o `test -f 'ctlmsg.c' || echo '$(srcdir)/'`ctlmsg.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-ctlmsg.Tpo $(DEPDIR)/mhuxd-ctlmsg.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ctlmsg.c' object='mhuxd-ctlmsg.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-ctlmsg.o `test -f 'ctlmsg.c' || echo '$(srcdir)/'`ctlmsg.c
-
-mhuxd-ctlmsg.obj: ctlmsg.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-ctlmsg.obj -MD -MP -MF $(DEPDIR)/mhuxd-ctlmsg.Tpo -c -o mhuxd-ctlmsg.obj `if test -f 'ctlmsg.c'; then $(CYGPATH_W) 'ctlmsg.c'; else $(CYGPATH_W) '$(srcdir)/ctlmsg.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-ctlmsg.Tpo $(DEPDIR)/mhuxd-ctlmsg.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ctlmsg.c' object='mhuxd-ctlmsg.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-ctlmsg.obj `if test -f 'ctlmsg.c'; then $(CYGPATH_W) 'ctlmsg.c'; else $(CYGPATH_W) '$(srcdir)/ctlmsg.c'; fi`
-
-mhuxd-dispatcher.o: dispatcher.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-dispatcher.o -MD -MP -MF $(DEPDIR)/mhuxd-dispatcher.Tpo -c -o mhuxd-dispatcher.o `test -f 'dispatcher.c' || echo '$(srcdir)/'`dispatcher.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-dispatcher.Tpo $(DEPDIR)/mhuxd-dispatcher.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='dispatcher.c' object='mhuxd-dispatcher.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-dispatcher.o `test -f 'dispatcher.c' || echo '$(srcdir)/'`dispatcher.c
-
-mhuxd-dispatcher.obj: dispatcher.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-dispatcher.obj -MD -MP -MF $(DEPDIR)/mhuxd-dispatcher.Tpo -c -o mhuxd-dispatcher.obj `if test -f 'dispatcher.c'; then $(CYGPATH_W) 'dispatcher.c'; else $(CYGPATH_W) '$(srcdir)/dispatcher.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-dispatcher.Tpo $(DEPDIR)/mhuxd-dispatcher.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='dispatcher.c' object='mhuxd-dispatcher.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-dispatcher.obj `if test -f 'dispatcher.c'; then $(CYGPATH_W) 'dispatcher.c'; else $(CYGPATH_W) '$(srcdir)/dispatcher.c'; fi`
-
-mhuxd-launcher.o: launcher.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-launcher.o -MD -MP -MF $(DEPDIR)/mhuxd-launcher.Tpo -c -o mhuxd-launcher.o `test -f 'launcher.c' || echo '$(srcdir)/'`launcher.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-launcher.Tpo $(DEPDIR)/mhuxd-launcher.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='launcher.c' object='mhuxd-launcher.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-launcher.o `test -f 'launcher.c' || echo '$(srcdir)/'`launcher.c
-
-mhuxd-launcher.obj: launcher.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-launcher.obj -MD -MP -MF $(DEPDIR)/mhuxd-launcher.Tpo -c -o mhuxd-launcher.obj `if test -f 'launcher.c'; then $(CYGPATH_W) 'launcher.c'; else $(CYGPATH_W) '$(srcdir)/launcher.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-launcher.Tpo $(DEPDIR)/mhuxd-launcher.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='launcher.c' object='mhuxd-launcher.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-launcher.obj `if test -f 'launcher.c'; then $(CYGPATH_W) 'launcher.c'; else $(CYGPATH_W) '$(srcdir)/launcher.c'; fi`
-
-mhuxd-linux_udev.o: linux_udev.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-linux_udev.o -MD -MP -MF $(DEPDIR)/mhuxd-linux_udev.Tpo -c -o mhuxd-linux_udev.o `test -f 'linux_udev.c' || echo '$(srcdir)/'`linux_udev.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-linux_udev.Tpo $(DEPDIR)/mhuxd-linux_udev.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='linux_udev.c' object='mhuxd-linux_udev.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-linux_udev.o `test -f 'linux_udev.c' || echo '$(srcdir)/'`linux_udev.c
-
-mhuxd-linux_udev.obj: linux_udev.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-linux_udev.obj -MD -MP -MF $(DEPDIR)/mhuxd-linux_udev.Tpo -c -o mhuxd-linux_udev.obj `if test -f 'linux_udev.c'; then $(CYGPATH_W) 'linux_udev.c'; else $(CYGPATH_W) '$(srcdir)/linux_udev.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-linux_udev.Tpo $(DEPDIR)/mhuxd-linux_udev.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='linux_udev.c' object='mhuxd-linux_udev.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-linux_udev.obj `if test -f 'linux_udev.c'; then $(CYGPATH_W) 'linux_udev.c'; else $(CYGPATH_W) '$(srcdir)/linux_udev.c'; fi`
-
 mhuxd-main.o: main.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-main.o -MD -MP -MF $(DEPDIR)/mhuxd-main.Tpo -c -o mhuxd-main.o `test -f 'main.c' || echo '$(srcdir)/'`main.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-main.Tpo $(DEPDIR)/mhuxd-main.Po
@@ -534,6 +483,48 @@ mhuxd-main.obj: main.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
 
+mhuxd-mhcontrol.o: mhcontrol.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhcontrol.o -MD -MP -MF $(DEPDIR)/mhuxd-mhcontrol.Tpo -c -o mhuxd-mhcontrol.o `test -f 'mhcontrol.c' || echo '$(srcdir)/'`mhcontrol.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-mhcontrol.Tpo $(DEPDIR)/mhuxd-mhcontrol.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mhcontrol.c' object='mhuxd-mhcontrol.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhcontrol.o `test -f 'mhcontrol.c' || echo '$(srcdir)/'`mhcontrol.c
+
+mhuxd-mhcontrol.obj: mhcontrol.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhcontrol.obj -MD -MP -MF $(DEPDIR)/mhuxd-mhcontrol.Tpo -c -o mhuxd-mhcontrol.obj `if test -f 'mhcontrol.c'; then $(CYGPATH_W) 'mhcontrol.c'; else $(CYGPATH_W) '$(srcdir)/mhcontrol.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-mhcontrol.Tpo $(DEPDIR)/mhuxd-mhcontrol.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mhcontrol.c' object='mhuxd-mhcontrol.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhcontrol.obj `if test -f 'mhcontrol.c'; then $(CYGPATH_W) 'mhcontrol.c'; else $(CYGPATH_W) '$(srcdir)/mhcontrol.c'; fi`
+
+mhuxd-mhinfo.o: mhinfo.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhinfo.o -MD -MP -MF $(DEPDIR)/mhuxd-mhinfo.Tpo -c -o mhuxd-mhinfo.o `test -f 'mhinfo.c' || echo '$(srcdir)/'`mhinfo.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-mhinfo.Tpo $(DEPDIR)/mhuxd-mhinfo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mhinfo.c' object='mhuxd-mhinfo.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhinfo.o `test -f 'mhinfo.c' || echo '$(srcdir)/'`mhinfo.c
+
+mhuxd-mhinfo.obj: mhinfo.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhinfo.obj -MD -MP -MF $(DEPDIR)/mhuxd-mhinfo.Tpo -c -o mhuxd-mhinfo.obj `if test -f 'mhinfo.c'; then $(CYGPATH_W) 'mhinfo.c'; else $(CYGPATH_W) '$(srcdir)/mhinfo.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-mhinfo.Tpo $(DEPDIR)/mhuxd-mhinfo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mhinfo.c' object='mhuxd-mhinfo.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhinfo.obj `if test -f 'mhinfo.c'; then $(CYGPATH_W) 'mhinfo.c'; else $(CYGPATH_W) '$(srcdir)/mhinfo.c'; fi`
+
+mhuxd-mhrouter.o: mhrouter.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhrouter.o -MD -MP -MF $(DEPDIR)/mhuxd-mhrouter.Tpo -c -o mhuxd-mhrouter.o `test -f 'mhrouter.c' || echo '$(srcdir)/'`mhrouter.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-mhrouter.Tpo $(DEPDIR)/mhuxd-mhrouter.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mhrouter.c' object='mhuxd-mhrouter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhrouter.o `test -f 'mhrouter.c' || echo '$(srcdir)/'`mhrouter.c
+
+mhuxd-mhrouter.obj: mhrouter.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhrouter.obj -MD -MP -MF $(DEPDIR)/mhuxd-mhrouter.Tpo -c -o mhuxd-mhrouter.obj `if test -f 'mhrouter.c'; then $(CYGPATH_W) 'mhrouter.c'; else $(CYGPATH_W) '$(srcdir)/mhrouter.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-mhrouter.Tpo $(DEPDIR)/mhuxd-mhrouter.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mhrouter.c' object='mhuxd-mhrouter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhrouter.obj `if test -f 'mhrouter.c'; then $(CYGPATH_W) 'mhrouter.c'; else $(CYGPATH_W) '$(srcdir)/mhrouter.c'; fi`
+
 mhuxd-mux.o: mux.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mux.o -MD -MP -MF $(DEPDIR)/mhuxd-mux.Tpo -c -o mhuxd-mux.o `test -f 'mux.c' || echo '$(srcdir)/'`mux.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-mux.Tpo $(DEPDIR)/mhuxd-mux.Po
@@ -547,6 +538,34 @@ mhuxd-mux.obj: mux.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mux.c' object='mhuxd-mux.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mux.obj `if test -f 'mux.c'; then $(CYGPATH_W) 'mux.c'; else $(CYGPATH_W) '$(srcdir)/mux.c'; fi`
+
+mhuxd-net.o: net.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-net.o -MD -MP -MF $(DEPDIR)/mhuxd-net.Tpo -c -o mhuxd-net.o `test -f 'net.c' || echo '$(srcdir)/'`net.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-net.Tpo $(DEPDIR)/mhuxd-net.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='net.c' object='mhuxd-net.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-net.o `test -f 'net.c' || echo '$(srcdir)/'`net.c
+
+mhuxd-net.obj: net.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-net.obj -MD -MP -MF $(DEPDIR)/mhuxd-net.Tpo -c -o mhuxd-net.obj `if test -f 'net.c'; then $(CYGPATH_W) 'net.c'; else $(CYGPATH_W) '$(srcdir)/net.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-net.Tpo $(DEPDIR)/mhuxd-net.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='net.c' object='mhuxd-net.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-net.obj `if test -f 'net.c'; then $(CYGPATH_W) 'net.c'; else $(CYGPATH_W) '$(srcdir)/net.c'; fi`
+
+mhuxd-opts.o: opts.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-opts.o -MD -MP -MF $(DEPDIR)/mhuxd-opts.Tpo -c -o mhuxd-opts.o `test -f 'opts.c' || echo '$(srcdir)/'`opts.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-opts.Tpo $(DEPDIR)/mhuxd-opts.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='opts.c' object='mhuxd-opts.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-opts.o `test -f 'opts.c' || echo '$(srcdir)/'`opts.c
+
+mhuxd-opts.obj: opts.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-opts.obj -MD -MP -MF $(DEPDIR)/mhuxd-opts.Tpo -c -o mhuxd-opts.obj `if test -f 'opts.c'; then $(CYGPATH_W) 'opts.c'; else $(CYGPATH_W) '$(srcdir)/opts.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-opts.Tpo $(DEPDIR)/mhuxd-opts.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='opts.c' object='mhuxd-opts.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-opts.obj `if test -f 'opts.c'; then $(CYGPATH_W) 'opts.c'; else $(CYGPATH_W) '$(srcdir)/opts.c'; fi`
 
 mhuxd-pglist.o: pglist.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-pglist.o -MD -MP -MF $(DEPDIR)/mhuxd-pglist.Tpo -c -o mhuxd-pglist.o `test -f 'pglist.c' || echo '$(srcdir)/'`pglist.c
@@ -576,19 +595,299 @@ mhuxd-tty.obj: tty.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-tty.obj `if test -f 'tty.c'; then $(CYGPATH_W) 'tty.c'; else $(CYGPATH_W) '$(srcdir)/tty.c'; fi`
 
-mhuxd-vsp.o: vsp.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-vsp.o -MD -MP -MF $(DEPDIR)/mhuxd-vsp.Tpo -c -o mhuxd-vsp.o `test -f 'vsp.c' || echo '$(srcdir)/'`vsp.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-vsp.Tpo $(DEPDIR)/mhuxd-vsp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vsp.c' object='mhuxd-vsp.o' libtool=no @AMDEPBACKSLASH@
+mhuxd-util.o: util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-util.o -MD -MP -MF $(DEPDIR)/mhuxd-util.Tpo -c -o mhuxd-util.o `test -f 'util.c' || echo '$(srcdir)/'`util.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-util.Tpo $(DEPDIR)/mhuxd-util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='util.c' object='mhuxd-util.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-vsp.o `test -f 'vsp.c' || echo '$(srcdir)/'`vsp.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-util.o `test -f 'util.c' || echo '$(srcdir)/'`util.c
 
-mhuxd-vsp.obj: vsp.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-vsp.obj -MD -MP -MF $(DEPDIR)/mhuxd-vsp.Tpo -c -o mhuxd-vsp.obj `if test -f 'vsp.c'; then $(CYGPATH_W) 'vsp.c'; else $(CYGPATH_W) '$(srcdir)/vsp.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-vsp.Tpo $(DEPDIR)/mhuxd-vsp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vsp.c' object='mhuxd-vsp.obj' libtool=no @AMDEPBACKSLASH@
+mhuxd-util.obj: util.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-util.obj -MD -MP -MF $(DEPDIR)/mhuxd-util.Tpo -c -o mhuxd-util.obj `if test -f 'util.c'; then $(CYGPATH_W) 'util.c'; else $(CYGPATH_W) '$(srcdir)/util.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-util.Tpo $(DEPDIR)/mhuxd-util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='util.c' object='mhuxd-util.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-vsp.obj `if test -f 'vsp.c'; then $(CYGPATH_W) 'vsp.c'; else $(CYGPATH_W) '$(srcdir)/vsp.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-util.obj `if test -f 'util.c'; then $(CYGPATH_W) 'util.c'; else $(CYGPATH_W) '$(srcdir)/util.c'; fi`
+
+mhuxd-conmgr.o: conmgr.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-conmgr.o -MD -MP -MF $(DEPDIR)/mhuxd-conmgr.Tpo -c -o mhuxd-conmgr.o `test -f 'conmgr.c' || echo '$(srcdir)/'`conmgr.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-conmgr.Tpo $(DEPDIR)/mhuxd-conmgr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='conmgr.c' object='mhuxd-conmgr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-conmgr.o `test -f 'conmgr.c' || echo '$(srcdir)/'`conmgr.c
+
+mhuxd-conmgr.obj: conmgr.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-conmgr.obj -MD -MP -MF $(DEPDIR)/mhuxd-conmgr.Tpo -c -o mhuxd-conmgr.obj `if test -f 'conmgr.c'; then $(CYGPATH_W) 'conmgr.c'; else $(CYGPATH_W) '$(srcdir)/conmgr.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-conmgr.Tpo $(DEPDIR)/mhuxd-conmgr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='conmgr.c' object='mhuxd-conmgr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-conmgr.obj `if test -f 'conmgr.c'; then $(CYGPATH_W) 'conmgr.c'; else $(CYGPATH_W) '$(srcdir)/conmgr.c'; fi`
+
+mhuxd-con_vsp.o: con_vsp.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-con_vsp.o -MD -MP -MF $(DEPDIR)/mhuxd-con_vsp.Tpo -c -o mhuxd-con_vsp.o `test -f 'con_vsp.c' || echo '$(srcdir)/'`con_vsp.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-con_vsp.Tpo $(DEPDIR)/mhuxd-con_vsp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='con_vsp.c' object='mhuxd-con_vsp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-con_vsp.o `test -f 'con_vsp.c' || echo '$(srcdir)/'`con_vsp.c
+
+mhuxd-con_vsp.obj: con_vsp.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-con_vsp.obj -MD -MP -MF $(DEPDIR)/mhuxd-con_vsp.Tpo -c -o mhuxd-con_vsp.obj `if test -f 'con_vsp.c'; then $(CYGPATH_W) 'con_vsp.c'; else $(CYGPATH_W) '$(srcdir)/con_vsp.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-con_vsp.Tpo $(DEPDIR)/mhuxd-con_vsp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='con_vsp.c' object='mhuxd-con_vsp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-con_vsp.obj `if test -f 'con_vsp.c'; then $(CYGPATH_W) 'con_vsp.c'; else $(CYGPATH_W) '$(srcdir)/con_vsp.c'; fi`
+
+mhuxd-con_tcp.o: con_tcp.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-con_tcp.o -MD -MP -MF $(DEPDIR)/mhuxd-con_tcp.Tpo -c -o mhuxd-con_tcp.o `test -f 'con_tcp.c' || echo '$(srcdir)/'`con_tcp.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-con_tcp.Tpo $(DEPDIR)/mhuxd-con_tcp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='con_tcp.c' object='mhuxd-con_tcp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-con_tcp.o `test -f 'con_tcp.c' || echo '$(srcdir)/'`con_tcp.c
+
+mhuxd-con_tcp.obj: con_tcp.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-con_tcp.obj -MD -MP -MF $(DEPDIR)/mhuxd-con_tcp.Tpo -c -o mhuxd-con_tcp.obj `if test -f 'con_tcp.c'; then $(CYGPATH_W) 'con_tcp.c'; else $(CYGPATH_W) '$(srcdir)/con_tcp.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-con_tcp.Tpo $(DEPDIR)/mhuxd-con_tcp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='con_tcp.c' object='mhuxd-con_tcp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-con_tcp.obj `if test -f 'con_tcp.c'; then $(CYGPATH_W) 'con_tcp.c'; else $(CYGPATH_W) '$(srcdir)/con_tcp.c'; fi`
+
+mhuxd-linux_termios.o: linux_termios.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-linux_termios.o -MD -MP -MF $(DEPDIR)/mhuxd-linux_termios.Tpo -c -o mhuxd-linux_termios.o `test -f 'linux_termios.c' || echo '$(srcdir)/'`linux_termios.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-linux_termios.Tpo $(DEPDIR)/mhuxd-linux_termios.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='linux_termios.c' object='mhuxd-linux_termios.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-linux_termios.o `test -f 'linux_termios.c' || echo '$(srcdir)/'`linux_termios.c
+
+mhuxd-linux_termios.obj: linux_termios.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-linux_termios.obj -MD -MP -MF $(DEPDIR)/mhuxd-linux_termios.Tpo -c -o mhuxd-linux_termios.obj `if test -f 'linux_termios.c'; then $(CYGPATH_W) 'linux_termios.c'; else $(CYGPATH_W) '$(srcdir)/linux_termios.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-linux_termios.Tpo $(DEPDIR)/mhuxd-linux_termios.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='linux_termios.c' object='mhuxd-linux_termios.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-linux_termios.obj `if test -f 'linux_termios.c'; then $(CYGPATH_W) 'linux_termios.c'; else $(CYGPATH_W) '$(srcdir)/linux_termios.c'; fi`
+
+mhuxd-channel.o: channel.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-channel.o -MD -MP -MF $(DEPDIR)/mhuxd-channel.Tpo -c -o mhuxd-channel.o `test -f 'channel.c' || echo '$(srcdir)/'`channel.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-channel.Tpo $(DEPDIR)/mhuxd-channel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='channel.c' object='mhuxd-channel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-channel.o `test -f 'channel.c' || echo '$(srcdir)/'`channel.c
+
+mhuxd-channel.obj: channel.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-channel.obj -MD -MP -MF $(DEPDIR)/mhuxd-channel.Tpo -c -o mhuxd-channel.obj `if test -f 'channel.c'; then $(CYGPATH_W) 'channel.c'; else $(CYGPATH_W) '$(srcdir)/channel.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-channel.Tpo $(DEPDIR)/mhuxd-channel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='channel.c' object='mhuxd-channel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-channel.obj `if test -f 'channel.c'; then $(CYGPATH_W) 'channel.c'; else $(CYGPATH_W) '$(srcdir)/channel.c'; fi`
+
+mhuxd-cfgmgr.o: cfgmgr.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-cfgmgr.o -MD -MP -MF $(DEPDIR)/mhuxd-cfgmgr.Tpo -c -o mhuxd-cfgmgr.o `test -f 'cfgmgr.c' || echo '$(srcdir)/'`cfgmgr.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-cfgmgr.Tpo $(DEPDIR)/mhuxd-cfgmgr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cfgmgr.c' object='mhuxd-cfgmgr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-cfgmgr.o `test -f 'cfgmgr.c' || echo '$(srcdir)/'`cfgmgr.c
+
+mhuxd-cfgmgr.obj: cfgmgr.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-cfgmgr.obj -MD -MP -MF $(DEPDIR)/mhuxd-cfgmgr.Tpo -c -o mhuxd-cfgmgr.obj `if test -f 'cfgmgr.c'; then $(CYGPATH_W) 'cfgmgr.c'; else $(CYGPATH_W) '$(srcdir)/cfgmgr.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-cfgmgr.Tpo $(DEPDIR)/mhuxd-cfgmgr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cfgmgr.c' object='mhuxd-cfgmgr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-cfgmgr.obj `if test -f 'cfgmgr.c'; then $(CYGPATH_W) 'cfgmgr.c'; else $(CYGPATH_W) '$(srcdir)/cfgmgr.c'; fi`
+
+mhuxd-daemon.o: daemon.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-daemon.o -MD -MP -MF $(DEPDIR)/mhuxd-daemon.Tpo -c -o mhuxd-daemon.o `test -f 'daemon.c' || echo '$(srcdir)/'`daemon.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-daemon.Tpo $(DEPDIR)/mhuxd-daemon.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='daemon.c' object='mhuxd-daemon.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-daemon.o `test -f 'daemon.c' || echo '$(srcdir)/'`daemon.c
+
+mhuxd-daemon.obj: daemon.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-daemon.obj -MD -MP -MF $(DEPDIR)/mhuxd-daemon.Tpo -c -o mhuxd-daemon.obj `if test -f 'daemon.c'; then $(CYGPATH_W) 'daemon.c'; else $(CYGPATH_W) '$(srcdir)/daemon.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-daemon.Tpo $(DEPDIR)/mhuxd-daemon.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='daemon.c' object='mhuxd-daemon.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-daemon.obj `if test -f 'daemon.c'; then $(CYGPATH_W) 'daemon.c'; else $(CYGPATH_W) '$(srcdir)/daemon.c'; fi`
+
+mhuxd-http_parser.o: http_parser.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-http_parser.o -MD -MP -MF $(DEPDIR)/mhuxd-http_parser.Tpo -c -o mhuxd-http_parser.o `test -f 'http_parser.c' || echo '$(srcdir)/'`http_parser.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-http_parser.Tpo $(DEPDIR)/mhuxd-http_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='http_parser.c' object='mhuxd-http_parser.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-http_parser.o `test -f 'http_parser.c' || echo '$(srcdir)/'`http_parser.c
+
+mhuxd-http_parser.obj: http_parser.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-http_parser.obj -MD -MP -MF $(DEPDIR)/mhuxd-http_parser.Tpo -c -o mhuxd-http_parser.obj `if test -f 'http_parser.c'; then $(CYGPATH_W) 'http_parser.c'; else $(CYGPATH_W) '$(srcdir)/http_parser.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-http_parser.Tpo $(DEPDIR)/mhuxd-http_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='http_parser.c' object='mhuxd-http_parser.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-http_parser.obj `if test -f 'http_parser.c'; then $(CYGPATH_W) 'http_parser.c'; else $(CYGPATH_W) '$(srcdir)/http_parser.c'; fi`
+
+mhuxd-http_server.o: http_server.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-http_server.o -MD -MP -MF $(DEPDIR)/mhuxd-http_server.Tpo -c -o mhuxd-http_server.o `test -f 'http_server.c' || echo '$(srcdir)/'`http_server.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-http_server.Tpo $(DEPDIR)/mhuxd-http_server.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='http_server.c' object='mhuxd-http_server.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-http_server.o `test -f 'http_server.c' || echo '$(srcdir)/'`http_server.c
+
+mhuxd-http_server.obj: http_server.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-http_server.obj -MD -MP -MF $(DEPDIR)/mhuxd-http_server.Tpo -c -o mhuxd-http_server.obj `if test -f 'http_server.c'; then $(CYGPATH_W) 'http_server.c'; else $(CYGPATH_W) '$(srcdir)/http_server.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-http_server.Tpo $(DEPDIR)/mhuxd-http_server.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='http_server.c' object='mhuxd-http_server.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-http_server.obj `if test -f 'http_server.c'; then $(CYGPATH_W) 'http_server.c'; else $(CYGPATH_W) '$(srcdir)/http_server.c'; fi`
+
+mhuxd-webui.o: webui.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-webui.o -MD -MP -MF $(DEPDIR)/mhuxd-webui.Tpo -c -o mhuxd-webui.o `test -f 'webui.c' || echo '$(srcdir)/'`webui.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-webui.Tpo $(DEPDIR)/mhuxd-webui.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='webui.c' object='mhuxd-webui.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-webui.o `test -f 'webui.c' || echo '$(srcdir)/'`webui.c
+
+mhuxd-webui.obj: webui.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-webui.obj -MD -MP -MF $(DEPDIR)/mhuxd-webui.Tpo -c -o mhuxd-webui.obj `if test -f 'webui.c'; then $(CYGPATH_W) 'webui.c'; else $(CYGPATH_W) '$(srcdir)/webui.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-webui.Tpo $(DEPDIR)/mhuxd-webui.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='webui.c' object='mhuxd-webui.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-webui.obj `if test -f 'webui.c'; then $(CYGPATH_W) 'webui.c'; else $(CYGPATH_W) '$(srcdir)/webui.c'; fi`
+
+mhuxd-cfgnod.o: cfgnod.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-cfgnod.o -MD -MP -MF $(DEPDIR)/mhuxd-cfgnod.Tpo -c -o mhuxd-cfgnod.o `test -f 'cfgnod.c' || echo '$(srcdir)/'`cfgnod.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-cfgnod.Tpo $(DEPDIR)/mhuxd-cfgnod.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cfgnod.c' object='mhuxd-cfgnod.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-cfgnod.o `test -f 'cfgnod.c' || echo '$(srcdir)/'`cfgnod.c
+
+mhuxd-cfgnod.obj: cfgnod.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-cfgnod.obj -MD -MP -MF $(DEPDIR)/mhuxd-cfgnod.Tpo -c -o mhuxd-cfgnod.obj `if test -f 'cfgnod.c'; then $(CYGPATH_W) 'cfgnod.c'; else $(CYGPATH_W) '$(srcdir)/cfgnod.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-cfgnod.Tpo $(DEPDIR)/mhuxd-cfgnod.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cfgnod.c' object='mhuxd-cfgnod.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-cfgnod.obj `if test -f 'cfgnod.c'; then $(CYGPATH_W) 'cfgnod.c'; else $(CYGPATH_W) '$(srcdir)/cfgnod.c'; fi`
+
+mhuxd-version.o: version.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-version.o -MD -MP -MF $(DEPDIR)/mhuxd-version.Tpo -c -o mhuxd-version.o `test -f 'version.c' || echo '$(srcdir)/'`version.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-version.Tpo $(DEPDIR)/mhuxd-version.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='version.c' object='mhuxd-version.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-version.o `test -f 'version.c' || echo '$(srcdir)/'`version.c
+
+mhuxd-version.obj: version.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-version.obj -MD -MP -MF $(DEPDIR)/mhuxd-version.Tpo -c -o mhuxd-version.obj `if test -f 'version.c'; then $(CYGPATH_W) 'version.c'; else $(CYGPATH_W) '$(srcdir)/version.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-version.Tpo $(DEPDIR)/mhuxd-version.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='version.c' object='mhuxd-version.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-version.obj `if test -f 'version.c'; then $(CYGPATH_W) 'version.c'; else $(CYGPATH_W) '$(srcdir)/version.c'; fi`
+
+mhuxd-http_parse_query.o: http_parse_query.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-http_parse_query.o -MD -MP -MF $(DEPDIR)/mhuxd-http_parse_query.Tpo -c -o mhuxd-http_parse_query.o `test -f 'http_parse_query.c' || echo '$(srcdir)/'`http_parse_query.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-http_parse_query.Tpo $(DEPDIR)/mhuxd-http_parse_query.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='http_parse_query.c' object='mhuxd-http_parse_query.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-http_parse_query.o `test -f 'http_parse_query.c' || echo '$(srcdir)/'`http_parse_query.c
+
+mhuxd-http_parse_query.obj: http_parse_query.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-http_parse_query.obj -MD -MP -MF $(DEPDIR)/mhuxd-http_parse_query.Tpo -c -o mhuxd-http_parse_query.obj `if test -f 'http_parse_query.c'; then $(CYGPATH_W) 'http_parse_query.c'; else $(CYGPATH_W) '$(srcdir)/http_parse_query.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-http_parse_query.Tpo $(DEPDIR)/mhuxd-http_parse_query.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='http_parse_query.c' object='mhuxd-http_parse_query.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-http_parse_query.obj `if test -f 'http_parse_query.c'; then $(CYGPATH_W) 'http_parse_query.c'; else $(CYGPATH_W) '$(srcdir)/http_parse_query.c'; fi`
+
+mhuxd-radiotypes.o: radiotypes.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-radiotypes.o -MD -MP -MF $(DEPDIR)/mhuxd-radiotypes.Tpo -c -o mhuxd-radiotypes.o `test -f 'radiotypes.c' || echo '$(srcdir)/'`radiotypes.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-radiotypes.Tpo $(DEPDIR)/mhuxd-radiotypes.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='radiotypes.c' object='mhuxd-radiotypes.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-radiotypes.o `test -f 'radiotypes.c' || echo '$(srcdir)/'`radiotypes.c
+
+mhuxd-radiotypes.obj: radiotypes.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-radiotypes.obj -MD -MP -MF $(DEPDIR)/mhuxd-radiotypes.Tpo -c -o mhuxd-radiotypes.obj `if test -f 'radiotypes.c'; then $(CYGPATH_W) 'radiotypes.c'; else $(CYGPATH_W) '$(srcdir)/radiotypes.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-radiotypes.Tpo $(DEPDIR)/mhuxd-radiotypes.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='radiotypes.c' object='mhuxd-radiotypes.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-radiotypes.obj `if test -f 'radiotypes.c'; then $(CYGPATH_W) 'radiotypes.c'; else $(CYGPATH_W) '$(srcdir)/radiotypes.c'; fi`
+
+mhuxd-wkman.o: wkman.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-wkman.o -MD -MP -MF $(DEPDIR)/mhuxd-wkman.Tpo -c -o mhuxd-wkman.o `test -f 'wkman.c' || echo '$(srcdir)/'`wkman.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-wkman.Tpo $(DEPDIR)/mhuxd-wkman.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='wkman.c' object='mhuxd-wkman.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-wkman.o `test -f 'wkman.c' || echo '$(srcdir)/'`wkman.c
+
+mhuxd-wkman.obj: wkman.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-wkman.obj -MD -MP -MF $(DEPDIR)/mhuxd-wkman.Tpo -c -o mhuxd-wkman.obj `if test -f 'wkman.c'; then $(CYGPATH_W) 'wkman.c'; else $(CYGPATH_W) '$(srcdir)/wkman.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-wkman.Tpo $(DEPDIR)/mhuxd-wkman.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='wkman.c' object='mhuxd-wkman.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-wkman.obj `if test -f 'wkman.c'; then $(CYGPATH_W) 'wkman.c'; else $(CYGPATH_W) '$(srcdir)/wkman.c'; fi`
+
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run `make' without going through this Makefile.
+# To change the values of `make' variables: instead of editing Makefiles,
+# (1) if the variable is set in `config.status', edit `config.status'
+#     (which will cause the Makefiles to be regenerated when you run `make');
+# (2) otherwise, pass the desired values on the `make' command line.
+$(RECURSIVE_TARGETS):
+	@fail= failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; test -z "$$fail"
+
+$(RECURSIVE_CLEAN_TARGETS):
+	@fail= failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	dot_seen=no; \
+	case "$@" in \
+	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
+	  *) list='$(SUBDIRS)' ;; \
+	esac; \
+	rev=''; for subdir in $$list; do \
+	  if test "$$subdir" = "."; then :; else \
+	    rev="$$subdir $$rev"; \
+	  fi; \
+	done; \
+	rev="$$rev ."; \
+	target=`echo $@ | sed s/-recursive//`; \
+	for subdir in $$rev; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done && test -z "$$fail"
+tags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
+	done
+ctags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -600,10 +899,23 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	set x; \
 	here=`pwd`; \
+	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
+	  include_option=--etags-include; \
+	  empty_fix=.; \
+	else \
+	  include_option=--include; \
+	  empty_fix=; \
+	fi; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test ! -f $$subdir/TAGS || \
+	      set "$$@" "$$include_option=$$here/$$subdir/TAGS"; \
+	  fi; \
+	done; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -622,7 +934,7 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	  fi; \
 	fi
 ctags: CTAGS
-CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
@@ -672,22 +984,48 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
+	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    $(am__make_dryrun) \
+	      || test -d "$(distdir)/$$subdir" \
+	      || $(MKDIR_P) "$(distdir)/$$subdir" \
+	      || exit 1; \
+	    dir1=$$subdir; dir2="$(distdir)/$$subdir"; \
+	    $(am__relativize); \
+	    new_distdir=$$reldir; \
+	    dir1=$$subdir; dir2="$(top_distdir)"; \
+	    $(am__relativize); \
+	    new_top_distdir=$$reldir; \
+	    echo " (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir="$$new_top_distdir" distdir="$$new_distdir" \\"; \
+	    echo "     am__remove_distdir=: am__skip_length_check=: am__skip_mode_fix=: distdir)"; \
+	    ($(am__cd) $$subdir && \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        top_distdir="$$new_top_distdir" \
+	        distdir="$$new_distdir" \
+		am__remove_distdir=: \
+		am__skip_length_check=: \
+		am__skip_mode_fix=: \
+	        distdir) \
+	      || exit 1; \
+	  fi; \
+	done
 check-am: all-am
-check: check-am
+check: check-recursive
 all-am: Makefile $(PROGRAMS)
-installdirs:
+installdirs: installdirs-recursive
+installdirs-am:
 	for dir in "$(DESTDIR)$(sbindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: install-am
-install-exec: install-exec-am
-install-data: install-data-am
-uninstall: uninstall-am
+install: install-recursive
+install-exec: install-exec-recursive
+install-data: install-data-recursive
+uninstall: uninstall-recursive
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-am
+installcheck: installcheck-recursive
 install-strip:
 	if test -z '$(STRIP)'; then \
 	  $(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
@@ -709,90 +1047,96 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-am
+clean: clean-recursive
 
 clean-am: clean-generic clean-sbinPROGRAMS mostlyclean-am
 
-distclean: distclean-am
+distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
 
-dvi: dvi-am
+dvi: dvi-recursive
 
 dvi-am:
 
-html: html-am
+html: html-recursive
 
 html-am:
 
-info: info-am
+info: info-recursive
 
 info-am:
 
-install-data-am:
+install-data-am: install-data-local
 
-install-dvi: install-dvi-am
+install-dvi: install-dvi-recursive
 
 install-dvi-am:
 
 install-exec-am: install-sbinPROGRAMS
 
-install-html: install-html-am
+install-html: install-html-recursive
 
 install-html-am:
 
-install-info: install-info-am
+install-info: install-info-recursive
 
 install-info-am:
 
 install-man:
 
-install-pdf: install-pdf-am
+install-pdf: install-pdf-recursive
 
 install-pdf-am:
 
-install-ps: install-ps-am
+install-ps: install-ps-recursive
 
 install-ps-am:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-am
+maintainer-clean: maintainer-clean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-am
+mostlyclean: mostlyclean-recursive
 
 mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-am
+pdf: pdf-recursive
 
 pdf-am:
 
-ps: ps-am
+ps: ps-recursive
 
 ps-am:
 
 uninstall-am: uninstall-sbinPROGRAMS
 
-.MAKE: install-am install-strip
+.MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) ctags-recursive \
+	install-am install-strip tags-recursive
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-sbinPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-sbinPROGRAMS install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+.PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
+	all all-am check check-am clean clean-generic \
+	clean-sbinPROGRAMS ctags ctags-recursive distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-data-local install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-sbinPROGRAMS install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-sbinPROGRAMS
+	mostlyclean-generic pdf pdf-am ps ps-am tags tags-recursive \
+	uninstall uninstall-am uninstall-sbinPROGRAMS
 
+
+install-data-local:
+	$(MKDIR_P) $(DESTDIR)$(STATEDIR) $(DESTDIR)$(RUNDIR) $(DESTDIR)$(LOGDIR)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

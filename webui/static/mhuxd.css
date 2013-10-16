@@ -1,0 +1,513 @@
+@font-face {
+  font-family: 'Monda';
+  font-style: normal;
+  font-weight: 400;
+  font-smooth: never;
+  src: local('Monda Regular'), local('Monda-Regular'), url(monda400.woff) format('woff');
+}
+@font-face {
+  font-family: 'Monda';
+  font-style: normal;
+  font-weight: 700;
+  font-smooth: never;
+  src: local('Monda Bold'), local('Monda-Bold'), url(monda700.woff) format('woff');
+}
+
+body, td, th
+{
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    font-size: 1em;
+}
+table 
+{
+    padding: 0px;
+}
+
+div
+{
+    position:relative;
+}
+
+td { margin: 5px; }
+
+/**
+ * Controls background color of the page
+ */
+body 
+{
+    background-color: #FFFFFF;                      /* white */
+}
+
+/**
+ * This controls the style of the Section Title located 
+ * between the breadcrumbs and the first section header.
+ */
+h1
+{
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 1.3em;
+    color: #555555                            /* dark gray */
+}
+h1.title
+{
+    margin-bottom: -19px;
+}
+
+
+table.sectionheadertable
+{
+    background-color: #7070a0;                      /* dark gray */
+}
+.sectionheadertableborder
+{
+
+    background-color: #000000;                      /* black */
+}
+td.sectiontitlecell {
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 1em;
+    color: white;
+    font-weight: bold;
+}
+.smallsection
+{
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    color: #003366;             /* dark blue */
+}
+.vlantext
+{
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    color: #003366;             /* dark blue */
+}
+.confirmtext
+{
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    color: #AA0000;             /* crimson */
+}
+
+table.sectiontable
+{
+    border: 1px solid #555555;            
+}
+
+table.sectiontableinner
+{
+    background: #EEEEEE;                
+    border-left: 5px solid #EEEEEE;
+    border-right: 5px solid #EEEEEE;
+}
+
+td.titlesettingscell {
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    font-size: 0.8em;
+    color: #111111;                             /* dark gray */
+    font-weight: bold;
+    background: #EEEEEE;                        /* light gray */
+    padding: 3px;
+    padding-left: 0px;
+}
+td.spacersettingscell {
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    font-size: 5%;
+    color: #111111;                             /* dark gray */
+    background: #EEEEEE;
+    padding: 3px;
+}
+td.contentsettingscell {
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    font-size: 0.8em;
+    color: #000000;                             /* black */
+    background: #EEEEEE;                        /* light gray */
+    padding: 3px;
+    padding-right: 0px;
+}
+td.dividersettingscell {
+    background: #999999;                        /* gray */
+}
+
+
+input[type="text"] {
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    font-size: 0.8em;
+}
+
+select {
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    font-size: 0.8em;
+}
+
+
+/*   These values are the default alternating colors of the list section rows  */
+tr.contentlistrow1 {
+    color: #000000;                             /* black */
+    background: #F9F9F9;                        /* Off-white */
+    border-top: 1px solid #999999;
+}
+tr.contentlistrow2 {
+    color: #000000;                             /* black */
+    background: #EEEEEE;                        /* dark gray */
+    border-top: 1px solid #999999;
+}
+tr.alert_row1 { 
+    color: #000000;                             /* black */
+    background-color: #FBD0AA;                  /* Lighter Orange */
+}
+tr.alert_row2 { 
+    color: #000000;                             /* black */
+    background-color: #FCDCBE;                  /* Darker Orange */
+}
+
+td.titlelistcell, td.titlelistcellright {
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    font-size: 0.8em;
+    font-weight: bold;
+    background: #CCCCCC;                       /* dark gray */
+}
+td.titlelistcellright {
+    text-align: right;
+}
+
+td.contentlistcell, td.radiolistcell1, td.radiolistcell2, td.contentlistcellright, td.contentlistcellbold {
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    font-size: 0.8em;
+    border-top: 1px solid #999999;
+}
+
+td.contentlistcellbold {
+    font-weight: bold;
+}
+
+td.contentlistcellright, div.contentlistcellright 
+{
+    text-align: right;
+}
+
+td.contentlistcell textarea.readOnly
+{
+    border-style: outset;
+}
+
+
+.msgtext
+{
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    font-size: 100%;
+}
+.msgtype
+{
+    font-family: 'Monda', Arial, Helvetica, sans-serif;
+    font-size: 100%;
+}
+.errorpic
+{
+    background: #AA0000;                      /* crimson */
+}
+.error
+{
+    background: #FFE6D0;                      /* light orange */
+    color: #660000;                           /* crimson */
+    border: #AA0000 solid 1px;                /* crimson */
+}
+.warningpic
+{
+    background: #DD5522;                      /* dark orange */
+}
+.warning 
+{
+    background: #FFEECC;                      /* light orange */
+    color: #992200;                           /* dark orange */
+    border: #DD5522 solid 1px;                /* dark orange */
+}
+.infopic
+{
+    background: #6699CC;                      /* dark blue */
+}
+.info 
+{
+    background: #FFFFDD;                      /* light yellow */
+    color: #222222;                           /* dark gray */
+    border: #6699CC solid 1px;                /* dark blue */
+}
+.attentionrequired
+{
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 80%;
+    color: #FFFFFF;                           /* white */
+    font-weight: bold;
+    background: #DD5522;                     /* dark orange */
+}
+.attentionrequireddot
+{
+    color: #DD5522;
+    display: inline;
+}
+.attentionrequiredmessage
+{
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 80%;
+    color: #444444;  
+    background: #FFEECC;
+}
+
+/**
+ *     LEFT SIDE MENU ITEMS
+ * 
+ */
+.menuTable {
+    background: #FFFFFF;               /* white */
+}
+
+.submenucell {
+    padding-left: 20;
+}
+.submenuselectedcell {
+    padding-left: 20;
+    background:  #d0d0f0;                                   /* yellow highlight */
+}
+.submenuselectedcelltext, .menuselectedcelltext {
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 70%;
+}
+.menuselectedcell {
+    background:  #d0d0f0;                                   /* yellow highlight */
+}
+.menuheadercell {
+    font-family: 'Roboto', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 70%;
+    font-weight: bold;
+    background: #555555;                                   /* dark gray */
+    border-bottom: 1px solid #555555;
+    padding: 3px;
+    color: white;
+}
+.keyMgmtMenuBox 
+{
+    width: 100%;
+    background: #EEEEEE;	                                    /* light gray */
+    border-left: 1px solid #555555;	                            /* dark gray */
+    border-right: 1px solid #555555;	                    /* dark gray */
+    border-top: 1px solid #555555;	                            /* dark gray */
+    border-bottom: 1px solid #555555;	                    /* dark gray */
+}
+
+/**
+ *     TOP MENU ITEMS
+ * 
+ */
+/* Top menu where logos, help and log out */
+.pageHeaderTable {
+    background: #000050;                                    /* black */
+}
+
+.pageHeaderText { /* Title */
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 2em;
+    color: #FFFFFF;                                        /* white */
+    font-weight: bold;
+}
+
+.pageHeaderTextItalic { /* Title, for the italicized 'i' */
+    font-family: 'Monda', "Times New Roman", Times, serif;
+    font-size: 170%;
+    color: #FFFFFF;                                        /* white */
+    font-weight: bold;
+    font-style: italic;
+}
+
+.regularTextWhiteBold { /* hostname top right corner */
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 80%;
+    color: #FFFFFF;                                        /* white */
+    font-weight: bold;
+}
+.smallTextWhite { /* Logged in as ... */
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 70%;
+    color: #FFFFFF;                                        /* white */
+}
+/* Non-selected tabs "Home", "Security", "Enterprise", "Device" */
+.navButton 
+{
+    background: #7070a0;                                   /* dark gray */
+    text-align: center;
+    padding-right: 1px;
+    padding-left: 1px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 0.8em;
+    font-weight: bold;
+    border-bottom: 1px solid #111111;
+}
+/* Selected tabs "Home", "Security", "Enterprise", "Device" */
+.navButtonSelected 
+{
+    /*	background: #febf50;                                  */     /* safenet yellow */
+    background: #d0d0f0;                                    
+    text-align: center;
+    padding-right: 1px;
+    padding-left: 1px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    color: #000000;
+    font-size: 0.8em;
+    font-weight: bold;
+    border-bottom: 1px solid #d0d0f0
+}
+/* Dark gray spacer between Nav buttons and the bottom portion of the page */
+.bottomnavspacer
+{
+    background:  #d0d0f0;                                       /* safenet yellow */
+    border-bottom: 1px solid #111111;                          /* near-black gray */
+    text-align: right;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 60%;
+}
+/*Border between Nav buttons */
+.navButtonSpacer
+{
+    padding-right: 1px;
+    padding-left: 1px;
+    border-bottom: 1px solid #000000;                         /* black */
+}
+/* Side of non-selected nav buttons */
+.navButtonCorner
+{
+    background: #7070a0;                                     /* dark gray */
+    border-bottom: 1px solid #111111;                        /* near-black gray */
+}
+/* Side of selected nav button */
+.navButtonCornerSelected
+{
+    background:  #d0d0f0;                                       /* yellow */
+    border-bottom: 1px solid  #d0d0f0;                          /* yellow */
+}
+
+/* These tabs are used in the properties section of NAE Keys */
+.tabButton 
+{
+    background: #555555;                                       /* dark gray */
+    text-align: center;
+    padding: 3px;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 80%;
+    font-weight: bold;
+    border-left: 1px solid #000000;                            /* black */
+    border-right: 1px solid #000000;
+    border-top: 1px solid #000000;
+    border-bottom: 1px solid #000000;
+}
+.tabButtonSelected 
+{
+    background:  #a0a0f0;                                       /* safenet yellow */
+    text-align: center;
+    padding: 3px;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 80%;
+    font-weight: bold;
+    border-left: 1px solid #000000;                            /* black */
+    border-right: 1px solid #000000;
+    border-top: 1px solid #000000;
+    border-bottom: 1px solid  #a0a0f0;                          /* safenet yellow */
+}
+.tabSpacer
+{
+    background:  #a0a0f0;                                        
+}
+.tabSpacer2
+{
+    background: #000000;
+}
+.tabButtonSpacer
+{
+    padding-right: 1px;
+    padding-left: 1px;
+    border-bottom: 1px solid #000000;
+}
+
+/**
+ *     MISC. ITEMS
+ * 
+ */
+/* Next to breadcrumb links, chevrons */
+.smalltextgray {
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 70%;
+    color: #444444;                                        /* gray */
+}
+
+/* Used in the attention table on the home page */
+.regulartextgray {
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 80%;
+    color: #444444;                                        /* gray */
+}
+/* ES Import uses this */
+.largeTextBlack {
+    font-family: 'Monda', Verdana, Arial, Helvetica, sans-serif;
+    font-size: 120%;
+    color: #000000;                                        /* black */
+}
+
+/* Link stuff */
+
+A:link       { color: #001199; text-decoration: underline; }
+A:visited    { color: #001199; text-decoration: underline; }
+A:active     { color: #990000; text-decoration: underline; }
+A:hover      { color: #990000; text-decoration: underline; }
+
+A.tablink:link       { color: white; text-decoration: none; }
+A.tablink:visited    { color: white; text-decoration: none; }
+A.tablink:active     { color: #FF0000; text-decoration: underline; }
+A.tablink:hover      { color: #FF0000; text-decoration: underline; }
+
+A.tablink2:link       { color: #444444; text-decoration: none; }
+A.tablink2:visited    { color: #444444; text-decoration: none; }
+A.tablink2:active     { color: #FF0000; text-decoration: underline; }
+A.tablink2:hover      { color: #FF0000; text-decoration: underline; }
+
+A.seltablink:link       { color: #ffffff; text-decoration: none; }
+A.seltablink:visited    { color: #ffffff; text-decoration: none; }
+A.seltablink:active     { color: #ffffff; text-decoration: underline; }
+A.seltablink:hover      { color: #ffffff; text-decoration: underline; }
+
+A.sortlink:link       { color: #000000; text-decoration: underline; }
+A.sortlink:visited    { color: #000000; text-decoration: underline; }
+A.sortlink:active     { color: #990000; text-decoration: underline; }
+A.sortlink:hover      { color: #990000; text-decoration: underline; }
+
+A.selsortlink:link       { color: #000000; text-decoration: underline; font-weight: bold; }
+A.selsortlink:visited    { color: #000000; text-decoration: underline; font-weight: bold; }
+A.selsortlink:active     { color: #990000; text-decoration: underline; font-weight: bold; }
+A.selsortlink:hover      { color: #990000; text-decoration: underline; font-weight: bold; }
+
+A.bannerlink:link       { color: #ffffff; text-decoration: underline; }
+A.bannerlink:visited    { color: #ffffff; text-decoration: underline; }
+A.bannerlink:active     { color: #ff0000; text-decoration: underline; }
+A.bannerlink:hover      { color: #ff0000; text-decoration: underline; }
+
+A.menulink:link       { color: #003366; text-decoration: none; }
+A.menulink:visited    { color: #003366; text-decoration: none; }
+A.menulink:active     { color: #FF0000; text-decoration: underline; }
+A.menulink:hover      { color: #FF0000; text-decoration: underline; }
+
+A.helplink:link       { color: white; text-decoration: none; }
+A.helplink:visited    { color: white; text-decoration: none; }
+A.helplink:active     { color: #990000; text-decoration: underline; }
+A.helplink:hover      { color: #990000; text-decoration: underline; }
+
+A.otherlink:link       { color: #0000CC; text-decoration: none; }
+A.otherlink:visited    { color: #0000CC; text-decoration: none; }
+A.otherlink:active     { color: #990000; text-decoration: underline; }
+A.otherlink:hover      { color: #990000; text-decoration: underline; }
+.destserverstatsforward
+{
+    background-color: #EEEEEE;
+}
+.destserverstatsswitching
+{
+    background-color: #DDDDDD;
+}
+
+

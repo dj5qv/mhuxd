@@ -1,0 +1,730 @@
+mhuxd.webui.base_url = /cs/home.cs
+mhuxd.webui.title = mhuxd WebUI
+mhuxd.webui.session.page = home
+mhuxd.webui.session.unit = 0
+mhuxd.webui.session.menu = summary
+
+mhuxd.webui.tabs {
+       home {
+            spec = s_home
+       	    display = Home
+	    page = home
+	    unit = 0
+       }
+       daemon {
+       	    spec = s_daemon
+	    display = Daemon
+	    page = daemon
+	    unit = 0
+       }
+}
+
+mhuxd.webui.templates {
+       keyer {
+       	     spec = s_keyer
+	     display = _dynamic_
+	     page = keyer
+	     unit = _dynamic_
+       }
+}
+
+mhuxd.webui.defaults {
+       home {
+	    default_menu = summary
+       }
+       daemon {
+	    default_menu = ports
+       }
+       keyer {
+            default_menu = radio
+       }
+}
+
+mhuxd.webui.menus {
+       home {
+       	    summary {
+	 	 display = Summary
+		 title   = Summary
+		 include = home_summary.cs
+            }
+       }
+       daemon {
+             ports {
+                  display = Ports
+		  title   = Daemon Ports Configuration and Routing
+                  include = daemon_ports.cs
+             }
+             settings {
+	 	  display = Settings
+		  title   = Daemon Settings
+		  include = daemon_settings.cs
+             }
+	     action {
+	 	  display = Action
+		  title   = Daemon Actions
+		  include = daemon_action.cs
+             }
+       }
+       keyer {
+             mode {
+	          display = Keyer Mode
+		  title = Keyer Mode
+		  include = keyer_mode.cs
+	     }
+
+             radio {
+                  display = Radio
+		  title   = Radio Communication Parameters
+                  include = keyer_radio.cs
+		  depends = has.r1
+             }
+             aux {
+                  display = AUX
+		  title   = AUX Communication Parameters
+                  include = keyer_aux.cs
+		  depends = has.aux
+             }
+             fsk {
+                  display = FSK
+		  title   = FSK Channel Parameters
+                  include = keyer_fsk.cs
+		  depends = has.fsk1
+             }
+             ptt {
+                  display = PTT
+                  title = PTT Configuration
+                  include = keyer_ptt.cs
+#                  depends = has.ptt_settings
+             }
+             audio {
+                  display = Audio 
+                  title = Audio Configuration
+                  include = keyer_audiosw.cs
+                  depends = has.audio_switching		  
+             }
+	     display {
+                  display = Display
+	          title = Display Configuration
+                  include = keyer_display.cs
+	     	  depends = has.display
+	     }
+	     cw {
+                  display = CW
+                  title = CW Settings
+                  include = keyer_winkey.cs
+                  depends = has.winkey
+             }
+             all_params {
+                  display = All Parameters
+                  title = All Keyer Parameters
+                  include = keyer_summary.cs
+             }
+       }
+}
+
+mhuxd.webui.options {
+       mode {
+             0 {
+                  display = CW
+	     }
+             1 {
+                  display = VOICE
+	     }
+             2 {
+                  display = FSK
+	     }
+             3 {
+                  display = DIGITAL
+	     }
+       }
+
+       digitalovervoicerule {
+             0 { 
+	          display = Band Map 
+             }
+	     1 { 
+	          display = Always VOICE 
+             }
+             2 { 
+	          display = Always DIGITAL 
+             }
+       }
+
+       radio_baud {
+             1200 {
+                  display = 1200
+             }
+             2400 {
+                  display = 2400
+             }
+             4800 {
+                  display = 4800
+             }
+             9600 {
+                  display = 9600
+             }
+             19200 {
+                  display = 19200
+             }
+             38400 {
+                  display = 38400
+             }
+             57600 {
+                  display = 57600
+             }
+       }
+
+
+       fsk_baud {
+             22 {
+                  display = 22
+             }
+             45 {
+                  display = 45
+             }
+             45_45 {
+	     	  default = 1
+                  display = 45.45
+             }
+             50 {
+                  display = 50
+             }
+	     56_25 {
+                  display = 56.25
+             }
+	     75 {
+                  display = 75
+             }
+	     100 {
+                  display = 100
+             }
+	     150 {
+                  display = 150
+             }
+	     300 {
+                  display = 300
+             }
+       }
+
+       radio_databits {
+             8 { 
+                  default = 1
+	          display = 8
+             }
+	     7 { 
+	          display = 7
+             }
+             6 { 
+	          display = 6
+             }
+             5 { 
+	          display = 5
+             }
+       }
+
+       fsk_databits {
+             8 { 
+	          display = 8
+             }
+	     7 { 
+	          display = 7
+             }
+             6 { 
+	          display = 6
+             }
+             5 { 
+                  default = 1
+	          display = 5
+             }
+       }
+
+       radio_stopbits {
+             1 { 
+                  default = 1
+	          display = 1
+             }
+	     2 { 
+	          display = 2
+             }
+       }
+
+       fsk_stopbits {
+             1 { 
+	          display = 1
+             }
+             1_5 { 
+                  default = 1
+	          display = 1.5
+             }
+	     2 { 
+	          display = 2
+             }
+       }
+
+       wk_keyer_modes {
+             0 {
+                  display = IambicB
+             }
+             1 {
+                  display = IambicA
+             }
+             2 {
+                  display = Ultimatic
+             }
+             3 {
+                  display = Bug Keyer
+             }
+       }
+
+       wk_ultimatic_modes {
+             0 {
+                  display = Normal
+             }
+             1 {
+                  display = Dah
+             }
+             2 {
+                  display = Dit
+             }
+       }
+
+       ptt {
+             ptt {
+                  display = PTT
+		  value = ptt
+             }
+
+             ptt1 {
+                  display = PTT1 (mic jack)
+		  value = ptt1
+             }
+
+             ptt2 {
+                  display = PTT2 (rear panel jack)
+		  value = ptt2
+             }
+
+             ptt12 {
+                  display = PTT1+2 (both)
+		  value = ptt12
+             }
+
+	     semi {
+                  display = Semi Break-in     
+		  value = semi
+             }
+
+	     noptt {
+                  display = No PTT   
+		  value = semi
+             }
+
+	     qsk {
+                  display = QSK
+		  value = qsk
+             }
+       }
+
+       audio {
+             2 {
+                  display = A (Mic -> Radio Mic)
+		  value = 2
+             }
+             1 {
+                  display = B (Soundcard -> Radio Line)
+		  value = 1
+             }
+             3 {
+                  display = C (Soundcard -> Radio Mic)
+		  value = 3
+             }
+             0 {
+                  display = D (like A + B)
+		  value = 0
+             }
+       }
+
+       side_tone {
+             0 {
+                  display = Off
+             }
+             1 {
+                  display = 1350 Hz
+             }
+             2 {
+                  display = 675 Hz
+             }
+             3 {
+                  display = 450 Hz
+             }
+             4 {
+                  display = 338 Hz
+             }
+       }
+
+       mk2micsel {
+             auto {
+                  display = Auto
+                  value = auto
+             }
+             front {
+                  display = Front
+		                    value = front
+             }
+             rear {
+                  display = Rear
+                  value = rear
+             }
+       }
+
+       mk2_dispbk {
+             0 {
+                  display = Empty
+                  value = 0
+             }
+             1 {
+                  display = Welcome Message
+                  value = 1
+             }
+             3 {
+                  display = TX data
+                  value = 3
+             }
+             4 {
+                  display = Recording Monitor
+                  value = 4
+             }
+             5 {
+                  display = Current WPM and Speed Pot
+                  value = 5
+             }
+             6 {
+                  display = RX Frequency
+                  value = 6
+             }
+             7 {
+                  display = TX Frequency
+                  value = 7
+             }
+             8 {
+                  display = RX or TX Frequency according to PTT
+                  value = 8
+             }
+             9 {
+                  display = System Power Supply Voltage
+                  value = 9
+             }
+             10 {
+                  display = Current Serial Number
+                  value = 10
+             }
+             11 {
+                  display = Current WPM and Serial Number
+                  value = 11
+             }
+             12 {
+                  display = Operating Frequency
+                  value = 12
+             }
+             13 {
+                  display = VFO A Frequency
+                  value = 13
+             }
+             14 {
+                  display = VFO B Frequency
+                  value = 14
+             }
+             15 {
+                  display = SeppIR/UltraBeam State
+                  value = 15
+             }
+             16 {
+                  display = Sub RX Frequency
+                  value = 16
+             }
+             17 {
+                  display = Keyer Mode
+                  value = 17
+             }
+             18 {
+                  display = Current Router Preset
+                  value = 18
+             }
+       }
+
+       mk2_dispev {
+             recMsg {
+	          display = Recording Message State
+             }
+             playMsg {
+	          display = Playing Message State
+             }
+             txDecoder {
+	          display = Monitor during Transmission
+             }
+# NIY
+#            rxDecoder {
+#	         display = Decoded RX data
+#            }
+
+             recDecoder {
+	          display = Monitor during DVK Recording
+             }
+             wpmChange {
+	          display = WPM on Change
+             }
+#            steppirCmd {
+#	         display = SteppIR/UltraBeam commands (from PS2 keyboard)
+#            }
+             rxFreqChange {
+	          display = RX Frequency Change
+             }
+             txFreqChange {
+	          display = TX Frequency Change
+             }
+             modeChange {
+	          display = Mode Change
+             }
+             micChange {
+	          display = Microphone Input Change
+             }
+             steppirLock {
+	          display = SteppIR/UltraBeam lock (tuning, home)
+             }
+             sysPwr {
+	          display = Supply Voltage when it is Out of Range
+             }
+             wpmInCwMode {
+	          display = WPM in cw mode
+             }
+             cfgOverriden {
+	          display = Config Overriding by Key
+             }
+             wpmSnControlChange {
+	          display = WPM and SN on Change
+             }
+             snChange {
+	          display = SN on Change
+             }
+             snInCwMode {
+	          display = SN in CW Mode
+             }
+             wpmSnInCwMode {
+	          display = WPM and SN in CW Mode
+             }
+             operFreqChange {
+	          display = Operating Frequency Change
+             }
+             vfoAFreqChange {
+	          display = VFO A Frequency Change
+             }
+             vfoBFreqChange {
+	          display = VFO B Frequency Change
+             }
+             steppirState {
+	          display = SteppIR/UltraBeam State
+             }
+             smLock {
+	          display = Station Master Lock
+             }
+             subRxFreqChange {
+	          display = Sub-RX Frequency Change
+             }
+             presetChange {
+	          display = Preset Change
+             }
+       }
+
+       mk2_disp_lines {
+             0 {
+                  display = Upper Line
+             }
+             1 {
+                  display = Lower Line
+             }
+       }
+
+       mk2r_codecs {
+             1 {
+                  display = SC1
+             }
+             0 {
+                  display = SC2
+             }
+       }
+
+       1 {   # CK
+             cw.ptt_opts.ptt : mhuxd.webui.options.ptt.ptt
+             cw.ptt_opts.qsk : mhuxd.webui.options.ptt.qsk
+       }
+
+       2 {   # DK
+             cw.ptt_opts.ptt : mhuxd.webui.options.ptt.ptt
+             cw.ptt_opts.noptt : mhuxd.webui.options.ptt.noptt
+       }      
+
+       3 {   # DK2
+             cw.ptt_opts.ptt : mhuxd.webui.options.ptt.ptt
+             cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
+             cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi             
+       }
+
+       4 {   # MK
+             cw.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
+	     cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi
+             cw.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+
+             voice.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             voice.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+
+             digital.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             digital.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+             digital.ptt_opts.ptt12 : mhuxd.webui.options.ptt.ptt12             
+
+	     cw.audioRx.2 :  mhuxd.webui.options.audio.2
+	     cw.audioTx.2 :  mhuxd.webui.options.audio.2
+	     cw.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+
+	     voice.audioRx.2 :  mhuxd.webui.options.audio.2
+	     voice.audioRx.1 :  mhuxd.webui.options.audio.1
+	     voice.audioRx.3 :  mhuxd.webui.options.audio.3
+	     voice.audioTx.2 :  mhuxd.webui.options.audio.2
+	     voice.audioTx.1 :  mhuxd.webui.options.audio.1
+	     voice.audioTx.3 :  mhuxd.webui.options.audio.3
+	     voice.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+	     voice.audioTxFootSw.1 :  mhuxd.webui.options.audio.1
+	     voice.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
+
+	     digital.audioRx.2 :  mhuxd.webui.options.audio.2
+	     digital.audioRx.1 :  mhuxd.webui.options.audio.1
+	     digital.audioRx.3 :  mhuxd.webui.options.audio.3
+	     digital.audioTx.2 :  mhuxd.webui.options.audio.2
+	     digital.audioTx.1 :  mhuxd.webui.options.audio.1
+	     digital.audioTx.3 : mhuxd.webui.options.audio.3
+	     digital.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+	     digital.audioTxFootSw.1 :  mhuxd.webui.options.audio.1
+	     digital.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
+
+
+       }
+
+       5 {   # MK2
+             cw.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
+             cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi
+             cw.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+             voice.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             voice.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+             digital.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             digital.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+             digital.ptt_opts.ptt12 : mhuxd.webui.options.ptt.ptt12             
+
+	     cw.audioRx.2 :  mhuxd.webui.options.audio.2
+	     cw.audioTx.2 :  mhuxd.webui.options.audio.2
+	     cw.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+
+	     voice.audioRx.2 :  mhuxd.webui.options.audio.2
+	     voice.audioRx.1 :  mhuxd.webui.options.audio.1
+	     voice.audioRx.3 :  mhuxd.webui.options.audio.3
+	     voice.audioRx.0 :  mhuxd.webui.options.audio.0
+	     voice.audioTx.2 :  mhuxd.webui.options.audio.2
+	     voice.audioTx.1 :  mhuxd.webui.options.audio.1
+	     voice.audioTx.3 :  mhuxd.webui.options.audio.3
+	     voice.audioTx.0 :  mhuxd.webui.options.audio.0
+	     voice.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+	     voice.audioTxFootSw.1 :  mhuxd.webui.options.audio.1
+	     voice.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
+	     voice.audioTxFootSw.0 :  mhuxd.webui.options.audio.0
+
+	     digital.audioRx.2 :  mhuxd.webui.options.audio.2
+	     digital.audioRx.1 :  mhuxd.webui.options.audio.1
+	     digital.audioRx.3 :  mhuxd.webui.options.audio.3
+	     digital.audioRx.0 :  mhuxd.webui.options.audio.0
+	     digital.audioTx.2 :  mhuxd.webui.options.audio.2
+	     digital.audioTx.1 :  mhuxd.webui.options.audio.1
+	     digital.audioTx.3 : mhuxd.webui.options.audio.3
+	     digital.audioTx.0 :  mhuxd.webui.options.audio.0
+	     digital.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+	     digital.audioTxFootSw.1 :  mhuxd.webui.options.audio.1
+	     digital.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
+	     digital.audioTxFootSw.0 :  mhuxd.webui.options.audio.0
+       }
+
+       6 {   # MK2R
+             cw.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
+             cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi
+             cw.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+
+             voice.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             voice.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+
+             digital.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             digital.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+             digital.ptt_opts.ptt12 : mhuxd.webui.options.ptt.ptt12             
+
+	     cw.audioRx.2 :  mhuxd.webui.options.audio.2
+	     cw.audioTx.2 :  mhuxd.webui.options.audio.2
+	     cw.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+
+	     voice.audioRx.2 :  mhuxd.webui.options.audio.2
+	     voice.audioRx.1 :  mhuxd.webui.options.audio.1
+	     voice.audioRx.3 :  mhuxd.webui.options.audio.3
+	     voice.audioTx.2 :  mhuxd.webui.options.audio.2
+	     voice.audioTx.1 :  mhuxd.webui.options.audio.1
+	     voice.audioTx.3 :  mhuxd.webui.options.audio.3
+	     voice.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+	     voice.audioTxFootSw.1 :  mhuxd.webui.options.audio.1
+	     voice.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
+
+	     digital.audioRx.2 :  mhuxd.webui.options.audio.2
+	     digital.audioRx.1 :  mhuxd.webui.options.audio.1
+	     digital.audioRx.3 :  mhuxd.webui.options.audio.3
+	     digital.audioTx.2 :  mhuxd.webui.options.audio.2
+	     digital.audioTx.1 :  mhuxd.webui.options.audio.1
+	     digital.audioTx.3 :  mhuxd.webui.options.audio.3
+	     digital.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+	     digital.audioTxFootSw.1 :  mhuxd.webui.options.audio.1
+	     digital.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
+       }
+
+       7 {   # MK2Rp
+             cw.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
+             cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi
+             cw.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+
+             voice.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             voice.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+
+             digital.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             digital.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2             
+             digital.ptt_opts.ptt12 : mhuxd.webui.options.ptt.ptt12             
+
+	     cw.audioRx.2 :  mhuxd.webui.options.audio.2
+	     cw.audioTx.2 :  mhuxd.webui.options.audio.2
+	     cw.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+
+	     voice.audioRx.2 :  mhuxd.webui.options.audio.2
+	     voice.audioRx.1 :  mhuxd.webui.options.audio.1
+	     voice.audioRx.3 :  mhuxd.webui.options.audio.3
+	     voice.audioTx.2 :  mhuxd.webui.options.audio.2
+	     voice.audioTx.1 :  mhuxd.webui.options.audio.1
+	     voice.audioTx.3 :  mhuxd.webui.options.audio.3
+	     voice.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+	     voice.audioTxFootSw.1 :  mhuxd.webui.options.audio.1
+	     voice.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
+
+	     digital.audioRx.2 :  mhuxd.webui.options.audio.2
+	     digital.audioRx.1 :  mhuxd.webui.options.audio.1
+	     digital.audioRx.3 :  mhuxd.webui.options.audio.3
+	     digital.audioTx.2 :  mhuxd.webui.options.audio.2
+	     digital.audioTx.1 :  mhuxd.webui.options.audio.1
+	     digital.audioTx.3 :  mhuxd.webui.options.audio.3
+	     digital.audioTxFootSw.2 : mhuxd.webui.options.audio.2
+	     digital.audioTxFootSw.1 :  mhuxd.webui.options.audio.1
+	     digital.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
+       }
+}
+

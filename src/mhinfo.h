@@ -1,6 +1,6 @@
 /*
- *  mhux - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -9,6 +9,8 @@
 
 #ifndef MHINFO_H
 #define MHINFO_H
+
+#include <stdint.h>
 
 /* Supported microHam device types */
 
@@ -19,10 +21,10 @@ enum { MHT_UNKNOWN, MHT_CK, MHT_DK, MHT_DK2, MHT_MK, MHT_MK2,
 /* Feature flags */
 
 enum {
-	MHF_HAS_CAT1 = (1<<0),
-	MHF_HAS_CAT2 = (1<<1),
-	MHF_HAS_CAT1_RADIO_SUPPORT = (1<<2),
-	MHF_HAS_CAT2_RADIO_SUPPORT = (1<<3),
+	MHF_HAS_R1 = (1<<0),
+	MHF_HAS_R2 = (1<<1),
+	MHF_HAS_R1_RADIO_SUPPORT = (1<<2),
+	MHF_HAS_R2_RADIO_SUPPORT = (1<<3),
 	MHF_HAS_AUX  = (1<<4),
 	MHF_HAS_WINKEY = (1<<5),
 	MHF_HAS_FSK1 = (1<<6),
@@ -31,28 +33,34 @@ enum {
 	MHF_HAS_FRBASE_CW = (1<<9),
 	MHF_HAS_FRBASE_DIGITAL = (1<<10),
 	MHF_HAS_FRBASE_VOICE = (1<<11),
+
+	MHF_HAS_LNA_PA_PTT = (1<<12),
+	MHF_HAS_LNA_PA_PTT_TAIL = (1<<13),
+	MHF_HAS_SOUNDCARD_PTT = (1<<14),
+	MHF_HAS_CW_IN_VOICE = (1<<15),
+
+	MHF_HAS_AUDIO_SWITCHING = (1<<16),
+	MHF_HAS_DISPLAY = (1<<17),
+	MHF_HAS_FOLLOW_TX_MODE = (1<<18)
+
 };
 
 struct mh_info {
-	int    type;
-	int    ver_fw_major;
-	int    ver_fw_minor;
-	int    ver_winkey;
+	uint16_t type;
+	uint16_t ver_fw_major;
+	uint16_t ver_fw_minor;
+	uint16_t ver_winkey;
+	uint32_t flags;
 	const char *type_str;
-	int    flags;
 };
 
 struct mh_info_map {
-	int             type;
-	const char     *name;
-	int             flags;
+	const char  *name;
+	uint32_t    flags;
+	uint16_t    type;
 };
 
-inline static int mhi_has_long_cat_setting(int type) {
-	return (type == MHT_DK2 || type == MHT_MK2 || type == MHT_MK2R || type == MHT_MK2Rp || type == MHT_SM);
-}
-
-extern const struct mh_info_map mh_info_map[];
-extern int mh_info_map_size;
+void mhi_init(struct mh_info *mhi, int type);
+int mhi_parse_version(struct mh_info *mhi, const uint8_t *data, uint16_t len);
 
 #endif // MHINFO_H

@@ -4,14 +4,10 @@ Priority: extra
 Maintainer: Matthias Moeller <dj5qv@maxec.de>
 Build-Depends: debhelper (>= 7.4.15), autotools-dev, libfuse-dev (>= 2.8.0), libudev-dev (>= 151), pkg-config (>= 0.22)
 Standards-Version: 3.9.2
-Homepage: http://maxec.de/dj5qv/apps/mhuxd.html
-Vcs-Git: git://github.com/dj5qv/mhuxd.git
-Vcs-Browser: https://github.com/dj5qv/mhuxd
+Homepage: http://maxec.de/dj5qv/apps/mhuxd
 
 Package: mhuxd
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Daemon implementing the microHam keyer protocol.
- Daemon implementing the microHam keyer protocol.
- mhuxd provides virtual serial ports (using CUSE)
- for radio control, Winkey, PTT etc.
+Description: Device Router for microHam keyers.
+ Mhuxd is a device router daemon for microHam keyers.

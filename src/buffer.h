@@ -1,6 +1,6 @@
 /*
- *  mhux - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -10,16 +10,16 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include <assert.h>
+#include <stdint.h>
 #include <string.h>
 
-#define BUFFER_CAPACITY 4096
+#define BUFFER_CAPACITY 64
 
 
 struct buffer {
 	unsigned char data[BUFFER_CAPACITY];
-	unsigned size;
-	unsigned rpos;
+	uint16_t size;
+	uint16_t rpos;
 };
 
 struct buffer *buf_alloc();
@@ -30,17 +30,15 @@ inline static void buf_reset(struct buffer *b) {
 	b->rpos = 0;
 }
 
-inline static unsigned buf_size_avail(struct buffer *b) {
+inline static uint16_t buf_size_avail(struct buffer *b) {
 	return BUFFER_CAPACITY - b->size;
 }
 
-inline static void buf_inc_size(struct buffer *b, int size_inc) {
+inline static void buf_add_size(struct buffer *b, uint16_t size_inc) {
 	b->size += size_inc;
-	assert(b->size <= BUFFER_CAPACITY);
 }
 
-inline static void buf_inc_rpos(struct buffer *b, int size_inc) {
-	assert(b->rpos + size_inc <= BUFFER_CAPACITY);
+inline static void buf_consume(struct buffer *b, uint16_t size_inc) {
 	b->rpos += size_inc;
         if(b->rpos == b->size)
                 buf_reset(b);
@@ -53,14 +51,18 @@ inline static int buf_append_c(struct buffer *b, unsigned char c) {
 	return 0;
 }
 
-inline static int buf_append(struct buffer *b, const unsigned char *p, int len) {
-	int avail = buf_size_avail(b);
+inline static int buf_append(struct buffer *b, const unsigned char *p, ssize_t len) {
+	uint16_t avail = buf_size_avail(b);
 	if(len > avail)
 		len = avail;
 
 	memcpy(b->data + b->size, p, len);
         b->size += len;
 	return len;
+}
+
+inline static int buf_append_str(struct buffer *b, const unsigned char *p) {
+	return buf_append(b, p, strlen((char*)p));
 }
 
 inline static int buf_get_c(struct buffer *b) {
@@ -73,5 +75,15 @@ inline static int buf_get_c(struct buffer *b) {
         return c;
 }
 
+inline static void buf_remove_front(struct buffer *b, uint16_t len) {
+	memmove(b->data, b->data + len, b->size - len);
+	b->size -= len;
+	if(b->rpos <= len)
+		b->rpos = 0;
+	else
+		b->rpos -= len;
+}
+
 
 #endif // BUFFER_H
+

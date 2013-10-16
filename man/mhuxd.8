@@ -1,11 +1,7 @@
-.\"Created with GNOME Manpages Editor
-.\"http://sourceforge.net/projects/gmanedit2
-
-.\"Replace <program> with the program name, x with the Section Number
-.TH mhuxd 8 "April 2012" "" "Daemon for microHam Keyers"
+.TH mhuxd 8 "May 2013" "" "Router Daemon for microHam Keyers"
 
 .SH NAME
-mhuxd \- Daemon for accessing microHam keyers
+mhuxd \- Router Daemon for microHam keyers
 
 ..SH SYNOPSIS
 .B mhuxd
@@ -13,93 +9,56 @@ mhuxd \- Daemon for accessing microHam keyers
 .br
 
 .SH DESCRIPTION
-\fBmhuxd\fP is a daemon that implements the microHam keyer protocol. This protocol allows to multiplex
-multiple communication channels over a single serial USB connection. The daemon provides virtual serial ports to allow
-hamradio applications to access those channels and make use of the various functions of those keyers.
-\fBmhuxd\fP talks to the keyer via an USB serial port (e.g. /dev/ttyUSB0). Prerequisite for this port to be
-available is that the kernel driver \fBftdi_sio\fP is available and loaded. Additionally the kernel driver
-\fBcuse\fP must be available to enable \fBmhuxd\fP to provide virtual serial ports.
-.PP
-Currently supported microHam keyers are:
-.PP
-    CW KEYER (untested)
-    DIGI KEYER (untested)
-    DIGI KEYER II
+\fBMhuxd\fP
+is a device router for microHam keyers. Currently it runs on the
+Linux operating system only. Supported microHam keyers are:
+
+.PP 
     micro KEYER
-    micro KEYER II (untested)
-    MK2R(+) (untested)
-    micro2R (untested) 
-.PP
-Which virtual serial ports are created depends on the keyer. This is a list of all possible ports:
-.PP
-   /dev/mhuxd/cat1  Radio control radio 1
-   /dev/mhuxd/cat2  Radio control radio 2
-   /dev/mhuxd/fsk1  FSK port radio 1
-   /dev/mhuxd/fsk2  FSK port radio 2
-   /dev/mhuxd/wk1   Winkey port
-   /dev/mhuxd/ptt1  PTT port radio 1
-   /dev/mhuxd/ptt1  PTT port radio 2
+    micro KEYER II
+    DIGI KEYER
+    DIGI KEYER II
+    MK2R & MK2R+
+    CW KEYER
+
+\fBMhuxd\fP provides a web interface. It allows to perform keyer 
+configuration changes including Winkey configuration. Once mhuxd 
+is running the web interfaces can be accessed at:
+
+      \fBhttp://localhost:5052\fP
+
+This can be changed by the -w option.
+
+mhuxd automatically discovers any supported microHam devices which are connected to an USB port. The daemon
+can control multiple microHam devices simultaneously.
+
+
+Similar to the microHam device router mhuxd can create virtual serial ports.
+This allows ham radio applications like CQRLOG or Fldigi to send rig commands
+or utilize the K1EL Winkey chip. These ports can be created using the web
+interface.
+
 
 .SH OPTIONS
-.TP
-\fB\-h\fR, \fB\-\-help\fR
 
+.TP
+\fB\-h\fR
 Prints a list of available options
 
 .TP
-\fB\-c\fR, \fB\-\-cfg\fR=\fICFGFILE\fR
+\fB\-w\fR \fI<interface:port>\fR
 
-Specify a configuration file. Without this option the configuration file is loaded from 
-\fB/etc/mhuxd.conf\fP
-
-.TP
-\fB\-l\fR, \fB\-\-log-level\fR=\fILOGLEVEL\fR
-
-Specify the log level. Note that the option LogLevel in \fBmhuxd.conf\fP has precedence and
-should be commented out to make use of this switch. Specify one of these values:
-.PP
-.PD 0
-.IP
-MUTE   No logging
-.PP
-.IP
-CRIT   Severity critical
-.PP
-.IP
-ERROR  Severity error or higher
-.PP
-.IP
-WARN   Severity warn or higher
-.PP
-.IP
-INFO   Severity info or higher
-.PP
-.IP
-DEBUG0 All severities plus debug info.
-.PP
-.IP
-DEBUG1 like DEBUG0 but even more debug info
+interface and port of the webserver
+(default: localhost:5052)
 
 .TP
-\fB\-b\fR, \fB\-\-background\fR
+\fB\-b\fR
+run in background, log to logfile
 
-Let \fBmhuxd\fP run in background. Enable logging to syslog. Without this option \fBmhuxd\fP runs in foreground and logging goes to stderr.
-
-.TP
-\fB\-\-list-radios\fR
-
-Print a list of radios and correspondig radio codes. These radio codes are microHam specific. 
-Some keyers can send radio controll commands on it's own providing that the correct radio
-code is configured in \fBmhuxd.conf\fP.
-
-.TP
-\fB\-\-list-dev\fR
-
-Print a list of microHam keyers currently connected to any USB port. This list also contains the
-serial numbers (see option \fB-s\fP).
 
 .SH AUTHOR
 Written by Matthias Moeller, DJ5QV
 
 .SH "REPORTING BUGS"
 Report mhuxd bugs to dj5qv@maxec.de
+

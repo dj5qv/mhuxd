@@ -1,52 +1,159 @@
-/*
- *  mhux - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
- *
- *  This program can be distributed under the terms of the GNU GPLv2.
- *  See the file COPYING
- */
-
-
 #include <stdio.h>
-#include <unistd.h>
+#include <errno.h>
+#include <ev.h>
+
+#include "util/neo_err.h"
 #include "config.h"
-#include "global.h"
-#include "opts.h"
-#include "launcher.h"
-#include "logger.h"
 #include "util.h"
+#include "logger.h"
+#include "devmgr.h"
+#include "conmgr.h"
+#include "cfgmgr.h"
+#include "opts.h"
+#include "daemon.h"
+#include "http_server.h"
+#include "webui.h"
 
-int main(int argc, char **argv) {
-	int err;
-	struct launcher *lc;
+#ifndef LOGDIR
+#error LOGDIR not defined
+#endif
 
-	err = opt_parse(argc, argv);
+#ifndef RUNDIR
+#error RUNDIR not defined
+#endif
 
-	if(err) {
-		fprintf(stderr, "Error parsing options!");
+#define LOGFILE LOGDIR "/mhuxd.log"
+#define PIDFILE RUNDIR "/mhuxd.pid"
+
+const char *log_file_name = LOGFILE;
+
+static void sigint_cb (struct ev_loop *loop, struct ev_signal *w, int revents)
+{
+	(void)w; (void)revents;
+	ev_unloop (loop, EVUNLOOP_ALL);
+}
+
+int main(int argc, char **argv)
+{
+        struct ev_signal w_sigint, w_sigterm, w_sigpipe, w_sighup;
+        struct ev_loop *loop;
+	struct cfgmgr *cfgmgr;
+	struct conmgr *conmgr;
+	FILE *logfile = NULL;
+	FILE *pidfile = NULL;
+
+	printf("\n%s (C)2012-2013 Matthias Moeller, DJ5QV\n", PACKAGE_STRING);
+
+	// options
+	process_opts(argc, argv);
+
+
+	// logging
+	if(!background) {
+		logfile = stdout;
+		log_set_level(LOGSV_DBG1);
+	} else {
+		logfile = fopen(log_file_name, "a");
+		printf("Logfile is: %s\n", log_file_name);
+	}
+
+	if(logfile == NULL) {
+		fprintf(stderr, "could not open logfile %s (%s)!\n", log_file_name, strerror(errno));
 		return -1;
 	}
 
-	if(!mhux_params.as_daemon) 
-		 printf("\n\n%s (C) 2012 Matthias Moeller, DJ5QV\n\n", PACKAGE_STRING);
+	log_init(logfile);
 
-	if(mhux_params.help)
-		return 0;
-	
-	log_init();
-	log_set_level_by_str(mhux_params.log_level);
-
-	if(mhux_params.as_daemon) {
-		log_set_ident("mhuxd");
-		daemonize();
+	if(background) {
+		dmn_daemonize();
 	}
 
-	lc = launch_start_all();
+	info("%s (C)2012-2013 Matthias Moeller, DJ5QV", PACKAGE_STRING);
+	info("Logfile: %s", log_file_name);
 
-	launch_stop_all(lc);
+	// pid file
+	pidfile = dmn_pidfile_lock(PIDFILE);
+	if(pidfile == NULL)
+		return -1;
 
-	opt_free();
+	// ev setup
+	ev_set_allocator((void*)w_realloc);
+	loop = ev_default_loop(EVFLAG_AUTO);
 
-        return 0;
+	// Connector manager
+	conmgr = conmgr_create();
+
+	// load config & apply the daemon part
+	cfgmgr = cfgmgr_create(conmgr, loop);
+
+	// start webserver & webui
+	struct http_server *hs = hs_start(loop, webui_host_port);
+	if(!hs) {
+		fatal("(mhuxd) Could not start webserver, exiting!");
+		exit(-1);
+	}
+
+	//hs_add_directory_map(hs, "/static/", "/home/mattes/Devel/mhuxd-0.50/http/static");
+	//hs_add_directory_map(hs, "/", "/home/mattes/Devel/mhuxd-0.50/http/root");
+
+	struct webui *webui = webui_create(hs, cfgmgr);
+
+	if(!webui) {
+		fatal("(mhuxd) Could not start webui, exiting!");
+		hs_stop(hs);
+		exit(-1);
+	}
+
+
+	ev_signal_init (&w_sigint, sigint_cb, SIGINT);
+	ev_signal_init (&w_sigterm, sigint_cb, SIGTERM);
+	ev_signal_init (&w_sigpipe, sigint_cb, SIGPIPE);
+	ev_signal_init (&w_sighup, sigint_cb, SIGHUP);
+
+	ev_signal_start (loop, &w_sigint);
+	ev_signal_start (loop, &w_sigterm);
+	ev_signal_start (loop, &w_sigpipe);
+	ev_signal_start (loop, &w_sighup);
+
+	dmgr_create(loop, cfgmgr);
+
+	if(cfgmgr_init(cfgmgr))
+		err("(main) error initializing config manager!");
+
+	dmgr_enable_monitor();
+
+	//				dmgr_add_device("192838", 9);
+//				dmgr_add_device("987654", 5);
+				dmgr_add_device("123098", 6);
+				dmgr_add_device("123099", 7);
+//			dmgr_add_device("123456", 4);
+	//			dmgr_add_device("456123", 1);
+	//			dmgr_add_device("456124", 2);
+
+
+	ev_loop(loop, 0);
+
+	cfgmgr_save_cfg(cfgmgr);
+	cfgmgr_destroy(cfgmgr);
+
+	conmgr_destroy(conmgr);
+
+	dmgr_destroy();
+	
+	webui_destroy(webui);
+	hs_stop(hs);
+
+	ev_default_destroy();
+
+	dmn_pidfile_unlock(pidfile, PIDFILE);
+
+	info("<<< exit >>>");
+
+	if(logfile && logfile != stdout)
+		fclose(logfile);
+
+	nerr_free();
+
+	return 0;
 }
 

@@ -1,1 +1,89 @@
-doc/README
+                    mhuxd MicroHam Keyer Device Router 
+                     (C) 2012-2013 Matthias Moeller, DJ5QV
+
+
+ABOUT
+
+   Homepage: http://maxec.de/dj5qv/apps/mhuxd/
+   Contact: mhuxd@maxec.de
+
+   Mhuxd is a device router for microHam keyers. Currently it runs on the
+   Linux operating system only. Supported microHam keyers are:
+
+    - micro KEYER
+    - micro KEYER II
+    - DIGI KEYER
+    - DIGI KEYER II
+    - MK2R & MK2R+
+    - CW KEYER
+
+   Starting with version 0.50 mhuxd provides a web interface. It allows 
+   to perform keyer configuration changes including Winkey configuration.
+   Once mhuxd is running the web interfaces can be accessed at:
+
+      http://localhost:5052. 
+
+   This can be changed by the -w option.
+
+   Similar to the microHam device router mhuxd can create virtual serial ports.
+   This allows ham radio applications like CQRLOG or Fldigi to send rig commands
+   or utilize the K1EL Winkey chip. These ports can be created using the web 
+   interface.
+
+ 
+PREREQUISITES
+
+   - Linux Operating system
+   - 'cuse' kernel module 
+   - 'ftdi_sio' kernel module
+   - libfuse
+   - libev
+   - libudev
+
+   Mhuxd doesn't need to run as root. However it needs read/write access to /dev/cuse
+   which is typically owned by root.
+
+
+INSTALLATION
+
+    Ubuntu and related distributions (Debian, Mint):
+    ------------------------------------------------
+    On Ubuntu (and corresponding Debian based distributions like Mint) install the
+    required packaged, e.g. by apt-get:
+
+    'sudo apt-get install libudev1' (use libudev0 for Ubuntu < 13.04)
+    'sudo apt-get install libfuse2'
+    'sudo apt-get install libev4'
+
+    Download the appropiate mhuxd .deb package. This can then installed by:
+
+    'sudo dpkg -i <package file>'
+
+    After installation mhuxd will be immediately started. Check log file 
+    /var/log/mhuxd/mhuxd.log.
+
+
+    Compile from source code:
+    -------------------------
+
+    To compile mhuxd you'll need the development packages for libudev, libfuse, libev
+    and pkg-config.
+    (For Ubuntu that would be libev-dev, libfuse-dev, libudev-dev and pkg-config).
+
+    './configure --prefix=/usr/local/mhuxd'
+    'make'
+    'make install'
+
+    This would install everything into /usr/local/mhuxd.
+
+
+ACKNOWLEDGEMENTS
+
+Brandon Long - For the ClearSilver template system (http://www.clearsilver.net/)
+Igor Sysoev, Joyent Inc. et al.  - For http_parser
+Google Inc., Filipe Almeida - For streamhtmlparser
+
+
+
+
+

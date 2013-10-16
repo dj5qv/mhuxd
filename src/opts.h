@@ -1,28 +1,18 @@
 /*
- *  mhux - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
  */
 
+
 #ifndef OPTS_H
 #define OPTS_H
 
-struct mhux_param {
-#if 0
-	const char *dev;
-	const char *serial;
-#endif
-	const char *cfg_file;
-	const char *log_level;
-        int     help;
-	int	as_daemon;
-};
+extern int background;
+extern const char *webui_host_port;
 
-extern struct mhux_param mhux_params;
+int process_opts(int argc, char **argv);
 
-int opt_parse(int argc, char **argv);
-void opt_free();
-
-#endif // OPTS_H
+#endif /* OPTS_H */

@@ -1,22 +1,34 @@
+mhuxd (0.50-1) raring; urgency=low
+  * large parts rewritten
+  * added web interface for keyer configuration
+  * uses libev for event management
+  * supports configuration of the K1EL Winkey chip
+  * uses it's own log file rather than using syslog
+  * virtual serial ports persist even if the keyer goes offline.
+  * added missing ioctls TCSETSF & TCSETSW
+  * single threaded
+
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 09 Oct 2013 18:30:00 +0200
+
 mhuxd (0.33-5) raring; urgency=low
   * fixed incorrect libudev dependency on Ubuntu 13.04/13.10
 
- -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2012 18:30:00 +0200
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2013 18:30:00 +0200
 
 mhuxd (0.33-4) raring; urgency=low
   * Changed value 8 to 7 in compat file for Ubuntu 10.04 LTS
 
- -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2012 18:30:00 +0200
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2013 18:30:00 +0200
 
 mhuxd (0.33-3) raring; urgency=low
   * Removed autotools-dev dependency from rules file for Ubuntu 10.04 LTS
 
- -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2012 18:30:00 +0200
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2013 18:30:00 +0200
 
 mhuxd (0.33-2) raring; urgency=low
   * Changed dependencies to cover Ubuntu 10.04 LTS
 
- -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2012 18:00:00 +0200
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2013 18:00:00 +0200
 
 mhuxd (0.33-1) raring; urgency=low
   * mhuxd accepted values 0|1 only for DigitalOverVoice.
@@ -26,7 +38,7 @@ mhuxd (0.33-1) raring; urgency=low
     unresolvable dependencies with 0.32-1. Package will be integrated
     into Launchpad PPA to generate distribution specific packages.
 
- -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2012 15:00:00 +0200
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 29 Jul 2013 15:00:00 +0200
 
 mhuxd (0.32-1) unstable; urgency=low
 
@@ -36,7 +48,7 @@ mhuxd (0.32-1) unstable; urgency=low
   * Default PID file is now /tmp/mhuxd.pid if not specified otherwise
     in mhuxd.conf
 
- -- Matthias Moeller <mhuxd@maxec.de>  Sun, 24 May 2012 00:30:00 +0200
+ -- Matthias Moeller <mhuxd@maxec.de>  Sun, 24 May 2013 00:30:00 +0200
 
 mhuxd (0.30-2) unstable; urgency=low
 

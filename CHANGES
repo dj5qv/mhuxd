@@ -1,0 +1,52 @@
+0.49b
+ - major rewrite, completely single threaded now
+ - uses libev
+ - provides web interface for configuration (http://localhost:5052)
+ - logging changed from syslog to dedicated log file when running in
+   background/daemon mode.
+ - supports configuration of the K1EL Winkey chip
+ - virtual serial ports persist even if the keyer goes offline
+ - added missing ioctls TCSETSF & TCSETSW
+ - mhuxd.conf is obsolete and ignored now. Configuration is maintained
+   by the web interface and stored into /var/lib/mhuxd/mhuxd-state.hdf
+
+0.33
+ - mhuxd accepted values 0|1 only for DigitalOverVoice
+ - Changed values for KeepAliveInterval and DeviceTimeout in the default
+   config file
+
+0.32
+ - Fixed bug that prevented PTT usage on DIGI KEYER and CW KEYER
+ - Bad default values for MKII backlight
+ - Fixed compile warning and C99 issues
+ - Default PID file is now /tmp/mhuxd.pid if not specified otherwise
+   in mhuxd.conf
+
+0.30 
+ - Renamed default config file from mhuxd.cfg to mhuxd.conf
+ - In mhuxd.cfg changed section name <Device> to <Daemon>
+ - Added options Device, DevDir and LogLevel to section <Daemon>
+ - Fixed a bug that prevented r1FrBase to be applied to MK1 keyers.
+ - Removed command line switched -d and -s (can be configured in
+   mhuxd.conf now)
+ - Name of VSP subdirectory /dev/ can now be configured (DevDir).
+ - Debian/Ubuntu packaging, including:
+     - start/stop script
+     - creation of user and group mhuxd
+ - --list-dev option was showing all FTDI devices instead
+   of microHam devices only.
+ - Audio switching can be configured in letter notation
+   (e.g. r1FrBase_Cw AAA01)
+
+0.22 alpha
+ - VSP devices now always in /dev/mhux/ (e.g. /dev/mhux/cat1).
+ - Added missing initialization for 2nd radio on MK2R(+) devices.
+ - Cleanup in mhux.cfg.sample
+
+0.21 alpha
+ - Implemented SIGHUP handling. Upon SIGHUP mhuxd now reloads the config 
+   file. Only the <Keyer> section is re-applied so far.
+ - Fixed invalid free() in cleanup code when not using the -c option.
+
+0.2 alpha 2012-04-08
+ - Initial alpha release

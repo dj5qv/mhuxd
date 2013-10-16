@@ -1,6 +1,6 @@
 /*
- *  mhux - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -38,7 +38,7 @@ int tty_open(const char *name) {
 	int err = tcsetattr(fd, TCSANOW, &newtio);
 
 	if(err) {
-		err_e(-errno, "Could not set attributes on %s!", name);
+		err_e(errno, "(tty) could not set attributes on %s!", name);
 		close(fd);
 		return -1;
 	}

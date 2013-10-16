@@ -1,6 +1,6 @@
 /*
- *  mhux - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 enum {
 	LOGSV_MUTE,
@@ -25,10 +26,11 @@ enum {
         LOGSV_MAX    = LOGSV_DBG1,
 };
 
-void log_init();
+void log_init(FILE *f);
 void log_set_ident(const char *);
 void log_set_level(int level);
 int log_set_level_by_str(const char *s);
+const char *log_get_level_str();
 void log_hex(int severity, const char *header, const char *buf, int len);
 void log_msg(int severity, const char *fmt, ...)
 #ifdef __GNUC__
@@ -53,17 +55,17 @@ void log_msg(int severity, const char *fmt, ...)
 #define dbg1_h(hdr, buf, len)           log_hex(LOGSV_DBG1, hdr, (const char*) buf, len)
 
 #define fatal_e(e, fmt, args...)        \
-        fatal(fmt" (%s)" , ##args, strerror(-(e)))
+        fatal(fmt" (%s)" , ##args, strerror((e))
 #define err_e(e, fmt, args...)  \
-        err(fmt" (%s)" , ##args, strerror(-(e)))
+        err(fmt" (%s)" , ##args, strerror(e))
 #define warn_e(e, fmt, args...) \
-        warn(fmt" (%s)" , ##args, strerror(-(e)))
+        warn(fmt" (%s)" , ##args, strerror(e))
 #define info_e(e, fmt, args...) \
-        info(fmt" (%s)" , ##args, strerror(-(e)))
+        info(fmt" (%s)" , ##args, strerror(e))
 #define dbg0_e(e, fmt, args...) \
-        dbg0(fmt" (%s)" , ##args, strerror(-(e)))
+        dbg0(fmt" (%s)" , ##args, strerror(e))
 #define dbg1_e(e, fmt, args...) \
-        dbg1(fmt" (%s)" , ##args, strerror(-(e)))
+        dbg1(fmt" (%s)" , ##args, strerror(e))
 
 
 #endif // LOGGER_H

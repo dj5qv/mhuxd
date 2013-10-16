@@ -6,18 +6,11 @@
  *  See the file COPYING
  */
 
-
-#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <errno.h>
+
 #include "util.h"
-#include "logger.h"
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
@@ -51,42 +44,22 @@ char *w_strdup(const char *src) {
 	return n;
 }
 
-void daemonize(void) {
-	pid_t pid, sid;
+void *w_realloc (void *ptr, size_t size) {
+	void *p;
 
-	pid = fork();
-
-	if (pid < 0) {
-	    exit(EXIT_FAILURE);
+	if(!size) {
+		free(ptr);
+		return NULL;
 	}
 
-	if (pid > 0) {
-	    exit(EXIT_SUCCESS);
-	}
+	do {
+		p = realloc(ptr, size);
+		if(p == NULL)
+			sleep(1);
+	} while(!p);
 
-	umask(0);
-
-	sid = setsid();
-	if (sid < 0) {
-		exit(EXIT_FAILURE);
-	}
-
-	if ((chdir("/")) < 0) {
-		exit(EXIT_FAILURE);
-	}
-
-	/* Redirect standard files to /dev/null */
-        if(NULL == freopen( "/dev/null", "r", stdin)) {
-                err_e(-errno, "freopen stdin failed, exiting!");
-                exit(EXIT_FAILURE);
-        }
-        if(NULL == freopen( "/dev/null", "w", stdout)) {
-                err_e(-errno, "freopen stdout failed, exiting!");
-                exit(EXIT_FAILURE);
-        }
-        if(NULL == freopen( "/dev/null", "w", stderr)) {
-                err_e(-errno, "freopen stdin failed, exiting!");
-                exit(EXIT_FAILURE);
-        }
+	return p;
 }
+
+
 

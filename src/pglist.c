@@ -1,6 +1,6 @@
 /*
- *  mhux - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -56,3 +56,13 @@ int PG_Contains(struct PGList *l, struct PGNode *n) {
 	}
 	return 0;
 }
+
+int PG_Count(struct PGList *l) {
+	struct PGNode *n;
+	int cnt = 0;
+	PG_SCANLIST(l,n){
+		cnt++;
+	}
+	return cnt;
+}
+

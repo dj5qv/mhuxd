@@ -1,0 +1,108 @@
+
+mhuxd.webui.session.page = home
+mhuxd.webui.session.unit = 0
+mhuxd.webui.session.menu = summary
+
+
+mhuxd.main.hostname = otherhost
+mhuxd.main.program.name = foobar
+mhuxd.main.program.version = 0
+mhuxd.webui.nav.selected = home
+
+mhuxd.webui.nav.list {
+
+       home {
+       	    display = Home
+	    url = /cs/home.cs
+	    selected = summary
+	    menu {
+	    	 summary {
+		 	 display = Summary
+			 url = /cs/home.cs?page=home&menu=summary
+		 }
+		 nochnitem {
+		 	display = NochnItem
+			url = /cs/home.cs?page=home&menu=summary
+		 } 
+	    }
+       }			  
+
+       daemon {
+       	    display = Daemon
+	    url = /cs/daemon.cs
+       }			  
+
+
+       D2UL4ED0 {
+       	    display = Digi Keyer II
+	    url = /cs/keyer.cs
+       }			  
+}
+
+mhuxd.keyer {
+       D2UL4ED0 {
+       	       type = 3
+	       display = Digi Keyer II
+
+	       connector {
+		       1 {
+			       channel=r1
+			       type=vsp
+			       devname=cat1
+		       }
+		       2 {
+			       channel=ptt1
+			       type=vsp
+			       devname=ptt1
+		       }
+		       3 {
+			       channel=wk
+			       type=vsp
+			       devname=wk
+		       }
+	       }
+
+	       channel {
+		       r1 {
+			       baud = 9600
+			       stopbits = 1
+			       rtscts = 0
+			       databits = 8
+			       rigtype = 0x49
+			       icomaddress = 0x66
+			       icomsimulateautoinfo=0
+			       digitalovervoicerule=0
+			       usedecoderifconnected=0
+			       dontinterfereusbcontrol=1
+		       }
+		       r2 {
+			       baud = 9600
+			       stopbits = 1
+			       rtscts = 0
+			       databits = 8
+			       rigtype = 0x49
+			       icomaddress = 0x66
+			       icomsimulateautoinfo=0
+			       digitalovervoicerule=0
+			       usedecoderifconnected=0
+			       dontinterfereusbcontrol=1
+		       }
+		       fsk1 {
+			       baud = 45.5
+			       stopbits = 1.5
+			       databits = 5
+		       }	       
+		       fsk2 {
+			       baud = 45.5
+			       stopbits = 1.5
+			       databits = 5
+		       }	       
+	       }
+
+	       param {
+		       FSKDIDDLE=1
+		       R1QSK=1
+	       }
+      }		       
+}
+

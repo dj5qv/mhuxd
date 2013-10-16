@@ -1,6 +1,6 @@
 /*
- *  mhux - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -10,20 +10,13 @@
 #include <stdlib.h>
 #include "mux.h"
 #include "util.h"
+#include "channel.h"
+
+#include "logger.h"
 
 #define MAX_SEQUENCE_SIZE 5*4
 
-struct mx *mx_create() {
-	struct mx *mx = w_calloc(1, sizeof(*mx));
-	return mx;
-}
-
-void mx_destroy(struct mx *mx) {
-	if(mx)
-		free(mx);
-}
-
-int mx_mux(struct mx *mx, struct buffer *bout) {
+int mx_mux(struct buffer *bout, struct buffer *ibuf) {
 	unsigned char seq[MAX_SEQUENCE_SIZE];
 	int c, channel, frame_no;
 	int size, out_size = 0;
@@ -46,7 +39,7 @@ int mx_mux(struct mx *mx, struct buffer *bout) {
 			seq[frame_no*4+3] = (1<<7);
 
 			// R1 channel for all frames
-			if(-1 != (c = buf_get_c(mx->ibuf[MH_CHANNEL_R1]))) {
+			if(-1 != (c = buf_get_c(&ibuf[MH_CHANNEL_R1]))) {
 				seq[frame_no*4]     |= (1<<5);      // Validity
 				seq[frame_no*4]     |= ((c>>7)<<2); // MSB in sync byte
 				seq[frame_no*4+1]   |=  c;          // Payload
@@ -54,7 +47,7 @@ int mx_mux(struct mx *mx, struct buffer *bout) {
 			}
 
 			// R2 channel for all frames
-			if(-1 != (c = buf_get_c(mx->ibuf[MH_CHANNEL_R2]))) {
+			if(-1 != (c = buf_get_c(&ibuf[MH_CHANNEL_R2]))) {
 				seq[frame_no*4]     |= (1<<4);      // Validity
 				seq[frame_no*4]     |= ((c>>7)<<1); // MSB in sync byte
 				seq[frame_no*4+2]   |=  c;          // Payload
@@ -81,7 +74,7 @@ int mx_mux(struct mx *mx, struct buffer *bout) {
 
 			// Shared channel for this frame
 
-			struct buffer *b = mx->ibuf[channel];
+			struct buffer *b = &ibuf[channel];
 
 			if(-1 != (c = buf_get_c(b))) {
 				// Set validity bit only if this is not first or last byte of a command sequence.

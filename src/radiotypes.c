@@ -1,6 +1,6 @@
 /*
- *  mhux - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -10,15 +10,10 @@
 #include <stdio.h>
 #include <string.h>
 #include "radiotypes.h"
-#include "global.h"
+#include "util.h"
 
-struct rig_type {
-    unsigned char   key;
-    unsigned char   icom_addr;
-    const char     *name;
-};
 
-static const struct rig_type rig_types[] = {
+const struct rig_type rig_types[] = {
     {0xFE , 0x00 , "none"},
     {0x44 , 0x00 , "Elecraft K2"},
     {0x62 , 0x00 , "Elecraft K3"},
@@ -115,6 +110,8 @@ static const struct rig_type rig_types[] = {
     {0x6C , 0x00 , "Yaesu FTdx9000 Contest (patched)"}
 };
 
+const int num_rig_types = ARRAY_SIZE(rig_types);
+
 static int find_by_key(int key) {
 	unsigned i;
 	int idx = -1;
@@ -134,16 +131,9 @@ const char *rtyp_get_name(int key) {
 	return "* Unknown key *";
 }
 
-void rtyp_print_types(FILE *f) {
-	unsigned i;
-
-	fprintf(f, "Code IcomAddr  Radio\n\n");
-	for(i = 0; i < ARRAY_SIZE(rig_types); i++) {
-		fprintf(f, "0x%02x   ", rig_types[i].key);
-		if(strncmp(rig_types[i].name, "Icom", 4))
-			fprintf(f, "       ");
-		else
-			fprintf(f, "0x%02x   ", rig_types[i].icom_addr);
-		fprintf(f, "%s\n", rig_types[i].name);
-	}
+uint8_t rtyp_get_icom_address(int key) {
+	int idx = find_by_key(key);
+	if(idx < 0)
+		return 0x00;
+	return rig_types[idx].icom_addr;
 }
