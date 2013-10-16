@@ -23,10 +23,6 @@
 #include "conmgr.h"
 #include "cfgnod.h"
 
-#if !defined EV_VERSION_MAJOR || EV_VERSION_MAJOR < 4
-#define EVRUN_ONCE EVLOOP_ONESHOT
-#endif
-
 struct vsp {
 	int fd_data;
 	int fd_ptt;

@@ -22,6 +22,10 @@
 #include "channel.h"
 #include "wkman.h"
 
+#if !defined EV_VERSION_MAJOR || EV_VERSION_MAJOR < 4
+#define EVRUN_ONCE EVLOOP_ONESHOT
+#endif
+
 #ifndef STATEDIR
 #error STATEDIR not defined
 #endif
