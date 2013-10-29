@@ -1,0 +1,16 @@
+/var/log/mhuxd/*log {
+        weekly
+        missingok
+        rotate 7
+        sharedscripts
+        postrotate
+                if [ -e /var/run/mhuxd/mhuxd.pid ]; then
+                        invoke-rc.d --quiet mhuxd force-reload > /dev/null
+                        sleep 2
+                fi
+        endscript
+        compress
+	delaycompress
+        notifempty
+}
+
