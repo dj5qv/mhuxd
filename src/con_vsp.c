@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <poll.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <ev.h>
 #include <fuse.h>
 #include <cuse_lowlevel.h>
@@ -81,10 +83,10 @@ static struct vsp_session *find_vs(struct vsp *vsp, int fd) {
 
 // cuse_lowlevel_setup writes nice error messages to stderr which is useless for us running as a
 // daemon. Check /dev/cuse availability here and do some helpful error reporting to the log.
-static int check_cuse_dev() {
-	const char *devname = "/dev/cuse";
+static int check_cuse_dev(const char *devname) {
+	const char *cusepath = "/dev/cuse";
 	int fd;
-	fd = open(devname, O_RDWR);
+	fd = open(cusepath, O_RDWR);
 	if (fd == -1) {
 		if (errno == ENODEV || errno == ENOENT)
 			err("(vsp) /dev/cuse device not found, try 'modprobe cuse' first\n");
@@ -93,7 +95,18 @@ static int check_cuse_dev() {
 		return -1;
 	}
 	close(fd);
-	return 0;
+
+	struct stat buf;
+	char devpath[128];
+	snprintf(devpath, sizeof(devpath)-1, "/dev/mhuxd/%s", devname);
+	if(-1 == stat(devpath, &buf)) {
+		if(errno == ENOENT)
+			return 0;
+		err_e(errno, "(vsp) stat() on %s failed!", devpath);
+	}
+	err("(vsp) %s already exist!", devpath);
+
+	return -1;
 }
 
 static int set_bits(struct vsp_session *vs, int bits) {
@@ -165,8 +178,11 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		if(size <= 0)
 			break;
 
-		char header[32];
-		snprintf(header, sizeof(header), "(vsp) %s to k", vsp->devname);
+		char header[32] = "(vsp) ";
+		strncat(header, vsp->devname, 6);
+		strcat(header, " to k");
+
+		//snprintf(header, sizeof(header), "(vsp) %s to k", vsp->devname);
 		dbg1_h(header, buf, size);
 
 		PG_SCANLIST(&vsp->session_list, vs) {
@@ -672,7 +688,10 @@ struct vsp *vsp_create(struct connector_spec *cspec) {
 	ci.dev_info_argc = 1;
         ci.dev_info_argv = dev_info_argv;
         ci.flags = CUSE_UNRESTRICTED_IOCTL;
-	check_cuse_dev();
+	if(check_cuse_dev(vsp->devname)) {
+		err("(vsp) could not setup VSP %s!", vsp->devname);
+		goto failed;
+	}
 	vsp->se = cuse_lowlevel_setup(fargs.argc, fargs.argv, &ci, &vsp_clop, NULL, vsp);
         if(!vsp->se) {
                 err("(vsp) could not setup VSP %s!", vsp->devname);
