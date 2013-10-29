@@ -55,6 +55,33 @@ interface and port of the webserver
 \fB\-b\fR
 run in background, log to logfile
 
+.TP
+\fB\-l\fR \fI<loglevel>\fR
+
+Specify the initial log level. Note that the log level set in the WebUI will override this option. 
+Specify one of these values:
+.PP
+.PD 0
+.IP
+MUTE   No logging
+.PP
+.IP
+CRIT   Severity critical
+.PP
+.IP
+ERROR  Severity error or higher
+.PP
+.IP
+WARN   Severity warn or higher
+.PP
+.IP
+INFO   Severity info or higher
+.PP
+.IP
+DEBUG0 All severities plus debug info.
+.PP
+.IP
+DEBUG1 like DEBUG0 but even more debug info
 
 .SH AUTHOR
 Written by Matthias Moeller, DJ5QV

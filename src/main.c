@@ -36,6 +36,7 @@ static void sigint_cb(struct ev_loop *loop, struct ev_signal *w, int revents)
 	ev_unloop (loop, EVUNLOOP_ALL);
 }
 static void sighup_cb(struct ev_loop *loop, struct ev_signal *w, int revents) {
+	(void)w; (void)revents; (void)loop;
 	if(logfile && logfile != stdout) {
 		info("*** SIGHUP received-> closing log file");
 		fclose(logfile);
@@ -57,12 +58,12 @@ int main(int argc, char **argv)
 
 	// options
 	process_opts(argc, argv);
-
+	if(-1 == log_set_level_by_str(log_level_str)) // from opt.c
+		fprintf(stderr, "Invalid log level: %s", log_level_str);
 
 	// logging
 	if(!background) {
 		logfile = stdout;
-		log_set_level(LOGSV_DBG1);
 	} else {
 		logfile = fopen(log_file_name, "a");
 		printf("Logfile is: %s\n", log_file_name);

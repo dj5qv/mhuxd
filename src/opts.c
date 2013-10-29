@@ -17,6 +17,7 @@
 #define DEF_WEBUI_HOST_PORT "localhost:5052"
 
 int background = 0;
+const char *log_level_str = "INFO";
 const char *webui_host_port = DEF_WEBUI_HOST_PORT;
 
 static void print_help() {
@@ -25,6 +26,8 @@ static void print_help() {
 	puts("    -w <interface:port> interface and port of the webserver");
         puts("                        (default: " DEF_WEBUI_HOST_PORT);
 	puts("    -b                  run in background, log to logfile");
+	puts("    -l <log level>      set the initial log level");
+	puts("                        (MUTE|CRIT|ERROR|WARN|INFO|DEBUG0|DEBUG1)");
 	puts("\n");
 }
 
@@ -32,7 +35,7 @@ static void print_help() {
 int process_opts(int argc, char **argv) {
 	int opt;
 
-	while(-1 != (opt = getopt(argc, argv, "hbw:"))) {
+	while(-1 != (opt = getopt(argc, argv, "hbw:l:"))) {
 		switch(opt) {
 		case 'h':
 			print_help();
@@ -42,6 +45,9 @@ int process_opts(int argc, char **argv) {
 			break;
 		case 'b':
 			background = 1;
+			break;
+		case 'l':
+			log_level_str = optarg;
 			break;
 		default:
 			exit(-1);
