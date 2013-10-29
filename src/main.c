@@ -26,11 +26,23 @@
 #define PIDFILE RUNDIR "/mhuxd.pid"
 
 const char *log_file_name = LOGFILE;
+static FILE *logfile = NULL;
 
-static void sigint_cb (struct ev_loop *loop, struct ev_signal *w, int revents)
+static int signum = 0;
+static void sigint_cb(struct ev_loop *loop, struct ev_signal *w, int revents)
 {
 	(void)w; (void)revents;
+	signum = w->signum;
 	ev_unloop (loop, EVUNLOOP_ALL);
+}
+static void sighup_cb(struct ev_loop *loop, struct ev_signal *w, int revents) {
+	if(logfile && logfile != stdout) {
+		info("*** SIGHUP received-> closing log file");
+		fclose(logfile);
+		logfile = fopen(log_file_name, "a");
+		log_init(logfile);
+		info("*** logfile opened");
+	}
 }
 
 int main(int argc, char **argv)
@@ -39,7 +51,6 @@ int main(int argc, char **argv)
         struct ev_loop *loop;
 	struct cfgmgr *cfgmgr;
 	struct conmgr *conmgr;
-	FILE *logfile = NULL;
 	FILE *pidfile = NULL;
 
 	printf("\n%s (C)2012-2013 Matthias Moeller, DJ5QV\n", PACKAGE_STRING);
@@ -108,7 +119,7 @@ int main(int argc, char **argv)
 	ev_signal_init (&w_sigint, sigint_cb, SIGINT);
 	ev_signal_init (&w_sigterm, sigint_cb, SIGTERM);
 	ev_signal_init (&w_sigpipe, sigint_cb, SIGPIPE);
-	ev_signal_init (&w_sighup, sigint_cb, SIGHUP);
+	ev_signal_init (&w_sighup, sighup_cb, SIGHUP);
 
 	ev_signal_start (loop, &w_sigint);
 	ev_signal_start (loop, &w_sigterm);
@@ -123,7 +134,7 @@ int main(int argc, char **argv)
 	dmgr_enable_monitor();
 
 	//				dmgr_add_device("192838", 9);
-//				dmgr_add_device("987654", 5);
+				dmgr_add_device("987699", 4);
 				dmgr_add_device("123098", 6);
 				dmgr_add_device("123099", 7);
 //			dmgr_add_device("123456", 4);
@@ -132,6 +143,9 @@ int main(int argc, char **argv)
 
 
 	ev_loop(loop, 0);
+
+	if(signum) 
+		info("*** %s received!", strsignal(signum));
 
 	cfgmgr_save_cfg(cfgmgr);
 	cfgmgr_destroy(cfgmgr);
