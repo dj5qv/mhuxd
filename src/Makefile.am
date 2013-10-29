@@ -15,7 +15,7 @@ mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 		mhcontrol.h mhinfo.h mhrouter.h mux.h net.h opts.h pglist.h tty.h util.h \
 		conmgr.h con_vsp.h con_tcp.h linux_termios.h channel.h cfgmgr.h \
 		daemon.h http_parser.h http_server.h http_codes.h webui.h obuf.h cfgnod.h \
-		version.h http_parse_query.h radiotypes.h wkman.h
+		version.h http_parse_query.h radiotypes.h wkman.h mhflags.h
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(STATEDIR) $(DESTDIR)$(RUNDIR) $(DESTDIR)$(LOGDIR)

@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <ev.h>
 #include "mhrouter.h"
+#include "mhflags.h"
 #include "util.h"
 #include "pglist.h"
 #include "buffer.h"
@@ -22,20 +23,6 @@
 
 #define LB_BYTES_PER_IVAL (20.0)
 #define LB_CARRY_OVER (2)
-
-enum {
-        MHC2DFL_PTT_R1 = (1<<2),
-        MHC2DFL_PTT_R2 = (1<<3),
-        MHC2DFL_KEY_R1 = (1<<6),
-        MHC2DFL_KEY_R2 = (1<<7),
-
-        MHD2CFL_ANY_PTT = (1<<2),
-        MHD2CFL_R2      = (1<<3),
-        MHD2CFL_SQUELCH = (1<<4),
-        MHD2CFL_FSK_BUSY= (1<<5),
-        MHD2CFL_NON_VOX_PTT = (1<<6),
-        MHD2CFL_FOOTSWITCH = (1<<7),
-};
 
 struct Producer {
 	struct PGNode node;

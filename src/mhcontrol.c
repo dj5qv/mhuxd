@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <ev.h>
 #include "mhcontrol.h"
+#include "mhflags.h"
 #include "util.h"
 #include "pglist.h"
 #include "buffer.h"
@@ -87,22 +88,6 @@ enum {
 	MHCMD_AUTO_NUMBER         = 0x7d,
 	MHCMD_ARE_YOU_THERE       = 0x7e,
 	MHCMD_NOT_SUPPORTED       = 0x7f
-};
-
-
-// FIXME to be removed and covered by mhflags.c
-enum {
-        MHC2DFL_PTT_R1 = (1<<2),
-        MHC2DFL_PTT_R2 = (1<<3),
-        MHC2DFL_KEY_R1 = (1<<6),
-        MHC2DFL_KEY_R2 = (1<<7),
-
-        MHD2CFL_ANY_PTT = (1<<2),
-        MHD2CFL_R2      = (1<<3),
-        MHD2CFL_SQUELCH = (1<<4),
-        MHD2CFL_FSK_BUSY= (1<<5),
-        MHD2CFL_NON_VOX_PTT = (1<<6),
-        MHD2CFL_FOOTSWITCH = (1<<7),
 };
 
 enum {
@@ -462,16 +447,20 @@ static void flags_cb(struct mh_router *router, const uint8_t *data ,int len, int
 			radio = 1;
 		}
 
+		if((*old_flag & MHD2CFL_CTS) != (data[i] & MHD2CFL_CTS))
+			dbg0("(mhc) >>fl cts r%d %d", radio, (data[i] & MHD2CFL_CTS) ? 1 : 0);
+		if((*old_flag & MHD2CFL_LOCKOUT) != (data[i] & MHD2CFL_LOCKOUT))
+			dbg0("(mhc) >>fl cts r%d %d", radio, (data[i] & MHD2CFL_LOCKOUT) ? 1 : 0);
 		if((*old_flag & MHD2CFL_ANY_PTT) != (data[i] & MHD2CFL_ANY_PTT))
-			dbg0("(mhc) ptt-any r%d %d", radio, (data[i] & MHD2CFL_ANY_PTT) ? 1 : 0);
+			dbg0("(mhc) >>fl ptt-any r%d %d", radio, (data[i] & MHD2CFL_ANY_PTT) ? 1 : 0);
 		if((*old_flag & MHD2CFL_SQUELCH) != (data[i] & MHD2CFL_SQUELCH))
-			dbg0("(mhc) squelch r%d %d", radio, (data[i] & MHD2CFL_SQUELCH) ? 1 : 0);
+			dbg0("(mhc) >>fl squelch r%d %d", radio, (data[i] & MHD2CFL_SQUELCH) ? 1 : 0);
 		if((*old_flag & MHD2CFL_FSK_BUSY) != (data[i] & MHD2CFL_FSK_BUSY))
-			dbg0("(mhc) fsk-busy r%d %d", radio, (data[i] & MHD2CFL_FSK_BUSY) ? 1 : 0);
+			dbg0("(mhc) >>fl fsk-busy r%d %d", radio, (data[i] & MHD2CFL_FSK_BUSY) ? 1 : 0);
 		if((*old_flag & MHD2CFL_NON_VOX_PTT) != (data[i] & MHD2CFL_NON_VOX_PTT))
-			dbg0("(mhc) non-vox-ptt r%d %d", radio, (data[i] & MHD2CFL_NON_VOX_PTT) ? 1 : 0);
+			dbg0("(mhc) >>fl non-vox-ptt r%d %d", radio, (data[i] & MHD2CFL_NON_VOX_PTT) ? 1 : 0);
 		if((*old_flag & MHD2CFL_FOOTSWITCH) != (data[i] & MHD2CFL_FOOTSWITCH))
-			dbg0("(mhc) non-vox-ptt r%d %d", radio, (data[i] & MHD2CFL_FOOTSWITCH) ? 1 : 0);
+			dbg0("(mhc) >>fl non-vox-ptt r%d %d", radio, (data[i] & MHD2CFL_FOOTSWITCH) ? 1 : 0);
 
 		*old_flag = data[i];
 	}
