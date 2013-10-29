@@ -378,7 +378,7 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 		apply_keyer_params(cfgmgr, dev, param_nod, "");
 	} else {
 	*/
-	dbg1("(cfgmgr) set cfg from kopts");
+	dbg1("(cfgmgr) %s set cfg from kopts", serial);
 	mhc_kopts_to_cfg(dev->ctl, (struct cfg *)param_nod);
 		/*
 	}
