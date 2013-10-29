@@ -495,27 +495,21 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 
 	// add keyer page(s)
 	HDF *keyer_hdf = hdf_get_child(webui->hdf, "mhuxd.run.keyer");
-	HDF *templ_hdf = hdf_get_obj(webui->hdf, "mhuxd.webui.templates.keyer");
 	HDF *tabs_hdf = hdf_get_obj(webui->hdf, "mhuxd.webui.tabs");
 
-	while(keyer_hdf && templ_hdf && tabs_hdf) {
+	while(keyer_hdf && tabs_hdf) {
 		const char *name, *serial;
 		name = hdf_get_value(keyer_hdf, "info.name", NULL);
 		serial = hdf_obj_name(keyer_hdf);
 		if(name && serial) {
-			err = hdf_copy(tabs_hdf, serial, templ_hdf); nerr_ignore(&err);
-			HDF *keyer_page_hdf = hdf_get_obj(tabs_hdf, serial);
+			HDF *keyer_page_hdf;
+			err = hdf_get_node(tabs_hdf, serial, &keyer_page_hdf); nerr_ignore(&err);
 			if(keyer_page_hdf) {
-				/*
-				char query_ext[128];
-				snprintf(query_ext, sizeof(query_ext)-1, "serial=%s", serial);
-				err = hdf_set_value(keyer_page_hdf, "query", query_ext);
-				*/
+				err = hdf_set_value(keyer_page_hdf, "page", "keyer");
 				err = hdf_set_value(keyer_page_hdf, "display", name);
 				err = hdf_set_value(keyer_page_hdf, "unit", serial);
 			}
 		}
-
 		keyer_hdf = hdf_obj_next(keyer_hdf);
 	}
 

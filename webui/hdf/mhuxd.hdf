@@ -17,14 +17,6 @@ mhuxd.webui.tabs {
        }
 }
 
-mhuxd.webui.templates {
-       keyer {
-	     display = _dynamic_
-	     page = keyer
-	     unit = _dynamic_
-       }
-}
-
 mhuxd.webui.defaults {
        home {
 	    default_menu = summary
