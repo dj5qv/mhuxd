@@ -79,6 +79,8 @@ INSTALLATION
 
 ACKNOWLEDGEMENTS
 
+microHam - For providing the protocol specs and support
+Marc Lehmann and Emanuele Giaquinta - For libev (http://software.schmorp.de/pkg/libev.html)
 Brandon Long - For the ClearSilver template system (http://www.clearsilver.net/)
 Igor Sysoev, Joyent Inc. et al.  - For http_parser
 Google Inc., Filipe Almeida - For streamhtmlparser
