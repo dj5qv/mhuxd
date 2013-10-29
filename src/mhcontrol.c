@@ -800,7 +800,7 @@ int mhc_kopts_to_cfg(struct mh_control *ctl, struct cfg *cfg) {
 	int val;
 
 	if(!ctl || !ctl->kcfg) {
-		err("(mhc) %s %p %p", __func__, ctl, ctl ? ctl->kcfg : NULL);
+		//		err("(mhc) %s %p %p", __func__, ctl, ctl ? ctl->kcfg : NULL);
 		return -1;
 	}
 
