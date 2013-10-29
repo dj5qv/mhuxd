@@ -6,13 +6,11 @@ mhuxd.webui.session.menu = summary
 
 mhuxd.webui.tabs {
        home {
-            spec = s_home
        	    display = Home
 	    page = home
 	    unit = 0
        }
        daemon {
-       	    spec = s_daemon
 	    display = Daemon
 	    page = daemon
 	    unit = 0
@@ -21,7 +19,6 @@ mhuxd.webui.tabs {
 
 mhuxd.webui.templates {
        keyer {
-       	     spec = s_keyer
 	     display = _dynamic_
 	     page = keyer
 	     unit = _dynamic_
