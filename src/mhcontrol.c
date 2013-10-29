@@ -24,8 +24,8 @@
 #define MAX_CMD_QUEUE_SIZE 16
 #define MSB_BIT (1<<7)
 
-#define IVAL_HEARTBEAT 12
-#define IVAL_TIMEOUT 0.5
+#define IVAL_HEARTBEAT 2.0
+#define CMD_TIMEOUT 1.0
 
 // microHam commands
 enum {
@@ -518,7 +518,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, ui
 	ev_timer_init(&ctl->heartbeat_timer, heartbeat_cb, 0., IVAL_HEARTBEAT);
 	ctl->heartbeat_timer.data = ctl;
 
-	ev_timer_init(&ctl->cmd_timeout_timer, cmd_timeout_cb, IVAL_TIMEOUT, 0.);
+	ev_timer_init(&ctl->cmd_timeout_timer, cmd_timeout_cb, CMD_TIMEOUT, 0.);
 	ctl->cmd_timeout_timer.data = ctl;
 
 	mhr_add_status_cb(router, router_status_cb, ctl);
@@ -852,7 +852,7 @@ static int push_cmds(struct mh_control *ctl) {
 		return -1;
 	}
 #endif
-	ev_timer_set(&ctl->cmd_timeout_timer, IVAL_TIMEOUT, 0.);
+	ev_timer_set(&ctl->cmd_timeout_timer, CMD_TIMEOUT, 0.);
 	ev_timer_start(ctl->loop, &ctl->cmd_timeout_timer);
 	cmd->state = CMD_STATE_SENT;
 	return 0;
