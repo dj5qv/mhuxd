@@ -498,9 +498,12 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 
 	while(keyer_hdf && tabs_hdf) {
 		const char *name, *serial;
+		int type;
+
+		type = hdf_get_int_value(keyer_hdf, "info.type", MHT_UNKNOWN);
 		name = hdf_get_value(keyer_hdf, "info.name", NULL);
 		serial = hdf_obj_name(keyer_hdf);
-		if(name && serial) {
+		if(type != MHT_UNKNOWN && name && serial) {
 			HDF *keyer_page_hdf;
 			err = hdf_get_node(tabs_hdf, serial, &keyer_page_hdf); nerr_ignore(&err);
 			if(keyer_page_hdf) {
