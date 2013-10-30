@@ -121,7 +121,6 @@ static int encode_meta_settings(HDF *hdf) {
 		qsk = hdf_get_int_value(knod, "param.r1Qsk", 0);
 		type = hdf_get_int_value(knod, "type", MHT_UNKNOWN);
 		if(type == MHT_UNKNOWN) {
-			warn("(webui) %s() type == -1!", __func__);
 			continue;
 		}
 
