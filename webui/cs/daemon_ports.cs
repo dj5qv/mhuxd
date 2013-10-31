@@ -246,7 +246,10 @@
 	  <td class="spacersettingscell" align="right">&nbsp;&nbsp;</td>
 	  <td class="contentsettingscell" align="left">
 	    <table>
+	      <?cs set:tmp.has_keyers = 0 ?>
 	      <?cs each:item = mhuxd.run.keyer ?>
+	      <?cs if:item.info.type != 0 ?>
+	      <?cs set:tmp.has_keyers = 1 ?>
 	      <tr>
 		<td>
 		  <input 
@@ -258,6 +261,7 @@
 		     > <td class="contentsettingscell"><?cs var:item.info.name ?></td>
 		</td>
 	      </tr>
+	      <?cs /if ?>
 	      <?cs /each ?>
 	    </table>
 	  </td>
@@ -275,7 +279,7 @@
 </table>
 
 <img src="/static/dot.gif" height="4" border="0" width="1"><br>
-<input name="CreatePort" onclick="button_clicked=this.value;" value="Continue" type="submit">
+<input name="CreatePort" onclick="button_clicked=this.value;" value="Continue" type="submit" <?cs if:tmp.has_keyers == 0 ?>disabled<?cs /if ?>>
 <img src="/static/dot.gif" height="4" border="0" width="1"><br>
 
 
