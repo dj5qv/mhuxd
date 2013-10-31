@@ -134,14 +134,15 @@ int main(int argc, char **argv)
 
 	dmgr_enable_monitor();
 
-	//				dmgr_add_device("192838", 9);
-				dmgr_add_device("987699", 4);
-				dmgr_add_device("123098", 6);
-				dmgr_add_device("123099", 7);
-//			dmgr_add_device("123456", 4);
-	//			dmgr_add_device("456123", 1);
-	//			dmgr_add_device("456124", 2);
-
+	if(demo_mode) {
+		dmgr_add_device("DEMO_CK_1", 1);
+		dmgr_add_device("DEMO_DK_1", 2);
+		dmgr_add_device("DEMO_DK2_1", 3);
+		dmgr_add_device("DEMO_MK_1", 4);
+		dmgr_add_device("DEMO_MK2_1", 5);
+		dmgr_add_device("DEMO_MK2R_1", 6);
+		dmgr_add_device("DEMO_MK2Rp_1", 7);
+	}
 
 	ev_loop(loop, 0);
 

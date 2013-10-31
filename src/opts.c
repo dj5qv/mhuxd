@@ -17,6 +17,7 @@
 #define DEF_WEBUI_HOST_PORT "localhost:5052"
 
 int background = 0;
+int demo_mode = 0;
 const char *log_level_str = "INFO";
 const char *webui_host_port = DEF_WEBUI_HOST_PORT;
 
@@ -35,7 +36,7 @@ static void print_help() {
 int process_opts(int argc, char **argv) {
 	int opt;
 
-	while(-1 != (opt = getopt(argc, argv, "hbw:l:"))) {
+	while(-1 != (opt = getopt(argc, argv, "2hbw:l:"))) {
 		switch(opt) {
 		case 'h':
 			print_help();
@@ -48,6 +49,9 @@ int process_opts(int argc, char **argv) {
 			break;
 		case 'l':
 			log_level_str = optarg;
+			break;
+		case '2':
+			demo_mode = 1;
 			break;
 		default:
 			exit(-1);
