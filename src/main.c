@@ -135,13 +135,16 @@ int main(int argc, char **argv)
 	dmgr_enable_monitor();
 
 	if(demo_mode) {
-		dmgr_add_device("DEMO_CK_1", 1);
-		dmgr_add_device("DEMO_DK_1", 2);
-		dmgr_add_device("DEMO_DK2_1", 3);
-		dmgr_add_device("DEMO_MK_1", 4);
-		dmgr_add_device("DEMO_MK2_1", 5);
-		dmgr_add_device("DEMO_MK2R_1", 6);
-		dmgr_add_device("DEMO_MK2Rp_1", 7);
+		dmgr_add_device("CK_DEMO_CK_1", 0);
+		dmgr_add_device("DK_DEMO_DK_1", 0);
+		dmgr_add_device("D2_DEMO_DK2_1", 0);
+		dmgr_add_device("MK_DEMO_MK_1", 0);
+		dmgr_add_device("M2_DEMO_MK2_1", 0);
+		dmgr_add_device("2R_DEMO_MK2R_1", 0);
+		dmgr_add_device("2P_DEMO_MK2Rp_1", 0);
+		dmgr_add_device("UR_DEMO_U2R_1", 0);
+		dmgr_add_device("SM_DEMO_SM_1", 0);
+		dmgr_add_device("SD_DEMO_SMD_1", 0);
 	}
 
 	ev_loop(loop, 0);

@@ -41,7 +41,9 @@ enum {
 
 	MHF_HAS_AUDIO_SWITCHING = (1<<16),
 	MHF_HAS_DISPLAY = (1<<17),
-	MHF_HAS_FOLLOW_TX_MODE = (1<<18)
+	MHF_HAS_FOLLOW_TX_MODE = (1<<18),
+
+	MHF_MHUXD_SUPPORTED = (1<<31)
 
 };
 
@@ -62,5 +64,6 @@ struct mh_info_map {
 
 void mhi_init(struct mh_info *mhi, int type);
 int mhi_parse_version(struct mh_info *mhi, const uint8_t *data, uint16_t len);
+int mhi_type_from_serial(const char *serial);
 
 #endif // MHINFO_H

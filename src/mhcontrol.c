@@ -237,10 +237,10 @@ static void heartbeat_completed_cb(unsigned const char *reply, int len, int resu
 	if(result == CMD_RESULT_TIMEOUT) {
 		if(ctl->state != CTL_STATE_DEVICE_OFF) {
 			set_state(ctl,CTL_STATE_DEVICE_OFF);
-			warn("(mhc) heartbeat timed out!");
+			warn("(mhc) %s heartbeat timed out!", mhr_get_serial(ctl->router));
 			info("(mhc) %s OFFLINE", mhr_get_serial(ctl->router));
 		} else {
-			dbg0("(mhc) heartbeat timed out!");
+			dbg0("(mhc) %s heartbeat timed out!", mhr_get_serial(ctl->router));
 		}
 		return;
 	}
@@ -497,7 +497,7 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 }
 
 
-struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, uint16_t type) {
+struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, struct mh_info *mhi) {
 	struct mh_control *ctl;
 
 	dbg1("(mhc) %s()", __func__);
@@ -514,10 +514,9 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, ui
 
 	set_state(ctl, CTL_STATE_DEVICE_DISC);
 
-	mhi_init(&ctl->mhi, type);
+	memcpy(&ctl->mhi, mhi, sizeof(ctl->mhi));
 
-	if(type != MHT_UNKNOWN)
-		ctl->kcfg = kcfg_create(&ctl->mhi);
+	ctl->kcfg = kcfg_create(&ctl->mhi);
 
 	ev_timer_init(&ctl->heartbeat_timer, heartbeat_cb, 0., IVAL_HEARTBEAT);
 	ctl->heartbeat_timer.data = ctl;
@@ -550,7 +549,6 @@ void mhc_destroy(struct mh_control *ctl) {
 
 	while((cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list))) {
 		PG_Remove(&cmd->node);
-		info("free 1");
 		free(cmd);
 	}
 	while((cmd = (void*)PG_FIRSTENTRY(&ctl->free_list))) {

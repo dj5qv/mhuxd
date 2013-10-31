@@ -555,6 +555,9 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 			dev = dmgr_add_device(serial, type);
 		}
 
+		if(!dev)
+			continue;
+
 		for(chan_hdf = hdf_obj_child(hdf_get_obj(hdf, "channel")); chan_hdf; chan_hdf = hdf_obj_next(chan_hdf)) {
 			const char *chan_name = hdf_obj_name(chan_hdf);
 

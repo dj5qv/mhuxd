@@ -35,8 +35,9 @@ struct mh_router;
 struct ev_loop;
 struct cfg;
 struct cfgmgr;
+struct mh_info;
 
-struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, uint16_t type);
+struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, struct mh_info *mhi);
 void mhc_destroy(struct mh_control *ctl);
 int mhc_is_connected(struct mh_control *ctl);
 int mhc_is_online(struct mh_control *ctl);

@@ -26,20 +26,30 @@ struct device_manager *dman = NULL;
 static struct device *create_dev(const char *serial, uint16_t type) {
 	dbg1("(dmr) %s() for %s", __func__, serial);
 
-#if 0
-	if(!type)
-		type=MHT_DK2;
-#endif
-
 	struct device *dev = dmgr_get_device(serial);
 	if(dev)
 		return dev;
+
+	if(!type) {
+		type = mhi_type_from_serial(serial);
+		if(type == MHT_UNKNOWN) {
+			err("(dmr) Could not determine keyer type from serial number (%s)", serial);
+			return NULL;
+		}
+	}
+
+	struct mh_info mhi;
+	mhi_init(&mhi, type);
+	if(!(mhi.flags & MHF_MHUXD_SUPPORTED)) {
+		info("Ignoring unsupported device %s (%s)", serial, mhi.type_str);
+		return NULL;
+	}
 
 	dev = w_calloc(1, sizeof(*dev));
 	dev->serial = w_malloc(strlen(serial)+1);
 	strcpy(dev->serial, serial);
 	dev->router = mhr_create(dman->loop, serial);
-	dev->ctl = mhc_create(dman->loop, dev->router, type);
+	dev->ctl = mhc_create(dman->loop, dev->router, &mhi);
 	PG_AddTail(&dman->device_list, &dev->node);
 	mhc_add_state_changed_cb(dev->ctl, cfgmr_state_changed_cb, dman->cfgmgr);
 	//	cfgmgr_update_hdf_dev(dman->cfgmgr, serial);
@@ -83,7 +93,8 @@ static void devmon_callback(const char *serial, int status, void *user_data) {
 
 	struct device *dev = create_dev(serial, MHT_UNKNOWN);
 
-	mhr_set_keyer_fd(dev->router, fd);
+	if(dev)
+		mhr_set_keyer_fd(dev->router, fd);
 
 	free((void*)devnode);
 }
