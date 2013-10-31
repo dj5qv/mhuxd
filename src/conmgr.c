@@ -34,7 +34,7 @@ struct connector {
 	int ptt_channel;
 	int s_fd_data;
 	int s_fd_ptt;
-	void *specific;
+	void *instance;
 	struct device *dev;
 };
 
@@ -183,10 +183,10 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 
 	switch(ctr->type) {
 	case CON_VSP:
-		ctr->specific = vsp_create(&ctr->cspec);
+		ctr->instance = vsp_create(&ctr->cspec);
 		break;
 	case CON_TCP:
-		ctr->specific = ctcp_create(&ctr->cspec);
+		ctr->instance = ctcp_create(&ctr->cspec);
 		break;
 	default:
 		err("(cmgr) create connector, invalid type %d!", ctr->type);
@@ -195,7 +195,7 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 		break;
 	}
 
-	if(ctr->specific) {
+	if(ctr->instance) {
 		if(id > 0) {
 			ctr->id = id;
 			conmgr->id_cnt = id;
@@ -253,10 +253,10 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 
 			switch(ctr->type) {
 			case CON_VSP:
-				vsp_destroy(ctr->specific);
+				vsp_destroy(ctr->instance);
 				break;
 			case CON_TCP:
-				ctcp_destroy(ctr->specific);
+				ctcp_destroy(ctr->instance);
 				break;
 			default:
 				break;
