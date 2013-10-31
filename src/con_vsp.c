@@ -61,6 +61,7 @@ struct vsp_session {
 
 	fuse_req_t pending_in_req;
 	size_t pending_in_size;
+	size_t pending_in_processed;
 	const char *pending_in_buf;
 	fuse_req_t pending_out_req;
 	size_t pending_out_size;
@@ -243,15 +244,20 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 			snprintf(header, sizeof(header), "(vsp) %s to k", vsp->devname);
 			dbg1_h(header, b->data + b->rpos, size);
 
-			if(vs->pending_in_req && vs->pending_in_size <= buf_size_avail(b)) {
-				buf_append(b, (uint8_t*)vs->pending_in_buf, vs->pending_in_size);
-				fuse_reply_write(vs->pending_in_req, vs->pending_in_size);
-				vs->pending_in_size = 0;
-				vs->pending_in_req = NULL;
-				vs->pending_in_buf = NULL;
-			}
 			buf_consume(b, size);
 			vs->sis.tx += size;
+
+			if(vs->pending_in_req) {
+				vs->pending_in_processed += buf_append(b,
+					   (uint8_t*)vs->pending_in_buf + vs->pending_in_processed,
+					   vs->pending_in_size - vs->pending_in_processed);
+				if(vs->pending_in_processed == vs->pending_in_size) {
+					fuse_reply_write(vs->pending_in_req, vs->pending_in_size);
+					vs->pending_in_size = 0;
+					vs->pending_in_req = NULL;
+					vs->pending_in_buf = NULL;
+				}
+			}
 		}
 
 		if(b->rpos < b->size)
@@ -409,6 +415,9 @@ static void dv_write(fuse_req_t req, const char *buf, size_t size,
 		vs->pending_in_req = req;
 		vs->pending_in_size = size;
 		vs->pending_in_buf = buf;
+		vs->pending_in_processed = buf_append(b, (uint8_t*)buf, buf_size_avail(b));
+		ev_io_start(vsp->loop, &vsp->w_data_out);
+		fuse_req_interrupt_func(req, interrupt_func, vs);
 		return;
 	}
 
