@@ -447,8 +447,12 @@ static void flags_cb(struct mh_router *router, const uint8_t *data ,int len, int
 			radio = 1;
 		}
 
-		if((*old_flag & MHD2CFL_CTS) != (data[i] & MHD2CFL_CTS))
+		if((*old_flag & MHD2CFL_CTS) != (data[i] & MHD2CFL_CTS)) {
 			dbg0("(mhc) >>fl cts r%d %d", radio, (data[i] & MHD2CFL_CTS) ? 1 : 0);
+			if(!(data[i] & MHD2CFL_CTS)) {
+				warn("(mhc) CTS went from 1 to 0, CTS handling not implemented!");
+			}
+		}
 		if((*old_flag & MHD2CFL_LOCKOUT) != (data[i] & MHD2CFL_LOCKOUT))
 			dbg0("(mhc) >>fl cts r%d %d", radio, (data[i] & MHD2CFL_LOCKOUT) ? 1 : 0);
 		if((*old_flag & MHD2CFL_ANY_PTT) != (data[i] & MHD2CFL_ANY_PTT))
