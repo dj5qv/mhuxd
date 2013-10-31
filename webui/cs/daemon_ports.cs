@@ -137,6 +137,7 @@
       <td class="titlelistcell">ID</td>
       <td class="titlelistcell">Type</td>
       <td class="titlelistcell">Port / Device</td>
+      <td class="titlelistcell">Status</td>
       <td class="titlelistcell">Remote Access</td>
       <td class="titlelistcell">RTS-PTT</td>
       <td class="titlelistcell">DTR-PTT</td>
@@ -154,6 +155,7 @@
       <td class="contentlistcell"><?cs var:name(item) ?></td>
       <td class="contentlistcell"><?cs var:item.type ?></td>
       <td class="contentlistcell"><?cs var:item.devname ?></td>
+      <td class="contentlistcell"><?cs var:mhuxd.run.connector[name(item)].status ?></td>
 
       <?cs if:item.type == "VSP" ?>
       <td class="contentlistcell">&nbsp</td>		

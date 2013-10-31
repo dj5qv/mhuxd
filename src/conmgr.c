@@ -72,6 +72,10 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 		}
 	}
 
+	// Always "allocate" the id if it is != 0 even if the connector creation fails.
+	if(id && id > conmgr->id_cnt)
+		conmgr->id_cnt = id;
+
 	ctr = w_calloc(1, sizeof(*ctr));
 	ctr->s_fd_data = -1;
 	ctr->s_fd_ptt = -1;
@@ -198,7 +202,6 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 	if(ctr->instance) {
 		if(id > 0) {
 			ctr->id = id;
-			conmgr->id_cnt = id;
 		} else {
 			ctr->id = ++conmgr->id_cnt;
 		}
@@ -216,8 +219,9 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 	if(ctr->dev) {
 		mhr_rem_consumer(ctr->dev->router, sodat[0], ctr->channel);
 		mhr_rem_producer(ctr->dev->router, sodat[0], ctr->channel);
-		mhr_rem_consumer(ctr->dev->router, soptt[0], ctr->channel);
-		mhr_rem_producer(ctr->dev->router, soptt[0], ctr->channel);
+		mhr_rem_consumer(ctr->dev->router, soptt[0], ctr->ptt_channel);
+		mhr_rem_producer(ctr->dev->router, soptt[0], ctr->ptt_channel);
+
 
 		if(sodat[0] != -1) close(sodat[0]);
 		if(sodat[1] != -1) close(sodat[1]);

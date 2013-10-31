@@ -655,18 +655,27 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 			err("(cfgmgr) %s %d internal error", __func__, __LINE__);
 			continue;
 		}
-		int id = atoi(id_str);
-		id = conmgr_create_con(cfgmgr->conmgr, cfgmgr->loop, (struct cfg *)hdf, id);
+		int id, old_id = atoi(id_str);
+		id = conmgr_create_con(cfgmgr->conmgr, cfgmgr->loop, (struct cfg *)hdf, old_id);
 		if(!id) {
 			err("(cfgmgr) failed to create connector!");
 			rval++;
-			continue;
 		}
 
-		char buf[128];
-		snprintf(buf, sizeof(buf)-1, "mhuxd.connector.%d", id);
-		err = hdf_copy(cfgmgr->hdf_live, buf, hdf);
-		nerr_ignore(&err);
+		if(old_id || id) {
+			// So this connector has either been successfully created.
+			// Or is has been previously created successfully (old_id != 0). 
+			// We want to store it in any of both cases in live_hdf.
+			char buf[128];
+			int real_id = id ? id : old_id;
+			snprintf(buf, sizeof(buf)-1, "mhuxd.connector.%d", real_id);
+			err = hdf_copy(cfgmgr->hdf_live, buf, hdf);
+			nerr_ignore(&err);
+
+			snprintf(buf, sizeof(buf)-1, "mhuxd.run.connector.%d.status", real_id);
+			err = hdf_set_value(cfgmgr->hdf_live, buf, id ? "ok" : "failed");
+			nerr_ignore(&err);
+		}
 	}
 
 
