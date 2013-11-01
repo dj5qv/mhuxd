@@ -63,8 +63,13 @@ struct vsp_session {
 	size_t pending_in_size;
 	size_t pending_in_processed;
 	const char *pending_in_buf;
+
 	fuse_req_t pending_out_req;
 	size_t pending_out_size;
+	size_t pending_out_processed;
+	size_t pending_out_buf_capacity;
+	char *pending_out_buf;
+
 
 	struct serial_icounter_struct sis;
 };
@@ -201,11 +206,21 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 			buf_append(b, buf, size);
 
-			if(vs->pending_out_req && vs->pending_out_size <= (size_t)(b->size - b->rpos)) {
-				fuse_reply_buf(vs->pending_out_req, (char *)(b->data + b->rpos), vs->pending_out_size);
-				buf_consume(b, vs->pending_out_size);
-				vs->pending_out_req = NULL;
-				vs->pending_out_size = 0;
+			if(vs->pending_out_req) {
+				size_t quanta = b->size - b->rpos;
+				if(quanta > (vs->pending_out_size - vs->pending_out_processed))
+					quanta = vs->pending_out_size - vs->pending_out_processed;
+
+				memcpy(vs->pending_out_buf + vs->pending_out_processed,
+				       b->data + b->rpos, quanta);
+				buf_consume(b, quanta);
+				vs->pending_out_processed += quanta;
+				if(vs->pending_out_processed == vs->pending_out_size) {
+					fuse_reply_buf(vs->pending_out_req, vs->pending_out_buf, vs->pending_out_size);
+					vs->pending_out_req = NULL;
+					vs->pending_out_size = 0;
+					vs->pending_out_processed = 0;
+				}
 			}
 
 			if(vs->ph) {
@@ -317,6 +332,9 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 	if(vs->pending_out_req)
 		fuse_reply_err(vs->pending_out_req, EINTR);
 
+	if(vs->pending_out_buf)
+		free(vs->pending_out_buf);
+
 	vsp->open_cnt--;
 	PG_Remove(&vs->node);
 	if(vs->ph)
@@ -344,6 +362,7 @@ static void interrupt_func(fuse_req_t req, void *data) {
 		fuse_reply_err(vs->pending_out_req, EINTR);
 		vs->pending_out_req = NULL;
 		vs->pending_out_size = 0;
+		vs->pending_out_processed = 0;
 	}
 }
 
@@ -371,8 +390,21 @@ static void dv_read(fuse_req_t req, size_t size, off_t off,
 	struct buffer *b = &vs->buf_out;
 
 	if(!(fi->flags & O_NONBLOCK) && size > (size_t)(b->size - b->rpos)) {
+		// Blocking read request. Since request size may exceed the
+		// size of our struct buffer use a separate dynamic buffer.
 		vs->pending_out_req = req;
 		vs->pending_out_size = size;
+		if(vs->pending_out_buf_capacity < size) {
+			if(vs->pending_out_buf)
+				free(vs->pending_out_buf);
+			vs->pending_out_buf = w_malloc(size);
+			vs->pending_out_buf_capacity = size;
+		}
+		memcpy(vs->pending_out_buf, b->data + b->rpos, b->size - b->rpos);
+		vs->pending_out_processed = b->size - b->rpos;
+		buf_reset(b);
+
+
 		fuse_req_interrupt_func(req, interrupt_func, vs);
 		return;
 	}
@@ -755,6 +787,8 @@ void vsp_destroy(struct vsp *vsp) {
 			fuse_reply_err(vs->pending_in_req, EINTR);
 		if(vs->pending_out_req)
 			fuse_reply_err(vs->pending_out_req, EINTR);
+		if(vs->pending_out_buf)
+			free(vs->pending_out_buf);
 		PG_Remove(&vs->node);
 		free(vs);
         }
