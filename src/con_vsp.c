@@ -70,8 +70,9 @@ struct vsp_session {
 	size_t pending_out_buf_capacity;
 	char *pending_out_buf;
 
-
 	struct serial_icounter_struct sis;
+
+	uint32_t ptt_status;
 };
 
 
@@ -132,6 +133,8 @@ static int set_bits(struct vsp_session *vs, int bits) {
 	uint8_t state = data ? '1' : '0';
 	//	buf_append(&vs->buf_in, &state, 1);
 	res = write(vsp->fd_ptt, &state, 1);
+	if(res == 1)
+		vs->ptt_status = state;
 	if(res != 1) {
 		err_e(errno, "%s could not write to ptt channel!", vsp->devname);
 	}
@@ -259,6 +262,21 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 			snprintf(header, sizeof(header), "(vsp) %s to k", vsp->devname);
 			dbg1_h(header, b->data + b->rpos, size);
 
+			// If PTT channel, track PTT status
+			if(vsp->fd_data == vsp->fd_ptt) {
+				int i;
+				for(i = 0; i < (b->size - b->rpos); i++) {
+					switch( b->data[i]) {
+					case '0':
+						vs->ptt_status = 0;
+						break;
+					case '1':
+						vs->ptt_status = 1;
+						break;
+					}
+				}
+			}
+
 			buf_consume(b, size);
 			vs->sis.tx += size;
 
@@ -325,6 +343,13 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 		err = EBADF;
 		err("(vsp) attempt to close a non-existent connection!");
 		goto out;
+	}
+
+	if(vs->ptt_status == 1) {
+		uint8_t state = '0';
+		size_t res = write(vsp->fd_ptt, &state, 1);
+		if(res != 1)
+			err("(vsp) %s() %s could not send PTT off", __func__, vsp->devname);
 	}
 
 	if(vs->pending_in_req)
@@ -783,6 +808,13 @@ void vsp_destroy(struct vsp *vsp) {
 	dbg1("(vsp) %s()", __func__);
 
         while((vs = (void*)PG_FIRSTENTRY(&vsp->session_list))) {
+		if(vs->ptt_status) {
+			uint8_t state = '0';
+			size_t res = write(vsp->fd_ptt, &state, 1);
+			if(res != 1)
+				err("(vsp) %s() %s could not send PTT off", __func__, vsp->devname);
+		}
+
 		if(vs->pending_in_req)
 			fuse_reply_err(vs->pending_in_req, EINTR);
 		if(vs->pending_out_req)
