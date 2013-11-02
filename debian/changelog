@@ -1,4 +1,4 @@
-mhuxd (0.50-1) raring; urgency=low
+mhuxd (0.50-2) raring; urgency=low
   * large parts rewritten
   * added web interface for keyer configuration
   * uses libev for event management
@@ -6,7 +6,7 @@ mhuxd (0.50-1) raring; urgency=low
   * uses it's own log file rather than using syslog
   * virtual serial ports persist even if the keyer goes offline.
   * added missing ioctls TCSETSF & TCSETSW
-  * single threaded
+  * fixed several bugs
 
  -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 09 Oct 2013 18:30:00 +0200
 
