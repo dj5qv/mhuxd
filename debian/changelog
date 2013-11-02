@@ -1,4 +1,4 @@
-mhuxd (0.50-2) raring; urgency=low
+mhuxd (0.50rc1-2) raring; urgency=low
   * large parts rewritten
   * added web interface for keyer configuration
   * uses libev for event management
