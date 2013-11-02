@@ -1,4 +1,4 @@
-0.49b
+0.50rc1
  - major rewrite, completely single threaded now
  - uses libev
  - provides web interface for configuration (http://localhost:5052)
@@ -9,6 +9,7 @@
  - added missing ioctls TCSETSF & TCSETSW
  - mhuxd.conf is obsolete and ignored now. Configuration is maintained
    by the web interface and stored into /var/lib/mhuxd/mhuxd-state.hdf
+ - several bugs fixed
 
 0.33
  - mhuxd accepted values 0|1 only for DigitalOverVoice
