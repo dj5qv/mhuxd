@@ -25,7 +25,7 @@ mhuxd.webui.defaults {
 	    default_menu = ports
        }
        keyer {
-            default_menu = radio
+            default_menu = mode
        }
 }
 
