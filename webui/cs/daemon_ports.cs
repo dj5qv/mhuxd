@@ -260,7 +260,7 @@
 		     <?cs if:(first(item) && !mhuxd.webui.session.set.mhuxd.connector.0.serial)||
 			  name(item) == mhuxd.webui.session.set.mhuxd.connector.0.serial ?> checked
 		     <?cs /if ?>
-		     > <td class="contentsettingscell"><?cs var:item.info.name ?></td>
+		     > <td class="contentsettingscell"><?cs var:item.info.name ?> (<?cs var:name(item) ?>)</td>
 		</td>
 	      </tr>
 	      <?cs /if ?>
