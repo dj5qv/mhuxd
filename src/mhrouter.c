@@ -229,7 +229,8 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 
 		ev_io_start(loop, &router->w_out);
 
-		router->lb[prd->channel].avail_this_ival -= r;
+		if(router->lb[prd->channel].bps)
+			router->lb[prd->channel].avail_this_ival -= r;
 	}
 
 	if(r == 0) {
