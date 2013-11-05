@@ -15,6 +15,7 @@ enum {
 
 	CH_PTT1 = 9,
 	CH_PTT2 = 10,
+	CH_MCP = 11, 
 	ALL_NUM_CHANNELS
 };
 
