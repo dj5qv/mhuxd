@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define BUFFER_CAPACITY 64
+#define BUFFER_CAPACITY 512
 
 
 struct buffer {
