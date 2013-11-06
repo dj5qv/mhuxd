@@ -238,7 +238,7 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 			process_ptt_producer(prd, b);
 
 		PG_SCANLIST(&router->processor_cb_list[prd->channel], prc) {
-			prc->callback(router, prd->channel, b);
+			prc->callback(router, prd->channel, b, prc->user_data);
 		}
 
 		ev_io_start(loop, &router->w_out);
