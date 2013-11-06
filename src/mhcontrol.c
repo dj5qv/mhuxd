@@ -138,14 +138,14 @@ struct command {
 	struct PGNode node;
 	uint16_t len;
 	uint8_t state;
-	cmd_completion_cb cmd_completion_cb;
+	mhc_cmd_completion_cb cmd_completion_cb;
 	void *user_data;
 	uint8_t cmd[MAX_CMD_LEN];
 };
 
-static int submit_cmd(struct mh_control *ctl, struct buffer *b, cmd_completion_cb cb, void *user_data);
-static int submit_cmd_simple(struct mh_control *ctl, int cmd, cmd_completion_cb cb, void *user_data);
-static int submit_speed_cmd(struct mh_control *ctl, int channel, cmd_completion_cb cb, void *user_data);
+static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb cb, void *user_data);
+static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb cb, void *user_data);
+static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb cb, void *user_data);
 static void initializer_cb(unsigned const char *reply, int len, int result, void *user_data);
 static int push_cmds(struct mh_control *ctl);
 
@@ -583,7 +583,7 @@ const struct mh_info *mhc_get_mhinfo(struct mh_control *ctl)  {
 	return &ctl->mhi;
 }
 
-static int submit_speed_cmd(struct mh_control *ctl, int channel, cmd_completion_cb cb, void *user_data) {
+static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb cb, void *user_data) {
 	float fbaud, stopbits;
 	int ibaud;
 	uint8_t c, cmd, rtscts, databits, has_ext;
@@ -670,7 +670,7 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, cmd_completion_
 	return 0;
 }
 
-int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, cmd_completion_cb cb, void *user_data) {
+int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb cb, void *user_data) {
 
 	dbg1("(mhc) %s()", __func__);
 
@@ -702,7 +702,7 @@ int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, cmd_comp
 
 }
 
-int mhc_set_mode(struct mh_control *ctl, int mode, cmd_completion_cb cb, void *user_data) {
+int mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb cb, void *user_data) {
 	if(mhc_is_online(ctl)) {
 		struct buffer b;
 		buf_reset(&b);
@@ -716,7 +716,7 @@ int mhc_set_mode(struct mh_control *ctl, int mode, cmd_completion_cb cb, void *u
 	return 0;
 }
 
-int mhc_load_kopts(struct mh_control *ctl, cmd_completion_cb cb, void *user_data) {
+int mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_data) {
 	if(!mhc_is_online(ctl)) {
 		return -1;
 	}
@@ -862,7 +862,7 @@ static int push_cmds(struct mh_control *ctl) {
 	return 0;
 }
 
-static int submit_cmd_simple(struct mh_control *ctl, int cmd, cmd_completion_cb cb, void *user_data) {
+static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb cb, void *user_data) {
 	struct buffer buf;
 	buf_reset(&buf);
 	buf_append_c(&buf, cmd);
@@ -870,7 +870,7 @@ static int submit_cmd_simple(struct mh_control *ctl, int cmd, cmd_completion_cb 
 	return submit_cmd(ctl, &buf, cb, user_data);
 }
 
-static int submit_cmd(struct mh_control *ctl, struct buffer *b, cmd_completion_cb cb, void *user_data) {
+static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb cb, void *user_data) {
 
 	if(b->size > MAX_CMD_LEN) {
 		err("(mhc) Can't queue command, command too long (%d)!", b->size);
