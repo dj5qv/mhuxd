@@ -25,6 +25,7 @@
 #define MSB_BIT (1<<7)
 
 #define IVAL_HEARTBEAT 2.0
+#define IVAL_INFO 4.5
 #define CMD_TIMEOUT 1.0
 
 // microHam commands
@@ -123,6 +124,7 @@ struct mh_control {
 	//	void *state_chaned_cb_user_data;
 
 	ev_timer heartbeat_timer;
+	ev_timer info_timer;
 	ev_timer cmd_timeout_timer;
 	struct mh_info mhi;
 	struct cfg *speed_args[MH_NUM_CHANNELS];
@@ -132,6 +134,8 @@ struct mh_control {
 	uint8_t in_flag_r1, in_flag_r2;
 	uint8_t out_flag;
 	uint8_t set_mode;
+	uint8_t mpk_mok_state[8];
+	uint8_t acc_state[8];
 };
 
 struct command {
@@ -199,6 +203,16 @@ static void set_state(struct mh_control *ctl, uint8_t state) {
 	uint8_t new_keyer_state;
 	ctl->state = state;
 
+	if(state == CTL_STATE_DEVICE_DISC)
+		ev_timer_stop(ctl->loop, &ctl->heartbeat_timer);
+	else
+		ev_timer_start(ctl->loop, &ctl->heartbeat_timer);
+
+	if(state == CTL_STATE_OK)
+		ev_timer_start(ctl->loop, &ctl->info_timer);
+	else
+		ev_timer_stop(ctl->loop, &ctl->info_timer);
+
 	new_keyer_state = state_to_ext_state(state);
 
 	if(new_keyer_state != ctl->keyer_state) {
@@ -227,7 +241,6 @@ static void heartbeat_completed_cb(unsigned const char *reply, int len, int resu
 
 	if(result == CMD_RESULT_OK) {
 		dbg0("(mhc) heartbeat pong");
-		//		ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
 
 		if(ctl->state == CTL_STATE_DEVICE_OFF) {
 			initializer_cb(NULL, 0, CMD_RESULT_INVALID, ctl);
@@ -255,6 +268,13 @@ static void heartbeat_cb (struct ev_loop *loop,  struct ev_timer *w, int revents
 	submit_cmd_simple(ctl, MHCMD_ARE_YOU_THERE, heartbeat_completed_cb, ctl);
 }
 
+static void info_timer_cb (struct ev_loop *loop,  struct ev_timer *w, int revents) {
+	(void)loop;(void)revents;
+	struct mh_control *ctl = w->data;
+	dbg0("(mhc) info request");
+	submit_cmd_simple(ctl, MHCMD_ON_CONNECT, NULL, ctl);
+}
+
 static void cmd_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, int revents) {
 	(void)loop; (void)revents;
 	struct mh_control *ctl = w->data;
@@ -277,6 +297,52 @@ static void cmd_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, int reven
 static const char *keyer_modes[] = {
         "CW", "VOICE", "FSK", "DIGITAL",
 };
+
+/*
+ *  Process MPK State, MOK State, ACC State and U2R State
+ */
+static void process_keyer_states(struct mh_control *ctl, unsigned const char *data, int len) {
+	int f;
+
+	if(*data == MHCMD_MPK_STATE && (ctl->mhi.type == MHT_MK2 || ctl->mhi.type == MHT_DK2)) {
+		if(len != 6) {
+			err("(mhc) invalid cmd length for MPK/DK2 state! cmd: %d len: %d", *data, len);
+			return;
+		}
+
+		f = data[1];
+		dbg0("(mhc) mpk state, pwr: %2.1fV lineUpstream: %d micUpstream: %d",
+		     ((float)data[2]/10), (f>>0)&1, (f>>1)&1);
+		dbg0("(mhc) mpk state, downstream: %d audioCToAForced: %d, audioAToCForced %d, frontMicSelected: %d",
+		     (f>>2)&1, (f>>3)&1, (f>>4)&1, (f>>5)&1);
+		dbg0("(mhc) mpk state, steppir V%d.%d", data[4], data[3]);
+
+		memcpy(ctl->mpk_mok_state, data + 1, 8);
+		return;
+	}
+
+	if(*data == MHCMD_MOK_STATE && (ctl->mhi.type == MHT_MK2R || ctl->mhi.type == MHT_MK2Rp)) {
+		if(len != 10) {
+			err("(mhc) invalid cmd length for MOK state! cmd: %d len: %d", *data, len);
+			return;
+		}
+
+		memcpy(ctl->mpk_mok_state, data + 1, 8);
+		return;
+	}
+
+	if(*data == MHCMD_ACC_STATE && (ctl->mhi.type == MHT_MK2R || ctl->mhi.type == MHT_MK2Rp)) {
+		if(len != 10) {
+			err("(mhc) invalid cmd length for ACC state! cmd: %d len: %d", *data, len);
+			return;
+		}
+
+		memcpy(ctl->acc_state, data + 1, 8);
+		return;
+	}
+
+	err("(mhc) invalid state cmd %d for keyer %s", *data, mhr_get_serial(ctl->router));
+}
 
 static void consumer_cb(struct mh_router *router, unsigned const char *data ,int len, int channel, void *user_data) {
 	(void)router; (void)channel;
@@ -307,12 +373,9 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 
 	switch(*data) {
 	case MHCMD_MPK_STATE:
-		f = data[1];
-		dbg0("(mhc) mpk state, pwr: %2.1fV lineUpstream: %d micUpstream: %d", 
-		     ((float)data[2]/10), (f>>0)&1, (f>>1)&1);
-		dbg0("(mhc) mpk state, downstream: %d audioCToAForced: %d, audioAToCForced %d, frontMicSelected: %d", 
-		     (f>>2)&1, (f>>3)&1, (f>>4)&1, (f>>5)&1);
-		dbg0("(mhc) mpk state, steppir V%d.%d", data[4], data[3]);
+	case MHCMD_MOK_STATE:
+	case MHCMD_ACC_STATE:
+		process_keyer_states(ctl, data, len);
 		break;
 
 	case MHCMD_KEYER_MODE:
@@ -351,7 +414,6 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		}
 		set_state(ctl, CTL_STATE_DEVICE_OFF);
 		info("(mhc) %s OFFLINE", mhr_get_serial(ctl->router));
-		ev_timer_start(ctl->loop, &ctl->heartbeat_timer);
 		return;
 	}
 
@@ -396,7 +458,7 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		if(ctl->speed_idx < MH_NUM_CHANNELS)
 			break;
 
-		//ctl->speed_idx = 0;
+		ctl->speed_idx = 0;
 
 		// kcfg
 		if(ctl->kcfg == NULL)
@@ -421,14 +483,8 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		dbg0("(mhc) upload config ok");
 		info("(mhc) %s ONLINE", mhr_get_serial(ctl->router));
 		set_state(ctl, CTL_STATE_OK);
-		ev_timer_start(ctl->loop, &ctl->heartbeat_timer);
 		break;
 	}
-
-	// some initialization step failed, start probing
-	if(ctl->state == CTL_STATE_DEVICE_OFF)
-		ev_timer_start(ctl->loop, &ctl->heartbeat_timer);
-
 }
 
 static void flags_cb(struct mh_router *router, const uint8_t *data ,int len, int channel, void *user_data) {
@@ -477,7 +533,6 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 
 	struct mh_control *ctl = user_data;
 	if(status == MHROUTER_CONNECTED) {
-		//ev_timer_start(ctl->loop, &ctl->heartbeat_timer);
 		switch(ctl->state) {
 		case CTL_STATE_DEVICE_DISC:
 		case CTL_STATE_DEVICE_OFF:
@@ -490,7 +545,6 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 		}
 	}
 	if(status == MHROUTER_DISCONNECTED) {
-		ev_timer_stop(ctl->loop, &ctl->heartbeat_timer);
 		set_state(ctl, CTL_STATE_DEVICE_DISC);
 		info("(mhc) %s DISCONNECTED", mhr_get_serial(ctl->router));
 	}
@@ -505,7 +559,6 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	ctl = w_calloc(1, sizeof(*ctl));
 	ctl->loop = loop;
 	ctl->router = router;
-	ctl->heartbeat_timer.data = ctl;
 	ctl->set_mode = -1;
 
 	PG_NewList(&ctl->cmd_list);
@@ -519,7 +572,9 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	ctl->kcfg = kcfg_create(&ctl->mhi);
 
 	ev_timer_init(&ctl->heartbeat_timer, heartbeat_cb, 0., IVAL_HEARTBEAT);
+	ev_timer_init(&ctl->info_timer, info_timer_cb, 0., IVAL_INFO);
 	ctl->heartbeat_timer.data = ctl;
+	ctl->info_timer.data = ctl;
 
 	ev_timer_init(&ctl->cmd_timeout_timer, cmd_timeout_cb, CMD_TIMEOUT, 0.);
 	ctl->cmd_timeout_timer.data = ctl;
@@ -540,6 +595,7 @@ void mhc_destroy(struct mh_control *ctl) {
 	dbg1("(mhc) %s()", __func__);
 
 	ev_timer_stop(ctl->loop, &ctl->heartbeat_timer);
+	ev_timer_stop(ctl->loop, &ctl->info_timer);
 	ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
 
 	mhr_rem_status_cb(ctl->router, router_status_cb);
@@ -566,8 +622,6 @@ void mhc_destroy(struct mh_control *ctl) {
 			cfg_destroy(ctl->speed_args[i]);
 	}
 
-
-	ev_timer_stop(ctl->loop, &ctl->heartbeat_timer);
 	free(ctl);
 }
 
