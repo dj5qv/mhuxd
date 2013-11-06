@@ -76,7 +76,8 @@ am_mhuxd_OBJECTS = mhuxd-buffer.$(OBJEXT) mhuxd-demux.$(OBJEXT) \
 	mhuxd-http_parser.$(OBJEXT) mhuxd-http_server.$(OBJEXT) \
 	mhuxd-webui.$(OBJEXT) mhuxd-cfgnod.$(OBJEXT) \
 	mhuxd-version.$(OBJEXT) mhuxd-http_parse_query.$(OBJEXT) \
-	mhuxd-radiotypes.$(OBJEXT) mhuxd-wkman.$(OBJEXT)
+	mhuxd-radiotypes.$(OBJEXT) mhuxd-wkman.$(OBJEXT) \
+	mhuxd-proc_mcp.$(OBJEXT)
 mhuxd_OBJECTS = $(am_mhuxd_OBJECTS)
 mhuxd_LINK = $(CCLD) $(mhuxd_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
@@ -247,12 +248,12 @@ mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 		mhcontrol.c mhinfo.c mhrouter.c mux.c net.c opts.c pglist.c tty.c util.c \
 		conmgr.c con_vsp.c con_tcp.c linux_termios.c channel.c cfgmgr.c \
 		daemon.c http_parser.c http_server.c webui.c cfgnod.c version.c \
-		http_parse_query.c radiotypes.c wkman.c \
+		http_parse_query.c radiotypes.c wkman.c proc_mcp.c \
 		buffer.h demux.h devmgr.h kcfg.h linux_udev.h logger.h main.h \
 		mhcontrol.h mhinfo.h mhrouter.h mux.h net.h opts.h pglist.h tty.h util.h \
 		conmgr.h con_vsp.h con_tcp.h linux_termios.h channel.h cfgmgr.h \
 		daemon.h http_parser.h http_server.h http_codes.h webui.h obuf.h cfgnod.h \
-		version.h http_parse_query.h radiotypes.h wkman.h mhflags.h
+		version.h http_parse_query.h radiotypes.h wkman.h mhflags.h proc_mcp.h
 
 all: all-recursive
 
@@ -363,6 +364,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-net.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-opts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-pglist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-proc_mcp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-radiotypes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-tty.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-util.Po@am__quote@
@@ -817,6 +819,20 @@ mhuxd-wkman.obj: wkman.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='wkman.c' object='mhuxd-wkman.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-wkman.obj `if test -f 'wkman.c'; then $(CYGPATH_W) 'wkman.c'; else $(CYGPATH_W) '$(srcdir)/wkman.c'; fi`
+
+mhuxd-proc_mcp.o: proc_mcp.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-proc_mcp.o -MD -MP -MF $(DEPDIR)/mhuxd-proc_mcp.Tpo -c -o mhuxd-proc_mcp.o `test -f 'proc_mcp.c' || echo '$(srcdir)/'`proc_mcp.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-proc_mcp.Tpo $(DEPDIR)/mhuxd-proc_mcp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='proc_mcp.c' object='mhuxd-proc_mcp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-proc_mcp.o `test -f 'proc_mcp.c' || echo '$(srcdir)/'`proc_mcp.c
+
+mhuxd-proc_mcp.obj: proc_mcp.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-proc_mcp.obj -MD -MP -MF $(DEPDIR)/mhuxd-proc_mcp.Tpo -c -o mhuxd-proc_mcp.obj `if test -f 'proc_mcp.c'; then $(CYGPATH_W) 'proc_mcp.c'; else $(CYGPATH_W) '$(srcdir)/proc_mcp.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-proc_mcp.Tpo $(DEPDIR)/mhuxd-proc_mcp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='proc_mcp.c' object='mhuxd-proc_mcp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-proc_mcp.obj `if test -f 'proc_mcp.c'; then $(CYGPATH_W) 'proc_mcp.c'; else $(CYGPATH_W) '$(srcdir)/proc_mcp.c'; fi`
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
