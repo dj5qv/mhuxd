@@ -396,7 +396,7 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		if(ctl->speed_idx < MH_NUM_CHANNELS)
 			break;
 
-		//ctl->speed_idx = 0;
+		ctl->speed_idx = 0;
 
 		// kcfg
 		if(ctl->kcfg == NULL)
