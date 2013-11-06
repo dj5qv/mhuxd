@@ -542,6 +542,8 @@ void mhc_destroy(struct mh_control *ctl) {
 	ev_timer_stop(ctl->loop, &ctl->heartbeat_timer);
 	ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
 
+	mhr_rem_status_cb(ctl->router, router_status_cb);
+
 	while((sccb = (void*)PG_FIRSTENTRY(&ctl->state_changed_cb_list))) {
 		PG_Remove(&sccb->node);
 		free(sccb);
