@@ -30,7 +30,7 @@ static struct level level_map[] = {
 	{ "DEBUG1", LOGSV_DBG1 }
 };
 
-static int log_level = LOGSV_DFL;
+int log_level = LOGSV_DFL;
 static FILE *file = NULL;
 
 static int current_time(char buf[32]) {
@@ -66,10 +66,6 @@ int log_set_level_by_str(const char *s) {
 		}
 	}
 	return -1;
-}
-
-int log_get_level() {
-	return log_level;
 }
 
 const char *log_get_level_str() {
