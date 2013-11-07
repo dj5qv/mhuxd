@@ -19,6 +19,7 @@
 #include "mhinfo.h"
 #include "kcfg.h"
 #include "cfgnod.h"
+#include "mhstates.h"
 
 #define MAX_CMD_LEN 128
 #define MAX_CMD_QUEUE_SIZE 16
@@ -302,22 +303,14 @@ static const char *keyer_modes[] = {
  *  Process MPK State, MOK State, ACC State and U2R State
  */
 static void process_keyer_states(struct mh_control *ctl, unsigned const char *data, int len) {
-	int f;
 
 	if(*data == MHCMD_MPK_STATE && (ctl->mhi.type == MHT_MK2 || ctl->mhi.type == MHT_DK2)) {
 		if(len != 6) {
 			err("(mhc) invalid cmd length for MPK/DK2 state! cmd: %d len: %d", *data, len);
 			return;
 		}
-
-		f = data[1];
-		dbg0("(mhc) mpk state, pwr: %2.1fV lineUpstream: %d micUpstream: %d",
-		     ((float)data[2]/10), (f>>0)&1, (f>>1)&1);
-		dbg0("(mhc) mpk state, downstream: %d audioCToAForced: %d, audioAToCForced %d, frontMicSelected: %d",
-		     (f>>2)&1, (f>>3)&1, (f>>4)&1, (f>>5)&1);
-		dbg0("(mhc) mpk state, steppir V%d.%d", data[4], data[3]);
-
 		memcpy(ctl->mpk_mok_state, data + 1, 8);
+		mk2_debug_print_mpk_values(ctl->mpk_mok_state);
 		return;
 	}
 
@@ -328,6 +321,7 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 		}
 
 		memcpy(ctl->mpk_mok_state, data + 1, 8);
+		mk2r_debug_print_mok_values(ctl->mpk_mok_state);
 		return;
 	}
 
