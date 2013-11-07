@@ -30,6 +30,7 @@ void log_init(FILE *f);
 void log_set_ident(const char *);
 void log_set_level(int level);
 int log_set_level_by_str(const char *s);
+int log_get_level();
 const char *log_get_level_str();
 void log_hex(int severity, const char *header, const char *buf, int len);
 void log_msg(int severity, const char *fmt, ...)

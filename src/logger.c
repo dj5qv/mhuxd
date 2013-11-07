@@ -68,6 +68,10 @@ int log_set_level_by_str(const char *s) {
 	return -1;
 }
 
+int log_get_level() {
+	return log_level;
+}
+
 const char *log_get_level_str() {
 	uint16_t i;
 	for(i = 0; i < sizeof(level_map) / sizeof(struct level); i++) {
