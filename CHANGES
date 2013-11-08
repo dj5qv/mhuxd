@@ -1,3 +1,9 @@
+0.50rc2
+  * mhuxd did not set radio serial parameters when the keyer was switched off 
+    and on again
+  * In WebUI 'Add Port' the keyer selection now also shows the serial number
+  * some minor fixes
+
 0.50rc1
  - major rewrite, completely single threaded now
  - uses libev
