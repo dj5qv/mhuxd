@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([mhuxd], [0.50rc1], [mhuxd@maxec.de])
+AC_INIT([mhuxd], [0.50rc2], [mhuxd@maxec.de])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
 AC_PROG_CC
