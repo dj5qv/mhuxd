@@ -25,8 +25,6 @@ struct citem mok_items[] = {
 { "dvkFocus", 0, 3, 1 },
 { "earsAuto", 0, 4, 1 },
 { "directControl", 0, 5, 1 },
-//{ "reserve1", 0, 6, 1 },
-//{ "reserve2", 0, 7, 1 },
 
 { "lptCw", 0, 8, 1 },
 { "lptCw", 0, 9, 1 },
@@ -34,8 +32,6 @@ struct citem mok_items[] = {
 { "lptRxFocusPin", 0, 11, 1 },
 { "lptStereoFocusPin", 0, 12, 1 },
 { "focusAuto", 0, 13, 1 },
-//{ "reserve3", 0, 14, 1 },
-//{ "reserve4", 0, 15, 1 },
 
 { "ears.left.r1Main", 0, 16, 1 },
 { "ears.left.r1Sub", 0, 17, 1 },
@@ -69,19 +65,39 @@ struct citem mpk_items[] = {
 { "audioCToAForced", 0, 3, 1 },
 { "audioAToCForced", 0, 4, 1 },
 { "frontMicSelected", 0, 5, 1 },
-//{ "reserve1", 0, 6, 1 },
-//{ "reserve2", 0, 7, 1 },
 
 { "sysPwrVoltage", 1, 7, 8 },
 { "steppirVer", 2, 7, 8 },
 { "steppirVerHi", 3, 7, 8 },
 };
 
+struct citem mk2r_hfocus_items[] = {
+	{"txFocus", 0, 0, 1 },
+	{"rxFocus", 0, 1, 1 },
+	{"stereoFocus", 0, 2, 1 },
+	{"wkControledByApp", 0, 3, 1 },
+	{"directControl", 0, 4, 1 },
+
+	{"ears.left.r1Main", 1, 0, 1 },
+	{"ears.left.r1Sub", 1, 1, 1 },
+	{"ears.left.scLeft", 1, 2, 1 },
+	{"ears.left.scRight", 1, 3, 1 },
+	{"ears.left.r2Main", 1, 4, 1 },
+	{"ears.left.r2Sub", 1, 5, 1 },
+
+	{"ears.right.r1Main", 2, 0, 1 },
+	{"ears.right.r1Sub", 2, 1, 1 },
+	{"ears.right.scLeft", 2, 2, 1 },
+	{"ears.right.scRight", 2, 3, 1 },
+	{"ears.right.r2Main", 2, 4, 1 },
+	{"ears.right.r2Sub", 2, 5, 1 },
+};
+
 static const struct citem *find_citem(struct citem *items,  uint16_t array_size, const char *key) {
 	uint16_t i;
 
 	for(i = 0; i < array_size; i++) {
-		if(!strcasecmp(key, items[i].key))
+		if(!strcmp(key, items[i].key))
 			return &items[i];
 	}
 	return NULL;
@@ -146,5 +162,67 @@ void mk2_debug_print_mpk_values(const uint8_t mpk_buffer[4]) {
 
 	for(i = 0; i < ARRAY_SIZE(mpk_items); i++) {
 		dbg1("(mhstates) mpk %s: %d", mpk_items[i].key, mk2_get_mpk_value(mpk_buffer, mpk_items[i].key));
+	}
+}
+
+
+int mk2r_set_hfocus_value(uint8_t hfocus_buffer[4], const char *key, int value) {
+	const struct citem *cp;
+	int c;
+	int idx, bit, mask;
+
+	cp = find_citem(mk2r_hfocus_items, ARRAY_SIZE(mk2r_hfocus_items), key);
+	if(!cp) {
+		err("(mhstates) unknown host focus option: %s", key);
+		return -1;
+	}
+
+	idx = cp->off + cp->base_bit / 8;
+	bit = cp->base_bit % 8;
+	mask = width2mask(cp->width);
+
+	c = hfocus_buffer[idx];
+
+	if(value > mask) {
+		err("(mhstates) %s() invalid value %d for %s", __func__, value, key);
+		return -1;
+	}
+
+	c &= ~(mask << (bit + 1 - cp->width));
+	c |=  (value << (bit + 1 - cp->width));
+
+	hfocus_buffer[idx] = c;
+
+	dbg1("(mhstates) set host focus: %s = %d", key, value);
+
+	return 0;
+}
+
+static const char *copy_keys[] = {
+	"txFocus",
+	"rxFocus",
+	"stereoFocus",
+	// "wkControledByApp",
+	"directControl",
+	"ears.left.r1Main",
+	"ears.left.r1Sub",
+	"ears.left.scLeft",
+	"ears.left.scRight",
+	"ears.left.r2Main",
+	"ears.left.r2Sub",
+	"ears.right.r1Main",
+	"ears.right.r1Sub",
+	"ears.right.scLeft",
+	"ears.right.scRight",
+	"ears.right.r2Main",
+	"ears.right.r2Sub",
+	NULL
+};
+
+void mk2r_set_hfocus_from_mok(uint8_t hfocus_buffer[4], const uint8_t mok_buffer[8]) {
+	const char **p;
+
+	for(p = copy_keys; *p; p++) {
+		mk2r_set_hfocus_value(hfocus_buffer, *p, mk2r_get_mok_value(mok_buffer, *p));
 	}
 }
