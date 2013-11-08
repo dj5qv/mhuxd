@@ -64,37 +64,37 @@ static void hfocus_completion_cb(unsigned const char *reply_buf, int len, int re
  */
 static int process_cmd(struct proc_mcp *mcp) {
 	struct buffer b;
-	uint8_t hfocus;
+	uint8_t hfocus[8];
 
 	if(!mcp->cmd_len)
 		return -1;
 
 	dbg1("(mcp) command: %s", mcp->cmd);
 
-	mhc_mk2r_get_hfocus(mcp->ctl, &hfocus);
+	mhc_mk2r_get_hfocus(mcp->ctl, hfocus);
 
 	if(!strcmp(mcp->cmd, "FT1")) {
-		mk2r_set_hfocus_value(&hfocus, "txFocus", 0);
+		mk2r_set_hfocus_value(hfocus, "txFocus", 0);
 		goto set_hfocus;
 	}
 
 	if(!strcmp(mcp->cmd, "FT2")) {
-		mk2r_set_hfocus_value(&hfocus, "txFocus", 1);
+		mk2r_set_hfocus_value(hfocus, "txFocus", 1);
 		goto set_hfocus;
 	}
 
 	if(!strcmp(mcp->cmd, "FR1")) {
-		mk2r_set_hfocus_value(&hfocus, "rxFocus", 0);
+		mk2r_set_hfocus_value(hfocus, "rxFocus", 0);
 		goto set_hfocus;
 	}
 
 	if(!strcmp(mcp->cmd, "FR2")) {
-		mk2r_set_hfocus_value(&hfocus, "rxFocus", 1);
+		mk2r_set_hfocus_value(hfocus, "rxFocus", 1);
 		goto set_hfocus;
 	}
 
 	if(!strcmp(mcp->cmd, "FRS")) {
-		mk2r_set_hfocus_value(&hfocus, "stereoFocus", 1);
+		mk2r_set_hfocus_value(hfocus, "stereoFocus", 1);
 		goto set_hfocus;
 	}
 
@@ -103,7 +103,7 @@ static int process_cmd(struct proc_mcp *mcp) {
 
 set_hfocus:
 
-	return mhc_mk2r_set_hfocus(mcp->ctl, &hfocus, hfocus_completion_cb, mcp);
+	return mhc_mk2r_set_hfocus(mcp->ctl, hfocus, hfocus_completion_cb, mcp);
 
 }
 
