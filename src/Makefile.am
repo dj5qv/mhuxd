@@ -1,9 +1,11 @@
 SUBDIRS = clearsilver
 sbin_PROGRAMS = mhuxd 
+BRANCH := $(shell git symbolic-ref --short -q HEAD)
 
 mhuxd_CFLAGS = -g -Wall -Wextra -Wno-strict-aliasing -D_GNU_SOURCE -DEV_NO_THREADS $(FUSE_CFLAGS) \
 	$(UDEV_CFLAGS) -DLOGDIR=\"$(LOGDIR)\" -DSTATEDIR=\"$(STATEDIR)\" -DRUNDIR=\"$(RUNDIR)\" \
-	-DDATADIR=\"$(datadir)\" -DWEBUIDIR=\"$(WEBUIDIR)\" -DHDFDIR=\"$(HDFDIR)\" -Iclearsilver
+	-DDATADIR=\"$(datadir)\" -DWEBUIDIR=\"$(WEBUIDIR)\" -DHDFDIR=\"$(HDFDIR)\" -DBRANCH=\"$(BRANCH)\" \
+	-Iclearsilver
 mhuxd_DEPENDENCIES = clearsilver/libclearsilver.a
 mhuxd_LDADD  = -Lclearsilver -lclearsilver
 mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
