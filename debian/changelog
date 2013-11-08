@@ -1,3 +1,11 @@
+mhuxd (0.50rc2-1) raring; urgency=low
+  * mhuxd did not set radio serial parameters when the keyer was switched off 
+    and on again
+  * In WebUI 'Add Port' the keyer selection now also shows the serial number
+  * some minor fixes
+
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 08 Nov 2013 02:55:00 +0200
+
 mhuxd (0.50rc1-2) raring; urgency=low
   * large parts rewritten
   * added web interface for keyer configuration
@@ -8,7 +16,7 @@ mhuxd (0.50rc1-2) raring; urgency=low
   * added missing ioctls TCSETSF & TCSETSW
   * fixed several bugs
 
- -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 09 Oct 2013 18:30:00 +0200
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 02 Nov 2013 01:00:00 +0200
 
 mhuxd (0.33-5) raring; urgency=low
   * fixed incorrect libudev dependency on Ubuntu 13.04/13.10
