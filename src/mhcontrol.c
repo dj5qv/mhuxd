@@ -19,7 +19,7 @@
 #include "mhinfo.h"
 #include "kcfg.h"
 #include "cfgnod.h"
-#include "mhstates.h"
+#include "mhmok.h"
 
 #define MAX_CMD_LEN 128
 #define MAX_CMD_QUEUE_SIZE 16

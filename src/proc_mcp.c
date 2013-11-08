@@ -12,7 +12,7 @@
 #include "buffer.h"
 #include "logger.h"
 #include "mhcontrol.h"
-#include "mhstates.h"
+#include "mhmok.h"
 
 #define MCP_MAX_CMD_SIZE (32)
 
