@@ -7,10 +7,12 @@
  */
 
 #include <stdint.h>
+#include "proc_mcp.h"
 #include "util.h"
 #include "buffer.h"
 #include "logger.h"
 #include "mhcontrol.h"
+#include "mhstates.h"
 
 #define MCP_MAX_CMD_SIZE (32)
 
@@ -32,9 +34,77 @@ void mcp_destroy(struct proc_mcp *mcp) {
 	free(mcp);
 }
 
-static void process_cmd(struct proc_mcp *mcp) {
-	if(!mcp->cmd_len)
+static void hfocus_completion_cb(unsigned const char *reply_buf, int len, int result, void *user_data)  {
+	if(result != CMD_RESULT_OK) {
+		err("(mcp) HOST FOCUS command failed: %s!", mhc_cmd_err_string(result));
 		return;
+	}
+	dbg1("(mcp) HOST FOCUS cmd ok :)");
+}
+
+/*
+ * FT1<CR> SetTxFocus(R1) -> hfocus/txFocus = 0
+ * FT2<CR> SetTxFocus(R2) -> hfocus/txFocus = 1
+ * FR1<CR> SetRxFocus(R1) -> hfocus/rxFocus = 0
+ * FR2<CR> SetRxFocus(R2) -> hfocus/rxFocus = 1
+ * FRS<CR> SetRxFocus(STEREO) -> hfocus/stereoFocus = 1
+ * FRDxxxxxxxxxxxx<CR> SetRxFocus(DIRECT) -> TBC
+ * AM1xxxxxxxxxxxxxxxx<CR> SetAccOutputs(R1, outputs) -> TBC
+ * AM2xxxxxxxxxxxxxxxx<CR> SetAccOutputs(R2, outputs) -> TBC
+ * AS1dd<CR> SetAccOutputSelection(R1, selection) -> TBC
+ * AS2dd<CR> SetAccOutputSelection(R2, selection) -> TBC
+ * SAs<CR> ApplyScenario(scenarioIndex) -> mhc/APPLY SCENARIO
+ * MA<CR> AbortMessage() -> mhc/ABORT CW/FSK MESSAGE
+ * MPm<CR> PlayMessage(msgIndex) -> mhc/PLAY CW/FSK MESSAGE
+ * MPImi<CR> PlayMessagePeriodically(msgIndex, interval) -> TBC, probably to be implemented in router
+ * MRm<CR> StartMessageRecording(msgIndex) -> mhc/RECORD CW/FSK MESSAGE
+ * MRS<CR> StopMessageRecording() -> mhc/RECORD CW/FSK MESSAGE
+ * MBname<CR> SetMessageBank(msgName) -> TBC, probably implemented in router
+ *
+ */
+static int process_cmd(struct proc_mcp *mcp) {
+	struct buffer b;
+	uint8_t hfocus;
+
+	if(!mcp->cmd_len)
+		return -1;
+
+	dbg1("(mcp) command: %s", mcp->cmd);
+
+	mhc_mk2r_get_hfocus(mcp->ctl, &hfocus);
+
+	if(!strcmp(mcp->cmd, "FT1")) {
+		mk2r_set_hfocus_value(&hfocus, "txFocus", 0);
+		goto set_hfocus;
+	}
+
+	if(!strcmp(mcp->cmd, "FT2")) {
+		mk2r_set_hfocus_value(&hfocus, "txFocus", 1);
+		goto set_hfocus;
+	}
+
+	if(!strcmp(mcp->cmd, "FR1")) {
+		mk2r_set_hfocus_value(&hfocus, "rxFocus", 0);
+		goto set_hfocus;
+	}
+
+	if(!strcmp(mcp->cmd, "FR2")) {
+		mk2r_set_hfocus_value(&hfocus, "rxFocus", 1);
+		goto set_hfocus;
+	}
+
+	if(!strcmp(mcp->cmd, "FRS")) {
+		mk2r_set_hfocus_value(&hfocus, "stereoFocus", 1);
+		goto set_hfocus;
+	}
+
+
+	return -1;
+
+set_hfocus:
+
+	return mhc_mk2r_set_hfocus(mcp->ctl, &hfocus, hfocus_completion_cb, mcp);
+
 }
 
 void mcp_cb(struct mh_router *router, int channel, struct buffer *b, void *user_data) {
@@ -42,7 +112,7 @@ void mcp_cb(struct mh_router *router, int channel, struct buffer *b, void *user_
 	struct proc_mcp *mcp = user_data;
 	int c;
 
-	dbg1("(mhr) %s()", __func__);
+	dbg1("(mcp) %s()", __func__);
 
 	while(-1 != (c = buf_get_c(b))) {
 
@@ -55,13 +125,17 @@ void mcp_cb(struct mh_router *router, int channel, struct buffer *b, void *user_
 		}
 
 		if(c == 0x0d || c == 0x0a) {
-			process_cmd(mcp);
+			mcp->cmd[mcp->cmd_len] = 0;
+			if(-1 == process_cmd(mcp)) {
+				err("(mcp) error processing command: %s", mcp->cmd);
+			}
+			mcp->cmd_len = 0;
 			continue;
 		}
 
 		if(mcp->cmd_len >= MCP_MAX_CMD_SIZE) {
 			mcp->cmd_overflow = 1;
-			err("(mcp) command too long (%s)", mcp->cmd);
+			err("(mcp) command too long: %s(...)", mcp->cmd);
 			continue;
 		}
 
