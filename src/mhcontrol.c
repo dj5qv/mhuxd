@@ -579,9 +579,6 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	mhr_add_consumer_cb(router, consumer_cb, MH_CHANNEL_CONTROL, ctl);
 	mhr_add_consumer_cb(router, flags_cb, MH_CHANNEL_FLAGS, ctl);
 
-
-	mk2r_set_hfocus_from_mok(ctl->hfocus, ctl->mpk_mok_state);
-
 	return ctl;
 }
 
