@@ -45,7 +45,6 @@ const struct mh_info *mhc_get_mhinfo(struct mh_control *ctl);
 int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb cb, void *user_data);
 uint16_t mhc_get_type(struct mh_control *);
 const struct cfg *mhc_get_speed_args(struct mh_control *ctl, int channel);
-int mhc_set_kopts(struct mh_control *ctl, struct cfg *);
 int mhc_set_kopt(struct mh_control *ctl, const char *key, int val);
 int mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_data);
 int mhc_kopts_to_cfg(struct mh_control *ctl, struct cfg *cfg);
@@ -54,5 +53,9 @@ void mhc_rem_state_changed_cb(struct mh_control *ctl, mhc_state_changed_cb cb);
 uint8_t mhc_get_state(struct mh_control *ctl);
 const char *mhc_state_str(int state);
 int mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb cb, void *user_data);
+const char *mhc_cmd_err_string(int result);
+
+int mhc_mk2r_set_hfocus(struct mh_control *ctl, uint8_t hfocus[8], mhc_cmd_completion_cb cb, void *user_data);
+int mhc_mk2r_get_hfocus(struct mh_control *ctl, uint8_t dest[8]);
 
 #endif // MHCONTROL_H
