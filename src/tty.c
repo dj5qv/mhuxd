@@ -43,6 +43,8 @@ int tty_open(const char *name) {
 		return -1;
 	}
 
+	tcflush(fd, TCIOFLUSH);
+
 	return fd;
 }
 
