@@ -26,7 +26,7 @@
 #define MSB_BIT (1<<7)
 
 #define IVAL_HEARTBEAT 2.0
-#define IVAL_INFO 4.5
+#define IVAL_INFO 2
 #define CMD_TIMEOUT 1.0
 
 // microHam commands
@@ -203,17 +203,24 @@ static uint8_t state_to_ext_state(uint8_t state) {
 static void set_state(struct mh_control *ctl, uint8_t state) {
 	struct state_changed_cb *sccb;
 	uint8_t new_keyer_state;
-	ctl->state = state;
 
 	if(state == CTL_STATE_DEVICE_DISC)
 		ev_timer_stop(ctl->loop, &ctl->heartbeat_timer);
 	else
 		ev_timer_start(ctl->loop, &ctl->heartbeat_timer);
 
+#if 0
 	if(state == CTL_STATE_OK)
 		ev_timer_start(ctl->loop, &ctl->info_timer);
 	else
 		ev_timer_stop(ctl->loop, &ctl->info_timer);
+#endif
+
+	if(ctl->state != state && state == CTL_STATE_OK)
+		ev_timer_start(ctl->loop, &ctl->info_timer);
+
+	ctl->state = state;
+
 
 	new_keyer_state = state_to_ext_state(state);
 
@@ -275,6 +282,7 @@ static void info_timer_cb (struct ev_loop *loop,  struct ev_timer *w, int revent
 	struct mh_control *ctl = w->data;
 	dbg0("(mhc) info request");
 	submit_cmd_simple(ctl, MHCMD_ON_CONNECT, NULL, ctl);
+	ev_timer_stop(ctl->loop, &ctl->info_timer);
 }
 
 static void cmd_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, int revents) {
