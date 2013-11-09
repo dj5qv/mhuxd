@@ -355,6 +355,7 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 	if(cmd && cmd->state == CMD_STATE_SENT && data[0] == cmd->cmd[0]) {
 		ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
 		PG_Remove(&cmd->node);
+		dbg1_h("(mhc) cmd fm k: ", data, len);
 		if(cmd->cmd_completion_cb)
 			cmd->cmd_completion_cb(data, len, CMD_RESULT_OK, cmd->user_data);
 
@@ -925,6 +926,7 @@ static int push_cmds(struct mh_control *ctl) {
 		return 0;
 #if 1
 	int r = mhr_send(ctl->router, cmd->cmd, cmd->len, MH_CHANNEL_CONTROL);
+	dbg1_h("(mhc) cmd to k: ", cmd->cmd, cmd->len);
 	if(r != cmd->len) {
 		warn("(mhc) could not send command! (%d/%d)", r, cmd->len);
 		return -1;
