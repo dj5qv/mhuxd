@@ -85,16 +85,21 @@ static int process_cmd(struct proc_mcp *mcp) {
 
 	if(!strcmp(mcp->cmd, "FR1")) {
 		mk2r_set_hfocus_value(hfocus, "rxFocus", 0);
+		mk2r_set_hfocus_value(hfocus, "stereoFocus", 0);
+		mk2r_set_hfocus_value(hfocus, "directControl", 0);
 		goto set_hfocus;
 	}
 
 	if(!strcmp(mcp->cmd, "FR2")) {
 		mk2r_set_hfocus_value(hfocus, "rxFocus", 1);
+		mk2r_set_hfocus_value(hfocus, "stereoFocus", 0);
+		mk2r_set_hfocus_value(hfocus, "directControl", 0);
 		goto set_hfocus;
 	}
 
 	if(!strcmp(mcp->cmd, "FRS")) {
 		mk2r_set_hfocus_value(hfocus, "stereoFocus", 1);
+		mk2r_set_hfocus_value(hfocus, "directControl", 0);
 		goto set_hfocus;
 	}
 

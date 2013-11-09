@@ -100,6 +100,7 @@ enum {
 	CTL_STATE_GET_TYPE,
 	CTL_STATE_SET_CHANNELS,
 	CTL_STATE_LOAD_CFG,
+	CTL_STATE_ON_CONNECT,
 	CTL_STATE_OK,
 };
 
@@ -115,6 +116,7 @@ struct state_changed_cb {
 };
 
 struct mh_control {
+	const char *serial;
 	struct mh_router *router;
 	struct ev_loop *loop;
 	struct kcfg *kcfg;
@@ -125,7 +127,6 @@ struct mh_control {
 	//	void *state_chaned_cb_user_data;
 
 	ev_timer heartbeat_timer;
-	ev_timer info_timer;
 	ev_timer cmd_timeout_timer;
 	struct mh_info mhi;
 	struct cfg *speed_args[MH_NUM_CHANNELS];
@@ -185,6 +186,7 @@ static uint8_t state_to_ext_state(uint8_t state) {
 	case CTL_STATE_INIT:
 	case CTL_STATE_SET_CHANNELS:
 	case CTL_STATE_LOAD_CFG:
+	case CTL_STATE_ON_CONNECT:
 		ext_state = MHC_KEYER_STATE_OFFLINE;
 		break;
 	case CTL_STATE_DEVICE_DISC:
@@ -194,6 +196,7 @@ static uint8_t state_to_ext_state(uint8_t state) {
 		ext_state = MHC_KEYER_STATE_ONLINE;
 		break;
 	default:
+		err("(mhc) invalid CTL state %d!", state);
 		ext_state = MHC_KEYER_STATE_UNKNOWN;
 	}
 
@@ -204,23 +207,12 @@ static void set_state(struct mh_control *ctl, uint8_t state) {
 	struct state_changed_cb *sccb;
 	uint8_t new_keyer_state;
 
+	ctl->state = state;
+
 	if(state == CTL_STATE_DEVICE_DISC)
 		ev_timer_stop(ctl->loop, &ctl->heartbeat_timer);
 	else
 		ev_timer_start(ctl->loop, &ctl->heartbeat_timer);
-
-#if 0
-	if(state == CTL_STATE_OK)
-		ev_timer_start(ctl->loop, &ctl->info_timer);
-	else
-		ev_timer_stop(ctl->loop, &ctl->info_timer);
-#endif
-
-	if(ctl->state != state && state == CTL_STATE_OK)
-		ev_timer_start(ctl->loop, &ctl->info_timer);
-
-	ctl->state = state;
-
 
 	new_keyer_state = state_to_ext_state(state);
 
@@ -228,25 +220,17 @@ static void set_state(struct mh_control *ctl, uint8_t state) {
 		ctl->keyer_state = new_keyer_state;
 		PG_SCANLIST(&ctl->state_changed_cb_list, sccb)
 			if(sccb->cb)
-				sccb->cb(mhr_get_serial(ctl->router), ctl->keyer_state, sccb->user_data);
+				sccb->cb(ctl->serial, ctl->keyer_state, sccb->user_data);
 	}
 }
 
 static void generic_cb(unsigned const char *reply, int len, int result, void *user_data) {
-	(void)len;(void)user_data;
-	if(result == CMD_RESULT_OK) {
-		dbg0("(mhc) cmd 0x%02x ok", *reply);
-	}
-	if(result == CMD_RESULT_TIMEOUT) {
-		err("(mhc) cmd timed out!");
-	}
+	(void)len;(void)user_data;(void)reply,(void)result;
 }
 
 static void heartbeat_completed_cb(unsigned const char *reply, int len, int result, void *user_data) {
 	(void)reply; (void)len; (void)user_data;
 	struct mh_control *ctl = user_data;
-
-	dbg1("(mhc) %s()", __func__);
 
 	if(result == CMD_RESULT_OK) {
 		dbg0("(mhc) heartbeat pong");
@@ -259,10 +243,10 @@ static void heartbeat_completed_cb(unsigned const char *reply, int len, int resu
 	if(result == CMD_RESULT_TIMEOUT) {
 		if(ctl->state != CTL_STATE_DEVICE_OFF) {
 			set_state(ctl,CTL_STATE_DEVICE_OFF);
-			warn("(mhc) %s heartbeat timed out!", mhr_get_serial(ctl->router));
-			info("(mhc) %s OFFLINE", mhr_get_serial(ctl->router));
+			warn("(mhc) %s heartbeat timed out!", ctl->serial);
+			info("(mhc) %s OFFLINE", ctl->serial);
 		} else {
-			dbg0("(mhc) %s heartbeat timed out!", mhr_get_serial(ctl->router));
+			dbg0("(mhc) %s heartbeat timed out!", ctl->serial);
 		}
 		return;
 	}
@@ -277,22 +261,13 @@ static void heartbeat_cb (struct ev_loop *loop,  struct ev_timer *w, int revents
 	submit_cmd_simple(ctl, MHCMD_ARE_YOU_THERE, heartbeat_completed_cb, ctl);
 }
 
-static void info_timer_cb (struct ev_loop *loop,  struct ev_timer *w, int revents) {
-	(void)loop;(void)revents;
-	struct mh_control *ctl = w->data;
-	dbg0("(mhc) info request");
-	submit_cmd_simple(ctl, MHCMD_ON_CONNECT, NULL, ctl);
-	ev_timer_stop(ctl->loop, &ctl->info_timer);
-}
-
 static void cmd_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, int revents) {
 	(void)loop; (void)revents;
 	struct mh_control *ctl = w->data;
 	struct command *cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list);
 
-	dbg0("(mhc) cmd_timeout_cb()");
-
 	if(cmd && cmd->state == CMD_STATE_SENT) {
+		dbg1_h("(mhc) command timed out: ", cmd->cmd, cmd->len);
 		PG_Remove(&cmd->node);
 		if(cmd->cmd_completion_cb)
 			cmd->cmd_completion_cb(NULL, 0, CMD_RESULT_TIMEOUT, cmd->user_data);
@@ -344,7 +319,7 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 		return;
 	}
 
-	err("(mhc) invalid state cmd %d for keyer %s", *data, mhr_get_serial(ctl->router));
+	err("(mhc) invalid state cmd %d for keyer %s", *data, ctl->serial);
 }
 
 static void consumer_cb(struct mh_router *router, unsigned const char *data ,int len, int channel, void *user_data) {
@@ -384,7 +359,7 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 
 	case MHCMD_KEYER_MODE:
 		f = data[1];
-		dbg0("(mhc) Keyer Mode, cur: %s, r1: %s, r2: %s",
+		dbg0("(mhc) %s mode  cur: %s, r1: %s, r2: %s", ctl->serial,
 		     keyer_modes[f & 3], keyer_modes[(f>>2) & 3],
 		     keyer_modes[(f>>4) & 3]);
 		if(ctl->kcfg)
@@ -392,7 +367,6 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 		break;
 		
 	default:
-		dbg0("(mhc) got command 0x%02x", *data);
 		break;
 	}
 
@@ -410,14 +384,14 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 	// previous step failed?
 	if(result != CMD_RESULT_OK && result != CMD_RESULT_INVALID) {
 		if(result == CMD_RESULT_TIMEOUT) {
-			dbg0("(mhc) initializer timed out");
+			dbg0("(mhc) %s initializer timed out", ctl->serial);
 		}
 		if(result == CMD_RESULT_NOT_SUPPORTED) {
-			dbg0("(mhc) cmd not supported!");
+			dbg0("(mhc) %s cmd not supported!", ctl->serial);
 
 		}
 		set_state(ctl, CTL_STATE_DEVICE_OFF);
-		info("(mhc) %s OFFLINE", mhr_get_serial(ctl->router));
+		info("(mhc) %s OFFLINE", ctl->serial);
 		return;
 	}
 
@@ -425,33 +399,32 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 	switch(ctl->state) {
 	case CTL_STATE_DEVICE_OFF:
 		// kick off the state machine
-		info("(mhc) %s INITIALIZING", mhr_get_serial(ctl->router));
-		dbg0("(mhc) initializer ping");
+		info("(mhc) %s INITIALIZING", ctl->serial);
+		dbg0("(mhc) %s initializer ping", ctl->serial);
 		set_state(ctl, CTL_STATE_INIT);
 		submit_cmd_simple(ctl, MHCMD_ARE_YOU_THERE, initializer_cb, ctl);
 		break;
 	case CTL_STATE_INIT:
-		dbg0("(mhc) initializer ping ok");
+		dbg0("(mhc) %s initializer ping ok", ctl->serial);
 		set_state(ctl, CTL_STATE_GET_TYPE);
 		submit_cmd_simple(ctl, MHCMD_GET_VERSION, initializer_cb, ctl);
-		dbg0("(mhc) get version");
+		dbg0("(mhc) %s get version", ctl->serial);
 		break;
 	case CTL_STATE_GET_TYPE:
-		dbg0("(mhc) get version ok");
 		mhi_parse_version(&ctl->mhi, reply, len);
-		info("(mhc) detected microHam %s firmware %d.%d",
+		info("(mhc) %s detected microHam %s firmware %d.%d", ctl->serial,
 		     ctl->mhi.type_str, ctl->mhi.ver_fw_major, ctl->mhi.ver_fw_minor);
 
 		// fall through
 	case CTL_STATE_SET_CHANNELS:
 		// speeds
 		if(ctl->state == CTL_STATE_SET_CHANNELS)
-			dbg0("(mhc) set channel %d ok", ctl->speed_idx - 1);
+			dbg0("(mhc) %s set channel %d ok", ctl->serial, ctl->speed_idx - 1);
 
 		while(ctl->speed_idx < MH_NUM_CHANNELS) {
 			if(ctl->speed_args[ctl->speed_idx]) {
 				set_state(ctl, CTL_STATE_SET_CHANNELS);
-				dbg0("(mhc) set channel %d", ctl->speed_idx);
+				dbg0("(mhc) %s set channel %d", ctl->serial, ctl->speed_idx);
 				submit_speed_cmd(ctl, ctl->speed_idx, initializer_cb, ctl);
 				ctl->speed_idx++;
 				break;
@@ -481,13 +454,16 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		buf_append_c(&buf, MHCMD_SET_SETTINGS | MSB_BIT);
 		submit_cmd(ctl, &buf, initializer_cb, ctl);
 		set_state(ctl, CTL_STATE_LOAD_CFG);
-		dbg0("(mhc) upload config");
+		dbg0("(mhc) %s upload config", ctl->serial);
 		break;
 	case CTL_STATE_LOAD_CFG:
-		dbg0("(mhc) upload config ok");
-		info("(mhc) %s ONLINE", mhr_get_serial(ctl->router));
-		set_state(ctl, CTL_STATE_OK);
+		dbg0("(mhc) %s requesting status information", ctl->serial);
+		submit_cmd_simple(ctl, MHCMD_ON_CONNECT, initializer_cb, ctl);
+		set_state(ctl, CTL_STATE_ON_CONNECT);
 		break;
+	case CTL_STATE_ON_CONNECT:
+		info("(mhc) %s ONLINE", ctl->serial);
+		set_state(ctl, CTL_STATE_OK);
 	}
 }
 
@@ -508,23 +484,23 @@ static void flags_cb(struct mh_router *router, const uint8_t *data ,int len, int
 		}
 
 		if((*old_flag & MHD2CFL_CTS) != (data[i] & MHD2CFL_CTS)) {
-			dbg0("(mhc) >>fl cts r%d %d", radio, (data[i] & MHD2CFL_CTS) ? 1 : 0);
+			dbg0("(mhc) >> %s fl cts r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_CTS) ? 1 : 0);
 			if(!(data[i] & MHD2CFL_CTS)) {
-				warn("(mhc) CTS went from 1 to 0, CTS handling not implemented!");
+				warn("(mhc) %s CTS went from 1 to 0, CTS handling not implemented!", ctl->serial);
 			}
 		}
 		if((*old_flag & MHD2CFL_LOCKOUT) != (data[i] & MHD2CFL_LOCKOUT))
-			dbg0("(mhc) >>fl cts r%d %d", radio, (data[i] & MHD2CFL_LOCKOUT) ? 1 : 0);
+			dbg0("(mhc) %s fl lockout r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_LOCKOUT) ? 1 : 0);
 		if((*old_flag & MHD2CFL_ANY_PTT) != (data[i] & MHD2CFL_ANY_PTT))
-			dbg0("(mhc) >>fl ptt-any r%d %d", radio, (data[i] & MHD2CFL_ANY_PTT) ? 1 : 0);
+			dbg0("(mhc) %s fl ptt-any r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_ANY_PTT) ? 1 : 0);
 		if((*old_flag & MHD2CFL_SQUELCH) != (data[i] & MHD2CFL_SQUELCH))
-			dbg0("(mhc) >>fl squelch r%d %d", radio, (data[i] & MHD2CFL_SQUELCH) ? 1 : 0);
+			dbg0("(mhc) %s fl squelch r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_SQUELCH) ? 1 : 0);
 		if((*old_flag & MHD2CFL_FSK_BUSY) != (data[i] & MHD2CFL_FSK_BUSY))
-			dbg0("(mhc) >>fl fsk-busy r%d %d", radio, (data[i] & MHD2CFL_FSK_BUSY) ? 1 : 0);
+			dbg0("(mhc) %s fl fsk-busy r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_FSK_BUSY) ? 1 : 0);
 		if((*old_flag & MHD2CFL_NON_VOX_PTT) != (data[i] & MHD2CFL_NON_VOX_PTT))
-			dbg0("(mhc) >>fl non-vox-ptt r%d %d", radio, (data[i] & MHD2CFL_NON_VOX_PTT) ? 1 : 0);
+			dbg0("(mhc) %s fl non-vox-ptt r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_NON_VOX_PTT) ? 1 : 0);
 		if((*old_flag & MHD2CFL_FOOTSWITCH) != (data[i] & MHD2CFL_FOOTSWITCH))
-			dbg0("(mhc) >>fl non-vox-ptt r%d %d", radio, (data[i] & MHD2CFL_FOOTSWITCH) ? 1 : 0);
+			dbg0("(mhc) %s non-vox-ptt r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_FOOTSWITCH) ? 1 : 0);
 
 		*old_flag = data[i];
 	}
@@ -533,15 +509,13 @@ static void flags_cb(struct mh_router *router, const uint8_t *data ,int len, int
 static void router_status_cb(struct mh_router *router, int status, void *user_data) {
 	(void)router;
 
-	dbg1("(mhc) %s() status: %d", __func__, status);
-
 	struct mh_control *ctl = user_data;
 	if(status == MHROUTER_CONNECTED) {
 		switch(ctl->state) {
 		case CTL_STATE_DEVICE_DISC:
 		case CTL_STATE_DEVICE_OFF:
 			// kick off state machine
-			dbg0("(mhc) initializing %s", mhr_get_serial(router));
+			dbg0("(mhc) %s initializing", ctl->serial);
 			set_state(ctl, CTL_STATE_DEVICE_OFF);
 			initializer_cb(NULL, 0, CMD_RESULT_INVALID, ctl);
 			break;
@@ -550,7 +524,7 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 	}
 	if(status == MHROUTER_DISCONNECTED) {
 		set_state(ctl, CTL_STATE_DEVICE_DISC);
-		info("(mhc) %s DISCONNECTED", mhr_get_serial(ctl->router));
+		info("(mhc) %s DISCONNECTED", ctl->serial);
 	}
 }
 
@@ -563,6 +537,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	ctl = w_calloc(1, sizeof(*ctl));
 	ctl->loop = loop;
 	ctl->router = router;
+	ctl->serial = mhr_get_serial(router);
 	ctl->set_mode = -1;
 
 	PG_NewList(&ctl->cmd_list);
@@ -576,9 +551,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	ctl->kcfg = kcfg_create(&ctl->mhi);
 
 	ev_timer_init(&ctl->heartbeat_timer, heartbeat_cb, 0., IVAL_HEARTBEAT);
-	ev_timer_init(&ctl->info_timer, info_timer_cb, 0., IVAL_INFO);
 	ctl->heartbeat_timer.data = ctl;
-	ctl->info_timer.data = ctl;
 
 	ev_timer_init(&ctl->cmd_timeout_timer, cmd_timeout_cb, CMD_TIMEOUT, 0.);
 	ctl->cmd_timeout_timer.data = ctl;
@@ -599,7 +572,6 @@ void mhc_destroy(struct mh_control *ctl) {
 	dbg1("(mhc) %s()", __func__);
 
 	ev_timer_stop(ctl->loop, &ctl->heartbeat_timer);
-	ev_timer_stop(ctl->loop, &ctl->info_timer);
 	ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
 
 	mhr_rem_status_cb(ctl->router, router_status_cb);
@@ -646,7 +618,7 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	int ibaud;
 	uint8_t c, cmd, rtscts, databits, has_ext;
 
-	dbg1("(mhc) %s()", __func__);
+	dbg1("(mhc) %s %s()", ctl->serial, __func__);
 
 	if(channel < 0 || channel >= MH_NUM_CHANNELS) {
 		err("(mhc) %s() invalid channel number %d!", __func__, channel);
@@ -717,8 +689,6 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	}
 	buf_append_c(&buf, cmd | MSB_BIT);
 
-	dbg1_h("(mhc) speed cmd: ", buf.data, buf.size);
-
 	mhr_set_bps_limit(ctl->router, channel, fbaud);
 
 	submit_cmd(ctl, &buf, cb, user_data);
@@ -730,7 +700,7 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 
 int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb cb, void *user_data) {
 
-	dbg1("(mhc) %s()", __func__);
+	dbg1("(mhc) %s %s()",ctl->serial, __func__);
 
 	if(channel < 0 || channel >= MH_NUM_CHANNELS) {
 		err("(mhc) can't set speed, invalid channel (%d) specified!", channel);
@@ -819,7 +789,7 @@ int mhc_set_kopt(struct mh_control *ctl, const char *key, int val) {
 		return -1;
 	}
 
-	dbg0("(mhc) set keyer option %s=%d", key, val);
+	dbg0("(mhc) %s set keyer option %s=%d", ctl->serial, key, val);
 
 	return 0;
 }
@@ -903,7 +873,7 @@ void mhc_add_state_changed_cb(struct mh_control *ctl, mhc_state_changed_cb cb, v
 	sccb->user_data = user_data;
 	PG_AddTail(&ctl->state_changed_cb_list, &sccb->node);
 
-	sccb->cb(mhr_get_serial(ctl->router), ctl->keyer_state, sccb->user_data);
+	sccb->cb(ctl->serial, ctl->keyer_state, sccb->user_data);
 }
 
 void mhc_rem_state_changed_cb(struct mh_control *ctl, mhc_state_changed_cb cb) {
