@@ -42,13 +42,44 @@ static void hfocus_completion_cb(unsigned const char *reply_buf, int len, int re
 	dbg1("(mcp) HOST FOCUS cmd ok :)");
 }
 
+static int frd_to_hfocus(uint8_t hfocus[8], const char *frd_arg) {
+	int i;
+
+	if(strlen(frd_arg) != 12)
+		return -1;
+
+	for(i = 0; i < 12; i++)
+		if(frd_arg[i] != '0' && frd_arg[i] != '1')
+			return -1;
+
+	i = 0;
+
+	mk2r_set_hfocus_value(hfocus, "ears.left.r1Main", frd_arg[i++] == '1');
+	mk2r_set_hfocus_value(hfocus, "ears.left.r1Sub", frd_arg[i++] == '1');
+	mk2r_set_hfocus_value(hfocus, "ears.left.scLeft", frd_arg[i++] == '1');
+	mk2r_set_hfocus_value(hfocus, "ears.left.scRight", frd_arg[i++] == '1');
+	mk2r_set_hfocus_value(hfocus, "ears.left.r2Main", frd_arg[i++] == '1');
+	mk2r_set_hfocus_value(hfocus, "ears.left.r2Sub", frd_arg[i++] == '1');
+
+	mk2r_set_hfocus_value(hfocus, "ears.right.r1Main", frd_arg[i++] == '1');
+	mk2r_set_hfocus_value(hfocus, "ears.right.r1Sub", frd_arg[i++] == '1');
+	mk2r_set_hfocus_value(hfocus, "ears.right.scLeft", frd_arg[i++] == '1');
+	mk2r_set_hfocus_value(hfocus, "ears.right.scRight", frd_arg[i++] == '1');
+	mk2r_set_hfocus_value(hfocus, "ears.right.r2Main", frd_arg[i++] == '1');
+	mk2r_set_hfocus_value(hfocus, "ears.right.r2Sub", frd_arg[i++] == '1');
+
+	mk2r_set_hfocus_value(hfocus, "directControl", 0);
+
+	return 0;
+}
+
 /*
- * FT1<CR> SetTxFocus(R1) -> hfocus/txFocus = 0
- * FT2<CR> SetTxFocus(R2) -> hfocus/txFocus = 1
- * FR1<CR> SetRxFocus(R1) -> hfocus/rxFocus = 0
- * FR2<CR> SetRxFocus(R2) -> hfocus/rxFocus = 1
- * FRS<CR> SetRxFocus(STEREO) -> hfocus/stereoFocus = 1
- * FRDxxxxxxxxxxxx<CR> SetRxFocus(DIRECT) -> TBC
+ * FT1<CR> SetTxFocus(R1)
+ * FT2<CR> SetTxFocus(R2)
+ * FR1<CR> SetRxFocus(R1)
+ * FR2<CR> SetRxFocus(R2)
+ * FRS<CR> SetRxFocus(STEREO)
+ * FRDxxxxxxxxxxxx<CR> SetRxFocus(DIRECT)
  * AM1xxxxxxxxxxxxxxxx<CR> SetAccOutputs(R1, outputs) -> TBC
  * AM2xxxxxxxxxxxxxxxx<CR> SetAccOutputs(R2, outputs) -> TBC
  * AS1dd<CR> SetAccOutputSelection(R1, selection) -> TBC
@@ -66,7 +97,7 @@ static int process_cmd(struct proc_mcp *mcp) {
 	struct buffer b;
 	uint8_t hfocus[8];
 
-	if(!mcp->cmd_len)
+	if(mcp->cmd_len < 2)
 		return -1;
 
 	dbg1("(mcp) command: %s", mcp->cmd);
@@ -103,6 +134,11 @@ static int process_cmd(struct proc_mcp *mcp) {
 		goto set_hfocus;
 	}
 
+	if(!strncmp(mcp->cmd, "FRD", 3)) {
+		if(0 == frd_to_hfocus(hfocus, mcp->cmd + 3))
+			goto set_hfocus;
+	}
+
 
 	return -1;
 
@@ -130,6 +166,9 @@ void mcp_cb(struct mh_router *router, int channel, struct buffer *b, void *user_
 		}
 
 		if(c == 0x0d || c == 0x0a) {
+			if(!mcp->cmd_len)
+				continue;
+
 			mcp->cmd[mcp->cmd_len] = 0;
 			if(-1 == process_cmd(mcp)) {
 				err("(mcp) error processing command: %s", mcp->cmd);
