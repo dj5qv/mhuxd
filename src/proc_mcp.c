@@ -21,6 +21,7 @@ struct proc_mcp {
 	char cmd[MCP_MAX_CMD_SIZE + 1];
 	uint8_t cmd_len;
 	unsigned cmd_overflow;
+	const char *action_name;
 };
 
 struct proc_mcp *mcp_create(struct mh_control *ctl) {
@@ -34,12 +35,15 @@ void mcp_destroy(struct proc_mcp *mcp) {
 	free(mcp);
 }
 
-static void hfocus_completion_cb(unsigned const char *reply_buf, int len, int result, void *user_data)  {
+static void completion_cb(unsigned const char *reply_buf, int len, int result, void *user_data)  {
+	(void)reply_buf; (void)len;
+	struct proc_mcp *mcp = user_data;
+
 	if(result != CMD_RESULT_OK) {
-		err("(mcp) HOST FOCUS command failed: %s!", mhc_cmd_err_string(result));
+		err("(mcp) %s command failed: %s!", mcp->action_name, mhc_cmd_err_string(result));
 		return;
 	}
-	dbg1("(mcp) HOST FOCUS cmd ok :)");
+	dbg1("(mcp) %s cmd ok :)", (const char *)user_data);
 }
 
 static int frd_to_hfocus(uint8_t hfocus[8], const char *frd_arg) {
@@ -94,7 +98,6 @@ static int frd_to_hfocus(uint8_t hfocus[8], const char *frd_arg) {
  *
  */
 static int process_cmd(struct proc_mcp *mcp) {
-	struct buffer b;
 	uint8_t hfocus[8];
 
 	if(mcp->cmd_len < 2)
@@ -139,12 +142,23 @@ static int process_cmd(struct proc_mcp *mcp) {
 			goto set_hfocus;
 	}
 
+	if(!strncmp(mcp->cmd, "SA", 2) && strlen(mcp->cmd) == 3) {
+		char arg[2];
+		arg[0] = mcp->cmd[2];
+		arg[1] = 0;
+		if(arg[0] >= '0' && arg[0] <= '7') {
+			mcp->action_name = "APPLY SCENARIO";
+			return mhc_mk2r_set_scenario(mcp->ctl, atoi(arg), completion_cb, mcp);
+		}
+	}
+
+	err("(mcp) invalid command: %s", mcp->cmd);
 
 	return -1;
 
 set_hfocus:
-
-	return mhc_mk2r_set_hfocus(mcp->ctl, hfocus, hfocus_completion_cb, mcp);
+	mcp->action_name = "HOST FOCUS";
+	return mhc_mk2r_set_hfocus(mcp->ctl, hfocus, completion_cb, mcp);
 
 }
 

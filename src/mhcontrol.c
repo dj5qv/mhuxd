@@ -773,6 +773,15 @@ int mhc_mk2r_get_hfocus(struct mh_control *ctl, uint8_t dest[8]) {
 	return 0;
 }
 
+int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data) {
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_APPLY_SCENARIO);
+	buf_append_c(&b, idx);
+	buf_append_c(&b, MHCMD_APPLY_SCENARIO | MSB_BIT);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
 int mhc_set_kopt(struct mh_control *ctl, const char *key, int val) {
 	if(!key || !*key) {
 		warn("(mhc) %s() nameless config item!", __func__);
