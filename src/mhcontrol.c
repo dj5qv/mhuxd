@@ -368,8 +368,11 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 		break;
 
 	case MHCMD_JUST_RESTARTED:
-		info("(mhc) %s has just been restarted, initializing", ctl->serial);
-		set_state(ctl, CTL_STATE_SET_CHANNELS);
+		if(ctl->state == CTL_STATE_OK) {
+			info("(mhc) %s has just been restarted, initializing", ctl->serial);
+			set_state(ctl, CTL_STATE_SET_CHANNELS);
+		} else
+			info("(mhc) %s has just been restarted", ctl->serial);
 		break;
 
 	case MHCMD_USB_RX_OVERFLOW:
