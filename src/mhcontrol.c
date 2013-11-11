@@ -25,7 +25,7 @@
 #define MAX_CMD_QUEUE_SIZE 16
 #define MSB_BIT (1<<7)
 
-#define IVAL_HEARTBEAT 2.0
+#define IVAL_HEARTBEAT 10
 #define IVAL_INFO 2
 #define CMD_TIMEOUT 1.0
 
@@ -327,10 +327,11 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 	struct mh_control *ctl = user_data;
 	struct command *cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list);
 
+	dbg1_h("(mhc) cmd fm k: ", data, len);
+
 	if(cmd && cmd->state == CMD_STATE_SENT && data[0] == cmd->cmd[0]) {
 		ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
 		PG_Remove(&cmd->node);
-		dbg1_h("(mhc) cmd fm k: ", data, len);
 		if(cmd->cmd_completion_cb)
 			cmd->cmd_completion_cb(data, len, CMD_RESULT_OK, cmd->user_data);
 
@@ -365,7 +366,7 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 		if(ctl->kcfg)
 			kcfg_update_keyer_mode(ctl->kcfg, f & 3, (f>>2) & 3, (f>>4) & 3);
 		break;
-		
+
 	default:
 		break;
 	}
