@@ -372,6 +372,10 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 		set_state(ctl, CTL_STATE_SET_CHANNELS);
 		break;
 
+	case MHCMD_USB_RX_OVERFLOW:
+		warn("(mhc) %s usb rx overflow in keyer", ctl->serial);
+		break;
+
 	default:
 		break;
 	}
