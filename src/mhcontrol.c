@@ -97,7 +97,7 @@ enum {
 	CTL_STATE_DEVICE_OFF,
 	CTL_STATE_DEVICE_DISC,
 	CTL_STATE_INIT,
-	CTL_STATE_GET_TYPE,
+	CTL_STATE_GET_VERSION,
 	CTL_STATE_SET_CHANNELS,
 	CTL_STATE_LOAD_CFG,
 	CTL_STATE_ON_CONNECT,
@@ -182,7 +182,7 @@ static uint8_t state_to_ext_state(uint8_t state) {
 		ext_state = MHC_KEYER_STATE_DISABLED;
 		break;
 	case CTL_STATE_DEVICE_OFF:
-	case CTL_STATE_GET_TYPE:
+	case CTL_STATE_GET_VERSION:
 	case CTL_STATE_INIT:
 	case CTL_STATE_SET_CHANNELS:
 	case CTL_STATE_LOAD_CFG:
@@ -406,11 +406,11 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		break;
 	case CTL_STATE_INIT:
 		dbg0("(mhc) %s initializer ping ok", ctl->serial);
-		set_state(ctl, CTL_STATE_GET_TYPE);
+		set_state(ctl, CTL_STATE_GET_VERSION);
 		submit_cmd_simple(ctl, MHCMD_GET_VERSION, initializer_cb, ctl);
 		dbg0("(mhc) %s get version", ctl->serial);
 		break;
-	case CTL_STATE_GET_TYPE:
+	case CTL_STATE_GET_VERSION:
 		mhi_parse_version(&ctl->mhi, reply, len);
 		info("(mhc) %s detected microHam %s firmware %d.%d", ctl->serial,
 		     ctl->mhi.type_str, ctl->mhi.ver_fw_major, ctl->mhi.ver_fw_minor);
