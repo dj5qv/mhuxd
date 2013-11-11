@@ -367,6 +367,11 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 			kcfg_update_keyer_mode(ctl->kcfg, f & 3, (f>>2) & 3, (f>>4) & 3);
 		break;
 
+	case MHCMD_JUST_RESTARTED:
+		info("(mhc) %s has just been restarted, initializing", ctl->serial);
+		set_state(ctl, CTL_STATE_SET_CHANNELS);
+		break;
+
 	default:
 		break;
 	}
