@@ -25,7 +25,7 @@
 #define MAX_CMD_QUEUE_SIZE 16
 #define MSB_BIT (1<<7)
 
-#define IVAL_HEARTBEAT 10
+#define IVAL_HEARTBEAT 2
 #define IVAL_INFO 2
 #define CMD_TIMEOUT 1.0
 
