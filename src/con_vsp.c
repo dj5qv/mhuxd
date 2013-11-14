@@ -818,6 +818,8 @@ void vsp_destroy(struct vsp *vsp) {
 				err("(vsp) %s() %s could not send PTT off", __func__, vsp->devname);
 		}
 
+		if(vs->ph)
+			fuse_pollhandle_destroy(vs->ph);
 		if(vs->pending_in_req)
 			fuse_reply_err(vs->pending_in_req, EINTR);
 		if(vs->pending_out_req)
