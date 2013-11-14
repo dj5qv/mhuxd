@@ -58,7 +58,7 @@ static void completion_cb(unsigned const char *reply_buf, int len, int result, v
 		send_err_response(mcp->fd, mcp->cmd);
 		return;
 	}
-	dbg1("(mcp) %s cmd ok :)", (const char *)user_data);
+	dbg1("(mcp) %s cmd ok", mcp->action_name);
 }
 
 static int frd_to_hfocus(uint8_t hfocus[8], const char *frd_arg) {
@@ -166,6 +166,37 @@ static int process_cmd(struct proc_mcp *mcp) {
 			return mhc_mk2r_set_scenario(mcp->ctl, atoi(arg), completion_cb, mcp);
 		}
 	}
+
+	if(!strncmp(mcp->cmd, "MR", 2) && strlen(mcp->cmd) == 3) {
+		char arg[2];
+		arg[0] = mcp->cmd[2];
+		arg[1] = 0;
+		if(arg[0] >= '1' && arg[0] <= '9') {
+			mcp->action_name = "RECORD MESSAGE";
+			return mhc_record_message(mcp->ctl, atoi(arg), completion_cb, mcp);
+		}
+	}
+
+	if(!strncmp(mcp->cmd, "MP", 2) && strlen(mcp->cmd) == 3) {
+		char arg[2];
+		arg[0] = mcp->cmd[2];
+		arg[1] = 0;
+		if(arg[0] >= '1' && arg[0] <= '9') {
+			mcp->action_name = "PLAY MESSAGE";
+			return mhc_play_message(mcp->ctl, atoi(arg), completion_cb, mcp);
+		}
+	}
+
+	if(!strcmp(mcp->cmd, "MRS")) {
+		mcp->action_name = "STOP RECORDING";
+		return mhc_stop_recording(mcp->ctl, completion_cb, mcp);
+	}
+
+	if(!strcmp(mcp->cmd, "MA")) {
+		mcp->action_name = "ABORT MESSAGE";
+		return mhc_abort_message(mcp->ctl, completion_cb, mcp);
+	}
+
 
 	err("(mcp) invalid command: %s", mcp->cmd);
 
