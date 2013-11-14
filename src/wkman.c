@@ -16,6 +16,7 @@
 #include "clearsilver/util/neo_hdf.h"
 #include "wkman.h"
 #include "util.h"
+#include "citem.h"
 #include "devmgr.h"
 #include "channel.h"
 #include "mhrouter.h"
@@ -39,14 +40,6 @@ enum {
 	WKM_TAKS_WRITE_CFG,
 };
 
-struct citem {
-	const char	*key;
-	uint8_t		off;
-	uint8_t		base_bit;
-	uint8_t		width;
-	uint32_t	def;
-};
-
 struct wkman {
 	struct device *dev;
 	struct ev_loop *loop;
@@ -60,91 +53,38 @@ struct wkman {
 
 struct citem citems[] = {
 	// Mode Register
-	{ "disablePaddleWatchdog", 0, 7, 1, 1 },
-	{ "paddleEchoBack",        0, 6, 1, 0 },
-        { "keyMode",               0, 5, 2, 0 },
-	{ "paddleSwap",            0, 3, 1, 0 },
-	{ "serialEchoBack",        0, 2, 1, 1 },
-	{ "autoSpace",             0, 1, 1, 0 },
-	{ "ctSpacing",             0, 0, 1, 0 },
+	CITEMD("disablePaddleWatchdog", 0, 7, 1, 1 ),
+	CITEMD("paddleEchoBack",        0, 6, 1, 0 ),
+	CITEMD("keyMode",               0, 5, 2, 0 ),
+	CITEMD("paddleSwap",            0, 3, 1, 0 ),
+	CITEMD("serialEchoBack",        0, 2, 1, 1 ),
+	CITEMD("autoSpace",             0, 1, 1, 0 ),
+	CITEMD("ctSpacing",             0, 0, 1, 0 ),
 
-	{ "speedWpm",              1, 7, 8, 0 },
-	{ "sideToneFreq",          2, 7, 8, 5 },
-	{ "weight",                3, 7, 8, 50 },
-	{ "leadInTime",            4, 7, 8, 10 },
-	{ "tailTime",              5, 7, 8, 10 },
-	{ "minWpm",                6, 7, 8, 10 },
-	{ "wpmRange",              7, 7, 8, 50 },
-	{ "1stExtension",          8, 7, 8, 0 },
-	{ "keyComp",               9, 7, 8, 0 },
-	{ "farnsWpm",             10, 7, 8, 0 },
-	{ "paddleSetpoint",       11, 7, 8, 50 },
-	{ "ditDahRatio",          12, 7, 8, 50 },
-	{ "pinConfig",            13, 3, 4, 5 },
-	{ "hangTime",             13, 5, 2, 0 },
-	{ "ultimaticMode",        13, 7, 2, 0 },
-	{ "potRange",             14, 7, 8, 255 }
+	CITEMD("speedWpm",              1, 7, 8, 0 ),
+	CITEMD("sideToneFreq",          2, 7, 8, 5 ),
+	CITEMD("weight",                3, 7, 8, 50 ),
+	CITEMD("leadInTime",            4, 7, 8, 10 ),
+	CITEMD("tailTime",              5, 7, 8, 10 ),
+	CITEMD("minWpm",                6, 7, 8, 10 ),
+	CITEMD("wpmRange",              7, 7, 8, 50 ),
+	CITEMD("1stExtension",          8, 7, 8, 0 ),
+	CITEMD("keyComp",               9, 7, 8, 0 ),
+	CITEMD("farnsWpm",             10, 7, 8, 0 ),
+	CITEMD("paddleSetpoint",       11, 7, 8, 50 ),
+	CITEMD("ditDahRatio",          12, 7, 8, 50 ),
+	CITEMD("pinConfig",            13, 3, 4, 5 ),
+	CITEMD("hangTime",             13, 5, 2, 0 ),
+	CITEMD("ultimaticMode",        13, 7, 2, 0 ),
+	CITEMD("potRange",             14, 7, 8, 255 )
 };
 
-static const struct citem *find_citem(const char *key) {
-	uint16_t i;
-
-	for(i = 0; i < ARRAY_SIZE(citems); i++) {
-		if(!strcasecmp(key, citems[i].key))
-			return &citems[i];
-	}
-	return NULL;
-}
-
-static int get_byte(struct wkman *wkman, uint16_t idx) {
-	if(idx >= ARRAY_SIZE(wkman->cfg))
-		return -1;
-	return wkman->cfg[idx];
-}
-
-static int set_byte(struct wkman *wkman, uint16_t idx, uint8_t val) {
-	if(idx >= ARRAY_SIZE(wkman->cfg))
-		return -1;
-	wkman->cfg[idx] = val;
-	return 0;
-}
-
-static uint8_t width2mask(int w) {
-	return (0xff >> (8-w));
-}
-
 int wkm_set_value(struct wkman *wkman, const char *key, uint8_t val) {
-	const struct citem *cp;
-	int c;
-	uint16_t idx, bit, mask;
-
-	cp = find_citem(key);
-	if(!cp) {
-		warn("(wkman) unknown winkey option: %s", key);
-		return 1;
+	int r = citem_set_value(citems, ARRAY_SIZE(citems), wkman->cfg, sizeof(wkman->cfg), key, val);
+	if(r == -1) {
+		err("(wkman) could not set value %s = %d", key, val);
 	}
-
-	idx = cp->off + cp->base_bit / 8;
-	bit = cp->base_bit % 8;
-	mask = width2mask(cp->width);
-
-	c = get_byte(wkman, idx);
-
-	if(c < 0) {
-		err("(wkman) %s() index %d out of range!", __func__, idx);
-		return 1;
-	}
-
-	if(val > mask) {
-		err("(wkman) %s() invalid value %d for %s", __func__, val, key);
-		return 1;
-	}
-
-	c &= ~(mask << (bit + 1 - cp->width));
-	c |=  (val << (bit + 1 - cp->width));
-
-	set_byte(wkman, idx, c);
-	return 0;
+	return r;
 }
 
 void read_cb(struct mh_router *router, unsigned const char *data , int len, int channel, void *user_data) {
@@ -259,24 +199,7 @@ void wkm_destroy(struct wkman *wkman) {
 }
 
 int wkm_opts_to_cfg(struct wkman *wkman, struct cfg *cfg) {
-	const struct citem *cp;
-	int c;
-	uint16_t idx, bit, mask, i;
-
-	dbg1("(wkman) %s()", __func__);
-	for(i = 0; i < ARRAY_SIZE(citems); i++) {
-		cp = &citems[i];
-		idx = cp->off + cp->base_bit / 8;
-		bit = cp->base_bit % 8;
-		mask = width2mask(cp->width);
-		c = get_byte(wkman, idx);
-		if(c < 0) {
-			err("(wkman) %s() index %d out of range!", __func__, idx);
-			return -1;
-		}
-		cfg_set_int_value(cfg, citems[i].key, (c >> (bit + 1 - cp->width)) & mask);
-	}
-	return 0;
+	return citems_to_cfg(cfg, citems, ARRAY_SIZE(citems), wkman->cfg, sizeof(wkman->cfg));
 }
 
 int wkm_cfg_to_opts(struct wkman *wkman, struct cfg *cfg) {

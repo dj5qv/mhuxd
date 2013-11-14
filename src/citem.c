@@ -9,6 +9,7 @@
 #include <string.h>
 #include "citem.h"
 #include "logger.h"
+#include "cfgnod.h"
 
 const struct citem *citem_find(const struct citem *citems,  uint16_t num_citems, const char *key) {
 	uint16_t i;
@@ -85,4 +86,27 @@ void citem_debug_print_values(const char *header, struct citem *citems, int num_
 		     citems[i].key,
 		     citem_get_value(citems, num_citems, buffer, buffer_size, citems[i].key));
 	}
+}
+
+int citems_to_cfg(struct cfg *cfg, const struct citem *citems, int num_citems, uint8_t *buffer, int buffer_size) {
+	const struct citem *cp;
+	int c;
+	uint16_t idx, bit, mask, i;
+
+	for(i = 0; i < num_citems; i++) {
+		cp = &citems[i];
+		idx = cp->off + cp->base_bit / 8;
+		bit = cp->base_bit % 8;
+		mask = width2mask(cp->width);
+
+		if(idx >= buffer_size) {
+			err("(citem) %s() index out of range for %s", __func__, cp->key);
+			return -1;
+		}
+
+		c = buffer[idx];
+
+		cfg_set_int_value(cfg, citems[i].key, (c >> (bit + 1 - cp->width)) & mask);
+	}
+	return 0;
 }
