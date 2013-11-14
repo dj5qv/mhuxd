@@ -795,6 +795,41 @@ int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completio
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
+int mhc_record_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data) {
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_RECORD_FSK_CW_MSG);
+	buf_append_c(&b, idx - 1);
+	buf_append_c(&b, MHCMD_RECORD_FSK_CW_MSG | MSB_BIT);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
+int mhc_stop_recording(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_data) {
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_RECORD_FSK_CW_MSG);
+	buf_append_c(&b, 0xff);
+	buf_append_c(&b, MHCMD_RECORD_FSK_CW_MSG | MSB_BIT);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
+int mhc_play_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data) {
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_PLAY_FSK_CW_MSG);
+	buf_append_c(&b, idx - 1);
+	buf_append_c(&b, MHCMD_PLAY_FSK_CW_MSG | MSB_BIT);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
+int mhc_abort_message(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_data) {
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_ABORT_FSK_CW_MSG);
+	buf_append_c(&b, MHCMD_ABORT_FSK_CW_MSG | MSB_BIT);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
 int mhc_set_kopt(struct mh_control *ctl, const char *key, int val) {
 	if(!key || !*key) {
 		warn("(mhc) %s() nameless config item!", __func__);

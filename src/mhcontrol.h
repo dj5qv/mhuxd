@@ -55,6 +55,11 @@ const char *mhc_state_str(int state);
 int mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb cb, void *user_data);
 const char *mhc_cmd_err_string(int result);
 
+int mhc_record_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data);
+int mhc_stop_recording(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_data);
+int mhc_play_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data);
+int mhc_abort_message(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_data);
+
 int mhc_mk2r_set_hfocus(struct mh_control *ctl, uint8_t hfocus[8], mhc_cmd_completion_cb cb, void *user_data);
 int mhc_mk2r_get_hfocus(struct mh_control *ctl, uint8_t dest[8]);
 int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data);
