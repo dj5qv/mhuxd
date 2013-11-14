@@ -78,7 +78,7 @@ am_mhuxd_OBJECTS = mhuxd-buffer.$(OBJEXT) mhuxd-demux.$(OBJEXT) \
 	mhuxd-version.$(OBJEXT) mhuxd-http_parse_query.$(OBJEXT) \
 	mhuxd-radiotypes.$(OBJEXT) mhuxd-wkman.$(OBJEXT) \
 	mhuxd-proc_mcp.$(OBJEXT) mhuxd-mhmk2r.$(OBJEXT) \
-	mhuxd-citem.$(OBJEXT)
+	mhuxd-mhmk2.$(OBJEXT) mhuxd-citem.$(OBJEXT)
 mhuxd_OBJECTS = $(am_mhuxd_OBJECTS)
 mhuxd_LINK = $(CCLD) $(mhuxd_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
@@ -252,13 +252,13 @@ mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 		conmgr.c con_vsp.c con_tcp.c linux_termios.c channel.c cfgmgr.c \
 		daemon.c http_parser.c http_server.c webui.c cfgnod.c version.c \
 		http_parse_query.c radiotypes.c wkman.c proc_mcp.c mhmk2r.c \
-		citem.c \
+		mhmk2.c citem.c \
 		buffer.h demux.h devmgr.h kcfg.h linux_udev.h logger.h main.h \
 		mhcontrol.h mhinfo.h mhrouter.h mux.h net.h opts.h pglist.h tty.h util.h \
 		conmgr.h con_vsp.h con_tcp.h linux_termios.h channel.h cfgmgr.h \
 		daemon.h http_parser.h http_server.h http_codes.h webui.h obuf.h cfgnod.h \
 		version.h http_parse_query.h radiotypes.h wkman.h mhflags.h proc_mcp.h \
-		mhmk2r.h citem.h
+		mhmk2r.h mhmk2.h citem.h
 
 all: all-recursive
 
@@ -365,6 +365,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhcontrol.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhinfo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhmk2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhmk2r.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhrouter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mux.Po@am__quote@
@@ -854,6 +855,20 @@ mhuxd-mhmk2r.obj: mhmk2r.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mhmk2r.c' object='mhuxd-mhmk2r.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhmk2r.obj `if test -f 'mhmk2r.c'; then $(CYGPATH_W) 'mhmk2r.c'; else $(CYGPATH_W) '$(srcdir)/mhmk2r.c'; fi`
+
+mhuxd-mhmk2.o: mhmk2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhmk2.o -MD -MP -MF $(DEPDIR)/mhuxd-mhmk2.Tpo -c -o mhuxd-mhmk2.o `test -f 'mhmk2.c' || echo '$(srcdir)/'`mhmk2.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-mhmk2.Tpo $(DEPDIR)/mhuxd-mhmk2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mhmk2.c' object='mhuxd-mhmk2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhmk2.o `test -f 'mhmk2.c' || echo '$(srcdir)/'`mhmk2.c
+
+mhuxd-mhmk2.obj: mhmk2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhmk2.obj -MD -MP -MF $(DEPDIR)/mhuxd-mhmk2.Tpo -c -o mhuxd-mhmk2.obj `if test -f 'mhmk2.c'; then $(CYGPATH_W) 'mhmk2.c'; else $(CYGPATH_W) '$(srcdir)/mhmk2.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mhuxd-mhmk2.Tpo $(DEPDIR)/mhuxd-mhmk2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mhmk2.c' object='mhuxd-mhmk2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhmk2.obj `if test -f 'mhmk2.c'; then $(CYGPATH_W) 'mhmk2.c'; else $(CYGPATH_W) '$(srcdir)/mhmk2.c'; fi`
 
 mhuxd-citem.o: citem.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-citem.o -MD -MP -MF $(DEPDIR)/mhuxd-citem.Tpo -c -o mhuxd-citem.o `test -f 'citem.c' || echo '$(srcdir)/'`citem.c

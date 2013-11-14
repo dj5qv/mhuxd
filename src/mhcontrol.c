@@ -20,6 +20,7 @@
 #include "kcfg.h"
 #include "cfgnod.h"
 #include "mhmk2r.h"
+#include "mhmk2.h"
 
 #define MAX_CMD_LEN 128
 #define MAX_CMD_QUEUE_SIZE 16

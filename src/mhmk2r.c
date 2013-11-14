@@ -52,19 +52,6 @@ struct citem mok_items[] = {
 
 };
 
-struct citem mpk_items[] = {
-	CITEM("lineUpstream", 0, 0, 1 ),
-	CITEM("micUpstream", 0, 1, 1 ),
-	CITEM("downstream", 0, 2, 1 ),
-	CITEM("audioCToAForced", 0, 3, 1 ),
-	CITEM("audioAToCForced", 0, 4, 1 ),
-	CITEM("frontMicSelected", 0, 5, 1 ),
-
-	CITEM("sysPwrVoltage", 1, 7, 8 ),
-	CITEM("steppirVer", 2, 7, 8 ),
-	CITEM("steppirVerHi", 3, 7, 8 ),
-};
-
 struct citem mk2r_hfocus_items[] = {
 	CITEM("txFocus", 0, 0, 1 ),
 	CITEM("rxFocus", 0, 1, 1 ),
@@ -93,22 +80,10 @@ int mk2r_get_mok_value(const uint8_t mok_buffer[8], const char *key) {
 	return citem_get_value(mok_items, ARRAY_SIZE(mok_items), mok_buffer, 8, key);
 }
 
-int mk2_get_mpk_value(const uint8_t mpk_buffer[4], const char *key) {
-
-	return citem_get_value(mpk_items, ARRAY_SIZE(mpk_items), mpk_buffer, 4, key);
-}
-
-
 void mk2r_debug_print_mok_values(const uint8_t mok_buffer[8]) {
 
 	citem_debug_print_values("mok", mok_items, ARRAY_SIZE(mok_items), mok_buffer, 8);
 }
-
-void mk2_debug_print_mpk_values(const uint8_t mpk_buffer[4]) {
-
-	citem_debug_print_values("mpk", mpk_items, ARRAY_SIZE(mpk_items), mpk_buffer, 4);
-}
-
 
 int mk2r_set_hfocus_value(uint8_t hfocus_buffer[4], const char *key, int value) {
 	dbg1("(mk2r) %s() %s: %d", __func__, key, value);
