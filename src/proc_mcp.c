@@ -44,7 +44,6 @@ static void send_err_response(int fd, const char *cmd) {
 	*response = 'E';
 	strcpy(response + 1, cmd);
 	strcat(response, "\r\n");
-	info(">>> write (%d) %s", fd, response);
 	r = write(fd, response, strlen(response));
 	if(r <= 0)
 		err_e(errno, "(mcp) %s() could not write response!", __func__);
@@ -88,7 +87,7 @@ static int frd_to_hfocus(uint8_t hfocus[8], const char *frd_arg) {
 	mk2r_set_hfocus_value(hfocus, "ears.right.r2Main", frd_arg[i++] == '1');
 	mk2r_set_hfocus_value(hfocus, "ears.right.r2Sub", frd_arg[i++] == '1');
 
-	mk2r_set_hfocus_value(hfocus, "directControl", 0);
+	mk2r_set_hfocus_value(hfocus, "directControl", 1);
 
 	return 0;
 }
