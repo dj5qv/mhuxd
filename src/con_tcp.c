@@ -222,6 +222,7 @@ struct ctcp *ctcp_create(struct connector_spec *cpsec) {
 	ctcp->w_lsnr.data = ctcp;
 
 	ev_io_start(ctcp->loop, &ctcp->w_lsnr);
+	ev_io_start(ctcp->loop, &ctcp->w_data_in);
 	info("(tcp) tcp connector %s created", ctcp->devname);
 
 	return ctcp;
