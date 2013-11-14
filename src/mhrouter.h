@@ -20,7 +20,7 @@ enum {
 
 typedef void (*MHRConsumerCallback)(struct mh_router *, unsigned const char *data ,int len, int channel, void *user_data);
 typedef void (*MHRStatusCallback)(struct mh_router *, int status, void *user_data);
-typedef void (*MHRProcessorCallback)(struct mh_router *, int channel, struct buffer *, void *user_data);
+typedef void (*MHRProcessorCallback)(struct mh_router *, int channel, struct buffer *, int fd, void *user_data);
 
 
 struct mh_router *mhr_create(struct ev_loop *loop, const char *serial);

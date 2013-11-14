@@ -7,6 +7,8 @@
  */
 
 #include <stdint.h>
+#include <unistd.h>
+#include <errno.h>
 #include "proc_mcp.h"
 #include "util.h"
 #include "buffer.h"
@@ -22,6 +24,7 @@ struct proc_mcp {
 	uint8_t cmd_len;
 	unsigned cmd_overflow;
 	const char *action_name;
+	int fd;
 };
 
 struct proc_mcp *mcp_create(struct mh_control *ctl) {
@@ -35,12 +38,25 @@ void mcp_destroy(struct proc_mcp *mcp) {
 	free(mcp);
 }
 
+static void send_err_response(int fd, const char *cmd) {
+	ssize_t r;
+	char response[MCP_MAX_CMD_SIZE + 4];
+	*response = 'E';
+	strcpy(response + 1, cmd);
+	strcat(response, "\r\n");
+	info(">>> write (%d) %s", fd, response);
+	r = write(fd, response, strlen(response));
+	if(r <= 0)
+		err_e(errno, "(mcp) %s() could not write response!", __func__);
+}
+
 static void completion_cb(unsigned const char *reply_buf, int len, int result, void *user_data)  {
 	(void)reply_buf; (void)len;
 	struct proc_mcp *mcp = user_data;
 
 	if(result != CMD_RESULT_OK) {
 		err("(mcp) %s command failed: %s!", mcp->action_name, mhc_cmd_err_string(result));
+		send_err_response(mcp->fd, mcp->cmd);
 		return;
 	}
 	dbg1("(mcp) %s cmd ok :)", (const char *)user_data);
@@ -162,12 +178,14 @@ set_hfocus:
 
 }
 
-void mcp_cb(struct mh_router *router, int channel, struct buffer *b, void *user_data) {
+void mcp_cb(struct mh_router *router, int channel, struct buffer *b, int fd, void *user_data) {
 	(void)router; (void)channel;
 	struct proc_mcp *mcp = user_data;
 	int c;
 
 	dbg1("(mcp) %s()", __func__);
+
+	mcp->fd = fd;
 
 	while(-1 != (c = buf_get_c(b))) {
 
@@ -175,6 +193,7 @@ void mcp_cb(struct mh_router *router, int channel, struct buffer *b, void *user_
 			if(c == 0x0d || c == 0x0a) {
 				mcp->cmd_overflow = 0;
 				mcp->cmd_len = 0;
+				send_err_response(fd, mcp->cmd);
 			}
 			continue;
 		}
@@ -186,6 +205,7 @@ void mcp_cb(struct mh_router *router, int channel, struct buffer *b, void *user_
 			mcp->cmd[mcp->cmd_len] = 0;
 			if(-1 == process_cmd(mcp)) {
 				err("(mcp) error processing command: %s", mcp->cmd);
+				send_err_response(fd, mcp->cmd);
 			}
 			mcp->cmd_len = 0;
 			continue;
