@@ -368,6 +368,9 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 		if(err != STATUS_OK) goto failed;
 	}
 
+	err = hdf_set_int_value(chan_nod, "MCP", 1);
+	if(err != STATUS_OK) goto failed;
+
 
 	// Keyer parameters
 	err = hdf_get_node(knod, "param", &param_nod);

@@ -55,6 +55,7 @@ struct vsp_session {
 	struct vsp *vsp;
 	struct fuse_pollhandle *ph;
 	int fd;
+	int fd_flags;
 	int client_pid;
 	struct buffer buf_out;  // VSP -> client app
 	struct buffer buf_in;   // client app -> VSP
@@ -197,7 +198,8 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		PG_SCANLIST(&vsp->session_list, vs) {
 			struct buffer *b = &vs->buf_out;
 
-			dbg1("append size %zd buf size %d buf rpos %d", size, b->size, b->rpos);
+			if(vs->fd_flags & O_WRONLY)
+				continue;
 
 			avail = buf_size_avail(b);
 
@@ -318,6 +320,7 @@ static void dv_open(fuse_req_t req, struct fuse_file_info *fi)
 	struct vsp_session *vs = w_calloc(1, sizeof(*vs));
 	vs->vsp = vsp;
 	vs->fd = fi->fh;
+	vs->fd_flags = fi->flags;
 	vs->client_pid = fuse_req_ctx(req)->pid;;
 
 	PG_AddTail(&vsp->session_list, &vs->node);
@@ -815,6 +818,8 @@ void vsp_destroy(struct vsp *vsp) {
 				err("(vsp) %s() %s could not send PTT off", __func__, vsp->devname);
 		}
 
+		if(vs->ph)
+			fuse_pollhandle_destroy(vs->ph);
 		if(vs->pending_in_req)
 			fuse_reply_err(vs->pending_in_req, EINTR);
 		if(vs->pending_out_req)

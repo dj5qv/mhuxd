@@ -17,6 +17,7 @@
 #include "con_vsp.h"
 #include "con_tcp.h"
 #include "cfgnod.h"
+#include "proc_mcp.h"
 
 enum {
 	CON_INVALID,
@@ -36,6 +37,7 @@ struct connector {
 	int s_fd_ptt;
 	void *instance;
 	struct device *dev;
+	struct proc_mcp *mcp;
 };
 
 struct conmgr {
@@ -206,6 +208,11 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 			ctr->id = ++conmgr->id_cnt;
 		}
 
+		if(ctr->channel == CH_MCP) {
+			ctr->mcp = mcp_create(ctr->dev->ctl);
+			mhr_add_processor_cb(ctr->dev->router, mcp_cb, CH_MCP, ctr->mcp);
+		}
+
 		// atl_set_value_from_int(ctr->cspec.cfg, "ID", ctr->id);
 		PG_AddTail(&conmgr->connector_list, &ctr->node);
 	} else {
@@ -247,6 +254,11 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 				mhr_rem_producer(ctr->dev->router, ctr->s_fd_ptt, ctr->ptt_channel);
 				mhr_rem_consumer(ctr->dev->router, ctr->s_fd_ptt, ctr->ptt_channel);
 				close(ctr->s_fd_ptt);
+			}
+
+			if(ctr->mcp) {
+				mhr_rem_processor_cb(ctr->dev->router, mcp_cb, CH_MCP);
+				free(ctr->mcp);
 			}
 
 			mhr_rem_producer(ctr->dev->router, ctr->s_fd_data, ctr->channel);

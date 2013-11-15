@@ -26,6 +26,13 @@ enum {
         LOGSV_MAX    = LOGSV_DBG1,
 };
 
+extern int log_level;
+
+inline static int log_get_level() {
+	return log_level;
+}
+
+
 void log_init(FILE *f);
 void log_set_ident(const char *);
 void log_set_level(int level);

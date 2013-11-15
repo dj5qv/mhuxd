@@ -52,6 +52,7 @@ static void rem_session(struct ctcp_session *cs) {
 	ev_io_stop(ctcp->loop, &cs->w_out);
 
 	close(cs->fd);
+	ctcp->open_cnt--;
 	PG_Remove(&cs->node);
 	free(cs);
 }
@@ -157,6 +158,11 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 		return;
 	}
 
+	if(ctcp->open_cnt >= ctcp->max_con) {
+		info("(tcp) rejecting connect, maximum connections reached for %s", ctcp->devname);
+		close(fd);
+		return;
+	}
 
 	struct ctcp_session *cs = w_calloc(1, sizeof(*cs));
 	cs->ctcp = ctcp;
@@ -166,6 +172,8 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	ev_io_start(ctcp->loop, &cs->w_in);
 	cs->w_in.data = cs;
 	cs->w_out.data = cs;
+
+	ctcp->open_cnt++;
 
 	PG_AddTail(&ctcp->session_list, &cs->node);
 
@@ -214,6 +222,7 @@ struct ctcp *ctcp_create(struct connector_spec *cpsec) {
 	ctcp->w_lsnr.data = ctcp;
 
 	ev_io_start(ctcp->loop, &ctcp->w_lsnr);
+	ev_io_start(ctcp->loop, &ctcp->w_data_in);
 	info("(tcp) tcp connector %s created", ctcp->devname);
 
 	return ctcp;

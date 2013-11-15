@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 	struct conmgr *conmgr;
 	FILE *pidfile = NULL;
 
-	printf("\n%s (C)2012-2013 Matthias Moeller, DJ5QV\n", PACKAGE_STRING);
+	printf("\n%s branch:%s (C)2012-2013 Matthias Moeller, DJ5QV\n", PACKAGE_STRING, BRANCH);
 
 	// options
 	process_opts(argc, argv);
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 		dmn_daemonize();
 	}
 
-	info("%s (C)2012-2013 Matthias Moeller, DJ5QV", PACKAGE_STRING);
+	info("%s branch:%s (C)2012-2013 Matthias Moeller, DJ5QV", PACKAGE_STRING, BRANCH);
 	info("Logfile: %s", log_file_name);
 
 	// pid file
