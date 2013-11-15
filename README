@@ -48,19 +48,8 @@ INSTALLATION
 
     Ubuntu and related distributions (Debian, Mint):
     ------------------------------------------------
-    On Ubuntu (and corresponding Debian based distributions like Mint) install the
-    required packaged, e.g. by apt-get:
 
-    'sudo apt-get install libudev1' (use libudev0 for Ubuntu < 13.04)
-    'sudo apt-get install libfuse2'
-    'sudo apt-get install libev4'
-
-    Download the appropiate mhuxd .deb package. This can then installed by:
-
-    'sudo dpkg -i <package file>'
-
-    After installation mhuxd will be immediately started. Check log file 
-    /var/log/mhuxd/mhuxd.log.
+    Binary packages are available. Refer to http://mhuxd.dj5qv.de/install/ for details.
 
 
     Compile from source code:
