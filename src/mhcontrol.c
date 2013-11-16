@@ -26,8 +26,7 @@
 #define MAX_CMD_QUEUE_SIZE 16
 #define MSB_BIT (1<<7)
 
-#define IVAL_HEARTBEAT 2
-#define IVAL_INFO 2
+#define IVAL_HEARTBEAT 2.0
 #define CMD_TIMEOUT 1.0
 
 // microHam commands
@@ -242,7 +241,7 @@ static void heartbeat_completed_cb(unsigned const char *reply, int len, int resu
 		return;
 	}
 	if(result == CMD_RESULT_TIMEOUT) {
-		if(ctl->state != CTL_STATE_DEVICE_OFF) {
+		if(ctl->state == CTL_STATE_OK) {
 			set_state(ctl,CTL_STATE_DEVICE_OFF);
 			warn("(mhc) %s heartbeat timed out!", ctl->serial);
 			info("(mhc) %s OFFLINE", ctl->serial);
@@ -426,7 +425,7 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		break;
 	case CTL_STATE_GET_VERSION:
 		mhi_parse_version(&ctl->mhi, reply, len);
-		info("(mhc) %s detected microHam %s firmware %d.%d", ctl->serial,
+		info("(mhc) %s microHam %s firmware %d.%d", ctl->serial,
 		     ctl->mhi.type_str, ctl->mhi.ver_fw_major, ctl->mhi.ver_fw_minor);
 
 		// fall through
@@ -628,7 +627,7 @@ const struct mh_info *mhc_get_mhinfo(struct mh_control *ctl)  {
 }
 
 static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb cb, void *user_data) {
-	float fbaud, stopbits;
+	float fbaud, stopbits, bytes_per_sec;
 	int ibaud;
 	uint8_t c, cmd, rtscts, databits, has_ext;
 
@@ -677,10 +676,13 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	}
 
 	stopbits = cfg_get_float_val(cfg, "stopbits", 1);
-	if(stopbits == 1.5)
-		stopbits = 3;
 	rtscts = cfg_get_int_val(cfg, "rtscts", 0);
 	databits = cfg_get_int_val(cfg, "databits", 8);
+
+	bytes_per_sec = fbaud / (databits + stopbits);
+
+	if(stopbits == 1.5)
+		stopbits = 3;
 
 	buf_append_c(&buf, cmd);
 	buf_append_c(&buf, ibaud & 0xff);
@@ -703,7 +705,7 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	}
 	buf_append_c(&buf, cmd | MSB_BIT);
 
-	mhr_set_bps_limit(ctl->router, channel, fbaud);
+	mhr_set_bps_limit(ctl->router, channel, bytes_per_sec);
 
 	submit_cmd(ctl, &buf, cb, user_data);
 

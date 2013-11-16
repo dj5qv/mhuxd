@@ -37,7 +37,7 @@ void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback, int chan
 void mhr_rem_status_cb(struct mh_router *router, MHRStatusCallback callback);
 void mhr_rem_processor_cb(struct mh_router *router, MHRProcessorCallback callback, int channel);
 int mhr_send(struct mh_router *router, const uint8_t *data, unsigned int len, int channel);
-void mhr_set_bps_limit(struct mh_router *router, int channel, uint32_t bps);
+void mhr_set_bps_limit(struct mh_router *router, int channel, float bps);
 
 const char *mhr_get_serial(struct mh_router *);
 
