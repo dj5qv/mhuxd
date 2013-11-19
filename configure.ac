@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([mhuxd], [0.50rc2], [mhuxd@maxec.de])
+AC_INIT([mhuxd], [0.50rc3], [mhuxd@maxec.de])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
 AC_PROG_CC
@@ -11,10 +11,12 @@ AC_CONFIG_FILES([
  webui/Makefile
 ])
 
-AC_PROG_CC
 AC_PROG_MAKE_SET
 
 AC_PROG_RANLIB
+
+AM_PROG_CC_C_O
+AM_PROG_AR
 
 AC_CHECK_HEADERS([fcntl.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h sys/file.h sys/ioctl.h sys/socket.h sys/time.h termios.h unistd.h libintl.h])
 
@@ -137,7 +139,6 @@ if test ! -z "$HDFDIR"; then
   fi
 fi
 AC_SUBST(HDFDIR)
-
 
 # finish
 AC_OUTPUT
