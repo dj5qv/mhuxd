@@ -12,6 +12,8 @@
 		  <td valign="middle"><img src="/static/mhuxd.png" alt="mhuxd" border="0" height="35" width="350"></td>
 		  -->
 	      <td class="pageHeaderText" valign="middle"><i>m</i>huxd Device Router</td>
+	      <td align="left" height="50" width="25">&nbsp;</td>
+
 	    </tr>
 	  </tbody>
 	</table>
@@ -20,11 +22,14 @@
 	<table border="0" cellpadding="4" cellspacing="0">
 	  <tbody>
 	    <tr>
-	      <td class="smallTextWhite" align="right" nowrap="nowrap">Hostname: <?cs var:mhuxd.run.hostname ?></td>
+	      <td class="smallTextWhite" align="right" nowrap="nowrap">Hostname: <?cs var:mhuxd.run.hostname ?>
+		|<?cs var:mhuxd.run.program.version ?>|
+	      </td>
+	     
 	    </tr>
 	    <tr>
 	      <td class="regularTextWhiteBold" align="right" nowrap="nowrap">
-		<a href="/help" class="bannerlink" target="_new">Help</a> 
+		<a href="http://mhuxd.dj5qv.de/doc/" class="bannerlink" target="_new">Help</a> 
 	    </tr>
 	  </tbody>
 	</table>
