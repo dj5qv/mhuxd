@@ -306,7 +306,7 @@ struct citem c_mk2r[] = {
 	{ "r1OutputDataType",    24, 6, 3, 0 },
 	{ "r1BandDataInput",     24, 7, 1, 0 },
 	{ "pin4Function",        24, 11, 4, 0 },
-	{ "pin5Function",        24, 15, 1, 0 },
+	{ "pin5Function",        24, 15, 4, 0 },
 	{ "ser2Source",          24, 17, 2, 0 },
 	{ "r2OutputDataType",    24, 22, 3, 0 },
 	{ "r2BandDataInput",     24, 23, 1, 0 },
