@@ -640,7 +640,7 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 
 	struct cfg *cfg = ctl->speed_args[channel];
 	if(!cfg) {
-		err("(mhc) %s() no speed args defined!", __func__);
+		err("(mhc) %s() no speed args defined for channel %s!", __func__, ch_channel2str(channel));
 		return -1;
 	}
 
@@ -648,6 +648,11 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	buf_reset(&buf);
 
 	fbaud = cfg_get_float_val(cfg, "baud", -1);
+	if(!fbaud) {
+		// Avoid devision by zero
+		err("(mhc) %s() channel %s baud value must not be zero!", __func__, ch_channel2str(channel));
+		return -1;
+	}
 
 	has_ext = 0;
 
@@ -678,6 +683,12 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	stopbits = cfg_get_float_val(cfg, "stopbits", 1);
 	rtscts = cfg_get_int_val(cfg, "rtscts", 0);
 	databits = cfg_get_int_val(cfg, "databits", 8);
+
+	if(!databits) {
+		// Avoid devision by zero
+		err("(mhc) %s() channel %s data bits must not be zero!", __func__, ch_channel2str(channel));
+		return -1;
+	}
 
 	bytes_per_sec = fbaud / (databits + stopbits);
 
