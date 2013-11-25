@@ -23,7 +23,7 @@ static struct obuf *obuf_realloc(struct obuf *obuf, size_t new_size) {
 	obuf->data = w_realloc(obuf->data, new_size);
 	obuf->capacity = new_size;
 
-	dbg1("realloc ptr %p new size %zd", obuf->data, new_size);
+//	dbg1("realloc ptr %p new size %zd", obuf->data, new_size);
 
 	return obuf;
 }
