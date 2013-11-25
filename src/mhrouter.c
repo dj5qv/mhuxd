@@ -121,10 +121,21 @@ static void lb_cb(struct ev_loop *loop,  struct ev_timer *w, int revents) {
 void mhr_set_bps_limit(struct mh_router *router, int channel, float bps) {
 	struct LeakyBucket *lb = &router->lb[channel];
 
-	lb->bps = bps;
-	if(!bps)
+	if(bps == lb->bps)
+		return;
+
+	if(bps == 0) {
+		if(lb->bps) {
+			ev_timer_stop(router->loop, &lb->timer);
+			lb->bps = 0;
+		}
+		return;
+	}
+
+	if(lb->bps)
 		ev_timer_stop(router->loop, &lb->timer);
 
+	lb->bps = bps;
 	lb->router = router;
 	lb->ival = (1 / bps) * LB_BYTES_PER_IVAL;
 	lb->avail_this_ival = LB_BYTES_PER_IVAL + LB_CARRY_OVER;
@@ -244,8 +255,10 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	if(r > 0) {
 		buf_add_size(b, r);
 
-		// Timer may have been stopped because of an idle ival
-		ev_timer_start(router->loop, &router->lb[prd->channel].timer);
+		if(router->lb[prd->channel].bps) {
+			// Timer may have been stopped because of an idle ival
+			ev_timer_start(router->loop, &router->lb[prd->channel].timer);
+		}
 
 		if(is_ptt_channel(prd->channel))
 			process_ptt_producer(prd, b);
@@ -442,6 +455,9 @@ void mhr_destroy(struct mh_router *router) {
 	dbg1("(mhr) %s()", __func__);
 
 	for(i=0; i<ALL_NUM_CHANNELS; i++) {
+		if(router->lb[i].bps)
+			ev_timer_stop(router->loop, &router->lb[i].timer);
+
 		while((cns = (void *)PG_FIRSTENTRY(&router->consumer_list[i]))) {
 			mhr_rem_consumer(router, cns->fd, i);
 		}
