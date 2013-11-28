@@ -1,4 +1,14 @@
 # Make sure virtual serial ports create by mhuxd belong to group "mhuxd". 
 
-SUBSYSTEM=="cuse", KERNEL=="mhuxd*", GROUP="mhuxd"
+SUBSYSTEM=="cuse", KERNEL=="mhuxd*", GROUP="mhuxd", GOTO="mm_microham_device_blacklist_end"
+
+# modemmanager should ignore our keyer
+ACTION!="add|change", GOTO="mm_microham_device_blacklist_end"
+SUBSYSTEM!="usb", GOTO="mm_microham_device_blacklist_end"
+ENV{DEVTYPE}!="usb_device",  GOTO="mm_microham_device_blacklist_end"
+
+ATTRS{idVendor}=="0403", ATTRS{idProduct}=="eeef", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+LABEL="mm_microham_device_blacklist_end"
+
 
