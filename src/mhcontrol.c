@@ -699,7 +699,7 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	buf_append_c(&buf, ibaud & 0xff);
 	buf_append_c(&buf, ibaud >> 8);
 	c = (((int)stopbits) - 1) << 2;
-	c |= rtscts;
+	c |= rtscts << 4;
 	c |= (databits - 5) << 5;
 	buf_append_c(&buf, c);
 
