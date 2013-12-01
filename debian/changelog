@@ -1,3 +1,10 @@
+mhuxd (0.50rc3-1) raring; urgency=low
+  * implemented MCP channel, supporting commands FT, FR, FRS, SA, MR, MRS, MP,
+    MA 
+  * some minor fixes
+
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 16 Nov 2013 00:23:00 +0200
+
 mhuxd (0.50rc2-1) raring; urgency=low
   * mhuxd did not set radio serial parameters when the keyer was switched off 
     and on again
