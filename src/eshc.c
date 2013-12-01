@@ -29,70 +29,11 @@ struct eshc {
 
 struct eshc eshc;
 
-static int con(const char *host, int port)  {
-	int	sd;
-	struct	sockaddr_in server;
-	struct  hostent *hp, *gethostbyname();
-
-	sd = socket (AF_INET,SOCK_STREAM,0);
-
-	if(sd == -1)
-		return -1;
-
-	server.sin_family = AF_INET;
-	fprintf(stderr,"host: ==%s==\n", host);
-	hp = gethostbyname(host);
-	if(!hp) {
-		close(sd);
-		return -1;
-	}
-
-	bcopy ( hp->h_addr, &(server.sin_addr.s_addr), hp->h_length);
-	server.sin_port = htons(port);
-
-	if(-1 == connect(sd, &server, sizeof(server))) {
-		close(sd);
-		sd = -1;
-	}
-
-	return sd;
-}
-
-void *t_get_current_version_(void *ptr) {
-	(void)ptr;
-	static const char req_str[] = "GET /mhuxd/current HTTP/1.1\r\nHost: download.dj5qv.de\r\n\r\n";
-	ssize_t r;
-
-	int fd = con("download.dj5qv.de", 80);
-	if(fd == -1)
-		return NULL;
-
-	r = write(fd, req_str, sizeof(req_str));
-
-	if(r != sizeof(req_str)) {
-		close(fd);
-		return NULL;
-	}
-
-	char *buf = w_malloc(4096 + 1);
-	r = read(fd, buf, 4096);
-	if(r >= 0) {
-		buf[r] = 0;
-		fprintf(stderr, "Got %zd bytes\n%s", r, buf);
-	} else
-		fprintf(stderr, "read error\n");
-
-
-	free(buf);
-	close(fd);
-	return NULL;
-}
-
-void *t_get_current_version(void *ptr) {
+static void *t_get_current_version(void *ptr) {
 	(void)ptr;
 	struct http_request *req;
 
-	req = httpc_get_request("http://download.dj5qv.de/mhuxd/current");
+	req = httpc_get_request("http://download.dj5qv.de/mhuxd/version");
 
 	return NULL;
 }
@@ -109,7 +50,7 @@ static void get_current_version() {
 }
 
 static void cancel_get_current_version() {
-	fprintf(stderr," cancel\n");
+	fprintf(stderr," cancel try\n");
 	if(!eshc.gcv_pending)
 		return;
 
