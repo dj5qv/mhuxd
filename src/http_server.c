@@ -161,9 +161,6 @@ int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *su
 		return 0;
 	}
 
-
-	char *buf = w_malloc(st.st_size);
-
 	int fd = open(sub_path, O_RDONLY);
 
 	if(fd < 0) {
@@ -180,6 +177,8 @@ int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *su
 			return 0;
 		}
 	}
+
+	char *buf = w_malloc(st.st_size);
 
 	int rsize = read(fd, buf, st.st_size);
 
