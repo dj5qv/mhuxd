@@ -11,7 +11,7 @@ struct obuf {
 	char *data;
 };
 
-static struct obuf *obuf_alloc(size_t size) {
+static inline struct obuf *obuf_alloc(size_t size) {
 	struct obuf *obuf = w_malloc(sizeof(*obuf));
 	obuf->data = w_malloc(size);
 	obuf->capacity = size;
@@ -19,7 +19,7 @@ static struct obuf *obuf_alloc(size_t size) {
 	return obuf;
 }
 
-static struct obuf *obuf_realloc(struct obuf *obuf, size_t new_size) {
+static inline struct obuf *obuf_realloc(struct obuf *obuf, size_t new_size) {
 	obuf->data = w_realloc(obuf->data, new_size);
 	obuf->capacity = new_size;
 
@@ -28,9 +28,7 @@ static struct obuf *obuf_realloc(struct obuf *obuf, size_t new_size) {
 	return obuf;
 }
 
-#include "logger.h"
-
-static void obuf_free(struct obuf * obuf) {
+static inline void obuf_free(struct obuf * obuf) {
 	if(!obuf)
 		return;
 	if(obuf->data) {
@@ -39,7 +37,7 @@ static void obuf_free(struct obuf * obuf) {
 	free(obuf);
 }
 
-static size_t obuf_avail(struct obuf *obuf) {
+static inline size_t obuf_avail(struct obuf *obuf) {
 	return obuf->capacity - obuf->size;
 }
 
