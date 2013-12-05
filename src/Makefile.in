@@ -106,8 +106,7 @@ am_mhuxd_OBJECTS = mhuxd-buffer.$(OBJEXT) mhuxd-demux.$(OBJEXT) \
 	mhuxd-version.$(OBJEXT) mhuxd-http_parse_query.$(OBJEXT) \
 	mhuxd-radiotypes.$(OBJEXT) mhuxd-wkman.$(OBJEXT) \
 	mhuxd-proc_mcp.$(OBJEXT) mhuxd-mhmk2r.$(OBJEXT) \
-	mhuxd-mhmk2.$(OBJEXT) mhuxd-citem.$(OBJEXT) \
-	mhuxd-http_client.$(OBJEXT) mhuxd-eshc.$(OBJEXT)
+	mhuxd-mhmk2.$(OBJEXT) mhuxd-citem.$(OBJEXT)
 mhuxd_OBJECTS = $(am_mhuxd_OBJECTS)
 mhuxd_LINK = $(CCLD) $(mhuxd_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
@@ -328,13 +327,13 @@ mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 		conmgr.c con_vsp.c con_tcp.c linux_termios.c channel.c cfgmgr.c \
 		daemon.c http_parser.c http_server.c webui.c cfgnod.c version.c \
 		http_parse_query.c radiotypes.c wkman.c proc_mcp.c mhmk2r.c \
-		mhmk2.c citem.c http_client.c eshc.c \
+                mhmk2.c citem.c \
 		buffer.h demux.h devmgr.h kcfg.h linux_udev.h logger.h main.h \
 		mhcontrol.h mhinfo.h mhrouter.h mux.h net.h opts.h pglist.h tty.h util.h \
 		conmgr.h con_vsp.h con_tcp.h linux_termios.h channel.h cfgmgr.h \
 		daemon.h http_parser.h http_server.h http_codes.h webui.h obuf.h cfgnod.h \
 		version.h http_parse_query.h radiotypes.h wkman.h mhflags.h proc_mcp.h \
-		mhmk2r.h mhmk2.h citem.h http_client.h eshc.h
+                mhmk2r.h mhmk2.h citem.h
 
 all: all-recursive
 
@@ -434,8 +433,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-daemon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-demux.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-devmgr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-eshc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-http_client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-http_parse_query.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-http_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-http_server.Po@am__quote@
@@ -964,34 +961,6 @@ mhuxd-citem.obj: citem.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='citem.c' object='mhuxd-citem.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-citem.obj `if test -f 'citem.c'; then $(CYGPATH_W) 'citem.c'; else $(CYGPATH_W) '$(srcdir)/citem.c'; fi`
-
-mhuxd-http_client.o: http_client.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-http_client.o -MD -MP -MF $(DEPDIR)/mhuxd-http_client.Tpo -c -o mhuxd-http_client.o `test -f 'http_client.c' || echo '$(srcdir)/'`http_client.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mhuxd-http_client.Tpo $(DEPDIR)/mhuxd-http_client.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='http_client.c' object='mhuxd-http_client.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-http_client.o `test -f 'http_client.c' || echo '$(srcdir)/'`http_client.c
-
-mhuxd-http_client.obj: http_client.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-http_client.obj -MD -MP -MF $(DEPDIR)/mhuxd-http_client.Tpo -c -o mhuxd-http_client.obj `if test -f 'http_client.c'; then $(CYGPATH_W) 'http_client.c'; else $(CYGPATH_W) '$(srcdir)/http_client.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mhuxd-http_client.Tpo $(DEPDIR)/mhuxd-http_client.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='http_client.c' object='mhuxd-http_client.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-http_client.obj `if test -f 'http_client.c'; then $(CYGPATH_W) 'http_client.c'; else $(CYGPATH_W) '$(srcdir)/http_client.c'; fi`
-
-mhuxd-eshc.o: eshc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-eshc.o -MD -MP -MF $(DEPDIR)/mhuxd-eshc.Tpo -c -o mhuxd-eshc.o `test -f 'eshc.c' || echo '$(srcdir)/'`eshc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mhuxd-eshc.Tpo $(DEPDIR)/mhuxd-eshc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='eshc.c' object='mhuxd-eshc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-eshc.o `test -f 'eshc.c' || echo '$(srcdir)/'`eshc.c
-
-mhuxd-eshc.obj: eshc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-eshc.obj -MD -MP -MF $(DEPDIR)/mhuxd-eshc.Tpo -c -o mhuxd-eshc.obj `if test -f 'eshc.c'; then $(CYGPATH_W) 'eshc.c'; else $(CYGPATH_W) '$(srcdir)/eshc.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mhuxd-eshc.Tpo $(DEPDIR)/mhuxd-eshc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='eshc.c' object='mhuxd-eshc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-eshc.obj `if test -f 'eshc.c'; then $(CYGPATH_W) 'eshc.c'; else $(CYGPATH_W) '$(srcdir)/eshc.c'; fi`
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
