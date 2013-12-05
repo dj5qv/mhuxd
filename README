@@ -4,7 +4,7 @@
 
 ABOUT
 
-   Homepage: http://maxec.de/dj5qv/apps/mhuxd/
+   Homepage: http://mhuxd.dj5qv.de
    Contact: mhuxd@maxec.de
 
    Mhuxd is a device router for microHam keyers. Currently it runs on the
@@ -40,8 +40,8 @@ PREREQUISITES
    - libev
    - libudev
 
-   Mhuxd doesn't need to run as root. However it needs read/write access to /dev/cuse
-   which is typically owned by root.
+   Mhuxd doesn't need to run as root. However it needs read/write access to 
+   /dev/cuse which is typically owned by root.
 
 
 INSTALLATION
@@ -49,15 +49,17 @@ INSTALLATION
     Ubuntu and related distributions (Debian, Mint):
     ------------------------------------------------
 
-    Binary packages are available. Refer to http://mhuxd.dj5qv.de/install/ for details.
+    Binary packages are available. Refer to http://mhuxd.dj5qv.de/install/ for 
+    details.
 
 
     Compile from source code:
     -------------------------
 
-    To compile mhuxd you'll need the development packages for libudev, libfuse, libev
-    and pkg-config.
-    (For Ubuntu that would be libev-dev, libfuse-dev, libudev-dev and pkg-config).
+    To compile mhuxd you'll need the development packages for libudev, libfuse,
+    libev and pkg-config.
+    (For Ubuntu that would be libev-dev, libfuse-dev, libudev-dev and 
+     pkg-config).
 
     './configure --prefix=/usr/local/mhuxd'
     'make'
@@ -69,12 +71,8 @@ INSTALLATION
 ACKNOWLEDGEMENTS
 
 microHam - For providing the protocol specs and support
-Marc Lehmann and Emanuele Giaquinta - For libev (http://software.schmorp.de/pkg/libev.html)
-Brandon Long - For the ClearSilver template system (http://www.clearsilver.net/)
+Marc Lehmann and Emanuele Giaquinta - For libev
+Brandon Long - For the ClearSilver template system
 Igor Sysoev, Joyent Inc. et al.  - For http_parser
 Google Inc., Filipe Almeida - For streamhtmlparser
-
-
-
-
 
