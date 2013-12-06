@@ -574,6 +574,23 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	mhr_add_consumer_cb(router, consumer_cb, MH_CHANNEL_CONTROL, ctl);
 	mhr_add_consumer_cb(router, flags_cb, MH_CHANNEL_FLAGS, ctl);
 
+	if(mhi->flags & MHF_HAS_R1) {
+		mhr_set_bps_limit(ctl->router, MH_CHANNEL_R1, 9600.0 / (8.0 + 1.0));
+		mhr_set_bps_limit(ctl->router, CH_PTT1, 1200 / (8.0 + 1.0));
+	}
+	if(mhi->flags & MHF_HAS_R2) {
+		mhr_set_bps_limit(ctl->router, MH_CHANNEL_R2, 9600.0 / (8.0 + 1.0));
+		mhr_set_bps_limit(ctl->router, CH_PTT2, 1200 / (8.0 + 1.0));
+	}
+	if(mhi->flags & MHF_HAS_FSK1)
+		mhr_set_bps_limit(ctl->router, MH_CHANNEL_R1_FSK, 45.5 / (5.0 + 1.5));
+	if(mhi->flags & MHF_HAS_FSK2)
+		mhr_set_bps_limit(ctl->router, MH_CHANNEL_R2_FSK, 45.5 / (5.0 + 1.5));
+	if(mhi->flags & MHF_HAS_WINKEY)
+		mhr_set_bps_limit(ctl->router, MH_CHANNEL_WINKEY, 1200 / (8.0 + 1.0));
+
+	mhr_set_bps_limit(ctl->router, CH_MCP, 9600 / (8.0 + 1.0));
+
 	return ctl;
 }
 
