@@ -114,7 +114,7 @@ struct citem c_dk2[] = {
 	{ "usePFsk",            28, 7, 1,  0 },
 	/* X30-X39 = keyFuncPs2[0] - keyFuncPs2[9] */
 	{ "civAddress",		40, 7, 8,  0x70 }, /* IC-7000 */
-	{ "civBaudRate",	41, 7, 8,  0x24 }, /* 9600 */
+	{ "civBaudRate",	41, 7, 8,  0x18 }, /* 9600 */
 	{ "civFunc",		42, 7, 8,  0x00 }, /* none */
 	/* X44-X55 = keyFuncFh2[0] - keyFuncFh2[11] */
 };
