@@ -56,8 +56,15 @@
 	      <?cs /if ?>
 
 	      <td class="navButtonSelected">
+
+	      <?cs if:item.unit == "0" ?>
 		<a href="<?cs var:mhuxd.webui.base_url ?>?page=<?cs var:item.page ?>&unit=<?cs var:item.unit ?>&menu=<?cs var:mhuxd.webui.defaults[item.page].default_menu ?>" 
 		   class="tablink2"><?cs var:item.display ?></a></td>
+	      <?cs else ?>
+		<a href="<?cs var:mhuxd.webui.base_url ?>?page=<?cs var:item.page ?>&unit=<?cs var:item.unit ?>&menu=<?cs var:mhuxd.webui.options[mhuxd.keyer[item.unit].type].default_menu ?>" 
+		   class="tablink2"><?cs var:item.display ?></a></td>
+	      <?cs /if ?>
+
 	      <td class="navButtonCornerSelected" valign="top"><img src="/static/navtab2-sel-right.gif" alt="" height="5" width="5"></td>
 	      <td class="navButtonSpacer"><img src="/static/dot.gif" alt="" height="5" width="5"></td>
 
@@ -70,8 +77,16 @@
 	      <?cs /if ?>
 
 	      <td class="navButton">
+
+	      <?cs if:item.unit == "0" ?>
 		<a href="<?cs var:mhuxd.webui.base_url ?>?page=<?cs var:item.page ?>&unit=<?cs var:item.unit ?>&menu=<?cs var:mhuxd.webui.defaults[item.page].default_menu ?>" 
 		   class="tablink"><?cs var:item.display ?></a></td>
+	      <?cs else ?>
+		<a href="<?cs var:mhuxd.webui.base_url ?>?page=<?cs var:item.page ?>&unit=<?cs var:item.unit ?>&menu=<?cs var:mhuxd.webui.options[mhuxd.keyer[item.unit].type].default_menu ?>" 
+		   class="tablink"><?cs var:item.display ?></a></td>
+	      <?cs /if ?>
+
+
 	      <td class="navButtonCorner" valign="top"><img src="/static/navtab2-right.gif" alt="" height="5" width="5"></td>
 	      <td class="navButtonSpacer"><img src="/static/dot.gif" alt="" height="5" width="5"></td>
 

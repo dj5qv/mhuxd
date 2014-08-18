@@ -59,6 +59,7 @@ mhuxd.webui.menus {
 	          display = Keyer Mode
 		  title = Keyer Mode
 		  include = keyer_mode.cs
+		  depends = has.keyer_mode
 	     }
 
              radio {
@@ -83,7 +84,7 @@ mhuxd.webui.menus {
                   display = PTT
                   title = PTT Configuration
                   include = keyer_ptt.cs
-#                  depends = has.ptt_settings
+                  depends = has.ptt_settings
              }
              audio {
                   display = Audio 
@@ -543,22 +544,26 @@ mhuxd.webui.options {
        }
 
        1 {   # CK
+             default_menu = mode
              cw.ptt_opts.ptt : mhuxd.webui.options.ptt.ptt
              cw.ptt_opts.qsk : mhuxd.webui.options.ptt.qsk
        }
 
        2 {   # DK
+             default_menu = mode
              cw.ptt_opts.ptt : mhuxd.webui.options.ptt.ptt
              cw.ptt_opts.noptt : mhuxd.webui.options.ptt.noptt
        }      
 
        3 {   # DK2
+             default_menu = mode
              cw.ptt_opts.ptt : mhuxd.webui.options.ptt.ptt
              cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
              cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi             
        }
 
        4 {   # MK
+             default_menu = mode
              cw.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
              cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
 	     cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi
@@ -599,6 +604,7 @@ mhuxd.webui.options {
        }
 
        5 {   # MK2
+             default_menu = mode
              cw.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
              cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
              cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi
@@ -641,6 +647,7 @@ mhuxd.webui.options {
        }
 
        6 {   # MK2R
+             default_menu = mode
              cw.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
              cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
              cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi
@@ -679,6 +686,7 @@ mhuxd.webui.options {
        }
 
        7 {   # MK2Rp
+             default_menu = mode
              cw.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
              cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
              cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi
@@ -715,5 +723,14 @@ mhuxd.webui.options {
 	     digital.audioTxFootSw.1 :  mhuxd.webui.options.audio.1
 	     digital.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
        }
+
+       8 {
+             default_menu = radio
+       }
+
+       9 {
+             default_menu = radio
+       }
+
 }
 

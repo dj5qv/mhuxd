@@ -326,7 +326,14 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 	if(err != STATUS_OK) goto failed;
 	err = hdf_set_int_value(flags_nod, "has.follow_tx_mode", mhi->flags & MHF_HAS_FOLLOW_TX_MODE ? 1 : 0);
 	if(err != STATUS_OK) goto failed;
-
+	err = hdf_set_int_value(flags_nod, "has.ptt_settings", mhi->flags & MHF_HAS_PTT_SETTINGS ? 1 : 0);
+	if(err != STATUS_OK) goto failed;
+	err = hdf_set_int_value(flags_nod, "has.keyer_mode", mhi->flags & MHF_HAS_KEYER_MODE ? 1 : 0);
+	if(err != STATUS_OK) goto failed;
+	err = hdf_set_int_value(flags_nod, "has.flags_channel", mhi->flags & MHF_HAS_FLAGS_CHANNEL ? 1 : 0);
+	if(err != STATUS_OK) goto failed;
+	err = hdf_set_int_value(flags_nod, "has.mcp_support", mhi->flags & MHF_HAS_MCP_SUPPORT ? 1 : 0);
+	if(err != STATUS_OK) goto failed;
 
 
 	// Keyer channels
@@ -344,8 +351,10 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 		if(err != STATUS_OK) goto failed;
 	}
 
-	err = hdf_set_int_value(chan_nod, "PTT1", 1);
-	if(err != STATUS_OK) goto failed;
+	if(mhi->flags & MHF_HAS_FLAGS_CHANNEL) {
+		err = hdf_set_int_value(chan_nod, "PTT1", 1);
+		if(err != STATUS_OK) goto failed;
+	}
 
 	if((mhi->flags & MHF_HAS_R2)||(mhi->flags & MHF_HAS_FSK2)) {
 		err = hdf_set_int_value(chan_nod, "PTT2", 1);
@@ -368,9 +377,10 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 		if(err != STATUS_OK) goto failed;
 	}
 
-	err = hdf_set_int_value(chan_nod, "MCP", 1);
-	if(err != STATUS_OK) goto failed;
-
+	if(mhi->flags & MHF_HAS_MCP_SUPPORT) {
+		err = hdf_set_int_value(chan_nod, "MCP", 1);
+		if(err != STATUS_OK) goto failed;
+	}
 
 	// Keyer parameters
 	err = hdf_get_node(knod, "param", &param_nod);

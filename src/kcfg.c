@@ -451,15 +451,79 @@ struct citem c_u2r[] = {
 
 };
 
+struct citem c_sm[] = {
+{ "pwmContrast",		0, 4, 5, 15 },
+{ "pwmBlight",			1, 4, 5, 25 },
+{ "dispBg0",			2, 7, 8, 0x0d }, /* Rotor state */
+{ "dispBg1",			3, 7, 8, 0x10 }, /* detailed ant selection type 1 */
+{ "dispEv.steppirState",	4, 0, 1, 0 },
+{ "dispEv.steppirLock",		4, 1, 1, 0 },
+{ "dispEv.steppirCommands",	4, 2, 1, 0 },
+{ "dispEv.portAVolt",		4, 3, 1, 0 },
+{ "dispEv.portBVolt",		4, 4, 1, 0 },
+{ "dispEv.txFreqChange",	4, 5, 1, 0 },
+{ "dispEv.rxFreqChange",	4, 6, 1, 0 },
+{ "dispEv.operFreqChange",	4, 7, 1, 0 },
+{ "dispEv.vfoAFreqChange",	4, 8, 1, 0 },
+{ "dispEv.vfoBFreqChange",	4, 9, 1, 0 },
+{ "dispEv.curAntChange",	4,10, 1, 0 },
+{ "dispEv.rotatorStateChange",	4,11, 1, 0 },
+{ "dispEv.bandChange",		4,12, 1, 0 },
+{ "dispEv.antChange",		4,13, 1, 0 },
+{ "dispEv.txAntChange",		4,14, 1, 0 },
+{ "dispEv.virtRotatorStateChange", 4,15, 1, 0 },
+{ "dispEv.andSelectionSplit",	4,16, 1, 0 },
+{ "dispEv.group",		4,17, 1, 0 },
+
+{ "dispEvLn.steppirState",	8, 0, 1, 0 },
+{ "dispEvLn.steppirLock",	8, 1, 1, 0 },
+{ "dispEvLn.steppirCommands",	8, 2, 1, 0 },
+{ "dispEvLn.portAVolt",		8, 3, 1, 0 },
+{ "dispEvLn.portBVolt",		8, 4, 1, 0 },
+{ "dispEvLn.txFreqChange",	8, 5, 1, 0 },
+{ "dispEvLn.rxFreqChange",	8, 6, 1, 0 },
+{ "dispEvLn.operFreqChange",	8, 7, 1, 0 },
+{ "dispEvLn.vfoAFreqChange",	8, 8, 1, 0 },
+{ "dispEvLn.vfoBFreqChange",	8, 9, 1, 0 },
+{ "dispEvLn.curAntChange",	8,10, 1, 0 },
+{ "dispEvLn.rotatorStateChange",8,11, 1, 0 },
+{ "dispEvLn.bandChange",	8,12, 1, 0 },
+{ "dispEvLn.antChange",		8,13, 1, 0 },
+{ "dispEvLn.txAntChange",	8,14, 1, 0 },
+{ "dispEvLn.virtRotatorStateChange", 8,15, 1, 0 },
+{ "dispEvLn.andSelectionSplit",	8,16, 1, 0 },
+{ "dispEvLn.group",		8,17, 1, 0 },
+
+{ "dispEvTime",			12, 7, 8, 200 },
+{ "assignedToR2",		13, 0, 1, 0 },
+{ "enableSleepMode",		13, 1, 1, 0 },
+{ "buttonBeep",			13, 2, 1, 0 },
+{ "alarmBeep",			13, 3, 1, 0 },
+{ "forwardNumpadKeys",		13, 4, 1, 0 },
+{ "i2cCoupled",			13, 5, 1, 0 },
+/* 14 - 25 KeyFuncs */
+
+
+};
+
+
 #define MK1_SIZE (sizeof(c_mk1))
 #define DK2_SIZE (sizeof(c_dk2))
 #define MK2_SIZE (sizeof(c_mk2))
 #define MK2R_SIZE (sizeof(c_mk2r))
 #define U2R_SIZE (sizeof(c_u2r))
-
+#define SM_SIZE (sizeof(c_sm))
+/*
 #define G1_SIZE (DK2_SIZE > MK2_SIZE ? DK2_SIZE : MK2_SIZE) 
 #define G2_SIZE (MK2R_SIZE > U2R_SIZE ? MK2R_SIZE : U2R_SIZE)
 #define MAX_NUM_CITEMS (((G1_SIZE > G2_SIZE ? G1_SIZE : G2_SIZE) + sizeof(c_base)) / sizeof(struct citem))
+*/
+#define LARGEST1 (MK1_SIZE > DK2_SIZE ? MK1_SIZE : DK2_SIZE)
+#define LARGEST2 (LARGEST1 > MK2_SIZE ? LARGEST1 : MK2_SIZE)
+#define LARGEST3 (LARGEST2 > MK2R_SIZE ? LARGEST2 : MK2R_SIZE)
+#define LARGEST4 (LARGEST3 > U2R_SIZE ? LARGEST3 : U2R_SIZE)
+#define LARGEST5 (LARGEST4 > SM_SIZE ? LARGEST4 : SM_SIZE)
+#define MAX_NUM_CITEMS (LARGEST5)
 
 struct kcfg {
 	struct buffer b;
@@ -546,7 +610,9 @@ struct kcfg *kcfg_create(const struct mh_info *mhi) {
 
 	struct kcfg *kcfg = w_calloc(1, sizeof(*kcfg));
 	kcfg->mhi = mhi;
-	memcpy(kcfg->citem, c_base, sizeof(c_base));
+
+	if(mhi->type != MHT_SM && mhi->type != MHT_SMD)
+		memcpy(kcfg->citem, c_base, sizeof(c_base));
 
 	switch(mhi->type) {
 
@@ -594,15 +660,10 @@ struct kcfg *kcfg_create(const struct mh_info *mhi) {
 		kcfg->num_citems = ARRAY_SIZE(c_base);
 		buf_size = 12;
 		break;
-/*
-	case MHT_MK:
-		kcfg->num_citems = ARRAY_SIZE(c_base);
-		buf_size = 12;
-		break;
-*/
 	case MHT_SM:
 	case MHT_SMD:
-		kcfg->num_citems = ARRAY_SIZE(c_base);
+		kcfg->num_citems = ARRAY_SIZE(c_sm);
+		memcpy(kcfg->citem, c_sm, sizeof(c_sm));
 		buf_size = 56;
 		break;
 	}
