@@ -1,6 +1,6 @@
 AC_PREREQ([2.69])
 AC_INIT([mhuxd], [0.50rc3], [mhuxd@maxec.de])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 AC_PROG_CC
 AC_CONFIG_HEADERS([config.h])
