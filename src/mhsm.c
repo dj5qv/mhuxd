@@ -13,12 +13,9 @@
 #include "citem.h"
 
 struct citem sm_state_items[] = {
-	CITEM("curAzimuthMsb", 0, 0, 8),
-	CITEM("curAzimuthLsb", 1, 0, 8),
-	CITEM("azimuthOffsetMsb", 2, 0, 8 ),
-	CITEM("azimuthOffsetLsb", 3, 0, 8 ),
-	CITEM("targetAzimuthMsb", 4, 0, 8 ),
-	CITEM("targetAzimuthLsb", 5, 0, 8 ),
+	CITEM("curAzimuth", 0, 0, 16),
+	CITEM("azimuthOffset", 2, 0, 16 ),
+	CITEM("targetAzimuth", 4, 0, 16 ),
 	CITEM("portAVolt", 6, 0, 8 ),
 	CITEM("portBVolt", 7, 0, 8 ),
 };
