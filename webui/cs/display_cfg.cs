@@ -20,14 +20,14 @@
 
 	    <?cs call:opt_select("Background Upper Line",
 		 "set.mhuxd.keyer."+unit+".param.dispBg0", 
-		 mhuxd.webui.options.mk2_dispbk, 
+		 mhuxd.webui.options[keyer_type].dispbg, 
 		 mhuxd.keyer[unit].param.dispBg0 ) 
 	     ?>
 	    <tr><td class="dividersettingscell" colspan="3"><img src="/static/dot.gif" alt="" border="0" height="1" width="1"></td></tr>
 
 	    <?cs call:opt_select("Background Lower Line",
 		 "set.mhuxd.keyer."+unit+".param.dispBg1", 
-		 mhuxd.webui.options.mk2_dispbk, 
+		 mhuxd.webui.options[keyer_type].dispbg, 
 		 mhuxd.keyer[unit].param.dispBg1 ) 
 		 ?>
 

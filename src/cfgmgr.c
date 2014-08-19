@@ -416,7 +416,7 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 
 
 
-#if 0
+#if 1
 	STRING str;
 	string_init(&str);
 	hdf_dump_str(cfgmgr->hdf_live, "", 0, &str);

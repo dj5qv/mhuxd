@@ -9,7 +9,7 @@
 	  <tbody>
 
 
-	    <?cs each:item = mhuxd.webui.options.mk2_dispev ?>
+	    <?cs each:item = mhuxd.webui.options[keyer_type].dispev ?>
 
 	    <tr>
 	      <td class="titlesettingscell" align="right"><?cs var:item.display ?>:</td>
@@ -19,8 +19,8 @@
 	      </td>
 	      <td class="contentsettingscell">
 		<?cs call:opt_select_basic(
-		     "set.mhuxd.keyer."+unit+".param.dispEv."+name(item),
-		     mhuxd.webui.options.mk2_disp_lines,
+		     "set.mhuxd.keyer."+unit+".param.dispEvLn."+name(item),
+		     mhuxd.webui.options.disp_lines,
 		     mhuxd.keyer[unit].param.dispEvLn[name(item)])
 		     ?>
 

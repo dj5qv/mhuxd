@@ -20,11 +20,11 @@ struct citem sm_state_items[] = {
 	CITEM("portBVolt", 7, 0, 8 ),
 };
 
-int sm_get_state_value(const uint8_t mpk_buffer[4], const char *key) {
-	return citem_get_value(sm_state_items, ARRAY_SIZE(sm_state_items), mpk_buffer, 9, key);
+int sm_get_state_value(const uint8_t buffer[9], const char *key) {
+	return citem_get_value(sm_state_items, ARRAY_SIZE(sm_state_items), buffer, 9, key);
 }
 
-void sm_debug_print_state_values(const uint8_t mpk_buffer[4]) {
-	citem_debug_print_values("mpk", sm_state_items, ARRAY_SIZE(sm_state_items), mpk_buffer, 9);
+void sm_debug_print_state_values(const uint8_t buffer[9]) {
+	citem_debug_print_values("sm state", sm_state_items, ARRAY_SIZE(sm_state_items), buffer, 9);
 }
 

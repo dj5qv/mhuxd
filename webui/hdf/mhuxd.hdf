@@ -367,7 +367,141 @@ mhuxd.webui.options {
              }
        }
 
-       mk2_dispbk {
+
+       sm_dispbg {
+             0 {
+                  display = Empty
+                  value = 0
+             }
+             1 {
+                  display = Welcome Message
+                  value = 1
+             }
+             2 {
+                  display = RX frequency
+                  value = 2
+             }
+             3 {
+                  display = TX frequency
+                  value = 3
+             }
+             4 {
+                  display = RX or TX frequency, according to PTT
+                  value = 4
+             }
+             5 {
+                  display = operating frequency (as reported by radio)
+                  value = 5
+             }
+             6 {
+                  display = VFO A frequency
+                  value = 6
+             }
+             7 {
+                  display = VFO B frequency
+                  value = 7
+             }
+             8 {
+                  display = port A power supply voltage
+                  value = 8
+             }
+             9 {
+                  display = port B power supply voltage
+                  value = 9
+             }
+             10 {
+                  display = current SteppIR state
+                  value = 10
+             }
+             11 {
+                  display = RX antenna + TX antenna
+                  value = 11
+             }
+             12 {
+                  display = current antenna
+                  value = 12
+             }
+             13 {
+                  display = rotator state
+                  value = 13
+             }
+             14 {
+                  display = current band
+                  value = 14
+             }
+             15 {
+                  display = antenna selection
+                  value = 15
+             }
+             16 {
+                  display = detailed antenna selection, type 1
+                  value = 16
+             }
+             17 {
+                  display = detailed antenna selection, type 2
+                  value = 17
+             }
+       }
+
+       sm_dispev {
+             steppirState {
+	          display = SteppIR state, if controlled
+             }
+             steppirLock {
+	          display = SteppIR lock (tuning, home)
+             }
+             steppirCommands {
+	          display = SteppIR commands (manual)
+             }
+             portAVolt {
+	          display = port A voltage, when out of range
+             }
+             portBVolt {
+	          display = port B voltage, when out of range
+             }
+             txFreqChange {
+	          display = TX frequency change
+             }
+             rxFreqChange {
+	          display = RX frequency change
+             }
+             operFreqChange {
+	          display = operating frequency change
+             }
+             vfoAFreqChange {
+	          display = VFO A frequency change
+             }
+             vfoBFreqChange {
+	          display = VFO B frequency change
+             }
+             curAntChange {
+	          display = current antenna change
+             }
+             rotatorStateChange {
+	          display = rotator state change
+             }
+             bandChange {
+	          display = band change
+             }
+             antChange {
+	          display = antenna selection change
+             }
+             txAntChange {
+	          display = TX antenna change (in RX state; in TX state: RX antenna change)
+             }
+             virtRotatorStateChange {
+	          display = virtual rotator state change
+             }
+             andSelectionSplit {
+	          display = RX and TX antenna selection, if split is active
+             }
+             group {
+	          display = group, if automatic scanning is active
+             }
+
+       }
+
+       mk2_dispbg {
              0 {
                   display = Empty
                   value = 0
@@ -525,7 +659,7 @@ mhuxd.webui.options {
              }
        }
 
-       mk2_disp_lines {
+       disp_lines {
              0 {
                   display = Upper Line
              }
@@ -605,6 +739,8 @@ mhuxd.webui.options {
 
        5 {   # MK2
              default_menu = mode
+	     dispbg : mhuxd.webui.options.mk2_dispbg
+	     dispev : mhuxd.webui.options.mk2_dispev
              cw.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
              cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
              cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi
@@ -724,11 +860,15 @@ mhuxd.webui.options {
 	     digital.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
        }
 
-       8 {
+       8 {   # SM
+	     dispbg : mhuxd.webui.options.sm_dispbg
+	     dispev : mhuxd.webui.options.sm_dispev
              default_menu = radio
        }
 
-       9 {
+       9 {   # SMD
+	     dispbg : mhuxd.webui.options.sm_dispbg
+	     dispev : mhuxd.webui.options.sm_dispev
              default_menu = radio
        }
 

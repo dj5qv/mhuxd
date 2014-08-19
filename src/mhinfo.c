@@ -70,11 +70,13 @@ const struct mh_info_map mh_info_map[] = {
 
 	{ .type = MHT_SM,      
 	  .name = "Station Master",
-	  .flags = MHF_MHUXD_SUPPORTED|MHF_HAS_R1|MHF_HAS_R1_RADIO_SUPPORT|MHF_HAS_AUX  },
+	  .flags = MHF_MHUXD_SUPPORTED|MHF_HAS_R1|MHF_HAS_R1_RADIO_SUPPORT|MHF_HAS_AUX|
+	  MHF_HAS_DISPLAY },
 
 	{ .type = MHT_SMD,     
 	  .name = "Station Master DeLuxe",
-	  .flags = MHF_MHUXD_SUPPORTED|MHF_HAS_R1|MHF_HAS_R1_RADIO_SUPPORT|MHF_HAS_AUX },
+	  .flags = MHF_MHUXD_SUPPORTED|MHF_HAS_R1|MHF_HAS_R1_RADIO_SUPPORT|MHF_HAS_AUX|
+	  MHF_HAS_DISPLAY },
 
 	{ .type = MHT_U2R,     
 	  .name = "micro2R", 
