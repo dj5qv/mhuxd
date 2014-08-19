@@ -21,6 +21,7 @@
 #include "cfgnod.h"
 #include "mhmk2r.h"
 #include "mhmk2.h"
+#include "mhsm.h"
 
 #define MAX_CMD_LEN 128
 #define MAX_CMD_QUEUE_SIZE 16
@@ -81,6 +82,7 @@ enum {
 
 	MHCMD_U2R_STATE           = 0x75,  /* U2R only */
 	MHCMD_USB_RX_OVERFLOW     = 0x77,
+	MHCMD_SML_STATE           = 0x76, /* SM, SMD only */
 	MHCMD_MPK_STATE           = 0x78, /* MK, DK2 only */
 	MHCMD_ACC_STATE           = 0x79, /* U2R, MK2R only */
 	MHCMD_DVK_CONTROL         = 0x7a, /* MK2R only */
@@ -136,7 +138,7 @@ struct mh_control {
 	uint8_t in_flag_r1, in_flag_r2;
 	uint8_t out_flag;
 	uint8_t set_mode;
-	uint8_t mpk_mok_state[8];
+	uint8_t state_buf[9];
 	uint8_t acc_state[8];
 	uint8_t hfocus[8];
 };
@@ -293,8 +295,8 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 			err("(mhc) invalid cmd length for MPK/DK2 state! cmd: %d len: %d", *data, len);
 			return;
 		}
-		memcpy(ctl->mpk_mok_state, data + 1, 8);
-		mk2_debug_print_mpk_values(ctl->mpk_mok_state);
+		memcpy(ctl->state_buf, data + 1, 4);
+		mk2_debug_print_mpk_values(ctl->state_buf);
 		return;
 	}
 
@@ -304,8 +306,8 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 			return;
 		}
 
-		memcpy(ctl->mpk_mok_state, data + 1, 8);
-		mk2r_debug_print_mok_values(ctl->mpk_mok_state);
+		memcpy(ctl->state_buf, data + 1, 8);
+		mk2r_debug_print_mok_values(ctl->state_buf);
 		return;
 	}
 
@@ -315,9 +317,21 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 			return;
 		}
 
-		memcpy(ctl->acc_state, data + 1, 8);
+		memcpy(ctl->acc_state, data + 1, 9);
 		return;
 	}
+
+	if(*data == MHCMD_SML_STATE && (ctl->mhi.type == MHT_SM ||ctl->mhi.type == MHT_SMD)) {
+		if(len != 11) {
+			err("(mhc) invalid cmd length for SM state! cmd: %d len: %d", *data, len);
+			return;
+		}
+
+		memcpy(ctl->state_buf, data + 1, 9);
+		sm_debug_print_state_values(ctl->state_buf);
+		return;
+	}
+
 
 	err("(mhc) invalid state cmd %d for keyer %s", *data, ctl->serial);
 }
@@ -355,6 +369,7 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 	case MHCMD_MPK_STATE:
 	case MHCMD_MOK_STATE:
 	case MHCMD_ACC_STATE:
+	case MHCMD_SML_STATE:
 		process_keyer_states(ctl, data, len);
 		break;
 

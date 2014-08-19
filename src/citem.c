@@ -22,8 +22,8 @@ const struct citem *citem_find(const struct citem *citems,  uint16_t num_citems,
 }
 
 int citem_get_value(const struct citem *citems, int num_citems, const uint8_t *buffer, int buffer_size, const char *key) {
-
 	const struct citem *cp = citem_find(citems, num_citems, key);
+	int val;
 	if(!cp)
 		return -1;
 
@@ -36,7 +36,13 @@ int citem_get_value(const struct citem *citems, int num_citems, const uint8_t *b
 		return -1;
 	}
 
-	return (buffer[idx] >> (bit + 1 - cp->width)) & mask;
+	if(cp->width == 16 && bit == 0) 
+		// SM comes with some 16 bit values, LSB first.
+		val = (buffer[idx + 1] << 8) | buffer[idx];
+	else
+		val = (buffer[idx] >> (bit + 1 - cp->width)) & mask;
+
+	return val;
 }
 
 int citem_set_value(const struct citem *citems, int num_citems, uint8_t *buffer, int buffer_size, const char *key, int value) {
@@ -58,17 +64,27 @@ int citem_set_value(const struct citem *citems, int num_citems, uint8_t *buffer,
 		err("(citem) %s() index out of range for %s", __func__, key);
 	}
 
-	c = buffer[idx];
+	if(cp->width == 16 && bit == 0) {
+		/* SM 16 bit values, LSB first */
+		if(value > INT16_MAX || value < INT16_MIN) {
+			err("(citem) %s() invalid value %d for %s", __func__, value, key);
+			return -1;
+		}
+		buffer[idx] = value & 0xff;
+		buffer[idx + 1] = (value >> 8) & 0xff;
+	} else {
+		c = buffer[idx];
 
-	if(value > mask) {
-		err("(citem) %s() invalid value %d for %s", __func__, value, key);
-		return -1;
+		if(value > mask) {
+			err("(citem) %s() invalid value %d for %s", __func__, value, key);
+			return -1;
+		}
+
+		c &= ~(mask << (bit + 1 - cp->width));
+		c |=  (value << (bit + 1 - cp->width));
+
+		buffer[idx] = c;
 	}
-
-	c &= ~(mask << (bit + 1 - cp->width));
-	c |=  (value << (bit + 1 - cp->width));
-
-	buffer[idx] = c;
 
 	return 0;
 

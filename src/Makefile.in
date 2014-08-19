@@ -106,7 +106,8 @@ am_mhuxd_OBJECTS = mhuxd-buffer.$(OBJEXT) mhuxd-demux.$(OBJEXT) \
 	mhuxd-version.$(OBJEXT) mhuxd-http_parse_query.$(OBJEXT) \
 	mhuxd-radiotypes.$(OBJEXT) mhuxd-wkman.$(OBJEXT) \
 	mhuxd-proc_mcp.$(OBJEXT) mhuxd-mhmk2r.$(OBJEXT) \
-	mhuxd-mhmk2.$(OBJEXT) mhuxd-citem.$(OBJEXT)
+	mhuxd-mhmk2.$(OBJEXT) mhuxd-mhsm.$(OBJEXT) \
+	mhuxd-citem.$(OBJEXT)
 mhuxd_OBJECTS = $(am_mhuxd_OBJECTS)
 mhuxd_LINK = $(CCLD) $(mhuxd_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
@@ -327,13 +328,13 @@ mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 		conmgr.c con_vsp.c con_tcp.c linux_termios.c channel.c cfgmgr.c \
 		daemon.c http_parser.c http_server.c webui.c cfgnod.c version.c \
 		http_parse_query.c radiotypes.c wkman.c proc_mcp.c mhmk2r.c \
-                mhmk2.c citem.c \
+                mhmk2.c mhsm.c citem.c \
 		buffer.h demux.h devmgr.h kcfg.h linux_udev.h logger.h main.h \
 		mhcontrol.h mhinfo.h mhrouter.h mux.h net.h opts.h pglist.h tty.h util.h \
 		conmgr.h con_vsp.h con_tcp.h linux_termios.h channel.h cfgmgr.h \
 		daemon.h http_parser.h http_server.h http_codes.h webui.h obuf.h cfgnod.h \
 		version.h http_parse_query.h radiotypes.h wkman.h mhflags.h proc_mcp.h \
-                mhmk2r.h mhmk2.h citem.h
+                mhmk2r.h mhmk2.h mhsm.h citem.h
 
 all: all-recursive
 
@@ -446,6 +447,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhmk2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhmk2r.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhrouter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mhsm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-mux.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-net.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-opts.Po@am__quote@
@@ -949,6 +951,20 @@ mhuxd-mhmk2.obj: mhmk2.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mhmk2.c' object='mhuxd-mhmk2.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhmk2.obj `if test -f 'mhmk2.c'; then $(CYGPATH_W) 'mhmk2.c'; else $(CYGPATH_W) '$(srcdir)/mhmk2.c'; fi`
+
+mhuxd-mhsm.o: mhsm.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhsm.o -MD -MP -MF $(DEPDIR)/mhuxd-mhsm.Tpo -c -o mhuxd-mhsm.o `test -f 'mhsm.c' || echo '$(srcdir)/'`mhsm.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mhuxd-mhsm.Tpo $(DEPDIR)/mhuxd-mhsm.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mhsm.c' object='mhuxd-mhsm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhsm.o `test -f 'mhsm.c' || echo '$(srcdir)/'`mhsm.c
+
+mhuxd-mhsm.obj: mhsm.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhsm.obj -MD -MP -MF $(DEPDIR)/mhuxd-mhsm.Tpo -c -o mhuxd-mhsm.obj `if test -f 'mhsm.c'; then $(CYGPATH_W) 'mhsm.c'; else $(CYGPATH_W) '$(srcdir)/mhsm.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mhuxd-mhsm.Tpo $(DEPDIR)/mhuxd-mhsm.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mhsm.c' object='mhuxd-mhsm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-mhsm.obj `if test -f 'mhsm.c'; then $(CYGPATH_W) 'mhsm.c'; else $(CYGPATH_W) '$(srcdir)/mhsm.c'; fi`
 
 mhuxd-citem.o: citem.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-citem.o -MD -MP -MF $(DEPDIR)/mhuxd-citem.Tpo -c -o mhuxd-citem.o `test -f 'citem.c' || echo '$(srcdir)/'`citem.c
