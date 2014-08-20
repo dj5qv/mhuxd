@@ -157,30 +157,33 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 	mhr_add_consumer(ctr->dev->router, sodat[0], ctr->channel);
 	mhr_add_producer(ctr->dev->router, sodat[0], ctr->channel);
 
-	// create the ptt sockets
-	ctr->ptt_channel = ch_ptt_channel(ctr->channel);
 
-	if(ctr->ptt_channel == ctr->channel) {
-		ctr->s_fd_ptt = ctr->s_fd_data;
-		ctr->cspec.fd_ptt = ctr->cspec.fd_data;
-	} else {
-		if(ctr->ptt_channel != -1) {
-			if(socketpair(AF_UNIX, SOCK_STREAM, 0, soptt)) {
-				err_e(errno, "(con) could not create ptt socket for VSP!");
-				goto fail;
+	if(ctr->type == CON_VSP && (cfg_get_int_val(cfg, "ptt_rts", 0) || cfg_get_int_val(cfg, "ptt_dtr", 0))) {
+		// create the ptt sockets for PTT control via RTS/DTR
+		ctr->ptt_channel = ch_ptt_channel(ctr->channel);
+
+		if(ctr->ptt_channel == ctr->channel) {
+			ctr->s_fd_ptt = ctr->s_fd_data;
+			ctr->cspec.fd_ptt = ctr->cspec.fd_data;
+		} else {
+			if(ctr->ptt_channel != -1) {
+				if(socketpair(AF_UNIX, SOCK_STREAM, 0, soptt)) {
+					err_e(errno, "(con) could not create ptt socket for VSP!");
+					goto fail;
+				}
+				if (fcntl(soptt[0], F_SETFL, O_NONBLOCK) < 0) {
+					err_e(errno, "(con) failed to set NONBLOCK on ptt socket");
+					goto fail;
+				}
+				if (fcntl(soptt[1], F_SETFL, O_NONBLOCK) < 0) {
+					err_e(errno, "(con) failed to set NONBLOCK on ptt socket");
+					goto fail;
+				}
+				ctr->s_fd_ptt = soptt[0];
+				ctr->cspec.fd_ptt = soptt[1];
+				mhr_add_consumer(ctr->dev->router, soptt[0], ctr->ptt_channel);
+				mhr_add_producer(ctr->dev->router, soptt[0], ctr->ptt_channel);
 			}
-			if (fcntl(soptt[0], F_SETFL, O_NONBLOCK) < 0) {
-				err_e(errno, "(con) failed to set NONBLOCK on ptt socket");
-				goto fail;
-			}
-			if (fcntl(soptt[1], F_SETFL, O_NONBLOCK) < 0) {
-				err_e(errno, "(con) failed to set NONBLOCK on ptt socket");
-				goto fail;
-			}
-			ctr->s_fd_ptt = soptt[0];
-			ctr->cspec.fd_ptt = soptt[1];
-			mhr_add_consumer(ctr->dev->router, soptt[0], ctr->ptt_channel);
-			mhr_add_producer(ctr->dev->router, soptt[0], ctr->ptt_channel);
 		}
 	}
 
@@ -226,8 +229,10 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 	if(ctr->dev) {
 		mhr_rem_consumer(ctr->dev->router, sodat[0], ctr->channel);
 		mhr_rem_producer(ctr->dev->router, sodat[0], ctr->channel);
-		mhr_rem_consumer(ctr->dev->router, soptt[0], ctr->ptt_channel);
-		mhr_rem_producer(ctr->dev->router, soptt[0], ctr->ptt_channel);
+		if(ctr->ptt_channel != -1) {
+			mhr_rem_consumer(ctr->dev->router, soptt[0], ctr->ptt_channel);
+			mhr_rem_producer(ctr->dev->router, soptt[0], ctr->ptt_channel);
+		}
 
 
 		if(sodat[0] != -1) close(sodat[0]);
