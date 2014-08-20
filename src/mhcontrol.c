@@ -587,7 +587,9 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	mhr_add_status_cb(router, router_status_cb, ctl);
 
 	mhr_add_consumer_cb(router, consumer_cb, MH_CHANNEL_CONTROL, ctl);
-	mhr_add_consumer_cb(router, flags_cb, MH_CHANNEL_FLAGS, ctl);
+
+	if(mhi->flags & MHF_HAS_FLAGS_CHANNEL)
+		mhr_add_consumer_cb(router, flags_cb, MH_CHANNEL_FLAGS, ctl);
 
 	if(mhi->flags & MHF_HAS_R1) {
 		mhr_set_bps_limit(ctl->router, MH_CHANNEL_R1, 9600.0 / (8.0 + 1.0));

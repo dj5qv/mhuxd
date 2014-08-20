@@ -91,6 +91,7 @@ struct mh_router {
 	char *serial;
 	uint8_t rflag[2];
 	uint8_t wflag;
+	uint8_t has_flags_channel;
 };
 
 static void lb_cb(struct ev_loop *loop,  struct ev_timer *w, int revents) {
@@ -344,7 +345,7 @@ static void keyer_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		if(channel < 0 || channel >= MH_NUM_CHANNELS)
 			continue;
 
-		if(channel == MH_CHANNEL_FLAGS)
+		if(channel == MH_CHANNEL_FLAGS && router->has_flags_channel)
 			process_in_flags(router, router->dmx->result_byte);
 
 		PG_SCANLIST(&router->consumer_list[channel], cns) {
@@ -416,13 +417,14 @@ static void keyer_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		ev_io_stop(loop, &router->w_out);
 }
 
-struct mh_router *mhr_create(struct ev_loop *loop, const char *serial) {
+struct mh_router *mhr_create(struct ev_loop *loop, const char *serial, uint8_t has_flags_channel) {
 	struct mh_router *router;
 	int i;
 
 	dbg1("(mhr) %s()", __func__);
 
 	router = w_calloc(1, sizeof(*router));
+	router->has_flags_channel = has_flags_channel;
 	router->serial = w_malloc(strlen(serial)+1);
 	strcpy(router->serial, serial);
 	router->fd = -1;
@@ -520,6 +522,9 @@ void mhr_add_consumer(struct mh_router *router, int fd, int channel) {
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
 		return;
 
+	if(channel == MH_CHANNEL_FLAGS && !router->has_flags_channel)
+		return;
+
 	if(fd == -1)
 		return;
 
@@ -538,6 +543,9 @@ void mhr_add_producer(struct mh_router *router, int fd, int channel) {
 	struct Producer *prd;
 
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
+		return;
+
+	if(channel == MH_CHANNEL_FLAGS && !router->has_flags_channel)
 		return;
 
 	if(fd == -1)
@@ -562,6 +570,9 @@ void mhr_add_consumer_cb(struct mh_router *router, MHRConsumerCallback callback,
 	struct ConsumerCb *cnc;
 
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
+		return;
+
+	if(channel == MH_CHANNEL_FLAGS && !router->has_flags_channel)
 		return;
 
 	dbg1("(mhr) %s() %s", __func__, ch_channel2str(channel));
@@ -591,6 +602,9 @@ void mhr_add_processor_cb(struct mh_router *router, MHRProcessorCallback callbac
 	struct ProcessorCb *prc;
 
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
+		return;
+
+	if(channel == MH_CHANNEL_FLAGS && !router->has_flags_channel)
 		return;
 
 	dbg1("(mhr) %s()", __func__);
@@ -700,6 +714,11 @@ void mhr_rem_processor_cb(struct mh_router *router, MHRProcessorCallback callbac
 int mhr_send(struct mh_router *router, const uint8_t *data, unsigned int len, int channel) {
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
 		return -1;
+
+	if(channel == MH_CHANNEL_FLAGS && !router->has_flags_channel) {
+		warn("%s() %s write to flags channel not supported on this device!", __func__, router->serial);
+		return -1;
+	}
 
 	if(len > BUFFER_CAPACITY)
 		return -1;

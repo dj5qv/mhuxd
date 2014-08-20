@@ -48,7 +48,7 @@ static struct device *create_dev(const char *serial, uint16_t type) {
 	dev = w_calloc(1, sizeof(*dev));
 	dev->serial = w_malloc(strlen(serial)+1);
 	strcpy(dev->serial, serial);
-	dev->router = mhr_create(dman->loop, serial);
+	dev->router = mhr_create(dman->loop, serial, mhi.flags & MHF_HAS_FLAGS_CHANNEL);
 	dev->ctl = mhc_create(dman->loop, dev->router, &mhi);
 	PG_AddTail(&dman->device_list, &dev->node);
 	mhc_add_state_changed_cb(dev->ctl, cfgmr_state_changed_cb, dman->cfgmgr);

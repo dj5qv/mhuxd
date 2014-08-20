@@ -23,7 +23,7 @@ typedef void (*MHRStatusCallback)(struct mh_router *, int status, void *user_dat
 typedef void (*MHRProcessorCallback)(struct mh_router *, int channel, struct buffer *, int fd, void *user_data);
 
 
-struct mh_router *mhr_create(struct ev_loop *loop, const char *serial);
+struct mh_router *mhr_create(struct ev_loop *loop, const char *serial, uint8_t has_flags_channel);
 void mhr_destroy(struct mh_router *router);
 void mhr_set_keyer_fd(struct mh_router *, int fd);
 void mhr_add_consumer(struct mh_router *router, int fd, int channel);
