@@ -322,7 +322,7 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 	}
 
 	if(*data == MHCMD_SML_STATE && (ctl->mhi.type == MHT_SM ||ctl->mhi.type == MHT_SMD)) {
-		if(len != 11) {
+		if(len < 11) {
 			err("(mhc) invalid cmd length for SM state! cmd: %d len: %d", *data, len);
 			return;
 		}
