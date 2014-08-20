@@ -743,7 +743,7 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 		c = cfg_get_int_val(cfg, "icomsimulateautoinfo", 0) << 0;
 		c |= cfg_get_int_val(cfg, "digitalovervoicerule", 0) << 1;
 		c |= cfg_get_int_val(cfg, "usedecoderifconnected", 0) << 3;
-		c |= cfg_get_int_val(cfg, "dontinterfereusbcontrol", 0) << 3;
+		c |= cfg_get_int_val(cfg, "dontinterfereusbcontrol", 0) << 4;
 		buf_append_c(&buf, c);
 	}
 	buf_append_c(&buf, cmd | MSB_BIT);
