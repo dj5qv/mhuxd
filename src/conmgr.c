@@ -219,7 +219,6 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 		}
 
 		if(ctr->channel == CH_ROTATOR) {
-			err("hier!");
 			ctr->rot = rot_create(ctr->dev->ctl);
 			mhr_add_processor_cb(ctr->dev->router, rot_cb, CH_ROTATOR, ctr->rot);
 		}
