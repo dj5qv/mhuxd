@@ -16,6 +16,7 @@ enum {
 	CH_PTT1 = 9,
 	CH_PTT2 = 10,
 	CH_MCP = 11, 
+	CH_ROTATOR = 12,
 	ALL_NUM_CHANNELS
 };
 

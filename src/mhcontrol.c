@@ -79,6 +79,7 @@ enum {
 	MHCMD_CAT_R2_FREQUENCY_INFO = 0x37, /* MK2R only */
 
 	/* 0x41 - 0x4D, 0x76 StationMaster only, not supported yet. */
+	MHCMD_TURN_TO_AZIMUTH	  = 0x49,
 
 	MHCMD_U2R_STATE           = 0x75,  /* U2R only */
 	MHCMD_USB_RX_OVERFLOW     = 0x77,
@@ -607,6 +608,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 		mhr_set_bps_limit(ctl->router, MH_CHANNEL_WINKEY, 1200 / (8.0 + 1.0));
 
 	mhr_set_bps_limit(ctl->router, CH_MCP, 9600 / (8.0 + 1.0));
+	mhr_set_bps_limit(ctl->router, CH_ROTATOR, 9600 / (8.0 + 1.0));
 
 	return ctl;
 }
@@ -840,6 +842,16 @@ int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completio
 	buf_append_c(&b, MHCMD_APPLY_SCENARIO);
 	buf_append_c(&b, idx);
 	buf_append_c(&b, MHCMD_APPLY_SCENARIO | MSB_BIT);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
+int mhc_sm_turn_to_azimuth(struct mh_control *ctl, uint16_t bearing, mhc_cmd_completion_cb cb, void *user_data) {
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_TURN_TO_AZIMUTH);
+	buf_append_c(&b, bearing & 0xff);
+	buf_append_c(&b, (bearing >> 8) & 0xff);
+	buf_append_c(&b, MHCMD_TURN_TO_AZIMUTH | MSB_BIT);
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 

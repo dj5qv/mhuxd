@@ -334,6 +334,8 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 	if(err != STATUS_OK) goto failed;
 	err = hdf_set_int_value(flags_nod, "has.mcp_support", mhi->flags & MHF_HAS_MCP_SUPPORT ? 1 : 0);
 	if(err != STATUS_OK) goto failed;
+	err = hdf_set_int_value(flags_nod, "has.rotator_support", mhi->flags & MHF_HAS_ROTATOR_SUPPORT ? 1 : 0);
+	if(err != STATUS_OK) goto failed;
 
 
 	// Keyer channels
@@ -376,9 +378,12 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 		err = hdf_set_int_value(chan_nod, "FSK2", 1);
 		if(err != STATUS_OK) goto failed;
 	}
-
 	if(mhi->flags & MHF_HAS_MCP_SUPPORT) {
 		err = hdf_set_int_value(chan_nod, "MCP", 1);
+		if(err != STATUS_OK) goto failed;
+	}
+	if(mhi->flags & MHF_HAS_ROTATOR_SUPPORT) {
+		err = hdf_set_int_value(chan_nod, "ROTATOR", 1);
 		if(err != STATUS_OK) goto failed;
 	}
 
@@ -416,7 +421,7 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 
 
 
-#if 1
+#if 0
 	STRING str;
 	string_init(&str);
 	hdf_dump_str(cfgmgr->hdf_live, "", 0, &str);

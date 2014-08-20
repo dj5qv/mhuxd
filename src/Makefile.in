@@ -105,9 +105,9 @@ am_mhuxd_OBJECTS = mhuxd-buffer.$(OBJEXT) mhuxd-demux.$(OBJEXT) \
 	mhuxd-webui.$(OBJEXT) mhuxd-cfgnod.$(OBJEXT) \
 	mhuxd-version.$(OBJEXT) mhuxd-http_parse_query.$(OBJEXT) \
 	mhuxd-radiotypes.$(OBJEXT) mhuxd-wkman.$(OBJEXT) \
-	mhuxd-proc_mcp.$(OBJEXT) mhuxd-mhmk2r.$(OBJEXT) \
-	mhuxd-mhmk2.$(OBJEXT) mhuxd-mhsm.$(OBJEXT) \
-	mhuxd-citem.$(OBJEXT)
+	mhuxd-proc_mcp.$(OBJEXT) mhuxd-proc_rotator.$(OBJEXT) \
+	mhuxd-mhmk2r.$(OBJEXT) mhuxd-mhmk2.$(OBJEXT) \
+	mhuxd-mhsm.$(OBJEXT) mhuxd-citem.$(OBJEXT)
 mhuxd_OBJECTS = $(am_mhuxd_OBJECTS)
 mhuxd_LINK = $(CCLD) $(mhuxd_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
@@ -327,14 +327,14 @@ mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 		mhcontrol.c mhinfo.c mhrouter.c mux.c net.c opts.c pglist.c tty.c util.c \
 		conmgr.c con_vsp.c con_tcp.c linux_termios.c channel.c cfgmgr.c \
 		daemon.c http_parser.c http_server.c webui.c cfgnod.c version.c \
-		http_parse_query.c radiotypes.c wkman.c proc_mcp.c mhmk2r.c \
+		http_parse_query.c radiotypes.c wkman.c proc_mcp.c proc_rotator.c mhmk2r.c \
                 mhmk2.c mhsm.c citem.c \
 		buffer.h demux.h devmgr.h kcfg.h linux_udev.h logger.h main.h \
 		mhcontrol.h mhinfo.h mhrouter.h mux.h net.h opts.h pglist.h tty.h util.h \
 		conmgr.h con_vsp.h con_tcp.h linux_termios.h channel.h cfgmgr.h \
 		daemon.h http_parser.h http_server.h http_codes.h webui.h obuf.h cfgnod.h \
 		version.h http_parse_query.h radiotypes.h wkman.h mhflags.h proc_mcp.h \
-                mhmk2r.h mhmk2.h mhsm.h citem.h
+                proc_rotator.h mhmk2r.h mhmk2.h mhsm.h citem.h
 
 all: all-recursive
 
@@ -453,6 +453,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-opts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-pglist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-proc_mcp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-proc_rotator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-radiotypes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-tty.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mhuxd-util.Po@am__quote@
@@ -923,6 +924,20 @@ mhuxd-proc_mcp.obj: proc_mcp.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='proc_mcp.c' object='mhuxd-proc_mcp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-proc_mcp.obj `if test -f 'proc_mcp.c'; then $(CYGPATH_W) 'proc_mcp.c'; else $(CYGPATH_W) '$(srcdir)/proc_mcp.c'; fi`
+
+mhuxd-proc_rotator.o: proc_rotator.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-proc_rotator.o -MD -MP -MF $(DEPDIR)/mhuxd-proc_rotator.Tpo -c -o mhuxd-proc_rotator.o `test -f 'proc_rotator.c' || echo '$(srcdir)/'`proc_rotator.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mhuxd-proc_rotator.Tpo $(DEPDIR)/mhuxd-proc_rotator.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='proc_rotator.c' object='mhuxd-proc_rotator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-proc_rotator.o `test -f 'proc_rotator.c' || echo '$(srcdir)/'`proc_rotator.c
+
+mhuxd-proc_rotator.obj: proc_rotator.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-proc_rotator.obj -MD -MP -MF $(DEPDIR)/mhuxd-proc_rotator.Tpo -c -o mhuxd-proc_rotator.obj `if test -f 'proc_rotator.c'; then $(CYGPATH_W) 'proc_rotator.c'; else $(CYGPATH_W) '$(srcdir)/proc_rotator.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mhuxd-proc_rotator.Tpo $(DEPDIR)/mhuxd-proc_rotator.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='proc_rotator.c' object='mhuxd-proc_rotator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -c -o mhuxd-proc_rotator.obj `if test -f 'proc_rotator.c'; then $(CYGPATH_W) 'proc_rotator.c'; else $(CYGPATH_W) '$(srcdir)/proc_rotator.c'; fi`
 
 mhuxd-mhmk2r.o: mhmk2r.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mhuxd_CFLAGS) $(CFLAGS) -MT mhuxd-mhmk2r.o -MD -MP -MF $(DEPDIR)/mhuxd-mhmk2r.Tpo -c -o mhuxd-mhmk2r.o `test -f 'mhmk2r.c' || echo '$(srcdir)/'`mhmk2r.c

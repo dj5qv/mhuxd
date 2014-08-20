@@ -18,6 +18,7 @@
 #include "con_tcp.h"
 #include "cfgnod.h"
 #include "proc_mcp.h"
+#include "proc_rotator.h"
 
 enum {
 	CON_INVALID,
@@ -38,6 +39,7 @@ struct connector {
 	void *instance;
 	struct device *dev;
 	struct proc_mcp *mcp;
+	struct proc_rotator *rot;
 };
 
 struct conmgr {
@@ -214,6 +216,12 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 		if(ctr->channel == CH_MCP) {
 			ctr->mcp = mcp_create(ctr->dev->ctl);
 			mhr_add_processor_cb(ctr->dev->router, mcp_cb, CH_MCP, ctr->mcp);
+		}
+
+		if(ctr->channel == CH_ROTATOR) {
+			err("hier!");
+			ctr->rot = rot_create(ctr->dev->ctl);
+			mhr_add_processor_cb(ctr->dev->router, rot_cb, CH_ROTATOR, ctr->rot);
 		}
 
 		// atl_set_value_from_int(ctr->cspec.cfg, "ID", ctr->id);
