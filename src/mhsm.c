@@ -108,16 +108,16 @@ struct sm {
 static void debug_print_antsw_values(struct sm_bandplan *bp);
 
 struct citem sm_state_items[] = {
-	CITEM("curAzimuth", 0, 0, 16),
-	CITEM("azimuthOffset", 2, 0, 16 ),
-	CITEM("targetAzimuth", 4, 0, 16 ),
-	CITEM("portAVolt", 6, 0, 8 ),
-	CITEM("portBVolt", 7, 0, 8 ),
+	CITEM("curAzimuth", 0, 15, 16),
+	CITEM("azimuthOffset", 2, 15, 16),
+	CITEM("targetAzimuth", 4, 15, 16),
+	CITEM("portAVolt", 6, 7, 8 ),
+	CITEM("portBVolt", 7, 7, 8 ),
 	CITEM("rotatorSelected", 8, 0, 1 ),
 	CITEM("virtualRotatorSelected", 8, 1, 1 ),
-	CITEM("steppirVer", 9, 0, 8),
-	CITEM("currentVrAzimuth", 10, 0, 16),
-	CITEM("steppirVerHi", 12, 0, 8)
+	CITEM("steppirVer", 9, 7, 8),
+	CITEM("currentVrAzimuth", 10, 15, 16),
+	CITEM("steppirVerHi", 12, 7, 8)
 };
 
 struct citem sm_bandplan_fixed_items[] = {
@@ -170,9 +170,9 @@ struct citem sm_bandplan_fixed_items[] = {
 	CITEM("extSerFunc", 10, 0, 8),
 	CITEM("extSerBaudRate", 11, 0, 8),
 	CITEM("extSerPar", 12, 0, 8),   // not implemented in SM 1.3 ?
-	CITEM("antSwDelay", 13, 0, 16),
+	CITEM("antSwDelay", 13, 15, 16),
 	CITEM("bbmDelay", 15, 0, 8),
-	CITEM("inhibitLead", 16, 0, 16),
+	CITEM("inhibitLead", 16, 15, 16),
 	CITEM("flags.useKeyIn", 18, 0, 1),
 	CITEM("flags.invertKeyIn", 18, 1, 1),
 
@@ -180,54 +180,54 @@ struct citem sm_bandplan_fixed_items[] = {
 	CITEM("sequencer.lead.", 19,0, 16),
 	CITEM("sequencer.tail.", 21,0, 16),
 	*/
-	CITEM("sequencer.lead.B6",  23, 0, 16),
-	CITEM("sequencer.tail.B6",  25, 0, 16),
-	CITEM("sequencer.lead.A10", 27, 0, 16),
-	CITEM("sequencer.tail.A10", 29, 0, 16),
-	CITEM("sequencer.lead.B5",  31, 0, 16),
-	CITEM("sequencer.tail.B5",  33, 0, 16),
-	CITEM("sequencer.lead.A9",  35, 0, 16),
-	CITEM("sequencer.tail.A9",  37, 0, 16),
+	CITEM("sequencer.lead.B6",  23, 15, 16),
+	CITEM("sequencer.tail.B6",  25, 15, 16),
+	CITEM("sequencer.lead.A10", 27, 15, 16),
+	CITEM("sequencer.tail.A10", 29, 15, 16),
+	CITEM("sequencer.lead.B5",  31, 15, 16),
+	CITEM("sequencer.tail.B5",  33, 15, 16),
+	CITEM("sequencer.lead.A9",  35, 15, 16),
+	CITEM("sequencer.tail.A9",  37, 15, 16),
 	/*
-	CITEM("sequencer.lead.",    39, 0, 16),
-	CITEM("sequencer.tail.",    41, 0, 16),
-	CITEM("sequencer.lead.",    43, 0, 16),
-	CITEM("sequencer.tail.",    45, 0, 16),
-	CITEM("sequencer.lead.",    47, 0, 16),
-	CITEM("sequencer.tail.",    49, 0, 16),
+	CITEM("sequencer.lead.",    39, 15, 16),
+	CITEM("sequencer.tail.",    41, 15, 16),
+	CITEM("sequencer.lead.",    43, 15, 16),
+	CITEM("sequencer.tail.",    45, 15, 16),
+	CITEM("sequencer.lead.",    47, 15, 16),
+	CITEM("sequencer.tail.",    49, 15, 16),
 	*/
-	CITEM("sequencer.lead.A8",  51, 0, 16),
-	CITEM("sequencer.tail.A8",  53, 0, 16),
-	CITEM("sequencer.lead.B4",  55, 0, 16),
-	CITEM("sequencer.tail.B4",  57, 0, 16),
-	CITEM("sequencer.lead.A7",  59, 0, 16),
-	CITEM("sequencer.tail.A7",  61, 0, 16),
-	CITEM("sequencer.lead.B2",  63, 0, 16),
-	CITEM("sequencer.tail.B2",  65, 0, 16),
-	CITEM("sequencer.lead.A6",  67, 0, 16),
-	CITEM("sequencer.tail.A6",  69, 0, 16),
-	CITEM("sequencer.lead.B1",  71, 0, 16),
-	CITEM("sequencer.tail.B1",  73, 0, 16),
-	CITEM("sequencer.lead.A5",  75, 0, 16),
-	CITEM("sequencer.tail.A5",  77, 0, 16),
-	CITEM("sequencer.lead.B10", 79, 0, 16),
-	CITEM("sequencer.tail.B10", 81, 0, 16),
-	CITEM("sequencer.lead.A4",  83, 0, 16),
-	CITEM("sequencer.tail.A4",  85, 0, 16),
-	CITEM("sequencer.lead.B9",  87, 0, 16),
-	CITEM("sequencer.tail.B9",  89, 0, 16),
-	CITEM("sequencer.lead.A3",  91, 0, 16),
-	CITEM("sequencer.tail.A3",  93, 0, 16),
-	CITEM("sequencer.lead.B8",  95, 0, 16),
-	CITEM("sequencer.tail.B8",  97, 0, 16),
-	CITEM("sequencer.tail.A2",  99, 0, 16),
-	CITEM("sequencer.tail.A2", 101, 0, 16),
-	CITEM("sequencer.tail.B7", 103, 0, 16),
-	CITEM("sequencer.tail.B7", 105, 0, 16),
-	CITEM("sequencer.tail.A1", 107, 0, 16),
-	CITEM("sequencer.tail.A1", 109, 0, 16),
-	CITEM("sequencer.tail.B3", 111, 0, 16),
-	CITEM("sequencer.tail.B3", 113, 0, 16),
+	CITEM("sequencer.lead.A8",  51, 15, 16),
+	CITEM("sequencer.tail.A8",  53, 15, 16),
+	CITEM("sequencer.lead.B4",  55, 15, 16),
+	CITEM("sequencer.tail.B4",  57, 15, 16),
+	CITEM("sequencer.lead.A7",  59, 15, 16),
+	CITEM("sequencer.tail.A7",  61, 15, 16),
+	CITEM("sequencer.lead.B2",  63, 15, 16),
+	CITEM("sequencer.tail.B2",  65, 15, 16),
+	CITEM("sequencer.lead.A6",  67, 15, 16),
+	CITEM("sequencer.tail.A6",  69, 15, 16),
+	CITEM("sequencer.lead.B1",  71, 15, 16),
+	CITEM("sequencer.tail.B1",  73, 15, 16),
+	CITEM("sequencer.lead.A5",  75, 15, 16),
+	CITEM("sequencer.tail.A5",  77, 15, 16),
+	CITEM("sequencer.lead.B10", 79, 15, 16),
+	CITEM("sequencer.tail.B10", 81, 15, 16),
+	CITEM("sequencer.lead.A4",  83, 15, 16),
+	CITEM("sequencer.tail.A4",  85, 15, 16),
+	CITEM("sequencer.lead.B9",  87, 15, 16),
+	CITEM("sequencer.tail.B9",  89, 15, 16),
+	CITEM("sequencer.lead.A3",  91, 15, 16),
+	CITEM("sequencer.tail.A3",  93, 15, 16),
+	CITEM("sequencer.lead.B8",  95, 15, 16),
+	CITEM("sequencer.tail.B8",  97, 15, 16),
+	CITEM("sequencer.tail.A2",  99, 15, 16),
+	CITEM("sequencer.tail.A2", 101, 15, 16),
+	CITEM("sequencer.tail.B7", 103, 15, 16),
+	CITEM("sequencer.tail.B7", 105, 15, 16),
+	CITEM("sequencer.tail.A1", 107, 15, 16),
+	CITEM("sequencer.tail.A1", 109, 15, 16),
+	CITEM("sequencer.tail.B3", 111, 15, 16),
+	CITEM("sequencer.tail.B3", 113, 15, 16),
 };
 
 static struct sm_bandplan *bp_create() {
@@ -626,12 +626,12 @@ int sm_get_antsw(struct sm *sm) {
 	return 0;
 }
 
-int sm_get_state_value(const uint8_t buffer[9], const char *key) {
-	return citem_get_value(sm_state_items, ARRAY_SIZE(sm_state_items), buffer, 9, key);
+int sm_get_state_value(const uint8_t buffer[13], const char *key) {
+	return citem_get_value(sm_state_items, ARRAY_SIZE(sm_state_items), buffer, 13, key);
 }
 
-void sm_debug_print_state_values(const uint8_t buffer[9]) {
-	citem_debug_print_values("sm state", sm_state_items, ARRAY_SIZE(sm_state_items), buffer, 9);
+void sm_debug_print_state_values(const uint8_t buffer[13]) {
+	citem_debug_print_values("sm state", sm_state_items, ARRAY_SIZE(sm_state_items), buffer, 13);
 }
 
 static void debug_print_antsw_values(struct sm_bandplan *bp) {

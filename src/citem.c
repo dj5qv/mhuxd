@@ -36,7 +36,7 @@ int citem_get_value(const struct citem *citems, int num_citems, const uint8_t *b
 		return -1;
 	}
 
-	if(cp->width == 16 && bit == 0) 
+	if(cp->width == 16 && bit == 15)
 		// SM comes with some 16 bit values, LSB first.
 		val = (buffer[idx + 1] << 8) | buffer[idx];
 	else
@@ -64,7 +64,7 @@ int citem_set_value(const struct citem *citems, int num_citems, uint8_t *buffer,
 		err("(citem) %s() index out of range for %s", __func__, key);
 	}
 
-	if(cp->width == 16 && bit == 0) {
+	if(cp->width == 16 && bit == 15) {
 		/* SM 16 bit values, LSB first */
 		if(value > INT16_MAX || value < INT16_MIN) {
 			err("(citem) %s() invalid value %d for %s", __func__, value, key);
