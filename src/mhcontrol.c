@@ -79,6 +79,7 @@ enum {
 	MHCMD_CAT_R2_FREQUENCY_INFO = 0x37, /* MK2R only */
 
 	/* 0x41 - 0x4D, 0x76 StationMaster only, not supported yet. */
+	MHCMD_GET_ANTSW_BLOCK     = 0x43,
 	MHCMD_TURN_TO_AZIMUTH	  = 0x49,
 
 	MHCMD_U2R_STATE           = 0x75,  /* U2R only */
@@ -104,6 +105,7 @@ enum {
 	CTL_STATE_SET_CHANNELS,
 	CTL_STATE_LOAD_CFG,
 	CTL_STATE_ON_CONNECT,
+	CTL_STATE_SM_GET_ANTSW,
 	CTL_STATE_OK,
 };
 
@@ -123,6 +125,7 @@ struct mh_control {
 	struct mh_router *router;
 	struct ev_loop *loop;
 	struct kcfg *kcfg;
+	struct sm *sm;
 	struct PGList cmd_list;
 	struct PGList free_list;
 	struct PGList state_changed_cb_list;
@@ -139,7 +142,7 @@ struct mh_control {
 	uint8_t in_flag_r1, in_flag_r2;
 	uint8_t out_flag;
 	uint8_t set_mode;
-	uint8_t state_buf[9];
+	uint8_t state_buf[13];
 	uint8_t acc_state[8];
 	uint8_t hfocus[8];
 };
@@ -190,6 +193,7 @@ static uint8_t state_to_ext_state(uint8_t state) {
 	case CTL_STATE_SET_CHANNELS:
 	case CTL_STATE_LOAD_CFG:
 	case CTL_STATE_ON_CONNECT:
+	case CTL_STATE_SM_GET_ANTSW:
 		ext_state = MHC_KEYER_STATE_OFFLINE;
 		break;
 	case CTL_STATE_DEVICE_DISC:
@@ -322,13 +326,22 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 		return;
 	}
 
-	if(*data == MHCMD_SML_STATE && (ctl->mhi.type == MHT_SM ||ctl->mhi.type == MHT_SMD)) {
+	if(*data == MHCMD_SML_STATE && (ctl->mhi.type == MHT_SM || ctl->mhi.type == MHT_SMD)) {
+
+		// Older firmware versions may come with 9 bytes payload, newer with 13.
 		if(len < 11) {
 			err("(mhc) invalid cmd length for SM state! cmd: %d len: %d", *data, len);
 			return;
 		}
 
-		memcpy(ctl->state_buf, data + 1, 9);
+		len -= 2;
+		if(len > (int)sizeof(ctl->state_buf)) {
+			warn("(mhc) %d bytes of payload in SM state!", len);
+			len = sizeof(ctl->state_buf);
+		}
+				     
+		memset(ctl->state_buf, 0, sizeof(ctl->state_buf));
+		memcpy(ctl->state_buf, data + 1, len);
 		sm_debug_print_state_values(ctl->state_buf);
 		return;
 	}
@@ -491,8 +504,18 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		set_state(ctl, CTL_STATE_ON_CONNECT);
 		break;
 	case CTL_STATE_ON_CONNECT:
+		if(ctl->mhi.type == MHT_SM || ctl->mhi.type == MHT_DK2) {
+			sm_get_antsw(ctl->sm);
+			set_state(ctl, CTL_STATE_SM_GET_ANTSW);
+		} else {
+			info("(mhc) %s ONLINE", ctl->serial);
+			set_state(ctl, CTL_STATE_OK);
+		}
+		break;
+	case CTL_STATE_SM_GET_ANTSW:
 		info("(mhc) %s ONLINE", ctl->serial);
 		set_state(ctl, CTL_STATE_OK);
+		break;
 	}
 }
 
@@ -609,6 +632,9 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 
 	mhr_set_bps_limit(ctl->router, CH_MCP, 9600 / (8.0 + 1.0));
 	mhr_set_bps_limit(ctl->router, CH_ROTATOR, 9600 / (8.0 + 1.0));
+
+	if(mhi->type == MHT_SM || mhi->type == MHT_DK2)
+		ctl->sm = sm_create(ctl);
 
 	return ctl;
 }
@@ -852,6 +878,16 @@ int mhc_sm_turn_to_azimuth(struct mh_control *ctl, uint16_t bearing, mhc_cmd_com
 	buf_append_c(&b, bearing & 0xff);
 	buf_append_c(&b, (bearing >> 8) & 0xff);
 	buf_append_c(&b, MHCMD_TURN_TO_AZIMUTH | MSB_BIT);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
+int mhc_sm_get_antsw_block(struct mh_control *ctl, uint16_t offset, mhc_cmd_completion_cb cb, void *user_data) {
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_GET_ANTSW_BLOCK);
+	buf_append_c(&b, offset & 0xff);
+	buf_append_c(&b, (offset >> 8) & 0xff);
+	buf_append_c(&b, MHCMD_GET_ANTSW_BLOCK | MSB_BIT);
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 

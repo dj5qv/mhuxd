@@ -13,6 +13,7 @@
 #include "mhinfo.h"
 #include "cfgmgr.h"
 #include "wkman.h"
+#include "mhsm.h"
 
 struct device_manager {
 	struct PGList device_list;
@@ -50,6 +51,8 @@ static struct device *create_dev(const char *serial, uint16_t type) {
 	strcpy(dev->serial, serial);
 	dev->router = mhr_create(dman->loop, serial, mhi.flags & MHF_HAS_FLAGS_CHANNEL);
 	dev->ctl = mhc_create(dman->loop, dev->router, &mhi);
+	if(type == MHT_SM)
+		dev->sm = sm_create(dev->ctl);
 	PG_AddTail(&dman->device_list, &dev->node);
 	mhc_add_state_changed_cb(dev->ctl, cfgmr_state_changed_cb, dman->cfgmgr);
 	//	cfgmgr_update_hdf_dev(dman->cfgmgr, serial);

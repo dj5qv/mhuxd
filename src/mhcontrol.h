@@ -65,5 +65,6 @@ int mhc_mk2r_get_hfocus(struct mh_control *ctl, uint8_t dest[8]);
 int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data);
 
 int mhc_sm_turn_to_azimuth(struct mh_control *ctl, uint16_t bearing, mhc_cmd_completion_cb cb, void *user_data);
+int mhc_sm_get_antsw_block(struct mh_control *ctl, uint16_t offset, mhc_cmd_completion_cb cb, void *user_data);
 
 #endif // MHCONTROL_H
