@@ -100,7 +100,7 @@ struct sm {
 	struct mh_control *ctl;
 	struct sm_bandplan *bp_eeprom;
 	uint8_t get_antsw_state;
-	uint8_t get_antsw_offset;
+	uint16_t get_antsw_offset;
 	uint8_t get_antsw_to_read;
 
 };
@@ -320,11 +320,12 @@ static int decode_arec(struct antenna_record *arec) {
 	BGETC(&arec->raw_buf);
 	arec->rotator = c;
 
-	BGETC(&arec->raw_buf);
-	arec->rotator_offset = c;
-
-	BGETC(&arec->raw_buf);
-	arec->rotator_offset |= (c << 8);
+	if(c == 1) {
+		BGETC(&arec->raw_buf);
+		arec->rotator_offset = c;
+		BGETC(&arec->raw_buf);
+		arec->rotator_offset |= (c << 8);
+	}
 
 	return 0;
 }
@@ -360,9 +361,11 @@ static int decode_grec(struct groups_record *grec) {
 		ap->idx = c;
 		BGETC(&grec->raw_buf);
 		ap->min_azimuth = c;
+		BGETC(&grec->raw_buf);
 		ap->min_azimuth |= (c << 8);
 		BGETC(&grec->raw_buf);
 		ap->max_azimuth = c;
+		BGETC(&grec->raw_buf);
 		ap->max_azimuth |= (c << 8);
 		PG_AddTail(&grec->antenna_pointer_list, &ap->node);
 	}
@@ -487,7 +490,7 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 	len -= 2;
 
 	dbg1("(sm) GET ANTSW BLOCK offset %d ok", sm->get_antsw_offset);
-	dbg1_h("(sm) GET ANTSW BLOCK data:", reply_buf + 1, len - 2);
+	dbg1_h("(sm) GET ANTSW BLOCK data:", reply_buf, len);
 
 	for(i = 0; i < 32; i++) {
 		uint8_t c = reply_buf[i];
@@ -531,6 +534,7 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 				sm->get_antsw_state = STATE_GET_ANTSW_GRPREC;
 				sm->get_antsw_to_read = c;
 				grec = w_calloc(1, sizeof(*grec));
+				PG_NewList(&grec->antenna_pointer_list);
 				PG_AddTail(&sm->bp_eeprom->groups_list, &grec->node);
 			} else {
 				sm->get_antsw_state = STATE_GET_ANTSW_BREC_LENTGH;
@@ -551,6 +555,8 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 				sm->get_antsw_state = STATE_GET_ANTSW_BREC;
 				sm->get_antsw_to_read = c;
 				brec = w_calloc(1, sizeof(*brec));
+				PG_NewList(&brec->antenna_pointer_list);
+				PG_NewList(&brec->groups_pointer_list);
 				PG_AddTail(&sm->bp_eeprom->band_list, &brec->node);
 			} else {
 				sm->get_antsw_state = STATE_GET_ANTSW_DONE;
@@ -621,7 +627,6 @@ int sm_get_antsw(struct sm *sm) {
 
 	if(-1 == mhc_sm_get_antsw_block(sm->ctl, sm->get_antsw_offset, get_antsw_completion_cb, sm))
 		return -1;
-
 
 	return 0;
 }

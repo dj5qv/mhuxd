@@ -105,7 +105,6 @@ enum {
 	CTL_STATE_SET_CHANNELS,
 	CTL_STATE_LOAD_CFG,
 	CTL_STATE_ON_CONNECT,
-	CTL_STATE_SM_GET_ANTSW,
 	CTL_STATE_OK,
 };
 
@@ -193,7 +192,6 @@ static uint8_t state_to_ext_state(uint8_t state) {
 	case CTL_STATE_SET_CHANNELS:
 	case CTL_STATE_LOAD_CFG:
 	case CTL_STATE_ON_CONNECT:
-	case CTL_STATE_SM_GET_ANTSW:
 		ext_state = MHC_KEYER_STATE_OFFLINE;
 		break;
 	case CTL_STATE_DEVICE_DISC:
@@ -504,15 +502,8 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		set_state(ctl, CTL_STATE_ON_CONNECT);
 		break;
 	case CTL_STATE_ON_CONNECT:
-		if(ctl->mhi.type == MHT_SM || ctl->mhi.type == MHT_DK2) {
+		if(ctl->mhi.type == MHT_SM || ctl->mhi.type == MHT_SMD)
 			sm_get_antsw(ctl->sm);
-			set_state(ctl, CTL_STATE_SM_GET_ANTSW);
-		} else {
-			info("(mhc) %s ONLINE", ctl->serial);
-			set_state(ctl, CTL_STATE_OK);
-		}
-		break;
-	case CTL_STATE_SM_GET_ANTSW:
 		info("(mhc) %s ONLINE", ctl->serial);
 		set_state(ctl, CTL_STATE_OK);
 		break;
@@ -633,7 +624,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	mhr_set_bps_limit(ctl->router, CH_MCP, 9600 / (8.0 + 1.0));
 	mhr_set_bps_limit(ctl->router, CH_ROTATOR, 9600 / (8.0 + 1.0));
 
-	if(mhi->type == MHT_SM || mhi->type == MHT_DK2)
+	if(mhi->type == MHT_SM || mhi->type == MHT_SMD)
 		ctl->sm = sm_create(ctl);
 
 	return ctl;
