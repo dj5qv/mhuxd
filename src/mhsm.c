@@ -65,7 +65,6 @@ struct groups_record {
 	uint16_t max_azimuth;
 	uint8_t flags;
 	uint16_t current_azimuth;
-	uint16_t status;
 };
 
 struct groups_pointer {
@@ -85,7 +84,9 @@ struct band_record {
 	struct PGList antenna_pointer_list;
 	struct PGList groups_pointer_list;
 	uint8_t flags;
-	uint32_t status;
+	uint8_t currentRx;
+	uint8_t currentTx;
+	uint8_t split;
 };
 
 struct sm_bandplan {
@@ -331,7 +332,7 @@ static int decode_arec(struct antenna_record *arec) {
 }
 
 static int decode_grec(struct groups_record *grec) {
-	int i, c, len, antcnt;
+	int i, c, len;
 
 	BGETC(&grec->raw_buf); // length of record
 
@@ -354,8 +355,8 @@ static int decode_grec(struct groups_record *grec) {
 	}
 
 	BGETC(&grec->raw_buf); // number of antennas
-	antcnt = c;
-	for(i = 0; i < antcnt; i++) {
+	grec->num_antennas = c;
+	for(i = 0; i < grec->num_antennas; i++) {
 		struct antenna_pointer *ap = w_calloc(1, sizeof(*ap));
 		BGETC(&grec->raw_buf);
 		ap->idx = c;
@@ -374,9 +375,9 @@ static int decode_grec(struct groups_record *grec) {
 	grec->flags = c;
 
 	BGETC(&grec->raw_buf);
-	grec->status = c;
+	grec->current_azimuth = c;
 	BGETC(&grec->raw_buf);
-	grec->status |= (c << 8);
+	grec->current_azimuth |= (c << 8);
 
 	return 0;
 }
@@ -389,20 +390,20 @@ static int decode_brec(struct band_record *brec) {
 	BGETC(&brec->raw_buf);
 	brec->low_freq = c;
 	BGETC(&brec->raw_buf);
-	brec->low_freq = (c << 8);
+	brec->low_freq |= (c << 8);
 	BGETC(&brec->raw_buf);
-	brec->low_freq = (c << 16);
+	brec->low_freq |= (c << 16);
 	BGETC(&brec->raw_buf);
-	brec->low_freq = (c << 24);
+	brec->low_freq |= (c << 24);
 
 	BGETC(&brec->raw_buf);
 	brec->high_freq = c;
 	BGETC(&brec->raw_buf);
-	brec->high_freq = (c << 8);
+	brec->high_freq |= (c << 8);
 	BGETC(&brec->raw_buf);
-	brec->high_freq = (c << 16);
+	brec->high_freq |= (c << 16);
 	BGETC(&brec->raw_buf);
-	brec->high_freq = (c << 24);
+	brec->high_freq |= (c << 24);
 
 	BGETC(&brec->raw_buf); // name len
 	len = c;
@@ -419,9 +420,9 @@ static int decode_brec(struct band_record *brec) {
 	BGETC(&brec->raw_buf);
 	brec->bpf_sequencer = c;
 	BGETC(&brec->raw_buf);
-	brec->bpf_sequencer = (c << 8);
+	brec->bpf_sequencer |= (c << 8);
 	BGETC(&brec->raw_buf);
-	brec->bpf_sequencer = (c << 16);
+	brec->bpf_sequencer |= (c << 16);
 
 	BGETC(&brec->raw_buf);
 	antcnt = c;
@@ -446,12 +447,14 @@ static int decode_brec(struct band_record *brec) {
 		}
 	}
 
+
+
 	BGETC(&brec->raw_buf);
-	brec->status = c;
+	brec->currentRx = c;
 	BGETC(&brec->raw_buf);
-	brec->status = (c << 8);
+	brec->currentTx = c;
 	BGETC(&brec->raw_buf);
-	brec->status = (c << 16);
+	brec->split = c;
 
 	return 0;
 }
@@ -595,7 +598,7 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 		}
 		PG_SCANLIST(&sm->bp_eeprom->groups_list, grec) {
 				if(-1 == decode_grec(grec))
-					err("(sm) error groups antenna record!");
+					err("(sm) error decoding groups record!");
 		}
 		PG_SCANLIST(&sm->bp_eeprom->band_list, brec) {
 				if(-1 == decode_brec(brec))
@@ -669,9 +672,9 @@ static void debug_print_antsw_values(struct sm_bandplan *bp) {
 	PG_SCANLIST(&bp->groups_list, grec) {
 		dbg1("(sm) groups index %d", i++);
 		dbg1_h("(sm) raw: ", grec->raw_buf.data, grec->raw_buf.size);
-		dbg1("(sm) label:       %s", grec->label);
-		dbg1("(sm) name:        %s", grec->name);
-		dbg1("(sm) num antennas:%d", grec->num_antennas);
+		dbg1("(sm) label:        %s", grec->label);
+		dbg1("(sm) name:         %s", grec->name);
+		dbg1("(sm) num antennas: %d", grec->num_antennas);
 		j = 0;
 		PG_SCANLIST(&grec->antenna_pointer_list, ap)  {
 			dbg1("(sm) ant list element %d", j++);
@@ -680,7 +683,7 @@ static void debug_print_antsw_values(struct sm_bandplan *bp) {
 			dbg1("(sm) ant max azimuth: %d", ap->max_azimuth);
 		}
 		dbg1("(sm) flags: %d (%s)", grec->flags, grec->flags & 1 ? "antenna group" : "virtual rotator");
-		dbg1("(sm) status %d", grec->status);
+		dbg1("(sm) current az %d", grec->current_azimuth);
 	}
 
 	dbg1("(sm) band list");
@@ -688,10 +691,10 @@ static void debug_print_antsw_values(struct sm_bandplan *bp) {
 	PG_SCANLIST(&bp->band_list, brec) {
 		dbg1("(sm) band index %d", i++);
 		dbg1_h("(sm) raw: ", brec->raw_buf.data, brec->raw_buf.size);
-		dbg1("(sm) name:   %s", brec->name);
-		dbg1("(sm) low:    %d", brec->low_freq);
-		dbg1("(sm) high:   %d", brec->high_freq);
-		dbg1("(sm) outputs:%d", brec->outputs);
+		dbg1("(sm) name:    %s", brec->name);
+		dbg1("(sm) low:     %d", brec->low_freq);
+		dbg1("(sm) high:    %d", brec->high_freq);
+		dbg1("(sm) outputs: %d", brec->outputs);
 		j = 0;
 		PG_SCANLIST(&brec->antenna_pointer_list, ap) {
 			dbg1("(sm) ant list element %d", j++);
@@ -702,7 +705,9 @@ static void debug_print_antsw_values(struct sm_bandplan *bp) {
 			dbg1("(sm) grp list element %d", j++);
 			dbg1("(sm) grp index: %d", gp->idx);
 		}
-		dbg1("(sm) status: %d", brec->status);
+		dbg1("(sm) current Rx: %d", brec->currentRx);
+		dbg1("(sm) current Tx: %d", brec->currentTx);
+		dbg1("(sm) split: %d", brec->split);
 	}
 
 }
