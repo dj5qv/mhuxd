@@ -502,8 +502,10 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		set_state(ctl, CTL_STATE_ON_CONNECT);
 		break;
 	case CTL_STATE_ON_CONNECT:
-		if(ctl->mhi.type == MHT_SM || ctl->mhi.type == MHT_SMD)
-			sm_get_antsw(ctl->sm);
+		if(ctl->sm) {
+			if( 0 != sm_get_antsw(ctl->sm))
+				warn("(mhc) could not download antsw from device!");
+		}
 		info("(mhc) %s ONLINE", ctl->serial);
 		set_state(ctl, CTL_STATE_OK);
 		break;
@@ -625,7 +627,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	mhr_set_bps_limit(ctl->router, CH_ROTATOR, 9600 / (8.0 + 1.0));
 
 	if(mhi->type == MHT_SM || mhi->type == MHT_SMD)
-		ctl->sm = sm_create(ctl);
+		ctl->sm = sm_create(ctl, loop);
 
 	return ctl;
 }
@@ -639,6 +641,9 @@ void mhc_destroy(struct mh_control *ctl) {
 
 	ev_timer_stop(ctl->loop, &ctl->heartbeat_timer);
 	ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
+
+	if(ctl->sm)
+		sm_destroy(ctl->sm);
 
 	mhr_rem_status_cb(ctl->router, router_status_cb);
 
@@ -1090,6 +1095,10 @@ static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completi
 	push_cmds(ctl);
 
 	return 0;
+}
+
+struct sm *mhc_get_sm(struct mh_control *ctl) {
+	return ctl->sm;
 }
 
 const char *mhc_cmd_err_string(int result) {

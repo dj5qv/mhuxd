@@ -17,7 +17,6 @@ struct device {
 	struct PGNode node;
 	struct mh_router *router;
 	struct mh_control *ctl;
-	struct sm *sm;
 	struct wkman *wkman;
 	char *serial;
 };

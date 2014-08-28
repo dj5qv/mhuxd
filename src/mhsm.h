@@ -13,10 +13,22 @@
 #include <stdint.h>
 
 struct mh_control;
+struct ev_loop;
+struct sm;
+struct cfg;
 
-struct sm* sm_create(struct mh_control *ctl);
+enum {
+	SM_OUT_ANT = 0,
+	SM_OUT_BPF = 1,
+	SM_OUT_SEQ = 2,
+	SM_OUT_SEQINV = 3
+};
+
+struct sm* sm_create(struct mh_control *ctl, struct ev_loop *loop);
 void sm_destroy (struct sm *sm);
 int sm_get_antsw(struct sm *sm);
+
+int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg);
 
 int sm_get_state_value(const uint8_t mpk_buffer[4], const char *key);
 void sm_debug_print_state_values(const uint8_t buffer[9]);

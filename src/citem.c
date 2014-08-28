@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -23,9 +23,24 @@ const struct citem *citem_find(const struct citem *citems,  uint16_t num_citems,
 
 int citem_get_value(const struct citem *citems, int num_citems, const uint8_t *buffer, int buffer_size, const char *key) {
 	const struct citem *cp = citem_find(citems, num_citems, key);
-	int val;
+
 	if(!cp)
 		return -1;
+
+	if(cp->off >= buffer_size) {
+		err("(citem) %s() idx %d out of range for key '%s'!", __func__, cp->off, key);
+		return -1;
+	}
+
+	if(cp->width == 16 && cp->base_bit == 15) {
+		// SM multi byte values, LSB first
+		return (buffer[cp->off + 1] << 8) | buffer[cp->off];
+	}
+
+	if(cp->width == 24 && cp->base_bit == 23) {
+		// SM multi byte values, LSB first
+		return (buffer[cp->off + 2] << 16 | buffer[cp->off + 1] << 8 | buffer[cp->off]);
+	}
 
 	uint16_t idx = cp->off + cp->base_bit / 8;
 	uint16_t bit = cp->base_bit % 8;
@@ -36,13 +51,7 @@ int citem_get_value(const struct citem *citems, int num_citems, const uint8_t *b
 		return -1;
 	}
 
-	if(cp->width == 16 && bit == 15)
-		// SM comes with some 16 bit values, LSB first.
-		val = (buffer[idx + 1] << 8) | buffer[idx];
-	else
-		val = (buffer[idx] >> (bit + 1 - cp->width)) & mask;
-
-	return val;
+	return (buffer[idx] >> (bit + 1 - cp->width)) & mask;;
 }
 
 int citem_set_value(const struct citem *citems, int num_citems, uint8_t *buffer, int buffer_size, const char *key, int value) {

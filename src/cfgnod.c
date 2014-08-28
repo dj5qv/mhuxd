@@ -71,6 +71,15 @@ struct cfg *cfg_copy(struct cfg *from) {
 	return (void *)dest;
 }
 
+struct cfg *cfg_create_child(struct cfg *parent, const char *key) {
+	HDF *child;
+	NEOERR *err;
+	err = hdf_get_node((HDF *)parent, key, &child);
+	if(err != STATUS_OK)
+		child = NULL;
+	return (struct cfg *)child;
+}
+
 void cfg_destroy(struct cfg *cfg) {
 	if(!cfg)
 		return;

@@ -68,5 +68,6 @@ webuics_DATA = \
 	cs/serial_cfg.cs \
 	cs/sidetone_cfg.cs \
 	cs/summary_cfg.cs \
-	cs/winkey_cfg.cs 
+	cs/winkey_cfg.cs \
+	cs/sm_outputs.cs
 

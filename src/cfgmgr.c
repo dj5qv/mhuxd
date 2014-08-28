@@ -21,6 +21,7 @@
 #include "radiotypes.h"
 #include "channel.h"
 #include "wkman.h"
+#include "mhsm.h"
 
 #if !defined EV_VERSION_MAJOR || EV_VERSION_MAJOR < 4
 #define EVRUN_ONCE EVLOOP_ONESHOT
@@ -336,6 +337,8 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 	if(err != STATUS_OK) goto failed;
 	err = hdf_set_int_value(flags_nod, "has.rotator_support", mhi->flags & MHF_HAS_ROTATOR_SUPPORT ? 1 : 0);
 	if(err != STATUS_OK) goto failed;
+	err = hdf_set_int_value(flags_nod, "has.sm_commands", mhi->flags & MHF_HAS_SM_COMMANDS ? 1 : 0);
+	if(err != STATUS_OK) goto failed;
 
 
 	// Keyer channels
@@ -419,7 +422,15 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 #endif
 	}
 
+	// SM
+	struct sm *sm;
+	if((sm = mhc_get_sm(dev->ctl))) {
+		HDF *smnod;
+		err = hdf_get_node(knod, "sm", &smnod);
+		if(err != STATUS_OK) goto failed;
 
+		sm_antsw_to_cfg(sm, (struct cfg *)smnod);
+	}
 
 #if 0
 	STRING str;

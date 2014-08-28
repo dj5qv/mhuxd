@@ -104,6 +104,13 @@ mhuxd.webui.menus {
                   include = keyer_winkey.cs
                   depends = has.winkey
              }
+	     sm_outputs {
+	     	  display = Switching / Outputs
+		  title = Antenna Switching / Outputs
+		  include = sm_outputs.cs
+		  depends = has.sm_commands
+	     }
+
              all_params {
                   display = All Parameters
                   title = All Keyer Parameters
@@ -498,9 +505,86 @@ mhuxd.webui.options {
              group {
 	          display = group, if automatic scanning is active
              }
-
        }
 
+       sm_outputs {
+       		  A1 { 
+		     display = A1 
+		  }
+       		  A2 { 
+		     display = A2 
+		  }
+       		  A3 { 
+		     display = A3 
+		  }
+       		  A4 { 
+		     display = A4 
+		  }
+       		  A5 { 
+		     display = A5 
+		  }
+       		  A6 { 
+		     display = A6 
+		  }
+       		  A7 { 
+		     display = A7 
+		  }
+       		  A8 { 
+		     display = A8 
+		  }
+       		  A9 { 
+		     display = A9 
+		  }
+       		  A10 { 
+		      display = A10 
+		  }
+       		  B1 { 
+		     display = B1 
+		  }
+       		  B2 { 
+		     display = B2 
+		  }
+       		  B3 { 
+		     display = B3 
+		  }
+       		  B4 { 
+		     display = B4 
+		  }
+       		  B5 { 
+		     display = B5 
+		  }
+       		  B6 { 
+		     display = B6 
+		  }
+       		  B7 { 
+		     display = B7 
+		  }
+       		  B8 { 
+		     display = B8 
+		  }
+       		  B9 { 
+		     display = B9 
+		  }
+       		  B10 { 
+		      display = B10 
+	   	  }
+       }
+
+       sm_output_classes {
+             0 {
+	     	 display = ANT
+	     }
+	     1 {
+	     	 display = BPF
+             }
+	     2 {
+	     	 display = SEQ
+	     }
+	     3 {
+	     	 display = SEQ inverted
+	     }
+       }
+       
        mk2_dispbg {
              0 {
                   display = Empty
@@ -863,12 +947,14 @@ mhuxd.webui.options {
        8 {   # SM
 	     dispbg : mhuxd.webui.options.sm_dispbg
 	     dispev : mhuxd.webui.options.sm_dispev
+	     outputs : mhuxd.webui.options.sm_outputs
              default_menu = radio
        }
 
        9 {   # SMD
 	     dispbg : mhuxd.webui.options.sm_dispbg
 	     dispev : mhuxd.webui.options.sm_dispev
+	     outputs : mhuxd.webui.options.sm_outputs
              default_menu = radio
        }
 
