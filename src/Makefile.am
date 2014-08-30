@@ -18,7 +18,7 @@ mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 		conmgr.h con_vsp.h con_tcp.h linux_termios.h channel.h cfgmgr.h \
 		daemon.h http_parser.h http_server.h http_codes.h webui.h obuf.h cfgnod.h \
 		version.h http_parse_query.h radiotypes.h wkman.h mhflags.h proc_mcp.h \
-                proc_rotator.h mhmk2r.h mhmk2.h mhsm.h citem.h 
+                proc_rotator.h mhmk2r.h mhmk2.h mhsm.h citem.h mhsm_sim.h
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(STATEDIR) $(DESTDIR)$(RUNDIR) $(DESTDIR)$(LOGDIR)

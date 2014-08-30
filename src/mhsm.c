@@ -17,6 +17,10 @@
 #include "mhcontrol.h"
 #include "cfgnod.h"
 
+#ifdef SMSIM
+#include "mhsm_sim.h"
+#endif
+
 #define MAX_NAME_LEN (10)
 #define MAX_LABEL_LEN (5)
 
@@ -25,15 +29,15 @@
 #define GRPFLAG_TYPE (1<<0)
 
 enum {
-	STATE_GET_ANTSW_EMPTY,
-	STATE_GET_ANTSW_FIXED,
-	STATE_GET_ANTSW_ANTREC_LENTGH,
-	STATE_GET_ANTSW_ANTREC,
-	STATE_GET_ANTSW_GRPREC_LENTGH,
-	STATE_GET_ANTSW_GRPREC,
-	STATE_GET_ANTSW_BREC_LENTGH,
-	STATE_GET_ANTSW_BREC,
-	STATE_GET_ANTSW_DONE
+	STATE_GET_ANTSW_EMPTY = 0,
+	STATE_GET_ANTSW_FIXED = 1,
+	STATE_GET_ANTSW_ANTREC_LENTGH = 2,
+	STATE_GET_ANTSW_ANTREC = 3,
+	STATE_GET_ANTSW_GRPREC_LENTGH = 4,
+	STATE_GET_ANTSW_GRPREC = 5,
+	STATE_GET_ANTSW_BREC_LENTGH = 6,
+	STATE_GET_ANTSW_BREC = 7,
+	STATE_GET_ANTSW_DONE = 8
 };
 
 struct antenna_record {
@@ -147,7 +151,7 @@ struct citem sm_state_items[] = {
 };
 
 struct citem sm_bandplan_fixed_items[] = {
-	CITEM("formatVersion", 0, 0, 8),
+	CITEM("formatVersion", 0, 7, 8),
 #if 0
 	CITEM("sequencerOutputs.B6", 1, 1, 1),
 	CITEM("sequencerOutputs.A10", 1, 2, 1),
@@ -194,14 +198,14 @@ struct citem sm_bandplan_fixed_items[] = {
 	CITEM("sequencerOutputs", 1, 23, 24),
 	CITEM("bandDependent", 4, 23, 24),
 #endif
-	CITEM("civFunc", 7, 0, 8),
-	CITEM("civBaudRate", 8, 0, 8),
-	CITEM("civAddress", 9, 0, 8),
-	CITEM("extSerFunc", 10, 0, 8),
-	CITEM("extSerBaudRate", 11, 0, 8),
-	CITEM("extSerPar", 12, 0, 8),   // not implemented in SM 1.3 ?
+	CITEM("civFunc", 7, 7, 8),
+	CITEM("civBaudRate", 8, 7, 8),
+	CITEM("civAddress", 9, 7, 8),
+	CITEM("extSerFunc", 10, 7, 8),
+	CITEM("extSerBaudRate", 11, 7, 8),
+	CITEM("extSerPar", 12, 7, 8),   // not implemented in SM 1.3 ?
 	CITEM("antSwDelay", 13, 15, 16),
-	CITEM("bbmDelay", 15, 0, 8),
+	CITEM("bbmDelay", 15, 7, 8),
 	CITEM("inhibitLead", 16, 15, 16),
 	CITEM("flags.useKeyIn", 18, 0, 1),
 	CITEM("flags.invertKeyIn", 18, 1, 1),
@@ -313,6 +317,7 @@ static void bp_destroy(struct sm_bandplan *bp) {
 static int decode_arec(struct antenna_record *arec) {
 	int i, c, len;
 
+	dbg1_h("(sm) arec raw: ", arec->raw_buf.data, arec->raw_buf.size);
 	BGETC(&arec->raw_buf); // label len
 	len = c;
 	if(len > MAX_LABEL_LEN)
@@ -355,12 +360,23 @@ static int decode_arec(struct antenna_record *arec) {
 		arec->rotator_offset |= (c << 8);
 	}
 
+	dbg1("(sm) label:       %s", arec->label);
+	dbg1("(sm) name:        %s", arec->name);
+	dbg1("(sm) output:      0x%08x", arec->output_settings);
+	dbg1("(sm) steppir:     %d", arec->steppir);
+	dbg1("(sm) rxonly:      %d", arec->rxonly);
+	dbg1("(sm) paAntNumber: %d", arec->pa_ant_number);
+	dbg1("(sm) rotator:     %d", arec->rotator);
+	if(arec->rotator)
+		dbg1("(sm) rot offs:    %d", arec->rotator_offset);
+
 	return 0;
 }
 
 static int decode_grec(struct groups_record *grec) {
 	int i, c, len;
 
+	dbg1_h("(sm) grec raw: ", grec->raw_buf.data, grec->raw_buf.size);
 	BGETC(&grec->raw_buf); // label len
 	len = c;
 	if(len > MAX_LABEL_LEN)
@@ -404,12 +420,27 @@ static int decode_grec(struct groups_record *grec) {
 	BGETC(&grec->raw_buf);
 	grec->current_azimuth |= (c << 8);
 
+	dbg1("(sm) label:        %s", grec->label);
+	dbg1("(sm) name:         %s", grec->name);
+	dbg1("(sm) num antennas: %d", grec->num_antennas);
+	dbg1("(sm) flags:        %d (%s)", grec->flags, grec->flags & 1 ? "antenna group" : "virtual rotator");
+	dbg1("(sm) current az:   %d", grec->current_azimuth);
+	int j = 0;
+	struct reference *ref;
+	PG_SCANLIST(&grec->ant_ref_list, ref)  {
+		dbg1("(sm) >>> ant         %d", j++);
+		dbg1("(sm)     ant idx:    %d", ref->idx);
+		dbg1("(sm)     ant min az: %d", ref->min_azimuth);
+		dbg1("(sm)     ant max az: %d", ref->max_azimuth);
+	}
+
 	return 0;
 }
 
 static int decode_brec(struct band_record *brec) {
 	int i, c, len, antcnt;
 
+	dbg1_h("(sm) raw: ", brec->raw_buf.data, brec->raw_buf.size);
 	BGETC(&brec->raw_buf);
 	brec->low_freq = c;
 	BGETC(&brec->raw_buf);
@@ -460,12 +491,14 @@ static int decode_brec(struct band_record *brec) {
 			BGETC(&brec->raw_buf); // flags;
 			ref->idx = ba0 - 1;
 			ref->flags = c;
+			PG_AddTail(&brec->grp_ref_list, &ref->node);
 		} else {
 			// linked to antenna
 			BGETC(&brec->raw_buf); // ba1
 			ref->idx = c;
 			BGETC(&brec->raw_buf); // ba2, flags
 			ref->flags = c;
+			PG_AddTail(&brec->ant_ref_list, &ref->node);
 		}
 	}
 
@@ -476,6 +509,26 @@ static int decode_brec(struct band_record *brec) {
 	BGETC(&brec->raw_buf);
 	brec->split = c;
 
+	dbg1("(sm) name:     %s", brec->name);
+	dbg1("(sm) low:      %u", brec->low_freq);
+	dbg1("(sm) high:     %u", brec->high_freq);
+	dbg1("(sm) outputs:  %u", brec->outputs);
+	int j = 0;
+	struct reference *ref;
+	PG_SCANLIST(&brec->ant_ref_list, ref) {
+		dbg1("(sm) >>> ant:     %u", j++);
+		dbg1("(sm)     ant idx: %u", ref->idx);
+	}
+	j = 0;
+	PG_SCANLIST(&brec->grp_ref_list, ref) {
+		dbg1("(sm) >>> grp:     %u", j++);
+		dbg1("(sm)     grp idx: %u", ref->idx);
+	}
+	dbg1("(sm) current Rx: %u", brec->currentRx);
+	dbg1("(sm) current Tx: %u", brec->currentTx);
+	dbg1("(sm) split:      %u", brec->split);
+
+
 	return 0;
 }
 
@@ -484,6 +537,9 @@ struct sm* sm_create(struct mh_control *ctl, struct ev_loop *loop) {
 	sm->loop = loop;
 	sm->ctl = ctl;
 	sm->get_antsw_state = STATE_GET_ANTSW_EMPTY;
+#ifdef SMSIM
+	smsim_init();
+#endif
 	return sm;
 }
 
@@ -513,7 +569,7 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 	reply_buf++;
 	len -= 2;
 
-	dbg1("(sm) GET ANTSW BLOCK offset %d ok", sm->get_antsw_offset);
+	dbg1("(sm) GET ANTSW BLOCK offset %d ok, state %d", sm->get_antsw_offset, sm->get_antsw_state);
 	dbg1_h("(sm) GET ANTSW BLOCK data:", reply_buf, len);
 
 	for(i = 0; i < 32; i++) {
@@ -602,31 +658,54 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 		}
 	}
 
+	dbg1("(sm) >>> GET ANTSW BLOCK state %d", sm->get_antsw_state);
+
 	if(sm->get_antsw_state != STATE_GET_ANTSW_DONE) {
 		// not finished yet
 		sm->get_antsw_offset += 32;
+#ifdef SMSIM
+		{
+			struct buffer b;
+			buf_reset(&b);
+			buf_append_c(&b, 0x43); // GET ANTSW BLOCK
+			buf_append(&b, bp_buf.data + sm->get_antsw_offset, 32);
+			buf_append_c(&b, 0x43 | (1<<7)); // GET ANTSW BLOCK
+			get_antsw_completion_cb(b.data, b.size, CMD_RESULT_OK, sm);
+		}
+
+#else
 		if(-1 == mhc_sm_get_antsw_block(sm->ctl, sm->get_antsw_offset, get_antsw_completion_cb, sm)) {
 			sm->get_antsw_state = STATE_GET_ANTSW_EMPTY;
 			return;
 		}
+#endif
 	} else {
 		struct antenna_record *arec;
 		struct groups_record *grec;
 		struct band_record *brec;
+		int i = 0;
+
+		citem_debug_print_values("sm antsw fixed", sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), sm->bp_eeprom->fixed_data, 115);
+
 		PG_SCANLIST(&sm->bp_eeprom->antenna_list, arec) {
-				if(-1 == decode_arec(arec))
-					err("(sm) error decoding antenna record!");
+			dbg1("(sm) decode arec %d", i++);
+			if(-1 == decode_arec(arec))
+				err("(sm) error decoding antenna record!");
 		}
+		i = 0;
 		PG_SCANLIST(&sm->bp_eeprom->groups_list, grec) {
-				if(-1 == decode_grec(grec))
-					err("(sm) error decoding groups record!");
+			dbg1("(sm) decode grec %d", i++);
+			if(-1 == decode_grec(grec))
+				err("(sm) error decoding groups record!");
 		}
+		i = 0;
 		PG_SCANLIST(&sm->bp_eeprom->band_list, brec) {
-				if(-1 == decode_brec(brec))
-					err("(sm) error decoding band record!");
+			dbg1("(sm) decode brec %d", i++);
+			if(-1 == decode_brec(brec))
+				err("(sm) error decoding band record!");
 		}
 
-		debug_print_antsw_values(sm->bp_eeprom);
+		// debug_print_antsw_values(sm->bp_eeprom);
 	}
 }
 
@@ -640,9 +719,10 @@ int sm_get_antsw(struct sm *sm) {
 		return -1;
 	}
 
+#if 0
 	if(! mhc_is_online(sm->ctl))
 		return -1;
-
+#endif
 	if(sm->bp_eeprom)
 		bp_destroy(sm->bp_eeprom);
 
@@ -652,12 +732,23 @@ int sm_get_antsw(struct sm *sm) {
 	sm->get_antsw_state = STATE_GET_ANTSW_FIXED;
 	sm->get_antsw_to_read = 115;
 
+#ifdef SMSIM
+	{
+		struct buffer b;
+		buf_reset(&b);
+		buf_append_c(&b, 0x43); // GET ANTSW BLOCK
+		buf_append(&b, bp_buf.data + sm->get_antsw_offset, 32);
+		buf_append_c(&b, 0x43 | (1<<7)); // GET ANTSW BLOCK
+		get_antsw_completion_cb(b.data, b.size, CMD_RESULT_OK, sm);
+	}
+#else
 	if(-1 == mhc_sm_get_antsw_block(sm->ctl, sm->get_antsw_offset, get_antsw_completion_cb, sm)) {
 		sm->get_antsw_state = STATE_GET_ANTSW_EMPTY;
 		return -1;
 	}
+#endif
 
-	while(sm->get_antsw_state != STATE_GET_ANTSW_EMPTY && sm->get_antsw_state == STATE_GET_ANTSW_DONE) {
+	while(sm->get_antsw_state != STATE_GET_ANTSW_EMPTY && sm->get_antsw_state != STATE_GET_ANTSW_DONE) {
 		ev_loop(sm->loop, EVRUN_ONCE);
 	}
 
@@ -750,10 +841,8 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 	uint8_t c;
 
 	if( ! sm->bp_eeprom) {
-		if(-1 == sm_get_antsw(sm))
-			return -1;
+		return -1;
 	}
-
 	if(sm->get_antsw_state != STATE_GET_ANTSW_DONE) {
 		err("(sm) %s failed, invalid state %d!", __func__, sm->get_antsw_state);
 		return -1;
