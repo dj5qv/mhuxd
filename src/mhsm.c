@@ -845,6 +845,7 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 			cfg_set_int_value(child_cfg, "min_azimuth", ref->min_azimuth);
 			cfg_set_int_value(child_cfg, "max_azimuth", ref->max_azimuth);
 		}
+		i++;
 	}
 
 	// bands
@@ -894,6 +895,7 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 			cfg_set_int_value(child_cfg, "idx", ref->idx);
 			cfg_set_int_value(child_cfg, "rx_only", ref->flags & 1);
 		}
+		i++;
 	}
 
 
