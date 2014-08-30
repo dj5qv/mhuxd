@@ -501,9 +501,43 @@ struct citem c_sm[] = {
 { "alarmBeep",			13, 3, 1, 0 },
 { "forwardNumpadKeys",		13, 4, 1, 0 },
 { "i2cCoupled",			13, 5, 1, 0 },
-/* 14 - 25 KeyFuncs */
 
+/* 14 - 25 Fh2KeyFuncs */
+{ "keyFuncFh2.1",		14, 7, 8, 0x04 },
+{ "keyFuncFh2.2",		15, 7, 8, 0x05 },
+{ "keyFuncFh2.3",		16, 7, 8, 0x06 },
+{ "keyFuncFh2.4",		17, 7, 8, 0x07 },
+{ "keyFuncFh2.5",		18, 7, 8, 0x08 },
+{ "keyFuncFh2.6",		19, 7, 8, 0x09 },
+{ "keyFuncFh2.7",		20, 7, 8, 0x0a },
+{ "keyFuncFh2.8",		21, 7, 8, 0x0b },
+{ "keyFuncFh2.9",		22, 7, 8, 0x0c },
+{ "keyFuncFh2.10",		23, 7, 8, 0x0d },
+{ "keyFuncFh2.11",		24, 7, 8, 0x0e },
+{ "keyFuncFh2.12",		25, 7, 8, 0x0f },
 
+{ "keyFuncPs2.shift0",		26, 7, 8, 0x22 },
+{ "keyFuncPs2.shift1",		27, 7, 8, 0x24 },
+{ "keyFuncPs2.shift2",		28, 7, 8, 0x25 },
+{ "keyFuncPs2.shift3",		29, 7, 8, 0x26 },
+{ "keyFuncPs2.shift4",		30, 7, 8, 0x27 },
+{ "keyFuncPs2.shift5",		31, 7, 8, 0x18 },
+{ "keyFuncPs2.shift6",		32, 7, 8, 0x19 },
+{ "keyFuncPs2.shift7",		33, 7, 8, 0x2b },
+{ "keyFuncPs2.shift8",		34, 7, 8, 0x2c },
+{ "keyFuncPs2.shift9",		35, 7, 8, 0x2d },
+{ "keyFuncPs2.0",		36, 7, 8, 0x0d },
+{ "keyFuncPs2.1",		37, 7, 8, 0x04 },
+{ "keyFuncPs2.2",		38, 7, 8, 0x05 },
+{ "keyFuncPs2.3",		39, 7, 8, 0x06 },
+{ "keyFuncPs2.4",		40, 7, 8, 0x07 },
+{ "keyFuncPs2.5",		41, 7, 8, 0x08 },
+{ "keyFuncPs2.6",		42, 7, 8, 0x09 },
+{ "keyFuncPs2.7",		43, 7, 8, 0x0a },
+{ "keyFuncPs2.8",		44, 7, 8, 0x0b },
+{ "keyFuncPs2.9",		45, 7, 8, 0x0c }
+
+/* 46 - 55 reserve */
 };
 
 
