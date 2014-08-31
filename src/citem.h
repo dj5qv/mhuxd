@@ -12,12 +12,12 @@
 
 #include <stdint.h>
 
-#define CITEM(key, offset, base_bit, width) { key, offset, base_bit, width, -1 }
-#define CITEMD(key, offset, base_bit, width, def) { key, offset, base_bit, width, def }
+#define CITEM(key, idx, base_bit, width) { key, idx, base_bit, width, -1 }
+#define CITEMD(key, idx, base_bit, width, def) { key, idx, base_bit, width, def }
 
 struct citem {
 	const char	*key;
-	uint8_t		off;
+	uint8_t		idx;
 	uint8_t		base_bit;
 	uint8_t		width;
 	uint32_t	def;

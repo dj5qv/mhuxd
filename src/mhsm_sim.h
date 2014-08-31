@@ -48,11 +48,11 @@ static void smsim_init() {
 	buf_append_c(&bp_buf, 0);  // extSerFunc
 	buf_append_c(&bp_buf, 24); // extSerBaudRate
 	buf_append_c(&bp_buf, 0);  // extSerPar
-	buf_append_c(&bp_buf, 0);  // antSwDelay #1
+	buf_append_c(&bp_buf, 5);  // antSwDelay #1
 	buf_append_c(&bp_buf, 0);  // antSwDelay #2
 	buf_append_c(&bp_buf, 0);  // bbmDelay
 	buf_append_c(&bp_buf, 0);  // inhibitLead #1
-	buf_append_c(&bp_buf, 0);  // inhibitLead #2
+	buf_append_c(&bp_buf, 5);  // inhibitLead #2
 	buf_append_c(&bp_buf, 0);  // flags
 
 	for(i = 19; i <= 114; i++)

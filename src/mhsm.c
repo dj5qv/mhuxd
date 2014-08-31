@@ -798,7 +798,6 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 	struct band_record *brec;
 	uint16_t i, j;
 	char str[256];
-	uint8_t c;
 
 	bp = sm->bp_eeprom;
 
@@ -813,9 +812,10 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 
 	for(i = 0; i < ARRAY_SIZE(sm_bandplan_fixed_items); i++) {
 		snprintf(str, sizeof(str), "fixed.%s", sm_bandplan_fixed_items[i].key);
-		c = citem_get_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data,
+		int c = citem_get_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data,
 				sizeof(bp->fixed_data), sm_bandplan_fixed_items[i].key);
-		cfg_set_int_value(cfg, str, c);
+		if(c != -1)
+			cfg_set_int_value(cfg, str, c);
 	}
 
 	for(j = 0; j < ARRAY_SIZE(output_map); j++) {

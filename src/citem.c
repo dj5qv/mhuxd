@@ -27,22 +27,22 @@ int citem_get_value(const struct citem *citems, int num_citems, const uint8_t *b
 	if(!cp)
 		return -1;
 
-	if(cp->off >= buffer_size) {
-		err("(citem) %s() idx %d out of range for key '%s'!", __func__, cp->off, key);
-		return -1;
+	// multibyte values (SM), 16 or 24 bit, LSB first.
+	if(cp->width > 8 && !(cp->width % 8)) {
+		int val = 0, i;
+		uint8_t bytes = cp->width / 8;
+
+		if(cp->idx + bytes - 1 >= buffer_size) {
+			err("(citem) %s() idx %d out of range for key '%s'!", __func__, cp->idx + bytes - 1, key);
+			return -1;
+		}
+
+		for(i = 0; i < bytes; i++)
+			val |= (buffer[cp->idx + i] << (i * 8));
+		return val;
 	}
 
-	if(cp->width == 16 && cp->base_bit == 15) {
-		// SM multi byte values, LSB first
-		return (buffer[cp->off + 1] << 8) | buffer[cp->off];
-	}
-
-	if(cp->width == 24 && cp->base_bit == 23) {
-		// SM multi byte values, LSB first
-		return (buffer[cp->off + 2] << 16 | buffer[cp->off + 1] << 8 | buffer[cp->off]);
-	}
-
-	uint16_t idx = cp->off + cp->base_bit / 8;
+	uint16_t idx = cp->idx + cp->base_bit / 8;
 	uint16_t bit = cp->base_bit % 8;
 	uint16_t mask = width2mask(cp->width);
 
@@ -65,7 +65,21 @@ int citem_set_value(const struct citem *citems, int num_citems, uint8_t *buffer,
 		return -1;
 	}
 
-	idx = cp->off + cp->base_bit / 8;
+	// multibyte values (SM), 16 or 24 bit, LSB first.
+	if(cp->width > 8 && !(cp->width % 8)) {
+		int i;
+		uint8_t bytes = cp->width / 8;
+		if(cp->idx + bytes - 1 >= buffer_size) {
+			err("(citem) %s() idx %d out of range for key '%s'!", __func__, cp->idx + bytes - 1, key);
+			return -1;
+		}
+		for(i = 0; i < bytes; i++) {
+			buffer[cp->idx + i] = (value >> (i * 8)) & 0xff;
+		}
+		return 0;
+	}
+
+	idx = cp->idx + cp->base_bit / 8;
 	bit = cp->base_bit % 8;
 	mask = width2mask(cp->width);
 
@@ -120,7 +134,7 @@ int citems_to_cfg(struct cfg *cfg, const struct citem *citems, int num_citems, u
 
 	for(i = 0; i < num_citems; i++) {
 		cp = &citems[i];
-		idx = cp->off + cp->base_bit / 8;
+		idx = cp->idx + cp->base_bit / 8;
 		bit = cp->base_bit % 8;
 		mask = width2mask(cp->width);
 
