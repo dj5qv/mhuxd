@@ -174,47 +174,6 @@ static int mk1_care_frbase(struct cfgmgr *cfgmgr, struct device *dev) {
 	return rval;
 }
 
-static int apply_keyer_params(struct cfgmgr *cfgmgr, struct device *dev, HDF *hdf, const char *prefix) {
-	NEOERR *err;
-	HDF *phdf;
-	char key[128], full_key[128];
-	const char *val_str;
-	int val, rval = 0;
-
-	for(phdf = hdf_obj_child(hdf); phdf; phdf = hdf_obj_next(phdf)) {
-		snprintf(key, sizeof(key)-1, "%s%s%s", prefix, *prefix ? "." : "", hdf_obj_name(phdf));
-
-		if(hdf_obj_child(phdf)) {
-			apply_keyer_params(cfgmgr, dev, phdf, key);
-			continue;
-		}
-
-		val_str = hdf_obj_value(phdf);
-		if(!val_str) {
-			err("cfgmgr) %s() no value for %s", __func__, key);
-			rval++;
-			continue;
-		}
-		val = atoi(val_str);
-		//dbg1(">>> set kopt %s/%d", key, val);
-		if(mhc_set_kopt(dev->ctl, key, val)) {
-			err("(cfgmgr) Could not set keyer parameter %s for keyer %s!",  key, dev->serial);
-			rval++;
-			continue;
-		}
-
-		snprintf(full_key, sizeof(full_key)-1, "mhuxd.keyer.%s.param.%s", dev->serial, key);
-		err = hdf_set_int_value(cfgmgr->hdf_live, full_key, val);
-		if(err != STATUS_OK) {
-			err("(cfgmgr) %s() could not update parameter %s in live hdf!", __func__, full_key);
-			nerr_ignore(&err);
-			rval++;
-		}
-	}
-
-	return rval;
-}
-
 void cfgmr_state_changed_cb(const char *serial, int state, void *user_data) {
 	(void)state; 
 	struct cfgmgr *cfgmgr = user_data;
@@ -549,6 +508,89 @@ static int check_icom_address(HDF *hdf) {
 	return rval;
 }
 
+static int apply_keyer_params(struct cfgmgr *cfgmgr, struct device *dev, HDF *hdf, const char *prefix) {
+	NEOERR *err;
+	HDF *phdf;
+	char key[128], full_key[128];
+	const char *val_str;
+	int val, rval = 0;
+
+	for(phdf = hdf_obj_child(hdf); phdf; phdf = hdf_obj_next(phdf)) {
+		snprintf(key, sizeof(key)-1, "%s%s%s", prefix, *prefix ? "." : "", hdf_obj_name(phdf));
+
+		if(hdf_obj_child(phdf)) {
+			apply_keyer_params(cfgmgr, dev, phdf, key);
+			continue;
+		}
+
+		val_str = hdf_obj_value(phdf);
+		if(!val_str) {
+			err("(cfgmgr) %s() no value for %s", __func__, key);
+			rval++;
+			continue;
+		}
+		val = atoi(val_str);
+		//dbg1(">>> set kopt %s/%d", key, val);
+		if(mhc_set_kopt(dev->ctl, key, val)) {
+			err("(cfgmgr) Could not set keyer parameter %s for keyer %s!",  key, dev->serial);
+			rval++;
+			continue;
+		}
+
+		snprintf(full_key, sizeof(full_key)-1, "mhuxd.keyer.%s.param.%s", dev->serial, key);
+		err = hdf_set_int_value(cfgmgr->hdf_live, full_key, val);
+		if(err != STATUS_OK) {
+			err("(cfgmgr) %s() could not update parameter %s in live hdf!", __func__, full_key);
+			nerr_ignore(&err);
+			rval++;
+		}
+	}
+
+	return rval;
+}
+
+static int apply_sm_antsw_params(struct cfgmgr *cfgmgr, struct device *dev, HDF *hdf, const char *prefix) {
+	NEOERR *err;
+	HDF *phdf;
+	char key[128], full_key[128];
+	const char *val_str;
+	int val, rval = 0;
+
+	for(phdf = hdf_obj_child(hdf); phdf; phdf = hdf_obj_next(phdf)) {
+		snprintf(key, sizeof(key)-1, "%s%s%s", prefix, *prefix ? "." : "", hdf_obj_name(phdf));
+
+		if(hdf_obj_child(phdf)) {
+			apply_sm_antsw_params(cfgmgr, dev, phdf, key);
+			continue;
+		}
+
+		val_str = hdf_obj_value(phdf);
+		if(!val_str) {
+			err("(cfgmgr) %s() no value for %s", __func__, key);
+			rval++;
+			continue;
+		}
+		val = atoi(val_str);
+
+		if(sm_antsw_set_opt(mhc_get_sm(dev->ctl), key, val)) {
+			err("(cfgmgr) Could not set keyer parameter %s for keyer %s!",  key, dev->serial);
+			rval++;
+			continue;
+		}
+
+		snprintf(full_key, sizeof(full_key)-1, "mhuxd.keyer.%s.sm.fixed.%s", dev->serial, key);
+		err = hdf_set_int_value(cfgmgr->hdf_live, full_key, val);
+		if(err != STATUS_OK) {
+			err("(cfgmgr) %s() could not update parameter %s in live hdf!", __func__, full_key);
+			nerr_ignore(&err);
+			rval++;
+		}
+	}
+
+	return rval;
+}
+
+
 int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	NEOERR *err;
 	HDF *hdf, *base_hdf = (void*)cfg;
@@ -676,6 +718,16 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 				}
 			}
 		}
+
+		// SM
+		struct sm *sm;
+		HDF *smhdf;
+		if((sm = mhc_get_sm(dev->ctl)) && (smhdf = hdf_get_obj(hdf, "sm"))) {
+			HDF *phdf = hdf_get_obj(smhdf, "fixed");
+			if(phdf)
+				apply_sm_antsw_params(cfgmgr, dev, phdf, "");
+		}
+
 	}
 
 	for(hdf = hdf_obj_child(hdf_get_obj(base_hdf, "mhuxd.connector")); hdf; hdf = hdf_obj_next(hdf)) {

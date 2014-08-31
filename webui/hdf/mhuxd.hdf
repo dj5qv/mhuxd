@@ -778,6 +778,7 @@ mhuxd.webui.options {
              cw.ptt_opts.ptt : mhuxd.webui.options.ptt.ptt
              cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
              cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi             
+     	     outputs : mhuxd.webui.options.sm_outputs
        }
 
        4 {   # MK

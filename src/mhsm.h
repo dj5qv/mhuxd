@@ -24,11 +24,13 @@ enum {
 	SM_OUT_SEQINV = 3
 };
 
-struct sm* sm_create(struct mh_control *ctl, struct ev_loop *loop);
+struct sm* sm_create(struct mh_control *ctl, const char *serial, struct ev_loop *loop);
 void sm_destroy (struct sm *sm);
 int sm_get_antsw(struct sm *sm);
 
 int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg);
+void sm_antsw_clear_lists(struct sm *sm);
+int sm_antsw_set_opt(struct sm *sm, const char *key, uint32_t val);
 
 int sm_get_state_value(const uint8_t mpk_buffer[4], const char *key);
 void sm_debug_print_state_values(const uint8_t buffer[9]);

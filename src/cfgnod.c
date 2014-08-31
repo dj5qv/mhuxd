@@ -80,6 +80,10 @@ struct cfg *cfg_create_child(struct cfg *parent, const char *key) {
 	return (struct cfg *)child;
 }
 
+struct cfg *cfg_get_child(struct cfg *parent, const char *key) {
+	return (struct cfg *)hdf_get_obj((HDF *)parent, key);
+}
+
 void cfg_destroy(struct cfg *cfg) {
 	if(!cfg)
 		return;

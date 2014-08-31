@@ -627,7 +627,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	mhr_set_bps_limit(ctl->router, CH_ROTATOR, 9600 / (8.0 + 1.0));
 
 	if(mhi->type == MHT_SM || mhi->type == MHT_SMD || mhi->type == MHT_DK2)
-		ctl->sm = sm_create(ctl, loop);
+		ctl->sm = sm_create(ctl, ctl->serial, loop);
 
 	return ctl;
 }

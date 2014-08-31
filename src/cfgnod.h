@@ -16,5 +16,6 @@ const char *cfg_name(struct cfg *cfg);
 int cfg_set_value(struct cfg *, const char *key, const char *val);
 int cfg_set_int_value(struct cfg *, const char *key, int val);
 struct cfg *cfg_create_child(struct cfg *parent, const char *key);
+struct cfg *cfg_get_child(struct cfg *parent, const char *key);
 
 #endif /* CFGNOD_H */
