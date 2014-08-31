@@ -109,6 +109,8 @@ struct sm {
 
 };
 
+static void debug_print_antsw_values(struct sm_bandplan *bp);
+
 struct output_map {
 	const char *label;
 	uint8_t bit;
@@ -363,16 +365,6 @@ static int decode_arec(struct antenna_record *arec) {
 		arec->rotator_offset |= (c << 8);
 	}
 
-	dbg1("(sm) label:       %s", arec->label);
-	dbg1("(sm) name:        %s", arec->name);
-	dbg1("(sm) output:      0x%08x", arec->output_settings);
-	dbg1("(sm) steppir:     %d", arec->steppir);
-	dbg1("(sm) rxonly:      %d", arec->rxonly);
-	dbg1("(sm) paAntNumber: %d", arec->pa_ant_number);
-	dbg1("(sm) rotator:     %d", arec->rotator);
-	if(arec->rotator)
-		dbg1("(sm) rot offs:    %d", arec->rotator_offset);
-
 	return 0;
 }
 
@@ -422,20 +414,6 @@ static int decode_grec(struct groups_record *grec) {
 	grec->current_azimuth = c;
 	BGETC(&grec->raw_buf);
 	grec->current_azimuth |= (c << 8);
-
-	dbg1("(sm) label:        %s", grec->label);
-	dbg1("(sm) name:         %s", grec->name);
-	dbg1("(sm) num antennas: %d", grec->num_antennas);
-	dbg1("(sm) flags:        %d (%s)", grec->flags, grec->flags & 1 ? "antenna group" : "virtual rotator");
-	dbg1("(sm) current az:   %d", grec->current_azimuth);
-	int j = 0;
-	struct reference *ref;
-	PG_SCANLIST(&grec->ant_ref_list, ref)  {
-		dbg1("(sm) >>> ant         %d", j++);
-		dbg1("(sm)     ant idx:    %d", ref->idx);
-		dbg1("(sm)     ant min az: %d", ref->min_azimuth);
-		dbg1("(sm)     ant max az: %d", ref->max_azimuth);
-	}
 
 	return 0;
 }
@@ -511,26 +489,6 @@ static int decode_brec(struct band_record *brec) {
 	brec->currentTx = c;
 	BGETC(&brec->raw_buf);
 	brec->split = c;
-
-	dbg1("(sm) name:     %s", brec->name);
-	dbg1("(sm) low:      %u", brec->low_freq);
-	dbg1("(sm) high:     %u", brec->high_freq);
-	dbg1("(sm) outputs:  %u", brec->outputs);
-	int j = 0;
-	struct reference *ref;
-	PG_SCANLIST(&brec->ant_ref_list, ref) {
-		dbg1("(sm) >>> ant:     %u", j++);
-		dbg1("(sm)     ant idx: %u", ref->idx);
-	}
-	j = 0;
-	PG_SCANLIST(&brec->grp_ref_list, ref) {
-		dbg1("(sm) >>> grp:     %u", j++);
-		dbg1("(sm)     grp idx: %u", ref->idx);
-	}
-	dbg1("(sm) current Rx: %u", brec->currentRx);
-	dbg1("(sm) current Tx: %u", brec->currentTx);
-	dbg1("(sm) split:      %u", brec->split);
-
 
 	return 0;
 }
@@ -708,6 +666,8 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 			if(-1 == decode_brec(brec))
 				err("(sm) error decoding band record!");
 		}
+
+		debug_print_antsw_values(sm->bp_eeprom);
 	}
 }
 
@@ -763,6 +723,72 @@ int sm_get_state_value(const uint8_t buffer[13], const char *key) {
 
 void sm_debug_print_state_values(const uint8_t buffer[13]) {
 	citem_debug_print_values("sm state", sm_state_items, ARRAY_SIZE(sm_state_items), buffer, 13);
+}
+
+static void debug_print_antsw_values(struct sm_bandplan *bp) {
+	struct antenna_record *arec;
+	struct groups_record *grec;
+	struct band_record *brec;
+	struct reference *ref;
+
+	int i, j;
+	dbg1("(sm) %s", __func__);
+	citem_debug_print_values("sm antsw fixed area", sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data, 115);
+
+	dbg1("(sm) antenna list");
+	i = 0;
+	PG_SCANLIST(&bp->antenna_list, arec) {
+		dbg1("(sm)  ant index %d", i++);
+		dbg1("(sm)    label:       %s", arec->label);
+		dbg1("(sm)    name:        %s", arec->name);
+		dbg1("(sm)    output:      0x%08x", arec->output_settings);
+		dbg1("(sm)    steppir:     %d", arec->steppir);
+		dbg1("(sm)    rxonly:      %d", arec->rxonly);
+		dbg1("(sm)    paAntNumber: %d", arec->pa_ant_number);
+		dbg1("(sm)    rotator:     %d", arec->rotator);
+		dbg1("(sm)    rotator off: %d", arec->rotator_offset);
+	}
+
+	dbg1("(sm) groups list");
+	i = 0;
+	PG_SCANLIST(&bp->groups_list, grec) {
+		dbg1("(sm)  groups index %d", i++);
+		dbg1("(sm)    label:        %s", grec->label);
+		dbg1("(sm)    name:         %s", grec->name);
+		dbg1("(sm)    num antennas: %d", grec->num_antennas);
+		dbg1("(sm)    flags:        %d (%s)", grec->flags, grec->flags & 1 ? "antenna group" : "virtual rotator");
+		dbg1("(sm)    current az    %d", grec->current_azimuth);
+		j = 0;
+		PG_SCANLIST(&grec->ant_ref_list, ref)  {
+			dbg1("(sm)    ant list element %d", j++);
+			dbg1("(sm)     ant index: %d", ref->idx);
+			dbg1("(sm)     ant min azimuth: %d", ref->min_azimuth);
+			dbg1("(sm)     ant max azimuth: %d", ref->max_azimuth);
+		}
+	}
+
+	dbg1("(sm) band list");
+	i = 0;
+	PG_SCANLIST(&bp->band_list, brec) {
+		dbg1("(sm)  band index %d", i++);
+		dbg1("(sm)    name:       %s", brec->name);
+		dbg1("(sm)    low:        %d", brec->low_freq);
+		dbg1("(sm)    high:       %d", brec->high_freq);
+		dbg1("(sm)    outputs:    %d", brec->outputs);
+		dbg1("(sm)    current Rx: %d", brec->currentRx);
+		dbg1("(sm)    current Tx: %d", brec->currentTx);
+		dbg1("(sm)    split:      %d", brec->split);
+		j = 0;
+		PG_SCANLIST(&brec->ant_ref_list, ref) {
+			dbg1("(sm)    ant list element %d", j++);
+			dbg1("(sm)     ant index: %d", ref->idx);
+		}
+		j = 0;
+		PG_SCANLIST(&brec->grp_ref_list, ref) {
+			dbg1("(sm)    grp list element %d", j++);
+			dbg1("(sm)     grp index: %d", ref->idx);
+		}
+	}
 }
 
 int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
