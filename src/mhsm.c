@@ -102,7 +102,6 @@ struct sm {
 	struct ev_loop *loop;
 	struct mh_control *ctl;
 	struct sm_bandplan *bp_eeprom;
-	struct sm_bandplan *bp_cfg;
 	uint8_t get_antsw_state;
 	uint16_t get_antsw_offset;
 	uint8_t get_antsw_to_read;
@@ -508,8 +507,6 @@ struct sm* sm_create(struct mh_control *ctl, const char *serial, struct ev_loop 
 void sm_destroy (struct sm *sm) {
 	if(sm->bp_eeprom)
 		bp_destroy(sm->bp_eeprom);
-	if(sm->bp_cfg)
-		bp_destroy(sm->bp_cfg);
 	free(sm);
 }
 
@@ -801,14 +798,15 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 
 	bp = sm->bp_eeprom;
 
-	if( ! bp) {
+	if(!bp)
 		return -1;
-	}
 
-	if(sm->get_antsw_state != STATE_GET_ANTSW_DONE) {
+	if(sm->get_antsw_state != STATE_GET_ANTSW_DONE && sm->get_antsw_state != STATE_GET_ANTSW_EMPTY) {
+		// GET ANTSW pending
 		err("(sm) %s failed, invalid state %d!", __func__, sm->get_antsw_state);
 		return -1;
 	}
+
 
 	for(i = 0; i < ARRAY_SIZE(sm_bandplan_fixed_items); i++) {
 		snprintf(str, sizeof(str), "fixed.%s", sm_bandplan_fixed_items[i].key);
@@ -826,8 +824,8 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 		bd = citem_get_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data,
 				sizeof(bp->fixed_data), "bandDependent");
 		if(seq >= 0 && bd >= 0) {
-			val = ((seq > output_map[j].bit) & 1) << 1;
-			val |= (bd > output_map[j].bit) & 1;
+			val = ((seq >> output_map[j].bit) & 1) << 1;
+			val |= (bd >> output_map[j].bit) & 1;
 			cfg_set_int_value(cfg, str, val);
 		}
 	}
@@ -947,10 +945,10 @@ int sm_antsw_set_opt(struct sm *sm, const char *key, uint32_t val) {
 	struct sm_bandplan *bp;
 	int ret;
 
-	if(!sm->bp_cfg)
-		sm->bp_cfg = bp_create();
+	if(!sm->bp_eeprom)
+		sm->bp_eeprom = bp_create();
 
-	bp = sm->bp_cfg;
+	bp = sm->bp_eeprom;
 
 	ret = citem_set_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data, sizeof(bp->fixed_data), key, val);
 
@@ -959,3 +957,51 @@ int sm_antsw_set_opt(struct sm *sm, const char *key, uint32_t val) {
 	return ret;
 }
 
+int sm_antsw_set_output(struct sm *sm, const char *out_name, uint8_t val) {
+	uint16_t j;
+	int seq, bd;
+	struct sm_bandplan *bp = sm->bp_eeprom;
+
+	if(!bp)
+		return -1;
+
+	dbg0("(mhsm) %s set antsw output %s=%d", sm->serial, out_name, val);
+
+	if(val >= SM_OUT_MAX) {
+		err("(mhsm) %s invalid value %u", __func__, val);
+		return -1;
+	}
+
+	for(j = 0; j < ARRAY_SIZE(output_map); j++) {
+		if(!strcmp(output_map[j].label, out_name)) {
+
+			seq = citem_get_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data,
+					sizeof(bp->fixed_data), "sequencerOutputs");
+			bd = citem_get_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data,
+					sizeof(bp->fixed_data), "bandDependent");
+			if(seq >= 0 && bd >= 0) {
+				seq &= ~(1 << output_map[j].bit);
+				bd  &= ~(1 << output_map[j].bit);
+				seq |= (((val >> 1) & 1) << output_map[j].bit);
+				bd  |= (((val >> 0) & 1) << output_map[j].bit);
+
+				citem_set_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data,
+						sizeof(bp->fixed_data), "sequencerOutputs", seq);
+				citem_set_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data,
+						sizeof(bp->fixed_data), "bandDependent", bd);
+
+			} else {
+				return -1;
+			}
+
+			return 0;
+		}
+	}
+
+	err("(mhsm) %s could not find output relay %s!", __func__, out_name);
+	return -1;
+}
+
+int sm_antsw_has_bandplan(struct sm *sm) {
+	return sm->bp_eeprom ? 1 : 0;
+}

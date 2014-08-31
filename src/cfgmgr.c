@@ -723,9 +723,23 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 		struct sm *sm;
 		HDF *smhdf;
 		if((sm = mhc_get_sm(dev->ctl)) && (smhdf = hdf_get_obj(hdf, "sm"))) {
+			// fixed area
 			HDF *phdf = hdf_get_obj(smhdf, "fixed");
 			if(phdf)
-				apply_sm_antsw_params(cfgmgr, dev, phdf, "");
+				rval += apply_sm_antsw_params(cfgmgr, dev, phdf, "");
+
+			// output
+			for(phdf = hdf_obj_child(hdf_get_obj(hdf, "sm.output")); phdf; phdf = hdf_obj_next(phdf)) {
+				const char *key = hdf_obj_name(phdf);
+				const char *val_str = hdf_obj_value(phdf);
+				if(!val_str || !*val_str)
+					continue;
+				int val = atoi(val_str);
+				if(sm_antsw_set_output(sm, key, val))
+					rval++;
+
+			}
+
 		}
 
 	}

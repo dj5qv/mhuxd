@@ -502,9 +502,9 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		set_state(ctl, CTL_STATE_ON_CONNECT);
 		break;
 	case CTL_STATE_ON_CONNECT:
-		if(ctl->sm) {
+		if(ctl->sm && !sm_antsw_has_bandplan(ctl->sm)) {
 			if( 0 != sm_get_antsw(ctl->sm))
-				warn("(mhc) could not download antsw from device!");
+				warn("(mhc) %s could not download antsw from device!", ctl->serial);
 		}
 		info("(mhc) %s ONLINE", ctl->serial);
 		set_state(ctl, CTL_STATE_OK);
