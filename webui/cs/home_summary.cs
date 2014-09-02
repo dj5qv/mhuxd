@@ -77,8 +77,8 @@
 
 <table class="sectiontable" cellpadding="3" cellspacing="0" width="100%">
   <tbody>
-    <tr>
 
+    <tr>
       <td class="titlelistcell">Name</td>
       <td class="titlelistcell">Serial</td>
       <td class="titlelistcell">Firmware</td>

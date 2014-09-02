@@ -104,10 +104,16 @@ mhuxd.webui.menus {
                   include = keyer_winkey.cs
                   depends = has.winkey
              }
-	     sm_outputs {
+	     sm_antsw_settings {
+	          display = Switching / Settings
+                  title = Antenna Switching / Settings
+                  include = sm_antsw_settings.cs
+		  depends = has.sm_commands
+	     }
+	     sm_antsw_outputs {
 	     	  display = Switching / Outputs
 		  title = Antenna Switching / Outputs
-		  include = sm_outputs.cs
+		  include = sm_antsw_outputs.cs
 		  depends = has.sm_commands
 	     }
 
@@ -201,6 +207,24 @@ mhuxd.webui.options {
 	     300 {
                   display = 300
              }
+       }
+
+       civ_baud {
+       	     192 {
+	     	 display = 1200
+	     }
+       	     96 {
+	     	 display = 2400
+	     }
+       	     48 {
+	     	 display = 4800
+	     }
+       	     24 {
+	     	 display = 9600
+	     }
+       	     12 {
+	     	 display = 19200
+	     }
        }
 
        radio_databits {
@@ -584,6 +608,61 @@ mhuxd.webui.options {
 	     	 display = SEQ inverted
 	     }
        }
+
+       sm_ext_ser_func {
+             0 {
+	     	 display = none
+	     }       	     
+             1 {
+	     	 display = auxiliary port
+	     }       	     
+             2 {
+	     	 display = Acom 2000
+	     }       	     
+             17 {
+	     	 display = CI-V TX frequency
+	     }       	     
+             18 {
+	     	 display = CI-V RX frequency
+	     }       	     
+             19 {
+	     	 display = CI-V operation frequency
+	     }       	     
+             20 {
+	     	 display = CI-V VFO A frequency
+	     }       	     
+             21 {
+	     	 display = CI-V VFO B frequency
+	     }       	     
+             22 {
+	     	 display = CI-V sub RX frequency
+	     }       	     
+             33 {
+	     	 display = SteppIR Dipole
+	     }       	     
+             34 {
+	     	 display = SteppIR Dipole with 40m-30m Dipole Adder
+	     }       	     
+             35 {
+	     	 display = SteppIR Yagi
+	     }       	     
+             36 {
+	     	 display = SteppIR Yagi with 40m-30m Dipole Adder
+	     }       	     
+             37 {
+	     	 display = SteppIR BigIR Vertical
+	     }       	     
+             38 {
+	     	 display = SteppIR BigIR Vertical with 80m Coil
+	     }       	     
+             39 {
+	     	 display = SteppIR SmallIR Vertical
+	     }       	     
+             40 {
+	     	 display = SteppIR MonstIR Yagi
+	     }       	     
+
+       }
        
        mk2_dispbg {
              0 {
@@ -759,6 +838,30 @@ mhuxd.webui.options {
              0 {
                   display = SC2
              }
+       }
+
+       civ_funcs {
+             0 {
+	          display = none
+	     }
+             1 {
+	          display = TX frequency
+	     }
+             2 {
+	          display = RX frequency
+	     }
+             3 {
+	          display = operation frequency
+	     }
+             4 {
+	          display = VFO A frequency
+	     }
+             5 {
+	          display = VFO B frequency
+	     }
+             6 {
+	          display = sub RX frequency
+	     }
        }
 
        1 {   # CK

@@ -391,7 +391,7 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 		sm_antsw_to_cfg(sm, (struct cfg *)smnod);
 	}
 
-#if 0
+#if 1
 	STRING str;
 	string_init(&str);
 	hdf_dump_str(cfgmgr->hdf_live, "", 0, &str);

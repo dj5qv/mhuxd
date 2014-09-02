@@ -151,6 +151,15 @@ struct citem sm_state_items[] = {
 	CITEM("steppirVerHi", 12, 7, 8)
 };
 
+// Convert 1/2700 seconds from/to milliseconds
+static int32_t conv_2700_to_ms(int32_t input) {
+	return (input * 1000 + 2700 / 2) / 2700;
+}
+static int32_t conv_ms_to_2700(int32_t input) {
+	return (input * 2700 + 1000 / 2) / 1000;
+}
+
+
 struct citem sm_bandplan_fixed_items[] = {
 	CITEM("formatVersion", 0, 7, 8),
 #if 0
@@ -204,9 +213,9 @@ struct citem sm_bandplan_fixed_items[] = {
 	CITEM("civAddress", 9, 7, 8),
 	CITEM("extSerFunc", 10, 7, 8),
 	CITEM("extSerBaudRate", 11, 7, 8),
-	CITEM("extSerPar", 12, 7, 8),   // not implemented in SM 1.3 ?
-	CITEM("antSwDelay", 13, 15, 16),
-	CITEM("bbmDelay", 15, 7, 8),
+	CITEM("extSerPar", 12, 7, 8),   // not implemented in SM ?
+	CITEMC("antSwDelay", 13, 15, 16, conv_ms_to_2700, conv_2700_to_ms),
+	CITEMC("bbmDelay", 15, 7, 8, conv_ms_to_2700, conv_2700_to_ms),
 	CITEM("inhibitLead", 16, 15, 16),
 	CITEM("useKeyIn", 18, 0, 1),
 	CITEM("invertKeyIn", 18, 1, 1),

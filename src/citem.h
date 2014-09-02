@@ -12,8 +12,11 @@
 
 #include <stdint.h>
 
-#define CITEM(key, idx, base_bit, width) { key, idx, base_bit, width, -1 }
-#define CITEMD(key, idx, base_bit, width, def) { key, idx, base_bit, width, def }
+typedef int32_t (*citem_convert)(int32_t input);
+
+#define CITEM(key, idx, base_bit, width) { key, idx, base_bit, width, -1, NULL, NULL }
+#define CITEMD(key, idx, base_bit, width, def) { key, idx, base_bit, width, def, NULL, NULL }
+#define CITEMC(key, idx, base_bit, width, conv_in, conv_out) { key, idx, base_bit, width, -1, conv_in, conv_out }
 
 struct citem {
 	const char	*key;
@@ -21,6 +24,8 @@ struct citem {
 	uint8_t		base_bit;
 	uint8_t		width;
 	uint32_t	def;
+	citem_convert   conv_in;
+	citem_convert   conv_out;
 };
 
 struct cfg;

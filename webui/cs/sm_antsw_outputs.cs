@@ -1,4 +1,4 @@
-<?cs def:sm_outputs1(unit, chan, keyer_type) ?>
+<?cs def:sm_antsw_outputs1(unit, chan, keyer_type) ?>
 
 
 <table class="sectiontable" cellpadding="0" cellspacing="0">
@@ -46,8 +46,8 @@
 <?cs /def ?>
 
 
-<?cs def:sm_outputs(unit, chan) ?>
-<?cs call:sm_outputs1(unit, chan, mhuxd.run.keyer[mhuxd.webui.session.unit].info.type) ?>
+<?cs def:sm_antsw_outputs(unit, chan) ?>
+<?cs call:sm_antsw_outputs1(unit, chan, mhuxd.run.keyer[mhuxd.webui.session.unit].info.type) ?>
 
 <img src="/static/dot.gif" height="4" border="0" width="1"><br>
 <?cs if:mhuxd.webui.session.Edit[chan] ?>
@@ -60,7 +60,7 @@
 
 <?cs /def ?>
 
-<?cs call:sectionheader("Outputs (not functional)", "foobar_help") ?>
+<?cs call:sectionheader("Outputs", "foobar_help") ?>
 &nbsp;&nbsp;<br>
-<?cs call:sm_outputs(mhuxd.webui.session.unit, "sm_outputs") ?>
+<?cs call:sm_antsw_outputs(mhuxd.webui.session.unit, "sm_antsw_outputs") ?>
 <br>
