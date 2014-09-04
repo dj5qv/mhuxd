@@ -116,6 +116,12 @@ mhuxd.webui.menus {
 		  include = sm_antsw_outputs.cs
 		  depends = has.sm_commands
 	     }
+	     sm_antsw_ant_list {
+	     	  display = Switching / Antennas
+		  title = Antenna Switching / Antennas
+		  include = sm_antsw_ant_list.cs
+		  depends = has.sm_commands
+	     }
 
              all_params {
                   display = All Parameters

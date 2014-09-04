@@ -310,7 +310,8 @@ webuics_DATA = \
 	cs/summary_cfg.cs \
 	cs/winkey_cfg.cs \
 	cs/sm_antsw_outputs.cs \
-	cs/sm_antsw_settings.cs
+	cs/sm_antsw_settings.cs \
+	cs/sm_antsw_ant_list.cs
 
 all: all-am
 

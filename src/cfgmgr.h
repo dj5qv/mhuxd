@@ -17,6 +17,7 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial);
 struct cfg *cfgmgr_get_live_cfg(struct cfgmgr *cfgmgr);
 int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg);
 int cfgmgr_unset_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg);
+int cfgmgr_edit_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int remove);
 int cfgmgr_save_cfg(struct cfgmgr *cfgmgr);
 
 void cfgmr_state_changed_cb(const char *serial, int state, void *user_data);

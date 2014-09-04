@@ -43,6 +43,7 @@ enum {
 struct antenna_record {
 	struct PGNode node;
 	struct buffer raw_buf;
+	uint8_t id;
 	char label[MAX_LABEL_LEN + 1];
 	char name[MAX_NAME_LEN + 1];
 	uint32_t output_settings;
@@ -64,6 +65,7 @@ struct reference {
 struct groups_record {
 	struct PGNode node;
 	struct buffer raw_buf;
+	uint8_t id;
 	char label[MAX_LABEL_LEN + 1];
 	char name[MAX_NAME_LEN + 1];
 	uint8_t	num_antennas;
@@ -77,6 +79,7 @@ struct groups_record {
 struct band_record {
 	struct PGNode node;
 	struct buffer raw_buf;
+	uint8_t id;
 	uint32_t low_freq;
 	uint32_t high_freq;
 	char name[MAX_NAME_LEN + 1];
@@ -105,6 +108,7 @@ struct sm {
 	uint8_t get_antsw_state;
 	uint16_t get_antsw_offset;
 	uint8_t get_antsw_to_read;
+	uint8_t id_cnt_ant, id_cnt_grp, id_cnt_band;
 
 };
 
@@ -116,26 +120,26 @@ struct output_map {
 };
 
 struct output_map output_map[] = {
-{ "B6", 1 },
-{ "A10", 2},
-{ "B5", 3 },
-{ "A9", 4 },
-{ "A8", 8 },
-{ "B4", 9 },
-{ "A7", 10 },
-{ "B2", 11 },
-{ "A6", 12 },
-{ "B1", 13 },
-{ "A5", 14 },
-{ "B10", 15 },
-{ "A4", 16 },
-{ "B9", 17 },
-{ "A3", 18 },
-{ "B8", 19 },
-{ "A2", 20 },
-{ "B7", 21 },
 { "A1", 22 },
-{ "B3", 23 }
+{ "A2", 20 },
+{ "A3", 18 },
+{ "A4", 16 },
+{ "A5", 14 },
+{ "A6", 12 },
+{ "A7", 10 },
+{ "A8", 8 },
+{ "A9", 4 },
+{ "A10", 2},
+{ "B1", 13 },
+{ "B2", 11 },
+{ "B3", 23 },
+{ "B4", 9 },
+{ "B5", 3 },
+{ "B6", 1 },
+{ "B7", 21 },
+{ "B8", 19 },
+{ "B9", 17 },
+{ "B10", 15 },
 };
 
 struct citem sm_state_items[] = {
@@ -220,10 +224,10 @@ struct citem sm_bandplan_fixed_items[] = {
 	CITEM("useKeyIn", 18, 0, 1),
 	CITEM("invertKeyIn", 18, 1, 1),
 
-	/*
-	CITEM("sequencer.lead.", 19,0, 16),
-	CITEM("sequencer.tail.", 21,0, 16),
-	*/
+
+	CITEM("sequencer.lead.keyOut", 19,0, 16),
+	CITEM("sequencer.tail.keyOut", 21,0, 16),
+
 	CITEM("sequencer.lead.B6",  23, 15, 16),
 	CITEM("sequencer.tail.B6",  25, 15, 16),
 	CITEM("sequencer.lead.A10", 27, 15, 16),
@@ -264,13 +268,13 @@ struct citem sm_bandplan_fixed_items[] = {
 	CITEM("sequencer.tail.A3",  93, 15, 16),
 	CITEM("sequencer.lead.B8",  95, 15, 16),
 	CITEM("sequencer.tail.B8",  97, 15, 16),
-	CITEM("sequencer.tail.A2",  99, 15, 16),
+	CITEM("sequencer.lead.A2",  99, 15, 16),
 	CITEM("sequencer.tail.A2", 101, 15, 16),
-	CITEM("sequencer.tail.B7", 103, 15, 16),
+	CITEM("sequencer.lead.B7", 103, 15, 16),
 	CITEM("sequencer.tail.B7", 105, 15, 16),
-	CITEM("sequencer.tail.A1", 107, 15, 16),
+	CITEM("sequencer.lead.A1", 107, 15, 16),
 	CITEM("sequencer.tail.A1", 109, 15, 16),
-	CITEM("sequencer.tail.B3", 111, 15, 16),
+	CITEM("sequencer.lead.B3", 111, 15, 16),
 	CITEM("sequencer.tail.B3", 113, 15, 16),
 };
 
@@ -281,6 +285,32 @@ static struct sm_bandplan *bp_create() {
 	PG_NewList(&bp->band_list);
 	return bp;
 }
+
+static struct antenna_record *arec_create(struct sm *sm) {
+	struct antenna_record *arec;
+	arec = w_calloc(1, sizeof(*arec));
+	arec->id = ++sm->id_cnt_ant;
+	info(">>> created arec id %d", arec->id);
+	return arec;
+}
+
+static struct groups_record *grec_create(struct sm *sm) {
+	struct groups_record *grec;
+	grec = w_calloc(1, sizeof(*grec));
+	grec->id = ++sm->id_cnt_grp;
+	PG_NewList(&grec->ant_ref_list);
+	return grec;
+}
+
+static struct band_record *brec_create(struct sm *sm) {
+	struct band_record *brec;
+	brec = w_calloc(1, sizeof(*brec));
+	brec->id = ++sm->id_cnt_band;
+	PG_NewList(&brec->ant_ref_list);
+	PG_NewList(&brec->grp_ref_list);
+	return brec;
+}
+
 
 static void clear_lists(struct sm_bandplan *bp) {
 	struct antenna_record *arec;
@@ -563,7 +593,7 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 			if(c > 0) {
 				sm->get_antsw_state = STATE_GET_ANTSW_ANTREC;
 				sm->get_antsw_to_read = c;
-				arec = w_calloc(1, sizeof(*arec));
+				arec = arec_create(sm);
 				PG_AddTail(&sm->bp_eeprom->antenna_list, &arec->node);
 			} else {
 				sm->get_antsw_state = STATE_GET_ANTSW_GRPREC_LENTGH;
@@ -583,8 +613,7 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 			if(c > 0) {
 				sm->get_antsw_state = STATE_GET_ANTSW_GRPREC;
 				sm->get_antsw_to_read = c;
-				grec = w_calloc(1, sizeof(*grec));
-				PG_NewList(&grec->ant_ref_list);
+				grec = grec_create(sm);
 				PG_AddTail(&sm->bp_eeprom->groups_list, &grec->node);
 			} else {
 				sm->get_antsw_state = STATE_GET_ANTSW_BREC_LENTGH;
@@ -604,9 +633,7 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 			if(c > 0) {
 				sm->get_antsw_state = STATE_GET_ANTSW_BREC;
 				sm->get_antsw_to_read = c;
-				brec = w_calloc(1, sizeof(*brec));
-				PG_NewList(&brec->ant_ref_list);
-				PG_NewList(&brec->grp_ref_list);
+				brec = brec_create(sm);
 				PG_AddTail(&sm->bp_eeprom->band_list, &brec->node);
 			} else {
 				sm->get_antsw_state = STATE_GET_ANTSW_DONE;
@@ -656,21 +683,24 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 		citem_debug_print_values("sm antsw fixed", sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), sm->bp_eeprom->fixed_data, 115);
 
 		PG_SCANLIST(&sm->bp_eeprom->antenna_list, arec) {
-			dbg1("(sm) decode arec %d", i++);
+			dbg1("(sm) decode arec %d", i);
 			if(-1 == decode_arec(arec))
 				err("(sm) error decoding antenna record!");
+			i++;
 		}
 		i = 0;
 		PG_SCANLIST(&sm->bp_eeprom->groups_list, grec) {
-			dbg1("(sm) decode grec %d", i++);
+			dbg1("(sm) decode grec %d", i);
 			if(-1 == decode_grec(grec))
 				err("(sm) error decoding groups record!");
+			i++;
 		}
 		i = 0;
 		PG_SCANLIST(&sm->bp_eeprom->band_list, brec) {
-			dbg1("(sm) decode brec %d", i++);
+			dbg1("(sm) decode brec %d", i);
 			if(-1 == decode_brec(brec))
 				err("(sm) error decoding band record!");
+			i++;
 		}
 
 		debug_print_antsw_values(sm->bp_eeprom);
@@ -694,7 +724,7 @@ int sm_get_antsw(struct sm *sm) {
 	if(sm->bp_eeprom)
 		bp_destroy(sm->bp_eeprom);
 
-	sm->bp_eeprom = bp_create();
+	sm->bp_eeprom = bp_create(sm);
 
 	sm->get_antsw_offset = 0;
 	sm->get_antsw_state = STATE_GET_ANTSW_FIXED;
@@ -747,6 +777,7 @@ static void debug_print_antsw_values(struct sm_bandplan *bp) {
 		dbg1("(sm)  ant index %d", i++);
 		dbg1("(sm)    label:       %s", arec->label);
 		dbg1("(sm)    name:        %s", arec->name);
+		dbg1("(sm)    id:          %u", arec->id);
 		dbg1("(sm)    output:      0x%08x", arec->output_settings);
 		dbg1("(sm)    steppir:     %d", arec->steppir);
 		dbg1("(sm)    rxonly:      %d", arec->rxonly);
@@ -802,7 +833,7 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 	struct antenna_record *arec;
 	struct groups_record *grec;
 	struct band_record *brec;
-	uint16_t i, j;
+	uint16_t j;
 	char str[256];
 
 	bp = sm->bp_eeprom;
@@ -817,10 +848,10 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 	}
 
 
-	for(i = 0; i < ARRAY_SIZE(sm_bandplan_fixed_items); i++) {
-		snprintf(str, sizeof(str), "fixed.%s", sm_bandplan_fixed_items[i].key);
+	for(j = 0; j < ARRAY_SIZE(sm_bandplan_fixed_items); j++) {
+		snprintf(str, sizeof(str), "fixed.%s", sm_bandplan_fixed_items[j].key);
 		int c = citem_get_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data,
-				sizeof(bp->fixed_data), sm_bandplan_fixed_items[i].key);
+				sizeof(bp->fixed_data), sm_bandplan_fixed_items[j].key);
 		if(c != -1)
 			cfg_set_int_value(cfg, str, c);
 	}
@@ -840,14 +871,14 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 	}
 
 	// ant
-	i = 0;
 	PG_SCANLIST(&bp->antenna_list, arec) {
-		snprintf(str, sizeof(str), "ant.%d", i);
+		snprintf(str, sizeof(str), "ant.%d", arec->id);
 		struct cfg *child_cfg = cfg_create_child(cfg, str);
 		if(!child_cfg)
 			return -1;
 		cfg_set_value(child_cfg, "label", arec->label);
 		cfg_set_value(child_cfg, "name", arec->name);
+		cfg_set_int_value(child_cfg, "id", arec->id);
 		cfg_set_int_value(child_cfg, "steppir", arec->steppir);
 		cfg_set_int_value(child_cfg, "rxonly", arec->rxonly);
 		cfg_set_int_value(child_cfg, "pa_ant_nr", arec->pa_ant_number);
@@ -855,24 +886,22 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 		cfg_set_int_value(child_cfg, "rotator_offset", arec->rotator_offset);
 
 		// output settings
-		snprintf(str, sizeof(str), "ant.%d.output", i);
+		snprintf(str, sizeof(str), "ant.%d.output", arec->id);
 		child_cfg = cfg_create_child(cfg, str);
 		for(j = 0; j < ARRAY_SIZE(output_map); j++) {
 			cfg_set_int_value(child_cfg, output_map[j].label, (arec->output_settings >> output_map[j].bit) & 1);
 		}
-
-		i++;
 	}
 
 	// groups
-	i = 0;
 	PG_SCANLIST(&bp->groups_list, grec) {
-		snprintf(str, sizeof(str), "group.%d", i);
+		snprintf(str, sizeof(str), "group.%d", grec->id);
 		struct cfg *child_cfg = cfg_create_child(cfg, str);
 		if(!child_cfg)
 			return -1;
 		cfg_set_value(child_cfg, "label", grec->label);
 		cfg_set_value(child_cfg, "name", grec->name);
+		cfg_set_int_value(child_cfg, "id", grec->id);
 		cfg_set_int_value(child_cfg, "num_antennas", grec->num_antennas);
 		cfg_set_int_value(child_cfg, "min_azimuth", grec->min_azimuth);
 		cfg_set_int_value(child_cfg, "max_azimuth", grec->max_azimuth);
@@ -882,7 +911,7 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 		struct reference *ref;
 		j = 0;
 		PG_SCANLIST(&grec->ant_ref_list, ref) {
-			snprintf(str, sizeof(str), "group.%d.ant.%d", i, j++);
+			snprintf(str, sizeof(str), "group.%d.ant.%d", grec->id, j++);
 			struct cfg *child_cfg = cfg_create_child(cfg, str);
 			if(!child_cfg)
 				return -1;
@@ -890,17 +919,16 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 			cfg_set_int_value(child_cfg, "min_azimuth", ref->min_azimuth);
 			cfg_set_int_value(child_cfg, "max_azimuth", ref->max_azimuth);
 		}
-		i++;
 	}
 
 	// bands
-	i = 0;
 	PG_SCANLIST(&bp->band_list, brec) {
-		snprintf(str, sizeof(str), "band.%d", i);
+		snprintf(str, sizeof(str), "band.%d", brec->id);
 		struct cfg *child_cfg = cfg_create_child(cfg, str);
 		if(!child_cfg)
 			return -1;
 
+		cfg_set_int_value(child_cfg, "idgg923", brec->id);
 		cfg_set_int_value(child_cfg, "low_freq", brec->low_freq);
 		cfg_set_int_value(child_cfg, "high_freq", brec->high_freq);
 		cfg_set_value(child_cfg, "name", brec->name);
@@ -910,7 +938,7 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 
 
 		// bpf / sequencer
-		snprintf(str, sizeof(str), "band.%d.bpf_seq", i);
+		snprintf(str, sizeof(str), "band.%d.bpf_seq", brec->id);
 		child_cfg = cfg_create_child(cfg, str);
 		if(!child_cfg)
 			return -1;
@@ -933,14 +961,13 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 
 		j = 0;
 		PG_SCANLIST(list, ref) {
-			snprintf(str, sizeof(str), "band.%d.%s.%d", i, type, j++);
+			snprintf(str, sizeof(str), "band.%d.%s.%d", brec->id, type, j++);
 			struct cfg *child_cfg = cfg_create_child(cfg, str);
 			if(!child_cfg)
 				return -1;
 			cfg_set_int_value(child_cfg, "idx", ref->idx);
 			cfg_set_int_value(child_cfg, "rx_only", ref->flags & 1);
 		}
-		i++;
 	}
 
 	return 0;
@@ -950,12 +977,76 @@ void sm_antsw_clear_lists(struct sm *sm) {
 	clear_lists(sm->bp_eeprom);
 }
 
+int sm_antsw_add_ant(struct sm *sm, struct cfg *cfg) {
+	struct antenna_record *arec;
+	struct sm_bandplan *bp = sm->bp_eeprom;
+	const char *str;
+	if(!bp)
+		return -1;
+
+	arec = arec_create(sm);
+
+	str = cfg_get_val(cfg, "label", "??");
+	strncpy(arec->label, str, MAX_LABEL_LEN);
+
+	str = cfg_get_val(cfg, "name", "??");
+	strncpy(arec->name, str, MAX_NAME_LEN);
+
+	arec->steppir = cfg_get_int_val(cfg, "steppir", 0);
+	arec->rxonly = cfg_get_int_val(cfg, "rxonly", 0);
+	arec->pa_ant_number = cfg_get_int_val(cfg, "pa_ant_number", 0);
+	arec->rotator = cfg_get_int_val(cfg, "rotator", 0);
+	arec->rotator_offset = cfg_get_int_val(cfg, "rotator_offset", 0);
+
+	// output bits
+	uint16_t j;
+	int val;
+	for(j = 0; j < ARRAY_SIZE(output_map); j++) {
+		val = cfg_get_int_val(cfg, output_map[j].label, 0);
+		val = (val == 1 ? 1 : 0);
+		arec->output_settings |= (val << output_map[j].bit);
+	}
+
+	info(">>> %s %s", __func__, arec->name);
+
+	PG_AddTail(&bp->antenna_list, &arec->node);
+
+	return 0;
+}
+
+int sm_antsw_rem_ant(struct sm *sm, int id) {
+
+	struct antenna_record *arec;
+	struct sm_bandplan *bp = sm->bp_eeprom;
+
+	if(!bp)
+		return -1;
+
+	dbg1("(mhsm) %s() id: %d", __func__, id);
+	debug_print_antsw_values(sm->bp_eeprom);
+
+	// FIXME: check references to this antenna and remove them.
+
+	PG_SCANLIST(&bp->antenna_list, arec) {
+	dbg1("(mhsm) %s() look: %d", __func__, arec->id);
+		if(arec->id == id) {
+			PG_Remove(&arec->node);
+			free(arec);
+			return 0;
+
+		}
+	}
+
+	err("(mhsm) could not remove antenna id %d, not found!", id);
+	return -1;
+}
+
 int sm_antsw_set_opt(struct sm *sm, const char *key, uint32_t val) {
 	struct sm_bandplan *bp;
 	int ret;
 
 	if(!sm->bp_eeprom)
-		sm->bp_eeprom = bp_create();
+		sm->bp_eeprom = bp_create(sm);
 
 	bp = sm->bp_eeprom;
 

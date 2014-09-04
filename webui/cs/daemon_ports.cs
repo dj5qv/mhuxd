@@ -200,7 +200,7 @@
 <?cs else ?>
 
 <img src="/static/dot.gif" height="4" border="0" width="1"><br>
-<input name="RemoveButton" onclick="button_clicked=this.value;" value="Remove" type="submit">
+<input name="Remove" onclick="button_clicked=this.value;" value="Remove" type="submit">
 <img src="/static/dot.gif" height="4" border="0" width="1"><br>
 
 <?cs /if ?>

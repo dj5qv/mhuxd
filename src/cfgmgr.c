@@ -89,23 +89,6 @@ static void initialize_live_hdf(HDF *hdf) {
 	}
 }
 
-#if 0
-int update_hdf_kopt(const char *serial, const char *key, int val) {
-	struct cfgmgr *cfgmgr = dmgr_get_cfgmgr();
-	NEOERR *err;
-	char full_key[MAX_HDF_PATH_LEN + 1];
-
-	snprintf(full_key, MAX_HDF_PATH_LEN, "mhuxd.keyer.%s.param.%s", serial, key);
-	err = hdf_set_int_value(cfgmgr->hdf_live, full_key, val);
-	if(err != STATUS_OK) {
-		log_neoerr(err, __func__);
-		return -1;
-	}
-
-	return 0;
-}
-#endif
-
 enum {
         MOD_CW,
         MOD_VOICE,
@@ -184,6 +167,7 @@ void cfgmr_state_changed_cb(const char *serial, int state, void *user_data) {
 int cfgmgr_update_hdf_all(struct cfgmgr *cfgmgr) {
 	struct device *dev;
 	int rval = 0;
+	dbg1("(cfgmgr) %s()", __func__);
 	PG_SCANLIST(dmgr_get_device_list(), dev)
 		rval += cfgmgr_update_hdf_dev(cfgmgr, dev->serial);
 	return rval;
@@ -590,7 +574,8 @@ static int apply_sm_antsw_params(struct cfgmgr *cfgmgr, struct device *dev, HDF 
 	return rval;
 }
 
-
+// Apply cfg/HDF to modules mhcontrol, wkm etc. and also to cfgmgr->hdf_live.
+//
 int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	NEOERR *err;
 	HDF *hdf, *base_hdf = (void*)cfg;
@@ -739,6 +724,13 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 					rval++;
 
 			}
+			
+			sm_antsw_clear_lists(sm);
+			// antennas
+			for(phdf = hdf_obj_child(hdf_get_obj(hdf, "sm.ant")); phdf; phdf = hdf_obj_next(phdf)) {
+				if(sm_antsw_add_ant(sm, (struct cfg *)phdf))
+					rval++;
+			}
 
 		}
 
@@ -794,6 +786,8 @@ int cfgmgr_unset_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	HDF *hdf, *base_hdf = (void*)cfg;
 	int rval = 0;
 
+	dbg1("(cfgmgr) %s()", __func__);
+
 	for(hdf = hdf_obj_child(hdf_get_obj(base_hdf, "mhuxd.connector")); hdf; hdf = hdf_obj_next(hdf)) {
 		const char *id_str = hdf_obj_name(hdf);
 		if(!id_str) {
@@ -812,6 +806,49 @@ int cfgmgr_unset_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 		if(err != STATUS_OK)
 			err("(cfgmgr) %s() error removing '%s' from live tree", __func__, buf);
 		nerr_ignore(&err);
+	}
+
+	return rval;
+}
+
+int cfgmgr_edit_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int remove) {
+	NEOERR *err;
+	HDF *base_hdf = (void*)cfg;
+	int rval = 0;
+
+	HDF *knod;
+	for(knod = hdf_obj_child(hdf_get_obj(base_hdf, "mhuxd.keyer")); knod; knod = hdf_obj_next(knod)) {
+		HDF *phdf;
+		const char *serial = hdf_obj_name(knod);
+		struct device *dev = dmgr_get_device(serial);
+		if(!dev) {
+			err("(cfgmgr) %s() could not find device %s in device list!", __func__, serial);
+			continue;
+		}
+
+		for(phdf = hdf_obj_child(hdf_get_obj(knod, "sm.ant")); phdf; phdf = hdf_obj_next(phdf)) {
+			const char *id_str = hdf_obj_name(phdf);
+			if(!id_str) {
+				rval++;
+				continue;
+			}
+			int id = atoi(id_str);
+
+			if(remove) {
+				int r = sm_antsw_rem_ant(mhc_get_sm(dev->ctl), id);
+				if(!r) {
+					char buf[128];
+					snprintf(buf, sizeof(buf)-1, "mhuxd.keyer.%s.sm.ant.%d", serial, id);
+					info(">>> remove tree %s", buf);
+					err = hdf_remove_tree(cfgmgr->hdf_live, buf);
+					if(err != STATUS_OK)
+						err("(cfgmgr) %s() error removing '%s' from live tree", __func__, buf);
+					nerr_ignore(&err);
+				} else
+					rval++;
+
+			}
+		}
 	}
 
 	return rval;
