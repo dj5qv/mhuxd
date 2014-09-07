@@ -146,7 +146,7 @@
       <td class="titlelistcell">Channel</td>
     </tr>
 
-    <?cs each:item = mhuxd.connector ?>
+    <?cs each:item = mhuxd.run.connector ?>
 
     <tr class="contentlistrow2">
       <td class="radiolistcell2" width="19" align="center">
@@ -193,7 +193,7 @@
   </tbody>
 </table>
 
-<?cs if:subcount(mhuxd.connector) == 0 ?>
+<?cs if:subcount(mhuxd.run.connector) == 0 ?>
 
 <br> <div class="novalues">No ports configured.</div>
 

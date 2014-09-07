@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -31,7 +31,5 @@ void conmgr_destroy(struct conmgr *conmgr);
 int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *cfg, int id);
 int conmgr_destroy_con(struct conmgr *, int id);
 void conmgr_destroy_all(struct conmgr *);
-const char **conmgr_get_con_list(const char *serial);
-void conmgr_free_con_list(const char **args);
 
 #endif // CONMGR_H

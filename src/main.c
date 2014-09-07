@@ -1,3 +1,11 @@
+/*
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *
+ *  This program can be distributed under the terms of the GNU GPLv2.
+ *  See the file COPYING
+ */
+
 #include <stdio.h>
 #include <errno.h>
 #include <ev.h>
@@ -97,6 +105,10 @@ int main(int argc, char **argv)
 
 	// load config & apply the daemon part
 	cfgmgr = cfgmgr_create(conmgr, loop);
+	if(!cfgmgr) {
+		fatal("(mhuxd) Could not create configuration manager, exiting!");
+		exit(-1);
+	}
 
 	// start webserver & webui
 	struct http_server *hs = hs_start(loop, webui_host_port);

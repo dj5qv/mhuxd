@@ -1,3 +1,11 @@
+/*
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *
+ *  This program can be distributed under the terms of the GNU GPLv2.
+ *  See the file COPYING
+ */
+
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -258,7 +266,7 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 	struct connector *ctr;
 	
-	dbg0("(con) %s()", __func__);
+	dbg1("(con) %s()", __func__);
 
 	PG_SCANLIST(&conmgr->connector_list, ctr) {
 		if(ctr->id == id) {
@@ -306,40 +314,4 @@ void conmgr_destroy_all(struct conmgr *conmgr) {
 		conmgr_destroy_con(conmgr, ctr->id);
 	}
 }
-#if 0
-const char **conmgr_get_con_list(const char *serial) {
-	struct connector *ctr;
-	int cnt;
-	const char **p, **args;
 
-	if(!connector_list_initialized) {
-		PG_NewList(&connector_list);
-		connector_list_initialized = 1;
-	}
-
-	cnt = 1;
-	PG_SCANLIST(&connector_list, ctr) 
-		cnt++;
-
-	args = w_malloc(cnt * sizeof(*args));
-	p = args;
-	PG_SCANLIST(&connector_list, ctr) {
-		if(serial && strcmp(serial, ctr->dev->serial))
-			continue;
-
-		*p++ = atl_args2str(ctr->cspec.args);
-	}
-	*p = NULL;
-	return args;
-}
-
-void conmgr_free_con_list(const char **args) {
-	const char **p = args;
-	if(args == NULL)
-		return;
-	while(*p) 
-		free((void*)*p++);
-	free(args);
-}
-
-#endif

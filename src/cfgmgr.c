@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -8,11 +8,13 @@
 
 #include <unistd.h>
 #include <sys/types.h>
+#include <ctype.h>
 #include <util/neo_hdf.h>
 #include <ev.h>
 #include "cfgmgr.h"
 #include "logger.h"
 #include "util.h"
+#include "cfgnod.h"
 #include "version.h"
 #include "devmgr.h"
 #include "mhcontrol.h"
@@ -39,8 +41,7 @@ extern const char *log_file_name;
 struct cfgmgr {
 	struct ev_loop *loop;
 	struct conmgr *conmgr;
-	HDF *hdf_saved;
-	HDF *hdf_live;
+	struct cfg *runtime_cfg;
 };
 
 static void log_neoerr(NEOERR *err, const char *what) {
@@ -54,39 +55,26 @@ static void log_neoerr(NEOERR *err, const char *what) {
 	nerr_ignore(&err);
 }
 
-static void initialize_live_hdf(HDF *hdf) {
-	NEOERR *err;
+static int merge_runtime_cfg(struct cfg *cfg) {
+	int rval = 0;
 	char buf[HOST_NAME_MAX + 1];
 	gethostname(buf, HOST_NAME_MAX);
-	err = hdf_set_value(hdf, "mhuxd.run.program.name", _package);
-	if(err) nerr_ignore(&err);
 
-	err = hdf_set_value(hdf, "mhuxd.run.program.version", _package_version);
-	if(err) nerr_ignore(&err);
-
-	err = hdf_set_value(hdf, "mhuxd.run.hostname", buf);
-	if(err) nerr_ignore(&err);
-
-	err = hdf_set_value(hdf, "mhuxd.run.logfile", log_file_name);
-	if(err) nerr_ignore(&err);
-
-	err = hdf_set_int_value(hdf, "mhuxd.run.pid", getpid());
-	if(err) nerr_ignore(&err);
-
-	err = hdf_set_value(hdf, "mhuxd.daemon.loglevel", log_get_level_str()); 
-	if(err) nerr_ignore(&err);
+	rval |= cfg_set_value(cfg, "mhuxd.run.program.name", _package);
+	rval |= cfg_set_value(cfg, "mhuxd.run.program.version", _package_version);
+	rval |= cfg_set_value(cfg, "mhuxd.run.hostname", buf);
+	rval |= cfg_set_value(cfg, "mhuxd.run.logfile", log_file_name);
+	rval |= cfg_set_int_value(cfg, "mhuxd.run.pid", getpid());
 
 	int i;
 	for(i = 0; i < num_rig_types; i++) {
 		char buf[128];
-		snprintf(buf, sizeof(buf)-1, "mhuxd.rigtype.%d.name", rig_types[i].key);
-		err = hdf_set_value(hdf, buf, rig_types[i].name);
-		if(err) nerr_ignore(&err);
-
-		snprintf(buf, sizeof(buf)-1, "mhuxd.rigtype.%d.icom_addr", rig_types[i].key);
-		err = hdf_set_int_value(hdf, buf, rig_types[i].icom_addr);
-		if(err) nerr_ignore(&err);
+		snprintf(buf, sizeof(buf)-1, "mhuxd.run.rigtype.%d.name", rig_types[i].key);
+		rval |= cfg_set_value(cfg, buf, rig_types[i].name);
+		snprintf(buf, sizeof(buf)-1, "mhuxd.run.rigtype.%d.icom_addr", rig_types[i].key);
+		rval |= cfg_set_int_value(cfg, buf, rig_types[i].icom_addr);
 	}
+	return rval;
 }
 
 enum {
@@ -96,48 +84,41 @@ enum {
         MOD_DIGITAL,
 };
 
-static int mk1_care_frbase(struct cfgmgr *cfgmgr, struct device *dev) {
+static int mk1_set_frbase(struct device *dev, struct cfg *param_cfg) {
 	int rval = 0;
 
 	// Ugly special treatment for MK1
 	const struct mh_info *mhi;
 	mhi = mhc_get_mhinfo(dev->ctl);
 	if(mhi && mhi->type == MHT_MK ) {
-		HDF *khdf;
-		char buf[128];
+		HDF *param_hdf = (HDF *)param_cfg;
 		int mode, audioRx = -1, audioTx = -1, audioTxFootSw = -1, ptt1 = -1, ptt2 = -1;
 
-		snprintf(buf, sizeof(buf), "mhuxd.keyer.%s.param", dev->serial);
-		khdf = hdf_get_obj(cfgmgr->hdf_live, buf);
-		if(!khdf) {
-			rval++;
-			err("(cfgmgr) %s() keyer hdf not found for %s", __func__, dev->serial);
-			goto out;
-		}
-	
-		mode = hdf_get_int_value(khdf, "r1KeyerMode", -1);
+		dbg1("(cfgmgr) %s()", __func__);
+
+		mode = hdf_get_int_value(param_hdf, "r1KeyerMode", -1);
 		switch(mode) {
 		case MOD_CW:
-			audioRx = hdf_get_int_value(khdf, "r1FrBase_Cw.audioRx", -1);
-			audioTx = hdf_get_int_value(khdf, "r1FrBase_Cw.audioTx", -1);
-			audioTxFootSw = hdf_get_int_value(khdf, "r1FrBase_Cw.audioTxFootSw", -1);
-			ptt1 = hdf_get_int_value(khdf, "r1FrBase_Cw.ptt1", -1);
-			ptt2 = hdf_get_int_value(khdf, "r1FrBase_Cw.ptt2", -1);
+			audioRx = hdf_get_int_value(param_hdf, "r1FrBase_Cw.audioRx", -1);
+			audioTx = hdf_get_int_value(param_hdf, "r1FrBase_Cw.audioTx", -1);
+			audioTxFootSw = hdf_get_int_value(param_hdf, "r1FrBase_Cw.audioTxFootSw", -1);
+			ptt1 = hdf_get_int_value(param_hdf, "r1FrBase_Cw.ptt1", -1);
+			ptt2 = hdf_get_int_value(param_hdf, "r1FrBase_Cw.ptt2", -1);
 			break;
 		case MOD_VOICE:
-			audioRx = hdf_get_int_value(khdf, "r1FrBase_Voice.audioRx", -1);
-			audioTx = hdf_get_int_value(khdf, "r1FrBase_Voice.audioTx", -1);
-			audioTxFootSw = hdf_get_int_value(khdf, "r1FrBase_Voice.audioTxFootSw", -1);
-			ptt1 = hdf_get_int_value(khdf, "r1FrBase_Voice.ptt1", -1);
-			ptt2 = hdf_get_int_value(khdf, "r1FrBase_Voice.ptt2", -1);
+			audioRx = hdf_get_int_value(param_hdf, "r1FrBase_Voice.audioRx", -1);
+			audioTx = hdf_get_int_value(param_hdf, "r1FrBase_Voice.audioTx", -1);
+			audioTxFootSw = hdf_get_int_value(param_hdf, "r1FrBase_Voice.audioTxFootSw", -1);
+			ptt1 = hdf_get_int_value(param_hdf, "r1FrBase_Voice.ptt1", -1);
+			ptt2 = hdf_get_int_value(param_hdf, "r1FrBase_Voice.ptt2", -1);
 			break;
 		case MOD_FSK:
 		case MOD_DIGITAL:
-			audioRx = hdf_get_int_value(khdf, "r1FrBase_Digital.audioRx", -1);
-			audioTx = hdf_get_int_value(khdf, "r1FrBase_Digital.audioTx", -1);
-			audioTxFootSw = hdf_get_int_value(khdf, "r1FrBase_Digital.audioTxFootSw", -1);
-			ptt1 = hdf_get_int_value(khdf, "r1FrBase_Digital.ptt1", -1);
-			ptt2 = hdf_get_int_value(khdf, "r1FrBase_Digital.ptt2", -1);
+			audioRx = hdf_get_int_value(param_hdf, "r1FrBase_Digital.audioRx", -1);
+			audioTx = hdf_get_int_value(param_hdf, "r1FrBase_Digital.audioTx", -1);
+			audioTxFootSw = hdf_get_int_value(param_hdf, "r1FrBase_Digital.audioTxFootSw", -1);
+			ptt1 = hdf_get_int_value(param_hdf, "r1FrBase_Digital.ptt1", -1);
+			ptt2 = hdf_get_int_value(param_hdf, "r1FrBase_Digital.ptt2", -1);
 			break;
 		}
 
@@ -153,51 +134,41 @@ static int mk1_care_frbase(struct cfgmgr *cfgmgr, struct device *dev) {
 			rval += mhc_set_kopt(dev->ctl, "r1FrBase.ptt2", ptt2);
 	}
 
- out:
 	return rval;
 }
 
 void cfgmr_state_changed_cb(const char *serial, int state, void *user_data) {
-	(void)state; 
-	struct cfgmgr *cfgmgr = user_data;
+	(void)state; (void)serial; (void)user_data;
+	//struct cfgmgr *cfgmgr = user_data;
 	dbg1("(cfgmgr) %s() %s", __func__, mhc_state_str(state));
-	cfgmgr_update_hdf_dev(cfgmgr, serial);
+	//cfgmgr_update_hdf_dev(cfgmgr, serial);
 }
 
-int cfgmgr_update_hdf_all(struct cfgmgr *cfgmgr) {
-	struct device *dev;
-	int rval = 0;
-	dbg1("(cfgmgr) %s()", __func__);
-	PG_SCANLIST(dmgr_get_device_list(), dev)
-		rval += cfgmgr_update_hdf_dev(cfgmgr, dev->serial);
-	return rval;
-}
-
-int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
+// Merge device configuration into cfg
+int cfgmgr_merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg) {
 	NEOERR *err;
+	HDF *hdf = (HDF *)cfg;
 	char full_key[MAX_HDF_PATH_LEN + 1];
 	const struct mh_info *mhi;
+	const char *serial = dev->serial;
 
 	dbg1("(cfgmgr) %s()", __func__);
 
-	struct device *dev = dmgr_get_device(serial);
-	if(!dev) {
-		err("(cfgmgr) %s() could not find device %s in device list!", __func__, serial);
+	if(!dev || !hdf)
 		return -1;
-	}
+
 	mhi = mhc_get_mhinfo(dev->ctl);
 
 	// Keyer node
 	HDF *knod, *param_nod, *flags_nod, *chan_nod, *run_nod, *winkey_nod;
 
 	snprintf(full_key, MAX_HDF_PATH_LEN, "mhuxd.keyer.%s", serial);
-	err = hdf_get_node(cfgmgr->hdf_live, full_key, &knod);
+	err = hdf_get_node(hdf, full_key, &knod);
 	if(err != STATUS_OK) goto failed;
 
 	snprintf(full_key, MAX_HDF_PATH_LEN, "mhuxd.run.keyer.%s", serial);
-	err = hdf_get_node(cfgmgr->hdf_live, full_key, &run_nod);
+	err = hdf_get_node(hdf, full_key, &run_nod);
 	if(err != STATUS_OK) goto failed;
-
 
 	// Keyer status
 	err = hdf_set_value(run_nod, "info.status", mhc_state_str(mhc_get_state((dev->ctl))));
@@ -229,7 +200,7 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 	// Keyer flags
 
 	snprintf(full_key, MAX_HDF_PATH_LEN, "mhuxd.run.keyer.%s.flags", serial);
-	err = hdf_get_node(cfgmgr->hdf_live, full_key, &flags_nod);
+	err = hdf_get_node(hdf, full_key, &flags_nod);
 	if(err != STATUS_OK) goto failed;
 
 	err = hdf_set_int_value(flags_nod, "has.r1", mhi->flags & MHF_HAS_R1 ? 1 : 0);
@@ -285,9 +256,10 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 
 
 	// Keyer channels
-
+	// FIXME: move this logic into mhuxd.hdf,
+	//        we already have corresponding "has." flags.
 	snprintf(full_key, MAX_HDF_PATH_LEN, "mhuxd.run.keyer.%s.channels", serial);
-	err = hdf_get_node(cfgmgr->hdf_live, full_key, &chan_nod);
+	err = hdf_get_node(hdf, full_key, &chan_nod);
 	if(err != STATUS_OK) goto failed;
 
 	if(mhi->flags & MHF_HAS_R1) {
@@ -336,33 +308,39 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 	// Keyer parameters
 	err = hdf_get_node(knod, "param", &param_nod);
 	if(err != STATUS_OK) goto failed;
-	/*
-	if(hdf_obj_child(param_nod)) {
-		dbg1("(cfgmgr) set kopts from cfg");
-		apply_keyer_params(cfgmgr, dev, param_nod, "");
-	} else {
-	*/
 	dbg1("(cfgmgr) %s set cfg from kopts", serial);
 	mhc_kopts_to_cfg(dev->ctl, (struct cfg *)param_nod);
-		/*
+
+	// Keyer channel speed
+
+	{
+		int i;
+		char name[33];
+		const struct cfg *speed_cfg;
+		char *p;
+		char buf[128];
+		name[32] = 0;
+
+		for(i = 0; i < MH_NUM_CHANNELS; i++) {
+			if((speed_cfg = mhc_get_speed_cfg(dev->ctl, i))) {
+				strncpy(name, ch_channel2str(i), sizeof(name) - 1);
+				for (p = name ; *p; ++p) *p = tolower(*p);
+
+				snprintf(buf, sizeof(buf)-1, "channel.%s", name);
+				err = hdf_copy(knod, buf, (HDF *)speed_cfg);
+				if(err != STATUS_OK) goto failed;
+			}
+		}
 	}
-		*/
 
 	// Winkey config
 	if((mhi->flags & MHF_HAS_WINKEY)) {
 		if(!dev->wkman) {
 			dev->wkman = wkm_create(cfgmgr->loop, dev);
 		}
-		
-#if 1
 		err = hdf_get_node(knod, "winkey", &winkey_nod);
 		if(err != STATUS_OK) goto failed;
-
-		//		if(!hdf_obj_child(winkey_nod))
 		wkm_opts_to_cfg(dev->wkman, (struct cfg *)winkey_nod);
-			//		else
-			//			wkm_cfg_to_opts(dev->wkman, (struct cfg *)winkey_nod);
-#endif
 	}
 
 	// SM
@@ -375,10 +353,10 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 		sm_antsw_to_cfg(sm, (struct cfg *)smnod);
 	}
 
-#if 1
+#if 0
 	STRING str;
 	string_init(&str);
-	hdf_dump_str(cfgmgr->hdf_live, "", 0, &str);
+	hdf_dump_str(hdf, "", 0, &str);
 	info("Updated dev, dump:\n%s", str.buf);
 	string_clear(&str);
 #endif
@@ -396,8 +374,28 @@ int cfgmgr_update_hdf_dev(struct cfgmgr *cfgmgr, const char *serial) {
 	}
 }
 
-struct cfg *cfgmgr_get_live_cfg(struct cfgmgr *cfgmgr) {
-	return (void*)cfgmgr->hdf_live;
+// merge current configuration into cfg
+int cfgmgr_merge_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
+	struct device *dev;
+	int rval = 0;
+
+	dbg1("(cfgmgr) %s()", __func__);
+
+	rval |= cfg_set_value(cfg, "mhuxd.daemon.loglevel", log_get_level_str());
+	rval |= cfg_merge(cfg, cfgmgr->runtime_cfg);
+
+	PG_SCANLIST(dmgr_get_device_list(), dev) {
+		rval |= cfgmgr_merge_device_cfg(cfgmgr, dev, cfg);
+	}
+
+	// connector configuration from runtime cfg
+	struct cfg *dest_cfg = cfg_create_child(cfg, "mhuxd.connector");
+	struct cfg *src_cfg = cfg_get_child(cfgmgr->runtime_cfg, "mhuxd.run.connector");
+	if(dest_cfg && src_cfg)
+		//rval |= conmgr_merge_cfg(cfgmgr->conmgr, con_cfg);
+		rval |= cfg_merge_s(dest_cfg, "", src_cfg);
+
+	return rval;
 }
 
 static void completion_cb(unsigned const char *reply_buf, int len, int result, void *user_data) {
@@ -405,45 +403,6 @@ static void completion_cb(unsigned const char *reply_buf, int len, int result, v
         int *notify = user_data;
         *notify = result;
 }
-#if 0
-static int param_update(struct device *dev, HDF *hdf, const char *key, const char *subkey, const char *val_str) {
-	size_t klen = strlen(key);
-	int rval = 0;
-
-	char *str = w_malloc(klen + strlen(subkey) + 2);
-	strcpy(str, key);
-	if(subkey && *subkey) {
-		str[klen] = '.';
-		strcpy(str + klen + 1, subkey);
-	}
-
-	if(!val_str) {
-		err("cfgmgr) %s() no value for %s", __func__, str);
-		rval++;
-		goto out;
-	}
-	int val = atoi(val_str);
-	if(mhc_set_kopt(dev->ctl, str, val)) {
-		err("(cfgmgr) Could not set keyer parameter %s for keyer %s!",  str, dev->serial);
-		rval++;
-		goto out;
-	}
-	char buf[128];
-	NEOERR *err;
-	snprintf(buf, sizeof(buf)-1, "mhuxd.keyer.%s.param.%s", dev->serial, str);
-	err = hdf_set_int_value(hdf, buf, val);
-	if(err != STATUS_OK) {
-		err("(cfgmgr) %s() could not update parameter %s in live hdf!", __func__, key);
-		nerr_ignore(&err);
-		rval++;
-	}
-
-out:
-	free(str);
-
-	return rval;
-}
-#endif
 
 int cfgmgr_init(struct cfgmgr *cfgmgr) {
 	HDF *saved_hdf;
@@ -493,9 +452,8 @@ static int check_icom_address(HDF *hdf) {
 }
 
 static int apply_keyer_params(struct cfgmgr *cfgmgr, struct device *dev, HDF *hdf, const char *prefix) {
-	NEOERR *err;
 	HDF *phdf;
-	char key[128], full_key[128];
+	char key[128];
 	const char *val_str;
 	int val, rval = 0;
 
@@ -520,23 +478,14 @@ static int apply_keyer_params(struct cfgmgr *cfgmgr, struct device *dev, HDF *hd
 			rval++;
 			continue;
 		}
-
-		snprintf(full_key, sizeof(full_key)-1, "mhuxd.keyer.%s.param.%s", dev->serial, key);
-		err = hdf_set_int_value(cfgmgr->hdf_live, full_key, val);
-		if(err != STATUS_OK) {
-			err("(cfgmgr) %s() could not update parameter %s in live hdf!", __func__, full_key);
-			nerr_ignore(&err);
-			rval++;
-		}
 	}
 
 	return rval;
 }
 
 static int apply_sm_antsw_params(struct cfgmgr *cfgmgr, struct device *dev, HDF *hdf, const char *prefix) {
-	NEOERR *err;
 	HDF *phdf;
-	char key[128], full_key[128];
+	char key[128];
 	const char *val_str;
 	int val, rval = 0;
 
@@ -561,23 +510,14 @@ static int apply_sm_antsw_params(struct cfgmgr *cfgmgr, struct device *dev, HDF 
 			rval++;
 			continue;
 		}
-
-		snprintf(full_key, sizeof(full_key)-1, "mhuxd.keyer.%s.sm.fixed.%s", dev->serial, key);
-		err = hdf_set_int_value(cfgmgr->hdf_live, full_key, val);
-		if(err != STATUS_OK) {
-			err("(cfgmgr) %s() could not update parameter %s in live hdf!", __func__, full_key);
-			nerr_ignore(&err);
-			rval++;
-		}
 	}
 
 	return rval;
 }
 
-// Apply cfg/HDF to modules mhcontrol, wkm etc. and also to cfgmgr->hdf_live.
+// Apply setting from cfg to program.
 //
 int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
-	NEOERR *err;
 	HDF *hdf, *base_hdf = (void*)cfg;
 	int rval = 0;
 
@@ -588,13 +528,11 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 		const char *name = hdf_obj_name(hdf);
 		if(!strcmp(name, "loglevel")) {
 			sval = hdf_obj_value(hdf);
-			if(-1 != log_set_level_by_str(sval)) {
-				err = hdf_set_value(cfgmgr->hdf_live, "mhuxd.daemon.loglevel", sval ? sval : "NULL");
-				nerr_ignore(&err);
+			if(-1 == log_set_level_by_str(sval)) {
+				err("(cfgmgr) invalid log level '%s'!", sval);
+				rval++;
 				continue;
 			}
-			err("(cfgmgr) invalid log level '%s'!", sval);
-			rval++;
 			continue;
 		}
 		warn("(cfgmgr) unkown daemon parameter '%s'!", name);
@@ -644,18 +582,11 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 				rval++;
 				continue;
 			}
-
-			char buf[128];
-			snprintf(buf, sizeof(buf)-1, "mhuxd.keyer.%s.channel.%s", serial, chan_name);
-			err = hdf_remove_tree(cfgmgr->hdf_live, buf);
-			nerr_ignore(&err);
-
-			err = hdf_copy(cfgmgr->hdf_live, buf, chan_hdf);
-			nerr_ignore(&err);
 		}
 
-		rval += apply_keyer_params(cfgmgr, dev, hdf_get_obj(hdf, "param"), "");
-		mk1_care_frbase(cfgmgr, dev);
+		HDF *param_hdf = hdf_get_obj(hdf, "param");
+		rval += apply_keyer_params(cfgmgr, dev, param_hdf, "");
+		mk1_set_frbase(dev, (struct cfg *)param_hdf);
 
 		if(mhc_is_online(dev->ctl)) {
 			result = -1;
@@ -675,9 +606,6 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 
 		if(dev->wkman) {
 			int werr,val;
-			char buf[128];
-			NEOERR *err;
-			HDF *winkey_nod;
 			for(winkey_hdf = hdf_obj_child(hdf_get_obj(hdf, "winkey")); winkey_hdf; winkey_hdf = hdf_obj_next(winkey_hdf)) {
 				const char *key = hdf_obj_name(winkey_hdf);
 				const char *val_str = hdf_obj_value(winkey_hdf);
@@ -687,13 +615,6 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 				if(wkm_set_value(dev->wkman, key, val))
 					rval++;
 			}
-
-			snprintf(buf, sizeof(buf)-1, "mhuxd.keyer.%s.winkey", dev->serial);
-			err = hdf_get_node(cfgmgr->hdf_live, buf, &winkey_nod);
-			if(err == STATUS_OK) {
-				wkm_opts_to_cfg(dev->wkman, (struct cfg *)winkey_nod);
-			} else
-				nerr_ignore(&err);
 
 			if(mhc_is_online(dev->ctl)) {
 				werr = wkm_write_cfg(dev->wkman);
@@ -736,23 +657,42 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 
 	}
 
-	for(hdf = hdf_obj_child(hdf_get_obj(base_hdf, "mhuxd.connector")); hdf; hdf = hdf_obj_next(hdf)) {
-		const char *id_str = hdf_obj_name(hdf);
+	struct cfg *pcfg;
+	for(pcfg = cfg_child( cfg_get_child(cfg, "mhuxd.connector")); pcfg; pcfg = cfg_next(pcfg)) {
+	// for(hdf = hdf_obj_child(hdf_get_obj(base_hdf, "mhuxd.connector")); hdf; hdf = hdf_obj_next(hdf)) {
+		const char *id_str = cfg_name(pcfg);
 		if(!id_str) {
 			err("(cfgmgr) %s %d internal error", __func__, __LINE__);
 			continue;
 		}
-		int id, old_id = atoi(id_str);
-		id = conmgr_create_con(cfgmgr->conmgr, cfgmgr->loop, (struct cfg *)hdf, old_id);
+		int id, requested_id = atoi(id_str);
+		id = conmgr_create_con(cfgmgr->conmgr, cfgmgr->loop, pcfg, requested_id);
 		if(!id) {
 			err("(cfgmgr) failed to create connector!");
 			rval++;
 		}
 
+		if(requested_id || id) {
+			struct cfg *con_node;
+			char buf[128];
+			snprintf(buf, sizeof(buf), "mhuxd.run.connector.%d", id ? id : requested_id);
+			con_node = cfg_create_child(cfgmgr->runtime_cfg, buf);
+			if(con_node) {
+				cfg_merge(con_node, pcfg);
+				cfg_set_value(con_node, "status", id ? "ok" : "failed");
+
+			} else {
+				rval++;
+			}
+
+		}
+
+#if 0
 		if(old_id || id) {
 			// So this connector has either been successfully created.
 			// Or is has been previously created successfully (old_id != 0). 
 			// We want to store it in any of both cases in live_hdf.
+
 			char buf[128];
 			int real_id = id ? id : old_id;
 			snprintf(buf, sizeof(buf)-1, "mhuxd.connector.%d", real_id);
@@ -763,6 +703,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 			err = hdf_set_value(cfgmgr->hdf_live, buf, id ? "ok" : "failed");
 			nerr_ignore(&err);
 		}
+#endif
 	}
 
 
@@ -782,7 +723,6 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 }
 
 int cfgmgr_unset_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
-	NEOERR *err;
 	HDF *hdf, *base_hdf = (void*)cfg;
 	int rval = 0;
 
@@ -800,19 +740,13 @@ int cfgmgr_unset_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 			rval++;
 			continue;
 		}
-		char buf[128];
-		snprintf(buf, sizeof(buf)-1, "mhuxd.connector.%d", id);
-		err = hdf_remove_tree(cfgmgr->hdf_live, buf);
-		if(err != STATUS_OK)
-			err("(cfgmgr) %s() error removing '%s' from live tree", __func__, buf);
-		nerr_ignore(&err);
 	}
 
 	return rval;
 }
 
 int cfgmgr_edit_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int remove) {
-	NEOERR *err;
+	(void)cfgmgr;
 	HDF *base_hdf = (void*)cfg;
 	int rval = 0;
 
@@ -835,16 +769,7 @@ int cfgmgr_edit_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int remove) {
 			int id = atoi(id_str);
 
 			if(remove) {
-				int r = sm_antsw_rem_ant(mhc_get_sm(dev->ctl), id);
-				if(!r) {
-					char buf[128];
-					snprintf(buf, sizeof(buf)-1, "mhuxd.keyer.%s.sm.ant.%d", serial, id);
-					info(">>> remove tree %s", buf);
-					err = hdf_remove_tree(cfgmgr->hdf_live, buf);
-					if(err != STATUS_OK)
-						err("(cfgmgr) %s() error removing '%s' from live tree", __func__, buf);
-					nerr_ignore(&err);
-				} else
+				if(sm_antsw_rem_ant(mhc_get_sm(dev->ctl), id))
 					rval++;
 
 			}
@@ -855,76 +780,49 @@ int cfgmgr_edit_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int remove) {
 }
 
 struct cfgmgr *cfgmgr_create(struct conmgr *conmgr, struct ev_loop *loop) {
-	NEOERR *err = STATUS_OK;
-
 	dbg1("(cfgmgr) %s()", __func__);
+	struct cfg *runtime_cfg = cfg_create();
+	if(!runtime_cfg)
+		return NULL;
 
 	struct cfgmgr *cfgmgr = w_calloc(1, sizeof(*cfgmgr));
 	cfgmgr->loop = loop;
 	cfgmgr->conmgr = conmgr;
-
-	if(err == STATUS_OK)
-		err = hdf_init(&cfgmgr->hdf_live);
-
-	if(err != STATUS_OK) {
-		log_neoerr(err, "could not initialize HDF!");
-		goto failed;
-	}
-
-	initialize_live_hdf(cfgmgr->hdf_live);
-
+	cfgmgr->runtime_cfg = runtime_cfg;
+	merge_runtime_cfg(cfgmgr->runtime_cfg);
 	return cfgmgr;
-
- failed:
-	hdf_destroy(&cfgmgr->hdf_live);
-	free(cfgmgr);
-	return NULL;
 }
 
 int cfgmgr_save_cfg(struct cfgmgr *cfgmgr) {
 	NEOERR *err;
-	HDF *save_hdf, *p_hdf;
+	HDF *save_hdf;
+	int rval = 0;
 
 	dbg1("(cfgmgr) %s()", __func__);
 
 	err = hdf_init(&save_hdf);
-	if(err != STATUS_OK) goto fail;
-
-	p_hdf = hdf_get_obj(cfgmgr->hdf_live, "mhuxd.daemon");
-	if(p_hdf) {
-		err = hdf_copy(save_hdf, "mhuxd.daemon", p_hdf);
-		if(err != STATUS_OK) goto fail;
+	if(err != STATUS_OK)  {
+		nerr_ignore(&err);
+		return -1;
 	}
 
-	p_hdf = hdf_get_obj(cfgmgr->hdf_live, "mhuxd.keyer");
-	if(p_hdf) {
-		err = hdf_copy(save_hdf, "mhuxd.keyer", p_hdf);
-		if(err != STATUS_OK) goto fail;
-	}
+	cfgmgr_merge_cfg(cfgmgr, (void*)save_hdf);
 
-	p_hdf = hdf_get_obj(cfgmgr->hdf_live, "mhuxd.connector");
-	if(p_hdf) {
-		err = hdf_copy(save_hdf, "mhuxd.connector", p_hdf);
-		if(err != STATUS_OK) goto fail;
-	}
+	//err = hdf_remove_tree(save_hdf, "mhuxd.run");
 
 	err = hdf_write_file_atomic(save_hdf, CFGFILE);
-	if(err != STATUS_OK) goto fail;
-
-	hdf_destroy(&save_hdf);
-	return 0;
-
- fail:
-	{
-	STRING str;
-	string_init(&str);
-	nerr_error_string(err, &str);
-	err("(cfgmgr) could not save configuration! (%s)", str.buf);
-	nerr_ignore(&err);
-	string_clear(&str);
-	hdf_destroy(&save_hdf);
+	if(err != STATUS_OK) {
+		STRING str;
+		string_init(&str);
+		nerr_error_string(err, &str);
+		err("(cfgmgr) could not save configuration! (%s)", str.buf);
+		nerr_ignore(&err);
+		string_clear(&str);
+		rval = -1;
 	}
-	return -1;
+
+	hdf_destroy(&save_hdf);
+	return rval;
 }
 
 void cfgmgr_destroy(struct cfgmgr *cfgmgr) {
@@ -933,8 +831,9 @@ void cfgmgr_destroy(struct cfgmgr *cfgmgr) {
 	if(!cfgmgr)
 		return;
 
-	hdf_destroy(&cfgmgr->hdf_saved);
-	hdf_destroy(&cfgmgr->hdf_live);
+	if(cfgmgr->runtime_cfg)
+		cfg_destroy(cfgmgr->runtime_cfg);
+
 	free(cfgmgr);
 }
 

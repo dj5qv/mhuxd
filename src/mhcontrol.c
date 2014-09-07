@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -628,7 +628,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 
 	if(mhi->type == MHT_SM || mhi->type == MHT_SMD || mhi->type == MHT_DK2) {
 		ctl->sm = sm_create(ctl, ctl->serial, loop);
-#ifdef SMSIM
+#ifdef SMSIMx
 		sm_get_antsw(ctl->sm);
 #endif
 	}
@@ -1010,7 +1010,7 @@ uint16_t mhc_get_type(struct mh_control *ctl) {
 	return ctl->mhi.type;
 }
 
-const struct cfg *mhc_get_speed_args(struct mh_control *ctl, int channel) {
+const struct cfg *mhc_get_speed_cfg(struct mh_control *ctl, int channel) {
 	if(channel < 0 || channel >= MH_NUM_CHANNELS)
 		return NULL;
 	return ctl->speed_args[channel];

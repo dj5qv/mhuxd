@@ -1,3 +1,11 @@
+/*
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *
+ *  This program can be distributed under the terms of the GNU GPLv2.
+ *  See the file COPYING
+ */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -500,19 +508,8 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 		}
 	}
 
-
-	// copy & merge from live HDF
-
-	cfgmgr_update_hdf_all(webui->cfgmgr);
-	HDF *live_hdf = (void*)cfgmgr_get_live_cfg(webui->cfgmgr);
-
-	if(live_hdf) {
-		err = hdf_copy(webui->hdf, "", live_hdf);
-
-		if(err != STATUS_OK) 
-			goto failed;
-	}
-
+	// merge current configuration
+	cfgmgr_merge_cfg(webui->cfgmgr, (struct cfg *)webui->hdf);
 
 	// generate meta settings from keyer parameters
 	encode_meta_settings(webui->hdf);

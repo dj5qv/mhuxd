@@ -1,11 +1,10 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
  */
-
 
 #include <ev.h>
 #include <unistd.h>
@@ -202,7 +201,7 @@ struct ctcp *ctcp_create(struct connector_spec *cpsec) {
 
 	struct netlsnr *lsnr = net_create_listener(devname);
 	if(lsnr == NULL) {
-		err_e(errno, "(tcp) could not create listener!");
+		err_e(errno, "(tcp) could not create listener %s!", devname);
 		return NULL;
 	}
 

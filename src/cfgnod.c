@@ -1,7 +1,32 @@
+/*
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *
+ *  This program can be distributed under the terms of the GNU GPLv2.
+ *  See the file COPYING
+ */
+
 #include <stdint.h>
 #include <util/neo_hdf.h>
 #include "cfgnod.h"
 #include "logger.h"
+
+struct cfg *cfg_create() {
+	NEOERR *err;
+	HDF *hdf;
+	err = hdf_init(&hdf);
+	if(err != STATUS_OK) {
+		err("(cfg) %s() could not create HDF!", __func__);
+		nerr_ignore(&err);
+		return NULL;
+	}
+	return (struct cfg *)hdf;
+}
+
+void cfg_destroy(struct cfg *cfg) {
+	if(cfg)
+		hdf_destroy((HDF **)&cfg);
+}
 
 const char *cfg_get_val(struct cfg *n, const char *key, const char *defval) {
 	return hdf_get_value((void*)n, key, defval);
@@ -63,7 +88,7 @@ struct cfg *cfg_copy(struct cfg *from) {
 
 	if(err != STATUS_OK) {
 		hdf_destroy(&dest);
-		err("(cfg) could not copy cfg tree!");
+		err("(cfg) %s() could not copy cfg tree!", __func__);
 		nerr_ignore(&err);
 		return NULL;
 	}
@@ -71,23 +96,40 @@ struct cfg *cfg_copy(struct cfg *from) {
 	return (void *)dest;
 }
 
+int cfg_merge_s(struct cfg *dest, const char *name, struct cfg *src) {
+	NEOERR *err;
+	err = hdf_copy((HDF *)dest, name, (HDF*)src);
+	if(err != STATUS_OK) {
+		nerr_ignore(&err);
+		err("(cfg) %s() could not merge!", __func__);
+		return -1;
+	}
+	return 0;
+}
+
+int cfg_merge_i(struct cfg *dest, int name, struct cfg *src) {
+	char buf[128];
+	snprintf(buf, sizeof(buf), "%d", name);
+	return cfg_merge_s(dest, buf, src);
+}
+
+int cfg_merge(struct cfg *dest, struct cfg *src) {
+	return cfg_merge_s(dest, "", src);
+}
+
 struct cfg *cfg_create_child(struct cfg *parent, const char *key) {
 	HDF *child;
 	NEOERR *err;
 	err = hdf_get_node((HDF *)parent, key, &child);
-	if(err != STATUS_OK)
+	if(err != STATUS_OK) {
 		child = NULL;
+		err("(cfg) %s() could not create child %s!", __func__, key);
+	}
 	return (struct cfg *)child;
 }
 
 struct cfg *cfg_get_child(struct cfg *parent, const char *key) {
 	return (struct cfg *)hdf_get_obj((HDF *)parent, key);
-}
-
-void cfg_destroy(struct cfg *cfg) {
-	if(!cfg)
-		return;
-	hdf_destroy((void*)&cfg);
 }
 
 struct cfg *cfg_child(struct cfg *cfg) {

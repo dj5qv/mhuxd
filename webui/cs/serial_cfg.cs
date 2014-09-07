@@ -66,7 +66,7 @@
 
 		<select id="sel" name="set.mhuxd.keyer.<?cs var:mhuxd.webui.session.unit ?>.channel.<?cs var:chan ?>.rigtype" 
 			 onchange="rigChanged(this);">
-		<?cs each:item = mhuxd.rigtype ?>
+		<?cs each:item = mhuxd.run.rigtype ?>
 		<option 
 		   value="<?cs var:name(item) ?>" 
 		   <?cs if:mhuxd.keyer[mhuxd.webui.session.unit].channel[chan].rigtype==name(item) ?>selected<?cs /if ?>
@@ -87,12 +87,12 @@
 		      }
 		      //--></script>
 
-		<?cs each:item = mhuxd.rigtype ?>
+		<?cs each:item = mhuxd.run.rigtype ?>
 		<input type="hidden" id="def_icomaddress_<?cs var:name(item) ?>" value="<?cs var:item.icom_addr ?>" >
 		<?cs /each ?>
 
 		<?cs else ?>
-		<?cs var:mhuxd.rigtype[mhuxd.keyer[mhuxd.webui.session.unit].channel[chan].rigtype].name ?>
+		<?cs var:mhuxd.run.rigtype[mhuxd.keyer[mhuxd.webui.session.unit].channel[chan].rigtype].name ?>
 		<?cs /if ?>
 	      </td>
 	    </tr>

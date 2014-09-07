@@ -44,7 +44,7 @@ int mhc_is_online(struct mh_control *ctl);
 const struct mh_info *mhc_get_mhinfo(struct mh_control *ctl);
 int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb cb, void *user_data);
 uint16_t mhc_get_type(struct mh_control *);
-const struct cfg *mhc_get_speed_args(struct mh_control *ctl, int channel);
+const struct cfg *mhc_get_speed_cfg(struct mh_control *ctl, int channel);
 int mhc_set_kopt(struct mh_control *ctl, const char *key, int val);
 int mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_data);
 int mhc_kopts_to_cfg(struct mh_control *ctl, struct cfg *cfg);

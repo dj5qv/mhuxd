@@ -724,7 +724,7 @@ int sm_get_antsw(struct sm *sm) {
 	if(sm->bp_eeprom)
 		bp_destroy(sm->bp_eeprom);
 
-	sm->bp_eeprom = bp_create(sm);
+	sm->bp_eeprom = bp_create();
 
 	sm->get_antsw_offset = 0;
 	sm->get_antsw_state = STATE_GET_ANTSW_FIXED;
@@ -1046,7 +1046,7 @@ int sm_antsw_set_opt(struct sm *sm, const char *key, uint32_t val) {
 	int ret;
 
 	if(!sm->bp_eeprom)
-		sm->bp_eeprom = bp_create(sm);
+		sm->bp_eeprom = bp_create();
 
 	bp = sm->bp_eeprom;
 
