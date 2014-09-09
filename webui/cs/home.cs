@@ -45,11 +45,9 @@
 		      <?cs call:hidden("metaset.mhuxd.webui.meta.keyer."+mhuxd.webui.session.unit+".type", mhuxd.run.keyer[mhuxd.webui.session.unit].info.type) ?>
 		      <?cs /if ?>
 
-		      <?cs include:mhuxd.webui.menus[mhuxd.webui.session.page][mhuxd.webui.session.menu].include ?>
-
 		      <!-- ERROR MESSAGE -->
 		      <?cs if:mhuxd.webui.notify.error ?>
-		      <br>
+
 
 		      <img src="/static/dot.gif" width="1" height="4" border="0"><br>
 		      <table border="0" cellspacing="0" cellpadding="1">
@@ -70,7 +68,11 @@
 			</tr>
 		      </table>
 		      <img src="/static/dot.gif" width="1" height="4" border="0"><br>
+		      <br>
 		      <?cs /if ?>
+
+		      <?cs include:mhuxd.webui.menus[mhuxd.webui.session.page][mhuxd.webui.session.menu].include ?>
+
 		    </form>
 		  </td>
 		  <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>

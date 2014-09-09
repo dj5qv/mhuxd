@@ -424,7 +424,7 @@ int cfgmgr_init(struct cfgmgr *cfgmgr) {
 		return 0;
 	}
 
-	rval = cfgmgr_apply_cfg(cfgmgr, (struct cfg*)saved_hdf);
+	rval = cfgmgr_apply_cfg(cfgmgr, (struct cfg*)saved_hdf, CFGMGR_APPLY_REPLACE);
 
 	hdf_destroy(&saved_hdf);
 
@@ -517,7 +517,7 @@ static int apply_sm_antsw_params(struct cfgmgr *cfgmgr, struct device *dev, HDF 
 
 // Apply setting from cfg to program.
 //
-int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
+int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 	HDF *hdf, *base_hdf = (void*)cfg;
 	int rval = 0;
 
@@ -646,7 +646,8 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 
 			}
 			
-			sm_antsw_clear_lists(sm);
+			if(apply_mode == CFGMGR_APPLY_REPLACE)
+				sm_antsw_clear_lists(sm);
 			// antennas
 			for(phdf = hdf_obj_child(hdf_get_obj(hdf, "sm.ant")); phdf; phdf = hdf_obj_next(phdf)) {
 				if(sm_antsw_add_ant(sm, (struct cfg *)phdf))
@@ -658,7 +659,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	}
 
 	struct cfg *pcfg;
-	for(pcfg = cfg_child( cfg_get_child(cfg, "mhuxd.connector")); pcfg; pcfg = cfg_next(pcfg)) {
+	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.connector")); pcfg; pcfg = cfg_next_child(pcfg)) {
 	// for(hdf = hdf_obj_child(hdf_get_obj(base_hdf, "mhuxd.connector")); hdf; hdf = hdf_obj_next(hdf)) {
 		const char *id_str = cfg_name(pcfg);
 		if(!id_str) {
@@ -722,46 +723,40 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	return rval;
 }
 
-int cfgmgr_unset_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
-	HDF *hdf, *base_hdf = (void*)cfg;
+int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg, int remove) {
 	int rval = 0;
+	struct cfg *pcfg;
 
 	dbg1("(cfgmgr) %s()", __func__);
 
-	for(hdf = hdf_obj_child(hdf_get_obj(base_hdf, "mhuxd.connector")); hdf; hdf = hdf_obj_next(hdf)) {
-		const char *id_str = hdf_obj_name(hdf);
-		if(!id_str) {
-			rval++;
-			continue;
-		}
-		int id = atoi(id_str);
-		if(conmgr_destroy_con(cfgmgr->conmgr, id)) {
-			err("(cfgmgr) could not destroy connector %d, not found!", id);
-			rval++;
-			continue;
+	// connectors, only remove supported
+	if(remove) {
+		struct cfg *pcfg;
+
+		for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.connector")); pcfg; pcfg = cfg_next_child(pcfg)) {
+			const char *id_str = cfg_name(pcfg);
+			if(!id_str) {
+				rval++;
+				continue;
+			}
+			int id = atoi(id_str);
+			conmgr_destroy_con(cfgmgr->conmgr, id);
+			cfg_remove_child_i(cfgmgr->runtime_cfg, "mhuxd.run.connector", id);
 		}
 	}
-
-	return rval;
-}
-
-int cfgmgr_edit_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int remove) {
-	(void)cfgmgr;
-	HDF *base_hdf = (void*)cfg;
-	int rval = 0;
-
-	HDF *knod;
-	for(knod = hdf_obj_child(hdf_get_obj(base_hdf, "mhuxd.keyer")); knod; knod = hdf_obj_next(knod)) {
-		HDF *phdf;
-		const char *serial = hdf_obj_name(knod);
+	
+	// SM
+	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.keyer")); pcfg; pcfg = cfg_next_child(pcfg)) {
+		const char *serial = cfg_name(pcfg);
 		struct device *dev = dmgr_get_device(serial);
+		struct cfg *smcfg;
 		if(!dev) {
 			err("(cfgmgr) %s() could not find device %s in device list!", __func__, serial);
 			continue;
 		}
 
-		for(phdf = hdf_obj_child(hdf_get_obj(knod, "sm.ant")); phdf; phdf = hdf_obj_next(phdf)) {
-			const char *id_str = hdf_obj_name(phdf);
+		for(smcfg = cfg_first_child( cfg_get_child(pcfg, "sm.ant")); smcfg; smcfg = cfg_next_child(smcfg)) {
+			const char *id_str = cfg_name(smcfg);
 			if(!id_str) {
 				rval++;
 				continue;
@@ -771,7 +766,9 @@ int cfgmgr_edit_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int remove) {
 			if(remove) {
 				if(sm_antsw_rem_ant(mhc_get_sm(dev->ctl), id))
 					rval++;
-
+			} else {
+				if(sm_antsw_mod_ant(mhc_get_sm(dev->ctl), smcfg))
+					rval++;
 			}
 		}
 	}

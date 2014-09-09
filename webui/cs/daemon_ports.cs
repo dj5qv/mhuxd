@@ -150,7 +150,7 @@
 
     <tr class="contentlistrow2">
       <td class="radiolistcell2" width="19" align="center">
-	<input type="checkbox" name="unset.mhuxd.connector.<?cs var:name(item) ?>" value="1" >
+	<input type="checkbox" name="modify.mhuxd.connector.<?cs var:name(item) ?>" value="1" >
       </td>
       <td class="contentlistcell"><?cs var:name(item) ?></td>
       <td class="contentlistcell"><?cs var:item.type ?></td>

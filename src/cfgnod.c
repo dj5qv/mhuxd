@@ -132,14 +132,38 @@ struct cfg *cfg_get_child(struct cfg *parent, const char *key) {
 	return (struct cfg *)hdf_get_obj((HDF *)parent, key);
 }
 
-struct cfg *cfg_child(struct cfg *cfg) {
+struct cfg *cfg_first_child(struct cfg *cfg) {
 	return (void*)hdf_obj_child((void*)cfg);
 }
 
-struct cfg *cfg_next(struct cfg *cfg) {
+struct cfg *cfg_next_child(struct cfg *cfg) {
 	return (void*)hdf_obj_next((void*)cfg);
 }
 
 const char *cfg_name(struct cfg *cfg) {
 	return hdf_obj_name((void*)cfg);
 }
+
+int cfg_remove_child(struct cfg *cfg, const char *path, const char *name) {
+	NEOERR *err;
+	char buf[128];
+	if(name && *name) {
+		snprintf(buf, sizeof(buf), "%s.%s", path, name);
+	} else {
+		snprintf(buf, sizeof(buf), "%s", path);
+	}
+
+	err = hdf_remove_tree((HDF *)cfg, buf);
+	if(err != STATUS_OK) {
+		nerr_ignore(&err);
+		return -1;
+	}
+	return 0;
+}
+
+int cfg_remove_child_i(struct cfg *cfg, const char *path, int i) {
+	char buf[128];
+	snprintf(buf, sizeof(buf), "%s.%d", path, i);
+	return cfg_remove_child(cfg, buf, NULL);
+}
+

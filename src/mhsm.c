@@ -51,7 +51,7 @@ struct antenna_record {
 	uint8_t rxonly : 1;
 	uint8_t pa_ant_number;
 	uint8_t rotator;
-	uint16_t rotator_offset;
+	int16_t rotator_offset;
 };
 
 struct reference {
@@ -290,7 +290,6 @@ static struct antenna_record *arec_create(struct sm *sm) {
 	struct antenna_record *arec;
 	arec = w_calloc(1, sizeof(*arec));
 	arec->id = ++sm->id_cnt_ant;
-	info(">>> created arec id %d", arec->id);
 	return arec;
 }
 
@@ -311,6 +310,13 @@ static struct band_record *brec_create(struct sm *sm) {
 	return brec;
 }
 
+static struct antenna_record *ant_by_id(struct PGList *list, int id) {
+	struct antenna_record *arec ;
+	PG_SCANLIST(list, arec)
+		if(arec->id == id)
+			return arec;
+	return NULL;
+}
 
 static void clear_lists(struct sm_bandplan *bp) {
 	struct antenna_record *arec;
@@ -357,6 +363,14 @@ static void bp_destroy(struct sm_bandplan *bp) {
 	if(c < 0) \
 		return -1;
 
+static int16_t check_roffset_range(int16_t offset) {
+	if(offset > 180 || offset < -180) {
+		warn("(mhsm) rotator offset out of range: %d", offset);
+		offset = offset > 180 ? 180 : -180;
+	}
+	return offset;
+}
+
 static int decode_arec(struct antenna_record *arec) {
 	int i, c, len;
 
@@ -401,6 +415,7 @@ static int decode_arec(struct antenna_record *arec) {
 		arec->rotator_offset = c;
 		BGETC(&arec->raw_buf);
 		arec->rotator_offset |= (c << 8);
+		arec->rotator_offset = check_roffset_range(arec->rotator_offset);
 	}
 
 	return 0;
@@ -841,6 +856,8 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 	if(!bp)
 		return -1;
 
+	dbg1("(mhsm) %s()", __func__);
+
 	if(sm->get_antsw_state != STATE_GET_ANTSW_DONE && sm->get_antsw_state != STATE_GET_ANTSW_EMPTY) {
 		// GET ANTSW pending
 		err("(sm) %s failed, invalid state %d!", __func__, sm->get_antsw_state);
@@ -881,7 +898,7 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 		cfg_set_int_value(child_cfg, "id", arec->id);
 		cfg_set_int_value(child_cfg, "steppir", arec->steppir);
 		cfg_set_int_value(child_cfg, "rxonly", arec->rxonly);
-		cfg_set_int_value(child_cfg, "pa_ant_nr", arec->pa_ant_number);
+		cfg_set_int_value(child_cfg, "pa_ant_number", arec->pa_ant_number);
 		cfg_set_int_value(child_cfg, "rotator", arec->rotator);
 		cfg_set_int_value(child_cfg, "rotator_offset", arec->rotator_offset);
 
@@ -974,17 +991,39 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 }
 
 void sm_antsw_clear_lists(struct sm *sm) {
+	dbg1("(mhsm) %s()", __func__);
 	clear_lists(sm->bp_eeprom);
 }
 
 int sm_antsw_add_ant(struct sm *sm, struct cfg *cfg) {
 	struct antenna_record *arec;
 	struct sm_bandplan *bp = sm->bp_eeprom;
+	if(!bp)
+		return -1;
+
+	dbg1("(mhsm) %s()", __func__);
+
+	arec = arec_create(sm);
+	PG_AddTail(&bp->antenna_list, &arec->node);
+	cfg_set_int_value(cfg, "id", arec->id);
+	return sm_antsw_mod_ant(sm, cfg);
+}
+
+int sm_antsw_mod_ant(struct sm *sm, struct cfg *cfg) {
+	struct antenna_record *arec;
+	struct sm_bandplan *bp = sm->bp_eeprom;
 	const char *str;
 	if(!bp)
 		return -1;
 
-	arec = arec_create(sm);
+	dbg1("(mhsm) %s()", __func__);
+
+	int id = cfg_get_int_val(cfg, "id", -1);
+	arec = ant_by_id(&bp->antenna_list, id);
+	if(!arec) {
+		err("(mhsm) %s() failed, antenna id %d not found!", __func__, id);
+		return -1;
+	}
 
 	str = cfg_get_val(cfg, "label", "??");
 	strncpy(arec->label, str, MAX_LABEL_LEN);
@@ -997,22 +1036,22 @@ int sm_antsw_add_ant(struct sm *sm, struct cfg *cfg) {
 	arec->pa_ant_number = cfg_get_int_val(cfg, "pa_ant_number", 0);
 	arec->rotator = cfg_get_int_val(cfg, "rotator", 0);
 	arec->rotator_offset = cfg_get_int_val(cfg, "rotator_offset", 0);
+	arec->rotator_offset = check_roffset_range(arec->rotator_offset);
 
 	// output bits
 	uint16_t j;
 	int val;
-	for(j = 0; j < ARRAY_SIZE(output_map); j++) {
+	cfg = cfg_get_child(cfg, "output");
+	arec->output_settings = 0;
+	for(j = 0; cfg && j < ARRAY_SIZE(output_map); j++) {
 		val = cfg_get_int_val(cfg, output_map[j].label, 0);
 		val = (val == 1 ? 1 : 0);
 		arec->output_settings |= (val << output_map[j].bit);
 	}
 
-	info(">>> %s %s", __func__, arec->name);
-
-	PG_AddTail(&bp->antenna_list, &arec->node);
-
 	return 0;
 }
+
 
 int sm_antsw_rem_ant(struct sm *sm, int id) {
 
@@ -1023,12 +1062,11 @@ int sm_antsw_rem_ant(struct sm *sm, int id) {
 		return -1;
 
 	dbg1("(mhsm) %s() id: %d", __func__, id);
-	debug_print_antsw_values(sm->bp_eeprom);
+	//debug_print_antsw_values(sm->bp_eeprom);
 
 	// FIXME: check references to this antenna and remove them.
 
 	PG_SCANLIST(&bp->antenna_list, arec) {
-	dbg1("(mhsm) %s() look: %d", __func__, arec->id);
 		if(arec->id == id) {
 			PG_Remove(&arec->node);
 			free(arec);

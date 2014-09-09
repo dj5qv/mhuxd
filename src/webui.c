@@ -462,7 +462,7 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 		ACTION_NONE = 0,
 		ACTION_SAVE = 1,
 		ACTION_REMOVE = 2,
-		ACTION_UPDATE = 3
+		ACTION_MODIFY = 3
 	};
 
 	int action = ACTION_NONE;
@@ -470,12 +470,12 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 		action = ACTION_SAVE;
 	if(hdf_get_value(webui->hdf, "mhuxd.webui.session.Remove", NULL))
 		action = ACTION_REMOVE;
-	if(hdf_get_value(webui->hdf, "mhuxd.webui.session.Edit", NULL))
-		action = ACTION_UPDATE;
+	if(hdf_get_value(webui->hdf, "mhuxd.webui.session.Modify", NULL))
+		action = ACTION_MODIFY;
 
 	HDF *set_hdf = hdf_get_obj(webui->hdf, "mhuxd.webui.session.set");
 	if(action == ACTION_SAVE && set_hdf) {
-		if(cfgmgr_apply_cfg(webui->cfgmgr, (void*)set_hdf)) {
+		if(cfgmgr_apply_cfg(webui->cfgmgr, (void*)set_hdf, CFGMGR_APPLY_ADD)) {
 			warn("(webui) could not apply config change (completely)!");
 			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error", 
 					    "Could not apply configuration change! Check log file for details.");
@@ -488,19 +488,20 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 		}
 	}
 
+#if 0
 	HDF *unset_hdf = hdf_get_obj(webui->hdf, "mhuxd.webui.session.unset");
 	if(action == ACTION_REMOVE && unset_hdf) {
-		if(cfgmgr_unset_cfg(webui->cfgmgr, (void*)unset_hdf)) {
+		if(cfgmgr_unset(webui->cfgmgr, (void*)unset_hdf)) {
 			warn("(webui) could not apply config change (completely)!");
 			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error", 
 					    "Could not apply configuration change! Check log file for details.");
 			nerr_ignore(&err);
 		}
 	}
-
-	HDF *edit_hdf = hdf_get_obj(webui->hdf, "mhuxd.webui.session.edit");
-	if((action == ACTION_UPDATE || action == ACTION_REMOVE) && edit_hdf) {
-		if(cfgmgr_edit_cfg(webui->cfgmgr, (void*)edit_hdf, action == ACTION_REMOVE)) {
+#endif
+	HDF *mod_hdf = hdf_get_obj(webui->hdf, "mhuxd.webui.session.modify");
+	if((action == ACTION_MODIFY || action == ACTION_REMOVE) && mod_hdf) {
+		if(cfgmgr_modify(webui->cfgmgr, (void*)mod_hdf, action == ACTION_REMOVE)) {
 			warn("(webui) could not apply config change (completely)!");
 			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error", 
 					    "Could not apply configuration change! Check log file for details.");
@@ -538,7 +539,7 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 	}
 
 
-#if 0
+#if 1
 	err = hdf_write_file_atomic(webui->hdf, "/tmp/.mhuxd-full.hdf");
 	nerr_ignore(&err);
 #endif

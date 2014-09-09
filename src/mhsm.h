@@ -35,6 +35,7 @@ void sm_antsw_clear_lists(struct sm *sm);
 int sm_antsw_set_opt(struct sm *sm, const char *key, uint32_t val);
 int sm_antsw_set_output(struct sm *sm, const char *out_name, uint8_t val);
 int sm_antsw_add_ant(struct sm *sm, struct cfg *cfg);
+int sm_antsw_mod_ant(struct sm *sm, struct cfg *cfg);
 int sm_antsw_rem_ant(struct sm *sm, int idx);
 
 int sm_get_state_value(const uint8_t mpk_buffer[4], const char *key);
