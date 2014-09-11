@@ -488,20 +488,18 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 		}
 	}
 
-#if 0
-	HDF *unset_hdf = hdf_get_obj(webui->hdf, "mhuxd.webui.session.unset");
-	if(action == ACTION_REMOVE && unset_hdf) {
-		if(cfgmgr_unset(webui->cfgmgr, (void*)unset_hdf)) {
+	HDF *mod_hdf = hdf_get_obj(webui->hdf, "mhuxd.webui.session.modify");
+	if(action == ACTION_MODIFY && mod_hdf) {
+		if(cfgmgr_modify(webui->cfgmgr, (void*)mod_hdf)) {
 			warn("(webui) could not apply config change (completely)!");
 			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error", 
 					    "Could not apply configuration change! Check log file for details.");
 			nerr_ignore(&err);
 		}
 	}
-#endif
-	HDF *mod_hdf = hdf_get_obj(webui->hdf, "mhuxd.webui.session.modify");
-	if((action == ACTION_MODIFY || action == ACTION_REMOVE) && mod_hdf) {
-		if(cfgmgr_modify(webui->cfgmgr, (void*)mod_hdf, action == ACTION_REMOVE)) {
+
+	if(action == ACTION_REMOVE && mod_hdf) {
+		if(cfgmgr_remove(webui->cfgmgr, (void*)mod_hdf)) {
 			warn("(webui) could not apply config change (completely)!");
 			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error", 
 					    "Could not apply configuration change! Check log file for details.");

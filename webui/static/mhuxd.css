@@ -171,6 +171,7 @@ td.contentlistcell, td.radiolistcell1, td.radiolistcell2, td.contentlistcellrigh
     font-family: 'Monda', Arial, Helvetica, sans-serif;
     font-size: 0.8em;
     border-top: 1px solid #999999;
+    white-space: nowrap;
 }
 
 td.contentlistcellbold {

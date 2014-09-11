@@ -648,9 +648,16 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 			
 			if(apply_mode == CFGMGR_APPLY_REPLACE)
 				sm_antsw_clear_lists(sm);
+
 			// antennas
 			for(phdf = hdf_obj_child(hdf_get_obj(hdf, "sm.ant")); phdf; phdf = hdf_obj_next(phdf)) {
 				if(sm_antsw_add_ant(sm, (struct cfg *)phdf))
+					rval++;
+			}
+
+			// groups
+			for(phdf = hdf_obj_child(hdf_get_obj(hdf, "sm.group")); phdf; phdf = hdf_obj_next(phdf)) {
+				if(sm_antsw_add_group(sm, (struct cfg *)phdf))
 					rval++;
 			}
 
@@ -660,7 +667,6 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 
 	struct cfg *pcfg;
 	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.connector")); pcfg; pcfg = cfg_next_child(pcfg)) {
-	// for(hdf = hdf_obj_child(hdf_get_obj(base_hdf, "mhuxd.connector")); hdf; hdf = hdf_obj_next(hdf)) {
 		const char *id_str = cfg_name(pcfg);
 		if(!id_str) {
 			err("(cfgmgr) %s %d internal error", __func__, __LINE__);
@@ -723,27 +729,79 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 	return rval;
 }
 
-int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg, int remove) {
+int cfgmgr_remove(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	int rval = 0;
 	struct cfg *pcfg;
 
 	dbg1("(cfgmgr) %s()", __func__);
 
-	// connectors, only remove supported
-	if(remove) {
-		struct cfg *pcfg;
+	// connectors
+	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.connector")); pcfg; pcfg = cfg_next_child(pcfg)) {
+		int id = cfg_name_to_int(pcfg, -1);
+		if(id == -1) {
+			rval++;
+			continue;
+		}
+		conmgr_destroy_con(cfgmgr->conmgr, id);
+		cfg_remove_child_i(cfgmgr->runtime_cfg, "mhuxd.run.connector", id);
+	}
 
-		for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.connector")); pcfg; pcfg = cfg_next_child(pcfg)) {
-			const char *id_str = cfg_name(pcfg);
-			if(!id_str) {
+	// SM
+	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.keyer")); pcfg; pcfg = cfg_next_child(pcfg)) {
+		const char *serial = cfg_name(pcfg);
+		struct device *dev = dmgr_get_device(serial);
+		struct cfg *smcfg;
+		if(!dev) {
+			err("(cfgmgr) %s() could not find device %s in device list!", __func__, serial);
+			continue;
+		}
+
+		for(smcfg = cfg_first_child( cfg_get_child(pcfg, "sm.ant")); smcfg; smcfg = cfg_next_child(smcfg)) {
+			int id = cfg_name_to_int(smcfg, -1);
+			if(id == -1) {
 				rval++;
 				continue;
 			}
-			int id = atoi(id_str);
-			conmgr_destroy_con(cfgmgr->conmgr, id);
-			cfg_remove_child_i(cfgmgr->runtime_cfg, "mhuxd.run.connector", id);
+			if(sm_antsw_rem_ant(mhc_get_sm(dev->ctl), id))
+				rval++;
+		}
+
+		for(smcfg = cfg_first_child( cfg_get_child(pcfg, "sm.group")); smcfg; smcfg = cfg_next_child(smcfg)) {
+			int id = cfg_name_to_int(smcfg, -1);
+			if(id == -1) {
+				rval++;
+				continue;
+			}
+
+			struct cfg *ant_cfg = cfg_get_child(smcfg, "ant");
+			if(ant_cfg) {
+				// remove references only
+				struct cfg *ref_cfg;
+				for(ref_cfg = cfg_first_child(ant_cfg); ref_cfg; ref_cfg = cfg_next_child(ref_cfg)) {
+
+					if(sm_antsw_rem_group_ref(mhc_get_sm(dev->ctl), id, cfg_name_to_int(ref_cfg, -1)))
+						rval++;
+				}
+
+			} else {
+				// remove the whole thing
+				if(sm_antsw_rem_group(mhc_get_sm(dev->ctl), id))
+					rval++;
+			}
 		}
 	}
+
+	return rval;
+}
+
+int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg) {
+	(void)cfgmgr;
+	int rval = 0;
+	struct cfg *pcfg;
+
+	dbg1("(cfgmgr) %s()", __func__);
+
+	// connectors, modify not supported
 	
 	// SM
 	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.keyer")); pcfg; pcfg = cfg_next_child(pcfg)) {
@@ -756,20 +814,25 @@ int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg, int remove) {
 		}
 
 		for(smcfg = cfg_first_child( cfg_get_child(pcfg, "sm.ant")); smcfg; smcfg = cfg_next_child(smcfg)) {
-			const char *id_str = cfg_name(smcfg);
-			if(!id_str) {
+			int id = cfg_name_to_int(smcfg, -1);
+			if(id == -1) {
 				rval++;
 				continue;
 			}
-			int id = atoi(id_str);
 
-			if(remove) {
-				if(sm_antsw_rem_ant(mhc_get_sm(dev->ctl), id))
-					rval++;
-			} else {
-				if(sm_antsw_mod_ant(mhc_get_sm(dev->ctl), smcfg))
-					rval++;
+			if(sm_antsw_mod_ant(mhc_get_sm(dev->ctl), smcfg))
+				rval++;
+		}
+
+		for(smcfg = cfg_first_child( cfg_get_child(pcfg, "sm.group")); smcfg; smcfg = cfg_next_child(smcfg)) {
+			int id = cfg_name_to_int(smcfg, -1);
+			if(id == -1) {
+				rval++;
+				continue;
 			}
+
+			if(sm_antsw_mod_group(mhc_get_sm(dev->ctl), smcfg))
+				rval++;
 		}
 	}
 

@@ -23,6 +23,9 @@ static const char *label_grp2 = "GRP-2";
 static const char *name_grp2 = "GROUP 2";
 static const char *label_grp3 = "VR-1";
 static const char *name_grp3 = "VIRO 1";
+static const char *label_grp4 = "VR-2";
+static const char *name_grp4 = "VIRO 2";
+
 
 static const char *name_band1 = "80-CW";
 static const char *name_band_stop = "STOPPER";
@@ -226,6 +229,35 @@ static void smsim_init() {
 	buf_append_c(&buf, 0);  // status
 	*buf.data = buf.size - 1;
 	buf_append(&bp_buf, buf.data, buf.size);
+
+
+	// group #4
+	buf_reset(&buf);
+	buf_append_c(&buf, 0);
+	buf_append_c(&buf, strlen(label_grp4));
+	buf_append(&buf, (uint8_t *)label_grp4, strlen(label_grp4));
+	buf_append_c(&buf, strlen(name_grp4));
+	buf_append(&buf, (uint8_t *)name_grp4, strlen(name_grp4));
+	buf_append_c(&buf, 2);  // num antennas
+	// #1
+	buf_append_c(&buf, 2);  // idx
+	buf_append_c(&buf, 90);  // min az
+	buf_append_c(&buf, 0);  // min az
+	buf_append_c(&buf, 100);  // max az
+	buf_append_c(&buf, 0);  // min az
+	// #2
+	buf_append_c(&buf, 3);  // idx
+	buf_append_c(&buf, 100);  // min az
+	buf_append_c(&buf, 0);  // min az
+	buf_append_c(&buf, 110);  // max az
+	buf_append_c(&buf, 0);  // min az
+
+	buf_append_c(&buf, 0);  // flags -> virt. rotator
+	buf_append_c(&buf, 0);  // status
+	buf_append_c(&buf, 0);  // status
+	*buf.data = buf.size - 1;
+	buf_append(&bp_buf, buf.data, buf.size);
+
 
 	// grp stop
 	buf_append_c(&bp_buf, 0);

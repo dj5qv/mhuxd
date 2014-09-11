@@ -1,11 +1,19 @@
 <?cs include:"macros.cs" ?>
-<html><head>
-<title><?cs var:mhuxd.webui.title ?></title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<link href="/static/mhuxd.css" rel="stylesheet" type="text/css">
-
-</head>
-  <body topmargin="0" leftmargin="0" marginheight="0" marginwidth="0">
+<html>
+  <head>
+    <title><?cs var:mhuxd.webui.title ?></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="/static/mhuxd.css" rel="stylesheet" type="text/css">
+    <script src="/static/scrollfix.js" type="text/javascript"></script>
+  </head>
+  <body 
+     topmargin="0" 
+     leftmargin="0" 
+     marginheight="0" 
+     marginwidth="0"  
+     onunload="unloadP('UniquePageNameHereScroll')" 
+     onload="loadP('UniquePageNameHereScroll')" 
+     >
     <?cs include:"pageheader.cs"  ?>
     <?cs include:"sectionheader.cs" ?>
     <table border="0" cellpadding="0" cellspacing="0" width="100%">

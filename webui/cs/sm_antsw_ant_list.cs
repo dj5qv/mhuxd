@@ -31,7 +31,6 @@
     <?cs each:item = mhuxd.keyer[unit].sm.ant ?>
 
     <tr class="contentlistrow2">
-
       <?cs if:mhuxd.webui.session.Edit[chan] ?>
       <td class="contentlistcell" width="19" align="center">&nbsp;&nbsp;</td>
       <?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".id", mhuxd.keyer[unit].sm.ant[name(item)].id) ?>
@@ -48,8 +47,8 @@
 				       mhuxd.keyer[unit].sm.ant[name(item)].label, 5 ) ?></td>
 
       <td class="contentlistcell"><?cs call:string_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".name", 
-				       mhuxd.keyer[unit].sm.ant[name(item)].name, 10 ) ?> </td>
+				       "modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".display", 
+				       mhuxd.keyer[unit].sm.ant[name(item)].display, 10 ) ?> </td>
 
       <td class="contentlistcell"><?cs call:opt_bool_basic(
 				       "modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".steppir", 
@@ -95,7 +94,7 @@
 				       "", 5 ) ?></td>
 
       <td class="contentlistcell"><?cs call:string_rw(
-				       "set.mhuxd.keyer."+unit+".sm.ant.0.name", 
+				       "set.mhuxd.keyer."+unit+".sm.ant.0.display", 
 				       "", 10 ) ?> </td>
 
       <td class="contentlistcell"><?cs call:bool_rw(

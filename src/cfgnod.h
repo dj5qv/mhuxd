@@ -27,11 +27,13 @@ void cfg_destroy(struct cfg *cfg);
 struct cfg *cfg_first_child(struct cfg *cfg);
 struct cfg *cfg_next_child(struct cfg *cfg);
 const char *cfg_name(struct cfg *cfg);
+int cfg_name_to_int(struct cfg *cfg, int def);
 
 int cfg_set_value(struct cfg *, const char *key, const char *val);
 int cfg_set_int_value(struct cfg *, const char *key, int val);
 struct cfg *cfg_create_child(struct cfg *parent, const char *key);
 struct cfg *cfg_get_child(struct cfg *parent, const char *key);
+struct cfg *cfg_get_child_by_int(struct cfg *parent, int ikey);
 int cfg_remove_child(struct cfg *cfg, const char *path, const char *name);
 int cfg_remove_child_i(struct cfg *cfg, const char *path, int i);
 

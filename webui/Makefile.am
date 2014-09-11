@@ -35,7 +35,8 @@ webuistatic_DATA = \
 	static/section-start-vert.gif \
 	static/stop.gif \
 	static/warning.gif \
-	static/Yellow.png 
+	static/Yellow.png \
+	static/scrollfix.js
 
 webuics_DATA = \
 	cs/audio_mk1.cs \
@@ -71,5 +72,6 @@ webuics_DATA = \
 	cs/winkey_cfg.cs \
 	cs/sm_antsw_outputs.cs \
 	cs/sm_antsw_settings.cs \
-	cs/sm_antsw_ant_list.cs
+	cs/sm_antsw_ant_list.cs \
+	cs/sm_antsw_vr_list.cs
 

@@ -1,3 +1,11 @@
+/*
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *
+ *  This program can be distributed under the terms of the GNU GPLv2.
+ *  See the file COPYING
+ */
+
 #include <unistd.h>
 #include <errno.h>
 #include <ev.h>

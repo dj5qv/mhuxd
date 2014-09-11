@@ -115,13 +115,23 @@
     <?cs call:string_id(display, optname, optvalue, id, 16) ?>
 <?cs /def ?>
 
-<?cs def:opt_select_basic(optname, optlist, optvalue) ?>
-<?cs if:mhuxd.webui.session.Edit[chan] ?>
+<?cs def:select(optname, optlist, optvalue) ?>
 <select name="<?cs var:optname ?>" >
   <?cs each:item=optlist ?>
-  <option value="<?cs var:name(item) ?>"<?cs if:name(item)==optvalue || (!optvalue && item.default=="1")?> selected<?cs /if ?>><?cs var:item.display ?></option>
+  <option value="<?cs var:name(item) ?>"
+	  <?cs if:name(item)==optvalue || (!optvalue && item.default=="1")?> 
+	  selected
+	  <?cs /if ?>
+	  >
+    <?cs var:item.display ?>
+  </option>
   <?cs /each ?>
 </select>
+<?cs /def ?>
+
+<?cs def:opt_select_basic(optname, optlist, optvalue) ?>
+<?cs if:mhuxd.webui.session.Edit[chan] ?>
+<?cs call:select(optname, optlist, optvalue) ?>
 <?cs else ?>
 <?cs var:optlist[optvalue].display ?>
 <?cs /if ?>

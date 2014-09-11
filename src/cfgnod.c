@@ -132,6 +132,12 @@ struct cfg *cfg_get_child(struct cfg *parent, const char *key) {
 	return (struct cfg *)hdf_get_obj((HDF *)parent, key);
 }
 
+struct cfg *cfg_get_child_by_int(struct cfg *parent, int ikey) {
+	char buf[128];
+	snprintf(buf, sizeof(buf), "%d", ikey);
+	return (struct cfg *)hdf_get_obj((HDF *)parent, buf);
+}
+
 struct cfg *cfg_first_child(struct cfg *cfg) {
 	return (void*)hdf_obj_child((void*)cfg);
 }
@@ -142,6 +148,13 @@ struct cfg *cfg_next_child(struct cfg *cfg) {
 
 const char *cfg_name(struct cfg *cfg) {
 	return hdf_obj_name((void*)cfg);
+}
+
+int cfg_name_to_int(struct cfg *cfg, int def) {
+	const char *name = cfg_name(cfg);
+	if(!name)
+		return def;
+	return atoi(name);
 }
 
 int cfg_remove_child(struct cfg *cfg, const char *path, const char *name) {
