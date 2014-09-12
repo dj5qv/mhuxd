@@ -148,6 +148,11 @@ tr.contentlistrow2 {
     background: #EEEEEE;                        /* dark gray */
     border-top: 1px solid #999999;
 }
+tr.contentlistrowmain {
+    color: #000000;                             /* black */
+    background: #DEEEDE;                        /* dark gray */
+    border-top: 1px solid #999999;
+}
 tr.alert_row1 { 
     color: #000000;                             /* black */
     background-color: #FBD0AA;                  /* Lighter Orange */

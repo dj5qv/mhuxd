@@ -773,7 +773,7 @@ int cfgmgr_remove(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 				continue;
 			}
 
-			struct cfg *ant_cfg = cfg_get_child(smcfg, "ant");
+			struct cfg *ant_cfg = cfg_get_child(smcfg, "ref");
 			if(ant_cfg) {
 				// remove references only
 				struct cfg *ref_cfg;
