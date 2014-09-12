@@ -5,7 +5,7 @@
 <!-- BASE PAGE -->
 
 
-<?cs call:sectionheader("Virtual Rotator List", "foobar_help") ?>
+<?cs call:sectionheader("Antenna Groups List", "foobar_help") ?>
 
 &nbsp;&nbsp;<br>
 
