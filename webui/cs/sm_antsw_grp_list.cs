@@ -9,21 +9,19 @@
 
 &nbsp;&nbsp;<br>
 
-<table class="sectiontable" cellpadding="3" cellspacing="0" width="80%">
+<table class="sectiontable" cellpadding="3" cellspacing="0" width="60%">
   <tbody>
     <tr>
-      <td class="titlelistcell">&nbsp;</td>
+      <td class="titlelistcell" width="19">&nbsp;</td>
       <td class="titlelistcell">ID</td>
       <td class="titlelistcell">Label</td>
       <td class="titlelistcell">Name</td>
       <td class="titlelistcell">RX-Only</td>
-      <td class="titlelistcell">Azimuth Min</td>
-      <td class="titlelistcell">Azimuth Max</td>
       <td class="titlelistcell">Antenna</td>
     </tr>
 
     <?cs each:item = mhuxd.keyer[unit].sm.group ?>
-    <?cs if:item.virtual_rotator ?>
+    <?cs if:!item.virtual_rotator ?>
 
 
     <!-- main row -->
@@ -39,19 +37,17 @@
 
       <td class="contentlistcell" width="1%"><?cs var:name(item) ?></td>
 
-      <td class="contentlistcell" width="25%" ><?cs call:string_basic(
+      <td class="contentlistcell" width="30%" ><?cs call:string_basic(
 				       "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".label", 
 				       mhuxd.keyer[unit].sm.group[name(item)].label, 5 ) ?></td>
 
-      <td class="contentlistcell" width="25%" ><?cs call:string_basic(
+      <td class="contentlistcell" width="30%" ><?cs call:string_basic(
 				       "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".display", 
 				       mhuxd.keyer[unit].sm.group[name(item)].display, 10 ) ?> </td>
 
       <td class="contentlistcell" width="10%" align="center">&nbsp;</td>
 
-      <td class="contentlistcell"  width="10%" align="center">&nbsp;</td>
-      <td class="contentlistcell"  width="10%" align="center">&nbsp;</td>
-      <td class="contentlistcell"  width="25%" >
+      <td class="contentlistcell"  width="30%" >
 	<?cs if:subcount(mhuxd.webui.session.AddAnt[chan]) || mhuxd.webui.session.Edit[chan] ?>
 	&nbsp;
 	<?cs else ?>
@@ -78,14 +74,6 @@
       <td class="contentlistcell" align="center">&nbsp;</td>
       <td class="contentlistcell" align="center"><?cs call:bool_ro("", mhuxd.keyer[unit].sm.ant[ant_item.dest_id].rxonly) ?> </td>
 
-      <td class="contentlistcell"><?cs call:opt_number_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ant."+name(ant_item)+".min_azimuth", 
-				       mhuxd.keyer[unit].sm.group[name(item)].ant[name(ant_item)].min_azimuth) ?> </td>
-
-      <td class="contentlistcell"><?cs call:opt_number_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ant."+name(ant_item)+".max_azimuth", 
-				       mhuxd.keyer[unit].sm.group[name(item)].ant[name(ant_item)].max_azimuth) ?> </td>
-
       <td class="contentlistcell">
 	<?cs call:opt_select_basic(
 	     "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ant."+name(ant_item)+".dest_id",
@@ -105,12 +93,6 @@
       <td class="contentlistcell" align="center">&nbsp;</td>
 
       <td class="contentlistcell">
-	<?cs call:number_rw("modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ant.0.min_azimuth", "") ?>
-      </td>
-      <td class="contentlistcell">
-	<?cs call:number_rw("modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ant.0.max_azimuth", "") ?>
-      </td>
-      <td class="contentlistcell">
 	<?cs call:select(
 	     "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ant.0.dest_id",
 	     mhuxd.keyer[unit].sm.ant,
@@ -128,7 +110,7 @@
       <td class="contentlistcell" width="19" align="center">&nbsp;&nbsp;</td>
       <td class="contentlistcell" width="1%" align="center">&nbsp;&nbsp;</td>
 
-      <?cs call:hidden("set.mhuxd.keyer."+unit+".sm.group.0.virtual_rotator", 1) ?>
+      <?cs call:hidden("set.mhuxd.keyer."+unit+".sm.group.0.virtual_rotator", 0) ?>
 
       <td class="contentlistcell"><?cs call:string_rw(
 				       "set.mhuxd.keyer."+unit+".sm.group.0.label", 
@@ -142,9 +124,7 @@
 				       "set.mhuxd.keyer."+unit+".sm.group.0.rxonly", 
 				       0 ) ?></td>
 
-      <td class="contentlistcell" width="25%" align="center">&nbsp;&nbsp;</td>
-      <td class="contentlistcell" width="25%" align="center">&nbsp;&nbsp;</td>
-      <td class="contentlistcell" width="25%" align="center">&nbsp;&nbsp;</td>
+      <td class="contentlistcell" width="30%" align="center">&nbsp;&nbsp;</td>
     </tr>
     <?cs /if ?>
     <!-- /Add new one -->

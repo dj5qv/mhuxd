@@ -221,9 +221,10 @@ struct citem sm_bandplan_fixed_items[] = {
 	CITEM("useKeyIn", 18, 0, 1),
 	CITEM("invertKeyIn", 18, 1, 1),
 
-
-	CITEM("sequencer.lead.keyOut", 19,0, 16),
-	CITEM("sequencer.tail.keyOut", 21,0, 16),
+	/*
+	CITEM("sequencer.lead.keyOut", 19,0, 16), // no lead support for keyOut
+	*/
+	CITEM("sequencer.tail.keyOut", 21,15, 16),
 
 	CITEM("sequencer.lead.B6",  23, 15, 16),
 	CITEM("sequencer.tail.B6",  25, 15, 16),

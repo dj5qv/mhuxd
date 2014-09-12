@@ -73,5 +73,6 @@ webuics_DATA = \
 	cs/sm_antsw_outputs.cs \
 	cs/sm_antsw_settings.cs \
 	cs/sm_antsw_ant_list.cs \
-	cs/sm_antsw_vr_list.cs
+	cs/sm_antsw_vr_list.cs \
+	cs/sm_antsw_grp_list.cs
 

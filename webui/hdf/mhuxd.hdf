@@ -128,6 +128,12 @@ mhuxd.webui.menus {
 		  include = sm_antsw_vr_list.cs
 		  depends = has.sm_commands
 	     }
+	     sm_antsw_grp_list {
+	     	  display = Switching / Ant. Groups
+		  title = Antenna Switching / Antenna Groups
+		  include = sm_antsw_grp_list.cs
+		  depends = has.sm_commands
+	     }
 
              all_params {
                   display = All Parameters
