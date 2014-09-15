@@ -25,7 +25,7 @@
 
 
     <!-- main row -->
-    <tr class="contentlistrow2">
+    <tr class="contentlistrowmain">
       <?cs if:mhuxd.webui.session.Edit[chan] ?>
       <td class="contentlistcell" width="19" align="center">&nbsp;</td>
       <?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".id", mhuxd.keyer[unit].sm.group[name(item)].id) ?>
@@ -48,11 +48,13 @@
       <td class="contentlistcell" width="10%" align="center">&nbsp;</td>
 
       <td class="contentlistcell"  width="30%" >
-	<?cs if:subcount(mhuxd.webui.session.AddAnt[chan]) || mhuxd.webui.session.Edit[chan] ?>
-	&nbsp;
-	<?cs else ?>
-	<input name="AddAnt.<?cs var:chan ?>.<?cs var:item.id ?>" value="Add Antenna" type="submit">
-	<?cs /if ?>
+	<input name="AddAnt.<?cs var:chan ?>.<?cs var:item.id ?>" value="Add Antenna" type="submit"
+	       <?cs if:subcount(mhuxd.webui.session.AddAnt[chan]) 
+		    || mhuxd.webui.session.Edit[chan] 
+		    || mhuxd.webui.session.Add[chan]?>
+	       disabled="1"
+	       <?cs /if ?>
+	       >
       </td>
     </tr>
 
@@ -112,18 +114,15 @@
 
       <?cs call:hidden("set.mhuxd.keyer."+unit+".sm.group.0.virtual_rotator", 0) ?>
 
-      <td class="contentlistcell"><?cs call:string_rw(
+      <td class="contentlistcell" width="30%"><?cs call:string_rw(
 				       "set.mhuxd.keyer."+unit+".sm.group.0.label", 
 				       "", 5 ) ?></td>
 
-      <td class="contentlistcell"><?cs call:string_rw(
+      <td class="contentlistcell" width="30%"><?cs call:string_rw(
 				       "set.mhuxd.keyer."+unit+".sm.group.0.display", 
 				       "", 10 ) ?> </td>
 
-      <td class="contentlistcell"><?cs call:bool_rw(
-				       "set.mhuxd.keyer."+unit+".sm.group.0.rxonly", 
-				       0 ) ?></td>
-
+      <td class="contentlistcell" width="10%" align="center">&nbsp;&nbsp;</td>
       <td class="contentlistcell" width="30%" align="center">&nbsp;&nbsp;</td>
     </tr>
     <?cs /if ?>
