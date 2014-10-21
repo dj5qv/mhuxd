@@ -28,7 +28,7 @@ static const char *name_grp4 = "VIRO 2";
 
 
 static const char *name_band1 = "80-CW";
-static const char *name_band_stop = "STOPPER";
+static const char *name_band_stop = "$STOPPER$";
 
 static struct buffer bp_buf;
 
@@ -282,15 +282,25 @@ static void smsim_init() {
 	buf_append_c(&buf, 0); // bpf/seq mask
 	buf_append_c(&buf, 0); // bpf/seq mask
 	buf_append_c(&buf, 0); // bpf/seq mask
-	buf_append_c(&buf, 2); // num ant selections
+	buf_append_c(&buf, 4); // num ant selections
 
 	buf_append_c(&buf, 0); // #1
 	buf_append_c(&buf, 4); // ant idx
 	buf_append_c(&buf, 0); // flags
 
-	buf_append_c(&buf, 3); // #2
+	buf_append_c(&buf, 3); // #2  #grp id 3
 	buf_append_c(&buf, 0); //
 	buf_append_c(&buf, 0); // flags
+
+
+	buf_append_c(&buf, 2); // #3 grp id 2
+	buf_append_c(&buf, 0); // ba0 grp id 2
+	buf_append_c(&buf, 0); // flags
+
+	buf_append_c(&buf, 0); // #4
+	buf_append_c(&buf, 3); // ba0 ant id 3
+	buf_append_c(&buf, 0); // flags
+
 
 	buf_append_c(&buf, 0); // status
 	buf_append_c(&buf, 0); // status

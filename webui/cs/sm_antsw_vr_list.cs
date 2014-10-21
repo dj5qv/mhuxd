@@ -22,30 +22,30 @@
       <td class="titlelistcell" align="center">Antenna</td>
     </tr>
 
-    <?cs each:item = mhuxd.keyer[unit].sm.group ?>
-    <?cs if:item.virtual_rotator ?>
-
+    <?cs each:item = mhuxd.keyer[unit].sm.obj ?>
+    <?cs if:item.type == 1 && item.virtual_rotator == 1 ?>
 
     <!-- main row -->
     <tr class="contentlistrowmain">
       <?cs if:mhuxd.webui.session.Edit[chan] ?>
       <td class="contentlistcell" width="19" align="center">&nbsp;</td>
-      <?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".id", mhuxd.keyer[unit].sm.group[name(item)].id) ?>
+      <?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".id", item.id) ?>
+      <?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".type", item.type) ?>
       <?cs else ?>
       <td class="radiolistcell2" width="19" align="center">
-	<input type="checkbox" name="modify.mhuxd.keyer.<?cs var:unit ?>.sm.group.<?cs var:name(item) ?>" value="1" > 
+	<input type="checkbox" name="modify.mhuxd.keyer.<?cs var:unit ?>.sm.obj.<?cs var:name(item) ?>" value="1" > 
       </td>
       <?cs /if ?>
 
       <td class="contentlistcell" width="1%"><?cs var:name(item) ?></td>
 
       <td class="contentlistcell" width="25%" ><?cs call:string_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".label", 
-				       mhuxd.keyer[unit].sm.group[name(item)].label, 5 ) ?></td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".label", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].label, 5 ) ?></td>
 
       <td class="contentlistcell" width="25%" ><?cs call:string_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".display", 
-				       mhuxd.keyer[unit].sm.group[name(item)].display, 10 ) ?> </td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".display", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].display, 10 ) ?> </td>
 
       <td class="contentlistcell" width="10%" align="center">&nbsp;</td>
       <td class="contentlistcell"  width="20%" align="center">&nbsp;</td>
@@ -62,14 +62,14 @@
     </tr>
 
     <!-- list ant ref area -->
-    <?cs each:ref_item = mhuxd.keyer[unit].sm.group[name(item)].ref ?>
+    <?cs each:ref_item = mhuxd.keyer[unit].sm.obj[name(item)].ref ?>
     <tr class="contentlistrow2">
       <?cs if:mhuxd.webui.session.Edit[chan] ?>
       <td class="contentlistcell" width="19" align="center">&nbsp;</td>
-      <?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ref."+name(ref_item)+".id", mhuxd.keyer[unit].sm.group[name(item)].id) ?>
+      <?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".ref."+name(ref_item)+".id", ref_item.id) ?>
       <?cs else ?>
       <td class="radiolistcell2" width="19" align="center">
-	<input type="checkbox" name="modify.mhuxd.keyer.<?cs var:unit ?>.sm.group.<?cs var:name(item) ?>.ref.<?cs var:name(ref_item) ?>" value="1" > 
+	<input type="checkbox" name="modify.mhuxd.keyer.<?cs var:unit ?>.sm.obj.<?cs var:name(item) ?>.ref.<?cs var:name(ref_item) ?>" value="1" > 
       </td>
       <?cs /if ?>
 
@@ -77,21 +77,21 @@
       <td class="contentlistcell" align="center">&nbsp;</td>
       <td class="contentlistcell" align="center">&nbsp;</td>
       <td class="contentlistcell" align="center">&nbsp;</td>
-      <td class="contentlistcell" align="center"><?cs call:bool_ro("", mhuxd.keyer[unit].sm.ant[ref_item.dest_id].rxonly) ?> </td>
+      <td class="contentlistcell" align="center"><?cs call:bool_ro("", mhuxd.keyer[unit].sm.obj[ref_item.dest_id].rxonly) ?> </td>
 
       <td class="contentlistcell" align="center"><?cs call:opt_number_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ref."+name(ref_item)+".min_azimuth", 
-				       mhuxd.keyer[unit].sm.group[name(item)].ref[name(ref_item)].min_azimuth) ?> </td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".ref."+name(ref_item)+".min_azimuth", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].ref[name(ref_item)].min_azimuth) ?> </td>
 
       <td class="contentlistcell" align="center"><?cs call:opt_number_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ref."+name(ref_item)+".max_azimuth", 
-				       mhuxd.keyer[unit].sm.group[name(item)].ref[name(ref_item)].max_azimuth) ?> </td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".ref."+name(ref_item)+".max_azimuth", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].ref[name(ref_item)].max_azimuth) ?> </td>
 
       <td class="contentlistcell">
 	<?cs call:opt_select_basic(
-	     "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ref."+name(ref_item)+".dest_id",
-	     mhuxd.keyer[unit].sm.ant,
-	     mhuxd.keyer[unit].sm.group[name(item)].ref[name(ref_item)].dest_id) ?>
+	     "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".ref."+name(ref_item)+".dest_id",
+	     mhuxd.keyer[unit].sm.obj,
+	     mhuxd.keyer[unit].sm.obj[name(item)].ref[name(ref_item)].dest_id) ?>
       </td>
     </tr>
     <?cs /each ?>
@@ -106,15 +106,15 @@
       <td class="contentlistcell" width="10%">&nbsp;</td>
 
       <td class="contentlistcell" width="20%">
-	<?cs call:number_rw("modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ref.0.min_azimuth", "") ?>
+	<?cs call:number_rw("modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".ref.0.min_azimuth", "") ?>
       </td>
       <td class="contentlistcell" width="20%">
-	<?cs call:number_rw("modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ref.0.max_azimuth", "") ?>
+	<?cs call:number_rw("modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".ref.0.max_azimuth", "") ?>
       </td>
       <td class="contentlistcell" width="30%">
 	<?cs call:select(
-	     "modify.mhuxd.keyer."+unit+".sm.group."+name(item)+".ref.0.dest_id",
-	     mhuxd.keyer[unit].sm.ant,
+	     "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".ref.0.dest_id",
+	     mhuxd.keyer[unit].sm.obj,
 	     "") ?>
       </td>
     </tr>
@@ -129,14 +129,15 @@
       <td class="contentlistcell" width="19" align="center">&nbsp;&nbsp;</td>
       <td class="contentlistcell" width="1%" align="center">&nbsp;&nbsp;</td>
 
-      <?cs call:hidden("set.mhuxd.keyer."+unit+".sm.group.0.virtual_rotator", 1) ?>
+      <?cs call:hidden("set.mhuxd.keyer."+unit+".sm.obj.0.type", 1) ?>
+      <?cs call:hidden("set.mhuxd.keyer."+unit+".sm.obj.0.virtual_rotator", 1) ?>
 
       <td class="contentlistcell" width="25%"><?cs call:string_rw(
-				       "set.mhuxd.keyer."+unit+".sm.group.0.label", 
+				       "set.mhuxd.keyer."+unit+".sm.obj.0.label", 
 				       "", 5 ) ?></td>
 
       <td class="contentlistcell" width="25%"><?cs call:string_rw(
-				       "set.mhuxd.keyer."+unit+".sm.group.0.display", 
+				       "set.mhuxd.keyer."+unit+".sm.obj.0.display", 
 				       "", 10 ) ?> </td>
 
       <td class="contentlistcell" width="10%" align="center">&nbsp;&nbsp;</td>

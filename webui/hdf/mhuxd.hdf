@@ -134,6 +134,12 @@ mhuxd.webui.menus {
 		  include = sm_antsw_grp_list.cs
 		  depends = has.sm_commands
 	     }
+	     sm_antsw_band_list {
+	     	  display = Switching / Bands
+		  title = Antenna Switching / Bands
+		  include = sm_antsw_band_list.cs
+		  depends = has.sm_commands
+	     }
 
              all_params {
                   display = All Parameters

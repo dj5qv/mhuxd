@@ -649,20 +649,12 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 			if(apply_mode == CFGMGR_APPLY_REPLACE)
 				sm_antsw_clear_lists(sm);
 
-			// antennas
-			for(phdf = hdf_obj_child(hdf_get_obj(hdf, "sm.ant")); phdf; phdf = hdf_obj_next(phdf)) {
-				if(sm_antsw_add_ant(sm, (struct cfg *)phdf))
+			// objects
+			for(phdf = hdf_obj_child(hdf_get_obj(hdf, "sm.obj")); phdf; phdf = hdf_obj_next(phdf)) {
+				if(sm_antsw_add_obj(sm, (struct cfg *)phdf))
 					rval++;
 			}
-
-			// groups
-			for(phdf = hdf_obj_child(hdf_get_obj(hdf, "sm.group")); phdf; phdf = hdf_obj_next(phdf)) {
-				if(sm_antsw_add_group(sm, (struct cfg *)phdf))
-					rval++;
-			}
-
 		}
-
 	}
 
 	struct cfg *pcfg;
@@ -756,36 +748,26 @@ int cfgmgr_remove(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 			continue;
 		}
 
-		for(smcfg = cfg_first_child( cfg_get_child(pcfg, "sm.ant")); smcfg; smcfg = cfg_next_child(smcfg)) {
-			int id = cfg_name_to_int(smcfg, -1);
-			if(id == -1) {
-				rval++;
-				continue;
-			}
-			if(sm_antsw_rem_ant(mhc_get_sm(dev->ctl), id))
-				rval++;
-		}
-
-		for(smcfg = cfg_first_child( cfg_get_child(pcfg, "sm.group")); smcfg; smcfg = cfg_next_child(smcfg)) {
+		for(smcfg = cfg_first_child( cfg_get_child(pcfg, "sm.obj")); smcfg; smcfg = cfg_next_child(smcfg)) {
 			int id = cfg_name_to_int(smcfg, -1);
 			if(id == -1) {
 				rval++;
 				continue;
 			}
 
-			struct cfg *ant_cfg = cfg_get_child(smcfg, "ref");
-			if(ant_cfg) {
+			struct cfg *tmp_cfg = cfg_get_child(smcfg, "ref");
+			if(tmp_cfg) {
 				// remove references only
 				struct cfg *ref_cfg;
-				for(ref_cfg = cfg_first_child(ant_cfg); ref_cfg; ref_cfg = cfg_next_child(ref_cfg)) {
+				for(ref_cfg = cfg_first_child(tmp_cfg); ref_cfg; ref_cfg = cfg_next_child(ref_cfg)) {
 
-					if(sm_antsw_rem_group_ref(mhc_get_sm(dev->ctl), id, cfg_name_to_int(ref_cfg, -1)))
+					if(sm_antsw_rem_obj_ref(mhc_get_sm(dev->ctl), id, cfg_name_to_int(ref_cfg, -1)))
 						rval++;
 				}
 
 			} else {
 				// remove the whole thing
-				if(sm_antsw_rem_group(mhc_get_sm(dev->ctl), id))
+				if(sm_antsw_rem_obj(mhc_get_sm(dev->ctl), id))
 					rval++;
 			}
 		}
@@ -813,25 +795,14 @@ int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 			continue;
 		}
 
-		for(smcfg = cfg_first_child( cfg_get_child(pcfg, "sm.ant")); smcfg; smcfg = cfg_next_child(smcfg)) {
+		for(smcfg = cfg_first_child( cfg_get_child(pcfg, "sm.obj")); smcfg; smcfg = cfg_next_child(smcfg)) {
 			int id = cfg_name_to_int(smcfg, -1);
 			if(id == -1) {
 				rval++;
 				continue;
 			}
 
-			if(sm_antsw_mod_ant(mhc_get_sm(dev->ctl), smcfg))
-				rval++;
-		}
-
-		for(smcfg = cfg_first_child( cfg_get_child(pcfg, "sm.group")); smcfg; smcfg = cfg_next_child(smcfg)) {
-			int id = cfg_name_to_int(smcfg, -1);
-			if(id == -1) {
-				rval++;
-				continue;
-			}
-
-			if(sm_antsw_mod_group(mhc_get_sm(dev->ctl), smcfg))
+			if(sm_antsw_mod_obj(mhc_get_sm(dev->ctl), smcfg))
 				rval++;
 		}
 	}

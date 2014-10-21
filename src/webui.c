@@ -357,7 +357,7 @@ static int decode_meta_settings(HDF *hdf, HDF *metaset) {
 				continue;
 			HDF *opt;
 			for(opt = hdf_obj_child(chan); opt; opt = hdf_obj_next(opt)) {
-				err("-->checking %s/%s", hdf_obj_name(opt), hdf_obj_value(opt));
+				// err("-->checking %s/%s", hdf_obj_name(opt), hdf_obj_value(opt));
 				if(!strncmp(hdf_obj_name(opt), "ptt_", 4))
 					decompose_ptt_str(param, type, chan_str, hdf_obj_name(opt), hdf_obj_value(opt));
 				if(!strcmp(hdf_obj_name(opt), "mk2micsel"))
@@ -481,11 +481,6 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 					    "Could not apply configuration change! Check log file for details.");
 			nerr_ignore(&err);
 		}
-		if(cfgmgr_save_cfg(webui->cfgmgr)) {
-			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error",
-				    "Could not save configuration! Check log file for details.");
-			nerr_ignore(&err);
-		}
 	}
 
 	HDF *mod_hdf = hdf_get_obj(webui->hdf, "mhuxd.webui.session.modify");
@@ -503,6 +498,14 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 			warn("(webui) could not apply config change (completely)!");
 			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error", 
 					    "Could not apply configuration change! Check log file for details.");
+			nerr_ignore(&err);
+		}
+	}
+
+	if(action != ACTION_NONE) {
+		if(cfgmgr_save_cfg(webui->cfgmgr)) {
+			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error",
+				    "Could not save configuration! Check log file for details.");
 			nerr_ignore(&err);
 		}
 	}

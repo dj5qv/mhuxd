@@ -2,19 +2,35 @@
 <input type="hidden" name="<?cs var:name ?>" value="<?cs var:value ?>">
 <?cs /def ?>
 
-<?cs def:bool_rw(optname, optvalue) ?>
+<?cs def:bool_rw_v(optname, optvalue, valueset) ?>
     <input type="hidden" name="<?cs var:optname ?>" value="0">
     <input type="checkbox"
 	   name="<?cs var:optname ?>"
-	   value="1"
-	   <?cs if:optvalue=="1" ?>checked<?cs /if ?> >
+	   value="<?cs var:valueset ?>"
+	   <?cs if:optvalue==valueset ?>checked<?cs /if ?> >
 <?cs /def ?>
 
-<?cs def:bool_ro(optname, optvalue) ?>
-<?cs if:optvalue == 1 ?>
+<?cs def:bool_ro_v(optname, optvalue, valueset) ?>
+<?cs if:optvalue == valueset ?>
 <img src="/static/checkmark.gif" alt="true">
 <?cs else ?>
 <img src="/static/nocheckmark.gif" alt="false">
+<?cs /if ?>
+<?cs /def ?>
+
+<?cs def:bool_rw(optname, optvalue) ?>
+<?cs call:bool_rw_v(optname, optvalue, "1") ?>
+<?cs /def ?>
+
+<?cs def:bool_ro(optname, optvalue) ?>
+<?cs call:bool_ro_v(optname, optvalue, "1") ?>
+<?cs /def ?>
+
+<?cs def:opt_bool_basic_v(optname, optvalue, valueset) ?>
+<?cs if:mhuxd.webui.session.Edit[chan] ?>
+<?cs call:bool_rw_v(optname, optvalue, valueset) ?>
+<?cs else ?>
+<?cs call:bool_ro_v(optname, optvalue, valueset) ?>
 <?cs /if ?>
 <?cs /def ?>
 
@@ -38,9 +54,9 @@
 
 <?cs def:string_rw(optname, optvalue, maxlength) ?>
 <input type="hidden" name="<?cs var:optname ?>" value="0">
-<input type="text" class="foobar"
+<input type="text" class="foobar" 
        name="<?cs var:optname ?>"
-       maxlength="<?cs var:maxlength ?>"
+       maxlength="<?cs var:maxlength ?>" size="<?cs var:maxlength+2 ?>"
        value="<?cs var:optvalue ?>"
        >
 <?cs /def ?>

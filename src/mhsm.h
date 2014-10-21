@@ -35,14 +35,22 @@ void sm_antsw_clear_lists(struct sm *sm);
 int sm_antsw_set_opt(struct sm *sm, const char *key, uint32_t val);
 int sm_antsw_set_output(struct sm *sm, const char *out_name, uint8_t val);
 
+int sm_antsw_add_obj(struct sm *sm, struct cfg * cfg);
+int sm_antsw_mod_obj(struct sm *sm, struct cfg * cfg);
+int sm_antsw_rem_obj(struct sm *sm, int id);
+int sm_antsw_rem_obj_ref(struct sm *sm, int obj_id, int ref_id);
+
 int sm_antsw_add_ant(struct sm *sm, struct cfg *cfg);
 int sm_antsw_mod_ant(struct sm *sm, struct cfg *cfg);
 int sm_antsw_rem_ant(struct sm *sm, int idx);
-
 int sm_antsw_add_group(struct sm *sm, struct cfg *cfg);
 int sm_antsw_mod_group(struct sm *sm, struct cfg *cfg);
 int sm_antsw_rem_group(struct sm *sm, int id);
 int sm_antsw_rem_group_ref(struct sm *sm, int grp_id, int ref_id);
+int sm_antsw_add_band(struct sm *sm, struct cfg *cfg);
+int sm_antsw_mod_band(struct sm *sm, struct cfg *cfg);
+int sm_antsw_rem_band(struct sm *sm, int id);
+int sm_antsw_rem_band_ref(struct sm *sm, int band_id, int ref_id);
 
 int sm_get_state_value(const uint8_t mpk_buffer[4], const char *key);
 void sm_debug_print_state_values(const uint8_t buffer[9]);

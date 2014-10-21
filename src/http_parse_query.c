@@ -6,6 +6,18 @@
 #include "logger.h"
 
 
+static void log_neoerr(NEOERR *err, const char *what) {
+	STRING str;
+
+	string_init(&str);
+
+	nerr_error_string(err, &str);
+	err(" %s(%s)", what, str.buf ? str.buf : "Unkown");
+	string_clear(&str);
+	nerr_ignore(&err);
+}
+
+
 static char *_cgi_url_unescape (char *value)
 {
 	int i = 0, o = 0;
@@ -53,8 +65,9 @@ int http_parse_query(HDF *hdf, char *query) {
 
 		err = hdf_set_value(hdf, k, v);
 		if(err != STATUS_OK) {
+			log_neoerr(err, "<<");
 			warn("%s() could not set hdf value %s/%s!", __func__, k, v);
-			nerr_ignore(&err);
+			//nerr_ignore(&err);
 		}
 
 		k = strtok_r(NULL, "&", &saveptr);

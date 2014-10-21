@@ -28,60 +28,61 @@
 
     </tr>
 
-    <?cs each:item = mhuxd.keyer[unit].sm.ant ?>
-
+    <?cs each:item = mhuxd.keyer[unit].sm.obj ?>
+    <?cs if:item.type == 0 ?>
     <tr class="contentlistrow2">
       <?cs if:mhuxd.webui.session.Edit[chan] ?>
       <td class="contentlistcell" width="19" align="center">&nbsp;&nbsp;</td>
-      <?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".id", mhuxd.keyer[unit].sm.ant[name(item)].id) ?>
+      <?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".id", item.id) ?>
+      <?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".type", item.type) ?>
       <?cs else ?>
       <td class="radiolistcell2" width="19" align="center">
-	<input type="checkbox" name="modify.mhuxd.keyer.<?cs var:unit ?>.sm.ant.<?cs var:name(item) ?>" value="1" > 
+	<input type="checkbox" name="modify.mhuxd.keyer.<?cs var:unit ?>.sm.obj.<?cs var:name(item) ?>" value="1" > 
       </td>
       <?cs /if ?>
 
       <td class="contentlistcell"><?cs var:name(item) ?></td>
 
       <td class="contentlistcell"><?cs call:string_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".label", 
-				       mhuxd.keyer[unit].sm.ant[name(item)].label, 5 ) ?></td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".label", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].label, 5 ) ?></td>
 
       <td class="contentlistcell"><?cs call:string_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".display", 
-				       mhuxd.keyer[unit].sm.ant[name(item)].display, 10 ) ?> </td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".display", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].display, 10 ) ?> </td>
 
       <td class="contentlistcell"><?cs call:opt_bool_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".steppir", 
-				       mhuxd.keyer[unit].sm.ant[name(item)].steppir ) ?></td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".steppir", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].steppir ) ?></td>
 
       <td class="contentlistcell"><?cs call:opt_bool_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".rxonly", 
-				       mhuxd.keyer[unit].sm.ant[name(item)].rxonly ) ?></td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".rxonly", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].rxonly ) ?></td>
 
       <td class="contentlistcell"><?cs call:opt_number_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".pa_ant_number", 
-				       mhuxd.keyer[unit].sm.ant[name(item)].pa_ant_number ) ?> </td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".pa_ant_number", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].pa_ant_number ) ?> </td>
 
       <td class="contentlistcell"><?cs call:opt_bool_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".rotator", 
-				       mhuxd.keyer[unit].sm.ant[name(item)].rotator ) ?></td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".rotator", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].rotator ) ?></td>
 
       <td class="contentlistcell"><?cs call:opt_number_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".rotator_offset", 
-				       mhuxd.keyer[unit].sm.ant[name(item)].rotator_offset ) ?> </td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".rotator_offset", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].rotator_offset ) ?> </td>
 
 
       <?cs each:subitem = mhuxd.keyer[unit].sm.output ?>
       <?cs if:mhuxd.keyer[unit].sm.output[name(subitem)] == 0 ?>
       <td class="contentlistcell"><?cs call:opt_bool_basic(
-				       "modify.mhuxd.keyer."+unit+".sm.ant."+name(item)+".output."+name(subitem), 
-				       mhuxd.keyer[unit].sm.ant[name(item)].output[name(subitem)] ) ?></td>
+				       "modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".output."+name(subitem), 
+				       mhuxd.keyer[unit].sm.obj[name(item)].output[name(subitem)] ) ?></td>
       <?cs /if ?>
       <?cs /each ?>
 
 
     </tr>
-
+    <?cs /if ?>
     <?cs /each ?>
 
     <!-- Add a new one -->
@@ -90,36 +91,36 @@
       <td class="contentlistcell" width="19" align="center">&nbsp;&nbsp;</td>
       <td class="contentlistcell" width="19" align="center">&nbsp;&nbsp;</td>
       <td class="contentlistcell"><?cs call:string_rw(
-				       "set.mhuxd.keyer."+unit+".sm.ant.0.label", 
+				       "set.mhuxd.keyer."+unit+".sm.obj.0.label", 
 				       "", 5 ) ?></td>
 
       <td class="contentlistcell"><?cs call:string_rw(
-				       "set.mhuxd.keyer."+unit+".sm.ant.0.display", 
+				       "set.mhuxd.keyer."+unit+".sm.obj.0.display", 
 				       "", 10 ) ?> </td>
 
       <td class="contentlistcell"><?cs call:bool_rw(
-				       "set.mhuxd.keyer."+unit+".sm.ant.0.steppir", 
+				       "set.mhuxd.keyer."+unit+".sm.obj.0.steppir", 
 				       0 ) ?></td>
 
       <td class="contentlistcell"><?cs call:bool_rw(
-				       "set.mhuxd.keyer."+unit+".sm.ant.0.rxonly", 
+				       "set.mhuxd.keyer."+unit+".sm.obj.0.rxonly", 
 				       0 ) ?></td>
 
       <td class="contentlistcell"><?cs call:number_rw(
-				       "set.mhuxd.keyer."+unit+".sm.ant.0.pa_ant_number", 
+				       "set.mhuxd.keyer."+unit+".sm.obj.0.pa_ant_number", 
 				       0 ) ?> </td>
 
       <td class="contentlistcell"><?cs call:bool_rw(
-				       "set.mhuxd.keyer."+unit+".sm.ant.0.rotator", 
+				       "set.mhuxd.keyer."+unit+".sm.obj.0.rotator", 
 				       0 ) ?></td>
 
       <td class="contentlistcell"><?cs call:number_rw(
-				       "set.mhuxd.keyer."+unit+".sm.ant.0.rotator_offset", 
-				       mhuxd.keyer[unit].sm.ant[name(item)].rotator_offset ) ?> </td>
+				       "set.mhuxd.keyer."+unit+".sm.obj.0.rotator_offset", 
+				       mhuxd.keyer[unit].sm.obj[name(item)].rotator_offset ) ?> </td>
       <?cs each:subitem = mhuxd.keyer[unit].sm.output ?>
       <?cs if:mhuxd.keyer[unit].sm.output[name(subitem)] == 0 ?>
       <td class="contentlistcell"><?cs call:bool_rw(
-				       "set.mhuxd.keyer."+unit+".sm.ant.0.output."+name(subitem), 
+				       "set.mhuxd.keyer."+unit+".sm.obj.0.output."+name(subitem), 
 				       0 ) ?></td>
       <?cs /if ?>
       <?cs /each ?>

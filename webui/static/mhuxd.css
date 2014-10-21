@@ -150,7 +150,17 @@ tr.contentlistrow2 {
 }
 tr.contentlistrowmain {
     color: #000000;                             /* black */
-    background: #DEEEDE;                        /* dark gray */
+    background: #DEEEDE;            
+    border-top: 1px solid #999999;
+}
+tr.bandrow {
+    color: #000000;                             /* black */
+    background: #FF9933;            
+    border-top: 1px solid #999999;
+}
+tr.refrow {
+    color: #000000;                             /* black */
+    background: #DEEEDE;            
     border-top: 1px solid #999999;
 }
 tr.alert_row1 { 
@@ -172,11 +182,16 @@ td.titlelistcellright {
     text-align: right;
 }
 
-td.contentlistcell, td.radiolistcell1, td.radiolistcell2, td.contentlistcellright, td.contentlistcellbold {
+td.contentlistcell, td.radiolistcell1, td.radiolistcell2, td.contentlistcellright, td.contentlistcellbold, td.outputheadercell {
     font-family: 'Monda', Arial, Helvetica, sans-serif;
     font-size: 0.8em;
     border-top: 1px solid #999999;
     white-space: nowrap;
+}
+
+td.outputheadercell {
+    font-size: 0.7em;
+    text-align: center;
 }
 
 td.contentlistcellbold {
