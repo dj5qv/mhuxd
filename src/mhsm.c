@@ -16,6 +16,7 @@
 #include "citem.h"
 #include "mhcontrol.h"
 #include "cfgnod.h"
+#include "dbuf.h"
 
 #ifdef SMSIM
 #include "mhsm_sim.h"
@@ -65,6 +66,7 @@ struct object {
 	char name[MAX_NAME_LEN + 1];
 	char label[MAX_LABEL_LEN + 1];
 	struct PGList ref_list;
+	int idx;
 };
 
 struct antenna_record {
@@ -104,6 +106,7 @@ struct sm_bandplan {
 	uint8_t fixed_data[115];
 	struct PGList obj_list;
 	int id_cnt;
+	struct dbuf *dbuf;
 };
 
 struct sm {
@@ -114,6 +117,7 @@ struct sm {
 	uint8_t get_antsw_state;
 	uint16_t get_antsw_offset;
 	uint8_t get_antsw_to_read;
+	uint16_t set_antsw_offset;
 };
 
 static void debug_print_antsw_values(struct sm_bandplan *bp);
@@ -283,10 +287,23 @@ struct citem sm_bandplan_fixed_items[] = {
 	CITEM("sequencer.tail.B3", 113, 15, 16),
 };
 
-static struct sm_bandplan *bp_create() {
-	struct sm_bandplan *bp = w_calloc(1, sizeof(*bp));
-	PG_NewList(&bp->obj_list);
-	return bp;
+static void update_index_values(struct PGList *olist) {
+	struct object *o;
+	int ant_i = 0, grp_i = 0, band_i = 0;
+
+	PG_SCANLIST(olist, o) {
+		switch(o->type) {
+		case OBJ_TYPE_ANT:
+			o->idx = ant_i++;
+			break;
+		case OBJ_TYPE_GRP:
+			o->idx = grp_i++;
+			break;
+		case OBJ_TYPE_BAND:
+			o->idx = band_i++;
+			break;
+		}
+	}
 }
 
 static struct object *obj_by_id(struct PGList *list, int id) {
@@ -296,7 +313,6 @@ static struct object *obj_by_id(struct PGList *list, int id) {
 			return o;
 	return NULL;
 }
-
 static struct antenna_record *ant_by_id(struct PGList *list, int id) {
 	return (struct antenna_record *)obj_by_id(list, id);
 }
@@ -307,6 +323,181 @@ static struct band_record *band_by_id(struct PGList *list, int id) {
 	return (struct band_record *)obj_by_id(list, id);
 }
 
+static void encode_bp(struct dbuf *dbuf, struct sm_bandplan *bp) {
+	struct object *o;
+	struct buffer b;
+	int c;
+	
+	dbuf_reset(dbuf);
+	dbuf_append(dbuf, bp->fixed_data, sizeof(bp->fixed_data));
+
+	update_index_values(&bp->obj_list);
+
+	PG_SCANLIST(&bp->obj_list, o) {
+		if(o->type != OBJ_TYPE_ANT)
+			continue;
+		buf_reset(&b);
+		buf_append_c(&b, 0);  // length dummy
+		buf_append_c(&b, strlen(o->label)); // label length
+		buf_append(&b, (uint8_t *)o->label, strlen(o->label)); // label
+		buf_append_c(&b, strlen(o->name)); // name length
+		buf_append(&b, (uint8_t *)o->name, strlen(o->name)); // name
+
+		struct antenna_record *arec = (void *)o;
+		buf_append_c(&b, arec->output_settings & 0xff); // output settings
+		buf_append_c(&b, (arec->output_settings >> 8) & 0xff);
+		buf_append_c(&b, (arec->output_settings >> 16) & 0xff);
+
+		c = ( (arec->steppir << 0) | (arec->rxonly << 1) );
+		buf_append_c(&b, c);  // flags
+
+		buf_append_c(&b, arec->pa_ant_number); // paAntNumber
+		buf_append_c(&b, arec->rotator);  // rotator
+		if(arec->rotator) {
+			buf_append_c(&b, arec->rotator_offset & 0xff);
+			buf_append_c(&b, (arec->rotator_offset >> 8) & 0xff);
+		}
+
+		b.data[0] = b.size; // now set the record size
+		dbuf_append(dbuf, b.data, b.size);
+	}
+
+	dbuf_append_c(dbuf, 0);  // zero size record
+
+	PG_SCANLIST(&bp->obj_list, o) {
+		if(o->type != OBJ_TYPE_GRP)
+			continue;
+		buf_reset(&b);
+		buf_append_c(&b, 0);  // length dummy
+		buf_append_c(&b, strlen(o->label)); // label length
+		buf_append(&b, (uint8_t *)o->label, strlen(o->label)); // label
+		buf_append_c(&b, strlen(o->name)); // name length
+		buf_append(&b, (uint8_t *)o->name, strlen(o->name)); // name
+
+		struct groups_record *grec = (void *)o;
+		struct reference *ref;
+		buf_append_c(&b, PG_Count(&o->ref_list));  // number of antennas
+		PG_SCANLIST(&o->ref_list, ref) {
+			buf_append_c(&b, obj_by_id(&bp->obj_list, ref->dest_id)->idx);
+			buf_append_c(&b, ref->min_azimuth & 0xff);
+			buf_append_c(&b, (ref->min_azimuth >> 8) & 0xff);
+			buf_append_c(&b, ref->max_azimuth & 0xff);
+			buf_append_c(&b, (ref->max_azimuth >> 8) & 0xff);
+		}
+
+		buf_append_c(&b, grec->flags); // flags
+		buf_append_c(&b, 0); // status bytes zero
+		buf_append_c(&b, 0);
+
+		b.data[0] = b.size; // now set the record size
+		dbuf_append(dbuf, b.data, b.size);
+	}
+
+	dbuf_append_c(dbuf, 0);  // zero size record
+
+	PG_SCANLIST(&bp->obj_list, o) {
+		if(o->type != OBJ_TYPE_BAND)
+			continue;
+		buf_reset(&b);
+		buf_append_c(&b, 0);  // length dummy
+
+		struct band_record *brec = (void *)o;
+		struct reference *ref;
+		buf_append_c(&b, brec->low_freq & 0xff);  // min freq
+		buf_append_c(&b, (brec->low_freq >> 8) & 0xff);
+		buf_append_c(&b, (brec->low_freq >> 16) & 0xff);
+		buf_append_c(&b, (brec->low_freq >> 24) & 0xff);
+
+		buf_append_c(&b, brec->high_freq & 0xff); // max freq
+		buf_append_c(&b, (brec->high_freq >> 8) & 0xff);
+		buf_append_c(&b, (brec->high_freq >> 16) & 0xff);
+		buf_append_c(&b, (brec->high_freq >> 24) & 0xff);
+
+		buf_append_c(&b, strlen(o->name)); // name length
+		buf_append(&b, (uint8_t *)o->name, strlen(o->name)); // name
+
+		buf_append_c(&b, brec->outputs);  // outputs
+
+		buf_append_c(&b, brec->bpf_seq & 0xff);
+		buf_append_c(&b, (brec->bpf_seq >> 8) & 0xff);
+		buf_append_c(&b, (brec->bpf_seq >> 16) & 0xff);
+
+		buf_append_c(&b, PG_Count(&o->ref_list));  // number of antennas
+
+		PG_SCANLIST(&o->ref_list, ref) {
+			struct object *dest_o = obj_by_id(&bp->obj_list, ref->dest_id);
+			if(!dest_o) {
+				err("(mhsm) %s() internal error!", __func__);
+				continue;
+			}
+
+			switch(dest_o->type) {
+			case OBJ_TYPE_ANT:
+				buf_append_c(&b, 0); // BA0
+				buf_append_c(&b, dest_o->idx); // BA1
+				buf_append_c(&b, ref->flags); // BA2
+				break;
+
+			case OBJ_TYPE_GRP:
+				buf_append_c(&b, dest_o->idx + 1); // BA0
+				buf_append_c(&b, 0); // BA1
+				buf_append_c(&b, ref->flags); // BA2
+				break;
+
+			default:
+				err("(mhsm) %s() reference to invalid object type %d!", __func__, dest_o->type);
+				break;
+			}
+			
+		}
+
+		buf_append_c(&b, 0); // status bytes zero
+		buf_append_c(&b, 0);
+		buf_append_c(&b, 0);
+
+		b.data[0] = b.size; // now set the record size
+		dbuf_append(dbuf, b.data, b.size);
+	}
+
+	// stopper record
+	buf_reset(&b);
+	buf_append_c(&b, 0);  // length dummy
+
+	buf_append_c(&b, 0);  // low freq
+	buf_append_c(&b, 0);
+	buf_append_c(&b, 0);
+	buf_append_c(&b, 0);
+
+	buf_append_c(&b, 0xff);  // high freq
+	buf_append_c(&b, 0xff);
+	buf_append_c(&b, 0xff);
+	buf_append_c(&b, 0xff);
+
+	buf_append_c(&b, 6); // name length
+	buf_append(&b, (unsigned char*)"$STOP$", 6);
+
+	buf_append_c(&b, 0); // outputs
+	buf_append_c(&b, 0); // bpf seq
+	buf_append_c(&b, 0);
+	buf_append_c(&b, 0);
+
+	buf_append_c(&b, 0); // num antennas
+
+	buf_append_c(&b, 0); // status bytes zero
+	buf_append_c(&b, 0);
+	buf_append_c(&b, 0);
+
+	b.data[0] = b.size; // now set the record size
+	dbuf_append(dbuf, b.data, b.size);
+
+}
+
+static struct sm_bandplan *bp_create() {
+	struct sm_bandplan *bp = w_calloc(1, sizeof(*bp));
+	PG_NewList(&bp->obj_list);
+	bp->dbuf = dbuf_create();
+	return bp;
+}
 
 static struct reference *ref_by_id(struct PGList *list, int id) {
 	struct reference *ref;
@@ -396,6 +587,8 @@ static void clear_obj_list(struct sm_bandplan *bp) {
 
 static void bp_destroy(struct sm_bandplan *bp) {
 	clear_obj_list(bp);
+	if(bp->dbuf)
+		dbuf_destroy(bp->dbuf);
 	free(bp);
 }
 
@@ -575,13 +768,11 @@ static int decode_brec(struct sm_bandplan *bp, struct band_record *brec) {
 			ref = ref_create(bp, REF_TYPE_GRP, 0);
 			ref->type = REF_TYPE_GRP;
 			ref->dest_id = grp_id_by_idx(&bp->obj_list, ba0 - 1);
-			info(">>> dest_id %d", ref->dest_id);
 		} else {
 			// linked to antenna
 			ref = ref_create(bp, REF_TYPE_ANT, 0);
 			ref->type = REF_TYPE_ANT;
 			ref->dest_id = ant_id_by_idx(&bp->obj_list, ba1);
-			info(">>> dest_id %d", ref->dest_id);
 		}
 		BGETC(&brec->raw_buf); // flags;
 		ref->flags = c;
@@ -1202,7 +1393,7 @@ int sm_antsw_mod_group(struct sm *sm, struct cfg *cfg) {
 		strncpy(grec->o.name, str, MAX_NAME_LEN);
 
 	grec->num_antennas = cfg_get_int_val(cfg, "num_antennas", grec->num_antennas);
-	grec->num_antennas = cfg_get_int_val(cfg, "rxonly", grec->rxonly);
+	grec->rxonly = cfg_get_int_val(cfg, "rxonly", grec->rxonly);
 	int c = cfg_get_int_val(cfg, "virtual_rotator", -1);
 	if(c != -1) {
 		grec->flags &= ~1;
@@ -1553,4 +1744,68 @@ int sm_antsw_set_output(struct sm *sm, const char *out_name, uint8_t val) {
 
 int sm_antsw_has_bandplan(struct sm *sm) {
 	return sm->bp_eeprom ? 1 : 0;
+}
+
+static int azimuth_overlap(uint16_t min1, uint16_t max1, uint16_t min2, uint16_t max2) {
+	if(max1 < min1)
+		max1 += 360;
+	if(max2 < min2)
+		max2 += 360;
+
+	if(max2 <= min1)
+		return 0;
+
+	if(min2 >= max1)
+		return 0;
+	
+	return 1;
+}
+
+static void update_azimuth_array(char ar[360], uint16_t min, uint16_t max) {
+	if(max >= 360)
+		max = 0;
+	
+	if(max < min)
+		memset(ar, 1, max + 1);
+	else
+		memset(ar + min, 1, (max + 1) - min);
+}
+
+static int azimuth_gaps(char ar[360]) {
+	uint16_t i;
+
+	for (i = 0; i < 360; i++) {
+		
+	}
+}
+
+int sm_antsw_validate_bp(struct sm *sm) {
+	struct sm_bandplan *bp = sm->bp_eeprom;
+
+	if(!bp)
+		return SM_VALIDATE_RESULT_OK;
+
+	struct object *o;
+	PG_SCANLIST(&bp->obj_list, o) {
+		if(o->type != OBJ_TYPE_GRP)
+			continue;
+		struct groups_record *grec = (void *)o;
+
+		if(!(grec->flags & 1)) // virtual rotator?
+			continue;
+
+		struct reference *ref, *cmp_ref;
+		PG_SCANLIST(&o->ref_list, ref) {
+			PG_SCANLIST(&o->ref_list, cmp_ref) {
+				if(azimuth_overlap(ref->min_azimuth, ref->max_azimuth, cmp_ref->min_azimuth, cmp_ref->max_azimuth)) {
+					warn("(mhsm) overlapping azimuths in %s", o->name);
+					return SM_VALIDATE_RESULT_AZIMUTH_OVERLAP;
+				}
+			}
+		}
+
+
+	}
+
+	return 0;
 }

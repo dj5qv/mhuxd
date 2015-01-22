@@ -436,6 +436,7 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 		goto failed;
 
 	if(query && *query) {
+		// need a non-const copy
 		char *q = w_strdup(query);
 		http_parse_query(qhdf, q);
 		free(q);
@@ -462,7 +463,9 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 		ACTION_NONE = 0,
 		ACTION_SAVE = 1,
 		ACTION_REMOVE = 2,
-		ACTION_MODIFY = 3
+		ACTION_MODIFY = 3,
+		ACTION_SM_LOAD = 4,
+		ACTION_SM_STORE = 5
 	};
 
 	int action = ACTION_NONE;
@@ -472,7 +475,12 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 		action = ACTION_REMOVE;
 	if(hdf_get_value(webui->hdf, "mhuxd.webui.session.Modify", NULL))
 		action = ACTION_MODIFY;
+	if(hdf_get_value(webui->hdf, "mhuxd.webui.session.SmLoad", NULL))
+		action = ACTION_SM_LOAD;
+	if(hdf_get_value(webui->hdf, "mhuxd.webui.session.SmStore", NULL))
+		action = ACTION_SM_STORE;
 
+	
 	HDF *set_hdf = hdf_get_obj(webui->hdf, "mhuxd.webui.session.set");
 	if(action == ACTION_SAVE && set_hdf) {
 		if(cfgmgr_apply_cfg(webui->cfgmgr, (void*)set_hdf, CFGMGR_APPLY_ADD)) {
@@ -502,6 +510,32 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 		}
 	}
 
+	if(action == ACTION_SM_LOAD) {
+		if(cfgmgr_sm_load(hdf_get_value(webui->hdf, "mhuxd.webui.session.unit", "Unkown"))) {
+			warn("(webui) could not load antenna switching settings!");
+			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error", 
+					    "Could not load antenna switching settings! Check log file for details.");
+			nerr_ignore(&err);
+		} else {
+			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.info", 
+					    "Antenna switching settings loaded!");
+			nerr_ignore(&err);
+		}
+	}
+
+	if(action == ACTION_SM_STORE) {
+		if(cfgmgr_sm_store(hdf_get_value(webui->hdf, "mhuxd.webui.session.unit", "Unkown"))) {
+			warn("(webui) could not store antenna switching settings!");
+			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error", 
+					    "Could not store antenna switching settings! Check log file for details.");
+			nerr_ignore(&err);
+		} else {
+			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.info", 
+					    "Antenna switching settings stored!");
+			nerr_ignore(&err);
+		}
+	}
+	
 	if(action != ACTION_NONE) {
 		if(cfgmgr_save_cfg(webui->cfgmgr)) {
 			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error",
@@ -540,7 +574,7 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 	}
 
 
-#if 1
+#if 0
 	err = hdf_write_file_atomic(webui->hdf, "/tmp/.mhuxd-full.hdf");
 	nerr_ignore(&err);
 #endif

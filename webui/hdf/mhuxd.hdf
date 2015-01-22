@@ -104,6 +104,12 @@ mhuxd.webui.menus {
                   include = keyer_winkey.cs
                   depends = has.winkey
              }
+	     sm_antsw_load_store {
+	          display = Switching / Load, Store
+                  title = Antenna Switching / Load & Store
+                  include = sm_antsw_load_store.cs
+		  depends = has.sm_commands
+	     }
 	     sm_antsw_settings {
 	          display = Switching / Settings
                   title = Antenna Switching / Settings

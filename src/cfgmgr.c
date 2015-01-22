@@ -810,6 +810,39 @@ int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	return rval;
 }
 
+int cfgmgr_sm_load(const char *serial) {
+	dbg1("(cfgmgr) %s()", __func__);
+	struct device *dev = dmgr_get_device(serial);
+	struct sm *sm;
+
+	if(!dev) {
+		err("(cfgmgr) %s keyer not found!", serial);
+		return -1;
+	}
+
+	sm = mhc_get_sm(dev->ctl);
+
+	if(!sm) {
+		err("(cfgmgr) %s no SM structure found!", serial);
+		return -1;
+	}
+
+	if(0 != sm_get_antsw(sm)) {
+		err("(cfgmgr) %s could not load antsw settings!", serial);
+		return -1;
+	}
+	return 0;
+}
+
+int cfgmgr_sm_store(const char *serial) {
+	dbg1("(cfgmgr) %s()", __func__);
+	struct device *dev = dmgr_get_device(serial);
+	struct sm *sm;
+
+	return 0;
+}
+
+
 struct cfgmgr *cfgmgr_create(struct conmgr *conmgr, struct ev_loop *loop) {
 	dbg1("(cfgmgr) %s()", __func__);
 	struct cfg *runtime_cfg = cfg_create();

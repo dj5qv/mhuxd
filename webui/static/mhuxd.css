@@ -13,6 +13,14 @@
   src: local('Monda Bold'), local('Monda-Bold'), url(monda700.woff) format('woff');
 }
 
+/*
+html, body
+{
+    height: 400px;
+}
+*/
+
+
 body, td, th
 {
     font-family: 'Monda', Arial, Helvetica, sans-serif;
@@ -22,10 +30,37 @@ table
 {
     padding: 0px;
 }
-
+/*
 div
 {
     position:relative;
+}
+*/
+div#left {
+    margin-top: 5px;
+    margin-left: 5px;
+    float: left;
+    width: 170px;
+}
+
+div#main {
+    margin-left: 190px;
+    margin-right: 220px;
+}
+
+.left-menu-table
+{
+    width: 100%;
+    background: #EEEEEE;	                                    /* light gray */
+    border-left: 1px solid #555555;	                            /* dark gray */
+    border-right: 1px solid #555555;	                    /* dark gray */
+    border-top: 1px solid #555555;	                            /* dark gray */
+    border-bottom: 1px solid #555555;	                    /* dark gray */
+}
+
+
+.menuselectedcell,.menucell {
+
 }
 
 td { margin: 5px; }

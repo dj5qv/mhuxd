@@ -328,8 +328,6 @@ GRP: <?cs var:mhuxd.keyer[unit].sm.obj[mhuxd.keyer[unit].sm.obj[bandid].ref[refi
 <?cs call:sm_antsw_band_list1(mhuxd.webui.session.unit, chan) ?>
 
 <?cs if:subcount(mhuxd.webui.session.AddAnt[chan]) ?>
-<input name="Modify" onclick="button_clicked=this.value;" value="Save" type="submit">
-<input name="CancelButton" onclick="button_clicked=this.value;" value="Cancel" type="submit">
 <?cs elseif:mhuxd.webui.session.Add[chan] ?>
 <input name="SaveButton" onclick="button_clicked=this.value;" value="Save" type="submit">
 <input name="CancelButton" onclick="button_clicked=this.value;" value="Cancel" type="submit">

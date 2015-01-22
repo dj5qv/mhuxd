@@ -40,6 +40,8 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode);
 int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg);
 int cfgmgr_remove(struct cfgmgr *cfgmgr, struct cfg *cfg);
 int cfgmgr_save_cfg(struct cfgmgr *cfgmgr);
+int cfgmgr_sm_load(const char *serial);
+int cfgmgr_sm_store(const char *serial);
 
 void cfgmr_state_changed_cb(const char *serial, int state, void *user_data);
 

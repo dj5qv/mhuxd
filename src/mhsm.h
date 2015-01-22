@@ -25,6 +25,12 @@ enum {
 	SM_OUT_MAX = 4
 };
 
+enum {
+	SM_VALIDATE_RESULT_OK = 0,
+	SM_VALIDATE_RESULT_AZIMUTH_OVERLAP = 1,
+
+};
+
 struct sm* sm_create(struct mh_control *ctl, const char *serial, struct ev_loop *loop);
 void sm_destroy (struct sm *sm);
 int sm_get_antsw(struct sm *sm);

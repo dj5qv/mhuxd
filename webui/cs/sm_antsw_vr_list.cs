@@ -103,8 +103,10 @@
       <td class="contentlistcell" width="1%">&nbsp;</td>
       <td class="contentlistcell" width="25%">&nbsp;</td>
       <td class="contentlistcell" width="25%">&nbsp;</td>
-      <td class="contentlistcell" width="10%">&nbsp;</td>
-
+      <td class="contentlistcell" width="10%">&nbsp;
+	<?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".type", 1) ?>
+      </td>
+      
       <td class="contentlistcell" width="20%">
 	<?cs call:number_rw("modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".ref.0.min_azimuth", "") ?>
       </td>
@@ -127,11 +129,11 @@
     <?cs if:mhuxd.webui.session.Add[chan] ?>
     <tr class="contentlistrow2">
       <td class="contentlistcell" width="19" align="center">&nbsp;&nbsp;</td>
-      <td class="contentlistcell" width="1%" align="center">&nbsp;&nbsp;</td>
-
-      <?cs call:hidden("set.mhuxd.keyer."+unit+".sm.obj.0.type", 1) ?>
-      <?cs call:hidden("set.mhuxd.keyer."+unit+".sm.obj.0.virtual_rotator", 1) ?>
-
+      <td class="contentlistcell" width="1%" align="center">&nbsp;&nbsp;
+	<?cs call:hidden("set.mhuxd.keyer."+unit+".sm.obj.0.type", 1) ?>
+	<?cs call:hidden("set.mhuxd.keyer."+unit+".sm.obj.0.virtual_rotator", 1) ?>
+      </td>
+      
       <td class="contentlistcell" width="25%"><?cs call:string_rw(
 				       "set.mhuxd.keyer."+unit+".sm.obj.0.label", 
 				       "", 5 ) ?></td>

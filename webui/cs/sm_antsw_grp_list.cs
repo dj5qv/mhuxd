@@ -112,7 +112,7 @@
       <td class="contentlistcell" width="19" align="center">&nbsp;&nbsp;</td>
       <td class="contentlistcell" width="1%" align="center">&nbsp;&nbsp;</td>
 
-      <?cs call:hidden("modify.mhuxd.keyer."+unit+".sm.obj."+name(item)+".type", 1) ?>
+      <?cs call:hidden("set.mhuxd.keyer."+unit+".sm.obj.0.type", 1) ?>
       <?cs call:hidden("set.mhuxd.keyer."+unit+".sm.obj.0.virtual_rotator", 0) ?>
 
       <td class="contentlistcell" width="30%"><?cs call:string_rw(

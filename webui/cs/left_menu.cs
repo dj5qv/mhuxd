@@ -1,12 +1,7 @@
 
 
 
-<td class="menuTable" valign="top" width="190">
-  <table border="0" cellpadding="3" cellspacing="3" width="100%">
-    <tbody>
-      <tr>
-	<td>
-	  <table class="keyMgmtMenuBox" border="0" cellpadding="0" cellspacing="0">
+	  <table class="left-menu-table" border="0" cellpadding="0" cellspacing="0">
 	    <tbody>
 
 	      <?cs each:item = mhuxd.webui.menus[mhuxd.webui.session.page] ?>
@@ -17,7 +12,7 @@
 		    <?cs if:mhuxd.webui.session.menu == name(item) ?>   
 		    "menuselectedcell"   
 		    <?cs else ?> 
-		    "" 
+		    "menucell" 
 		    <?cs /if ?> >
 		  <table>
 		    <tbody>
@@ -45,11 +40,6 @@
 
 	    </tbody>
 	  </table>
-	</td>
-      </tr>
-    </tbody>
-  </table>
-  <img src="/static/dot.gif" height="1" width="190"><br>
   <br>
   <br>
 </td>

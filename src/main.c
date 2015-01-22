@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 	struct conmgr *conmgr;
 	FILE *pidfile = NULL;
 
-	printf("\n%s (C)2012-2013 Matthias Moeller, DJ5QV\n", PACKAGE_STRING);
+	printf("\n%s (C)2012-2014 Matthias Moeller, DJ5QV\n", PACKAGE_STRING);
 
 	// options
 	process_opts(argc, argv);
