@@ -78,9 +78,12 @@ enum {
 	MHCMD_CAT_R2_FR_MODE_INFO = 0x36, /* MK2R only */
 	MHCMD_CAT_R2_FREQUENCY_INFO = 0x37, /* MK2R only */
 
-	/* 0x41 - 0x4D, 0x76 StationMaster only, not supported yet. */
+	// SM
+	MHCMD_SET_ANTSW_VALIDITY  = 0x41,
+	MHCMD_STORE_ANTSW_BLOCK   = 0x42,
 	MHCMD_GET_ANTSW_BLOCK     = 0x43,
 	MHCMD_TURN_TO_AZIMUTH	  = 0x49,
+	// 
 
 	MHCMD_U2R_STATE           = 0x75,  /* U2R only */
 	MHCMD_USB_RX_OVERFLOW     = 0x77,
@@ -320,7 +323,7 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 			return;
 		}
 
-		memcpy(ctl->acc_state, data + 1, 9);
+		memcpy(ctl->acc_state, data + 1, 8);
 		return;
 	}
 
@@ -398,6 +401,7 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 		if(ctl->state == CTL_STATE_OK) {
 			info("(mhc) %s has just been restarted, initializing", ctl->serial);
 			set_state(ctl, CTL_STATE_SET_CHANNELS);
+			initializer_cb(NULL, 0, CMD_RESULT_INVALID, ctl);
 		} else
 			info("(mhc) %s has just been restarted", ctl->serial);
 		break;
@@ -887,6 +891,26 @@ int mhc_sm_get_antsw_block(struct mh_control *ctl, uint16_t offset, mhc_cmd_comp
 	buf_append_c(&b, MHCMD_GET_ANTSW_BLOCK);
 	buf_append_c(&b, offset & 0xff);
 	buf_append_c(&b, (offset >> 8) & 0xff);
+	buf_append_c(&b, MHCMD_GET_ANTSW_BLOCK | MSB_BIT);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
+int mhc_sm_set_antsw_validity(struct mh_control *ctl, uint8_t param, mhc_cmd_completion_cb cb, void *user_data) {
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_SET_ANTSW_VALIDITY);
+	buf_append_c(&b, param);
+	buf_append_c(&b, MHCMD_SET_ANTSW_VALIDITY | MSB_BIT);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
+int mhc_sm_store_antsw_block(struct mh_control *ctl, uint16_t offset, const char *data, mhc_cmd_completion_cb cb, void *user_data) {
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_GET_ANTSW_BLOCK);
+	buf_append_c(&b, offset & 0xff);
+	buf_append_c(&b, (offset >> 8) & 0xff);
+	buf_append(&b, (const unsigned char*)data, 32);
 	buf_append_c(&b, MHCMD_GET_ANTSW_BLOCK | MSB_BIT);
 	return submit_cmd(ctl, &b, cb, user_data);
 }

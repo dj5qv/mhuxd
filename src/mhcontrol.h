@@ -67,5 +67,7 @@ int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completio
 struct sm *mhc_get_sm(struct mh_control *ctl);
 int mhc_sm_turn_to_azimuth(struct mh_control *ctl, uint16_t bearing, mhc_cmd_completion_cb cb, void *user_data);
 int mhc_sm_get_antsw_block(struct mh_control *ctl, uint16_t offset, mhc_cmd_completion_cb cb, void *user_data);
+int mhc_sm_set_antsw_validity(struct mh_control *ctl, uint8_t param, mhc_cmd_completion_cb cb, void *user_data);
+int mhc_sm_store_antsw_block(struct mh_control *ctl, uint16_t offset, const char *data, mhc_cmd_completion_cb cb, void *user_data);
 
 #endif // MHCONTROL_H
