@@ -94,6 +94,9 @@ static struct vsp_session *find_vs(struct vsp *vsp, int fd) {
 static int check_cuse_dev(const char *devname) {
 	const char *cusepath = "/dev/cuse";
 	int fd;
+
+	dbg1("(vsp) %s()", __func__);
+
 	fd = open(cusepath, O_RDWR);
 	if (fd == -1) {
 		if (errno == ENODEV || errno == ENOENT)
@@ -119,7 +122,8 @@ static int check_cuse_dev(const char *devname) {
 
 static int set_bits(struct vsp_session *vs, int bits) {
 	struct vsp *vsp = vs->vsp;
-        if(bits == vsp->mbits)
+
+	if(bits == vsp->mbits)
                 return 0;
 	if(!vsp->rts_is_ptt && !vsp->dtr_is_ptt)
 		return 0;
@@ -129,7 +133,7 @@ static int set_bits(struct vsp_session *vs, int bits) {
 		data |= 1;
 	if((bits & TIOCM_DTR) && vsp->dtr_is_ptt)
 		data |= 1;
-	dbg1("(vsp) %s RTS: %d DTR %d", vsp->devname, bits & TIOCM_RTS ? 1:0, bits & TIOCM_DTR ? 1:0);
+	dbg1("(vsp) %s() %s RTS: %d DTR %d", __func__, vsp->devname, bits & TIOCM_RTS ? 1:0, bits & TIOCM_DTR ? 1:0);
 
 	uint8_t state = data ? '1' : '0';
 	//	buf_append(&vs->buf_in, &state, 1);
@@ -153,6 +157,8 @@ static void chan_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct vsp *vsp = w->data;
 	struct fuse_session *se = vsp->se;
 
+	dbg1("(vsp) %s()", __func__);
+	
         int res = 0;
         struct fuse_chan *ch = fuse_session_next_chan(se, NULL);
 
@@ -176,6 +182,8 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	uint8_t buf[1024];
 	ssize_t size, avail;
 
+	dbg1("(vsp) %s()", __func__);
+	
 	do {
 		size = read(w->fd, buf, sizeof(buf));
 		if(size == -1 && errno != EAGAIN) {
@@ -190,9 +198,9 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 		char header[32] = "(vsp) ";
 		strncat(header, vsp->devname, 6);
-		strcat(header, " to k");
+		strcat(header, " k => vsp");
 
-		//snprintf(header, sizeof(header), "(vsp) %s to k", vsp->devname);
+		//snprintf(header, sizeof(header), "(vsp) %s to vsp", vsp->devname);
 		dbg1_h(header, buf, size);
 
 		PG_SCANLIST(&vsp->session_list, vs) {
@@ -246,6 +254,8 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct vsp_session *vs;
 	int size, need_to_write = 0;
 
+	dbg1("(vsp) %s()", __func__);
+
 	PG_SCANLIST(&vsp->session_list, vs) {
 		struct buffer *b = &vs->buf_in;
 		if(b->rpos == b->size)
@@ -261,7 +271,7 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 		if(size > 0) {
 			char header[32];
-			snprintf(header, sizeof(header), "(vsp) %s to k", vsp->devname);
+			snprintf(header, sizeof(header), "(vsp) %s vsp => k", vsp->devname);
 			dbg1_h(header, b->data + b->rpos, size);
 
 			// If PTT channel, track PTT status
@@ -380,7 +390,7 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 static void interrupt_func(fuse_req_t req, void *data) {
 	(void)req;
 	struct vsp_session *vs = data;
-	dbg1("(vsp) interrupt received on %s", vs->vsp->devname);
+	dbg1("(vsp) %s() %s", __func__, vs->vsp->devname);
 	if(vs->pending_in_req) {
 		fuse_reply_err(vs->pending_in_req, EINTR);
 		vs->pending_in_req = NULL;
@@ -400,7 +410,7 @@ static void dv_read(fuse_req_t req, size_t size, off_t off,
 	(void)off;
 	struct vsp *vsp = fuse_req_userdata(req);
 	int err = 0;
-	dbg1("(vsp) %s read, request size: %zd", vsp->devname, size);
+	dbg1("(vsp) %s() %s request size: %zd", __func__, vsp->devname, size);
 
 	struct vsp_session *vs = find_vs(vsp, fi->fh);
 	if(vs == NULL) {
@@ -454,7 +464,7 @@ static void dv_write(fuse_req_t req, const char *buf, size_t size,
 	(void)off;
 	struct vsp *vsp = fuse_req_userdata(req);
 	int err = 0;
-	dbg1("(vsp) %s write, request size: %zd", vsp->devname, size);
+	dbg1("(vsp) %s() %s, request size: %zd", __func__, vsp->devname, size);
 
 	struct vsp_session *vs = find_vs(vsp, fi->fh);
 	if(vs == NULL) {
@@ -502,7 +512,7 @@ static void dv_poll(fuse_req_t req, struct fuse_file_info *fi,
         int err = 0;
         unsigned events = 0;
 
-	dbg1("(vsp) %s Poll, ph: %0lx", vsp->devname, (unsigned long)ph);
+	dbg1("(vsp) %s() %s, ph: %0lx", __func__, vsp->devname, (unsigned long)ph);
 
 	struct vsp_session *vs = find_vs(vsp, fi->fh);
 	if(vs == NULL) {
@@ -536,7 +546,7 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 {
 	(void)flags;
 	struct vsp *vsp = fuse_req_userdata(req);
-	dbg1("(vsp) %s Ioctl, cmd: 0x%0x, arg: 0x%0lx, in_buf: 0x%0lx, in_buf size: %zd, out_bufsz: %zd",
+	dbg1("(vsp) %s() %s, cmd: 0x%0x, arg: 0x%0lx, in_buf: 0x%0lx, in_buf size: %zd, out_bufsz: %zd", __func__, 
 	     vsp->devname, cmd, (unsigned long)arg, (unsigned long)in_buf, in_bufsz, out_bufsz);
 
 	struct vsp_session *vs = find_vs(vsp, fi->fh);
