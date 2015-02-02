@@ -28,7 +28,7 @@ enum {
 enum {
 	SM_VALIDATE_RESULT_OK = 0,
 	SM_VALIDATE_RESULT_AZIMUTH_OVERLAP = 1,
-
+	SM_VALIDATE_RESULT_AZIMUTH_GAPS = 2,
 };
 
 struct sm* sm_create(struct mh_control *ctl, const char *serial, struct ev_loop *loop);

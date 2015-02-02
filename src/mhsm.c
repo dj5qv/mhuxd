@@ -1798,6 +1798,7 @@ int sm_antsw_validate_bp(struct sm *sm) {
 		return SM_VALIDATE_RESULT_OK;
 
 	struct object *o;
+
 	PG_SCANLIST(&bp->obj_list, o) {
 		if(o->type != OBJ_TYPE_GRP)
 			continue;
@@ -1807,17 +1808,43 @@ int sm_antsw_validate_bp(struct sm *sm) {
 			continue;
 		info(">>> start scan");
 		struct reference *ref, *cmp_ref;
+		char deg[360];
+		int i;
+		
+		memset(deg, 0, sizeof(deg));
 		PG_SCANLIST(&o->ref_list, ref) {
+
+			// gap array
+			if(ref->max_azimuth < ref->min_azimuth) {
+				for(i = 0; i <= ref->max_azimuth; i++)
+					deg[i] = 1;
+				for(i = ref->min_azimuth; i <= 360; i++)
+					deg[i] = 1;
+			} else {
+				for(i = ref->min_azimuth; i <= ref->max_azimuth; i++)
+					deg[i] = 1;
+			}
+
+			// az. overlap
 			PG_SCANLIST(&o->ref_list, cmp_ref) {
 				if(cmp_ref == ref)
 					continue;
 				info(">>> check");
 				if(azimuth_overlap(ref->min_azimuth, ref->max_azimuth, cmp_ref->min_azimuth, cmp_ref->max_azimuth)) {
-					warn("(mhsm) overlapping azimuths in %s", o->name);
+					warn("(mhsm) overlapping azimuths in %s!", o->name);
 					return SM_VALIDATE_RESULT_AZIMUTH_OVERLAP;
 				}
 			}
 		}
+
+		// check for gaps
+		for(i = 0; i < 360; i++) {
+			if(deg[i] == 0) {
+				warn("(mhsm) azimuths in %s do not cover 360 degrees!", o->name);
+				return SM_VALIDATE_RESULT_AZIMUTH_GAPS;
+			}
+		}
+			
 
 
 	}
