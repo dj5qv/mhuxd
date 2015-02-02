@@ -145,7 +145,7 @@ void cfgmr_state_changed_cb(const char *serial, int state, void *user_data) {
 }
 
 // Merge device configuration into cfg
-int cfgmgr_merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg) {
+int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg) {
 	NEOERR *err;
 	HDF *hdf = (HDF *)cfg;
 	char full_key[MAX_HDF_PATH_LEN + 1];
@@ -385,7 +385,7 @@ int cfgmgr_merge_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	rval |= cfg_merge(cfg, cfgmgr->runtime_cfg);
 
 	PG_SCANLIST(dmgr_get_device_list(), dev) {
-		rval |= cfgmgr_merge_device_cfg(cfgmgr, dev, cfg);
+		rval |= merge_device_cfg(cfgmgr, dev, cfg);
 	}
 
 	// connector configuration from runtime cfg
@@ -559,7 +559,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 
 			int channel = ch_str2channel(chan_name);
 			if(channel < 0 || channel >= MH_NUM_CHANNELS) {
-				err("(ctl) can't set speed, invalid channel (%s) specified!", chan_name);
+				err("(cfgmgr) can't set speed, invalid channel (%s) specified!", chan_name);
 				rval++;
 				continue;
 			}
@@ -604,6 +604,13 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 			}
 		}
 
+		// Winkey
+		const struct mh_info *mhi;
+		mhi = mhc_get_mhinfo(dev->ctl);
+
+		if((mhi->flags & MHF_HAS_WINKEY) && !dev->wkman)
+			dev->wkman = wkm_create(cfgmgr->loop, dev);
+		
 		if(dev->wkman) {
 			int werr,val;
 			for(winkey_hdf = hdf_obj_child(hdf_get_obj(hdf, "winkey")); winkey_hdf; winkey_hdf = hdf_obj_next(winkey_hdf)) {
@@ -838,6 +845,23 @@ int cfgmgr_sm_store(const char *serial) {
 	dbg1("(cfgmgr) %s()", __func__);
 	struct device *dev = dmgr_get_device(serial);
 	struct sm *sm;
+
+	if(!dev) {
+		err("(cfgmgr) %s keyer not found!", serial);
+		return -1;
+	}
+
+	sm = mhc_get_sm(dev->ctl);
+
+	if(!sm) {
+		err("(cfgmgr) %s no SM structure found!", serial);
+		return -1;
+	}
+
+	if(0 != sm_antsw_store(sm)) {
+		err("(cfgmgr) %s could not store antsw settings!", serial);
+		return -1;
+	}
 
 	return 0;
 }
