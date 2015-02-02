@@ -61,4 +61,6 @@ int sm_antsw_rem_band_ref(struct sm *sm, int band_id, int ref_id);
 int sm_get_state_value(const uint8_t mpk_buffer[4], const char *key);
 void sm_debug_print_state_values(const uint8_t buffer[9]);
 
+int sm_antsw_store(struct sm *sm);
+
 #endif // MHSM_H

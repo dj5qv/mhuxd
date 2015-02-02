@@ -1747,15 +1747,26 @@ int sm_antsw_has_bandplan(struct sm *sm) {
 }
 
 static int azimuth_overlap(uint16_t min1, uint16_t max1, uint16_t min2, uint16_t max2) {
-	if(max1 < min1)
-		max1 += 360;
-	if(max2 < min2)
-		max2 += 360;
 
-	if(max2 <= min1)
+	info("%s() %d %d / %d %d", __func__, min1, max1, min2, max2);
+
+	if(max1 < min1) {
+		// range crossing 360
+		if(max2 < min2) {
+			// there can only be one crossing range
+			return 1;
+		}
+
+		if(max1 > min2)
+			return 1;
+
+		return 0;
+	}
+
+	if(min1 >= max2 && max1 >= max2)
 		return 0;
 
-	if(min2 >= max1)
+	if(min1 < min2 && max1 <= min2)
 		return 0;
 	
 	return 1;
@@ -1777,6 +1788,7 @@ static int azimuth_gaps(char ar[360]) {
 	for (i = 0; i < 360; i++) {
 		
 	}
+	return 0;
 }
 
 int sm_antsw_validate_bp(struct sm *sm) {
@@ -1791,12 +1803,15 @@ int sm_antsw_validate_bp(struct sm *sm) {
 			continue;
 		struct groups_record *grec = (void *)o;
 
-		if(!(grec->flags & 1)) // virtual rotator?
+		if(grec->flags & 1) // no virtual rotator?
 			continue;
-
+		info(">>> start scan");
 		struct reference *ref, *cmp_ref;
 		PG_SCANLIST(&o->ref_list, ref) {
 			PG_SCANLIST(&o->ref_list, cmp_ref) {
+				if(cmp_ref == ref)
+					continue;
+				info(">>> check");
 				if(azimuth_overlap(ref->min_azimuth, ref->max_azimuth, cmp_ref->min_azimuth, cmp_ref->max_azimuth)) {
 					warn("(mhsm) overlapping azimuths in %s", o->name);
 					return SM_VALIDATE_RESULT_AZIMUTH_OVERLAP;
@@ -1809,3 +1824,17 @@ int sm_antsw_validate_bp(struct sm *sm) {
 
 	return 0;
 }
+
+int sm_antsw_store(struct sm *sm) {
+	int res;
+
+	res = sm_antsw_validate_bp(sm);
+	if(res) {
+		warn("(mhsm) antsw validation failed!");
+		return -1;
+	}
+
+
+	return 0;
+}
+				 
