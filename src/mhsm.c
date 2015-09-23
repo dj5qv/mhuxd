@@ -1771,7 +1771,7 @@ static int azimuth_overlap(uint16_t min1, uint16_t max1, uint16_t min2, uint16_t
 	
 	return 1;
 }
-
+#if 0
 static void update_azimuth_array(char ar[360], uint16_t min, uint16_t max) {
 	if(max >= 360)
 		max = 0;
@@ -1790,6 +1790,7 @@ static int azimuth_gaps(char ar[360]) {
 	}
 	return 0;
 }
+#endif
 
 int sm_antsw_validate_bp(struct sm *sm) {
 	struct sm_bandplan *bp = sm->bp_eeprom;
@@ -1806,7 +1807,7 @@ int sm_antsw_validate_bp(struct sm *sm) {
 
 		if(grec->flags & 1) // no virtual rotator?
 			continue;
-		info(">>> start scan");
+
 		struct reference *ref, *cmp_ref;
 		char deg[360];
 		int i;
@@ -1814,11 +1815,11 @@ int sm_antsw_validate_bp(struct sm *sm) {
 		memset(deg, 0, sizeof(deg));
 		PG_SCANLIST(&o->ref_list, ref) {
 
-			// gap array
+			// update gap array
 			if(ref->max_azimuth < ref->min_azimuth) {
 				for(i = 0; i <= ref->max_azimuth; i++)
 					deg[i] = 1;
-				for(i = ref->min_azimuth; i <= 360; i++)
+				for(i = ref->min_azimuth; i < 360; i++)
 					deg[i] = 1;
 			} else {
 				for(i = ref->min_azimuth; i <= ref->max_azimuth; i++)
@@ -1829,7 +1830,6 @@ int sm_antsw_validate_bp(struct sm *sm) {
 			PG_SCANLIST(&o->ref_list, cmp_ref) {
 				if(cmp_ref == ref)
 					continue;
-				info(">>> check");
 				if(azimuth_overlap(ref->min_azimuth, ref->max_azimuth, cmp_ref->min_azimuth, cmp_ref->max_azimuth)) {
 					warn("(mhsm) overlapping azimuths in %s!", o->name);
 					return SM_VALIDATE_RESULT_AZIMUTH_OVERLAP;
@@ -1845,8 +1845,6 @@ int sm_antsw_validate_bp(struct sm *sm) {
 			}
 		}
 			
-
-
 	}
 
 	return 0;
@@ -1854,14 +1852,27 @@ int sm_antsw_validate_bp(struct sm *sm) {
 
 int sm_antsw_store(struct sm *sm) {
 	int res;
+	struct sm_bandplan *bp;
 
+	dbg1("(sm) %s()", __func__);
+	
+	bp = sm->bp_eeprom;
+	if( ! bp)
+		return -1;
+	
 	res = sm_antsw_validate_bp(sm);
 	if(res) {
 		warn("(mhsm) antsw validation failed!");
 		return -1;
 	}
 
+	struct dbuf *dbuf = dbuf_create();
+	dbuf_set_inc_size(dbuf, 256);
+	
+	encode_bp(dbuf, sm->bp_eeprom);
 
+	dbuf_destroy(dbuf);
+	
 	return 0;
 }
 				 

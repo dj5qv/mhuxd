@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -8,43 +8,43 @@
 
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
-#include "util.h"
 #include "dbuf.h"
+#include "util.h"
+#include "logger.h"
 
-
-#define DEFAULT_SIZE_INC (1024)
-#define DEFAULT_SIZE_INITIAL (1024)
-
+#define DEFAULT_SIZE_INC (64)
 
 struct dbuf *dbuf_create() {
 	struct dbuf *dbuf = w_calloc(1, sizeof(*dbuf));
-	dbuf->size_initial = DEFAULT_SIZE_INITIAL;
 	dbuf->size_inc = DEFAULT_SIZE_INC;
 	return dbuf;
 }
 
 void dbuf_destroy(struct dbuf *dbuf) {
+	if(dbuf->data)
+		free(dbuf->data);
 	free(dbuf);
 }
 
-void dbuf_set_initial_size(struct dbuf *dbuf, size_t size) {
-	dbuf->size_initial = size;
-}
-
 void dbuf_set_inc_size(struct dbuf *dbuf, size_t size) {
+	if(!size)
+		return;
 	dbuf->size_inc = size;
 }
 
 void dbuf_append(struct dbuf *dbuf, uint8_t *data, size_t length) {
 	size_t avail;
 
+	if(!length)
+		return;
 
 	avail = dbuf->capacity - dbuf->size;
 
 	if(avail < length) {
-		size_t need = length - avail;
-		dbuf->capacity = need > dbuf->size_inc ? need : dbuf->size_inc;
+		dbuf->capacity += (((length / dbuf->size_inc) + 1) * dbuf->size_inc);
+		info(">>> realloc dbuf %zd", dbuf->capacity);
 		dbuf->data = w_realloc(dbuf->data, dbuf->capacity);
 	}
 

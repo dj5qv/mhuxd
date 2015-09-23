@@ -13,14 +13,12 @@
 struct dbuf {
 	size_t capacity;
 	size_t size;
-	size_t size_initial;
 	size_t size_inc;
 	uint8_t *data;
 };
 
 struct dbuf *dbuf_create();
 void dbuf_destroy(struct dbuf *dbuf) ;
-void dbuf_set_initial_size(struct dbuf *dbuf, size_t size);
 void dbuf_set_inc_size(struct dbuf *dbuf, size_t size);
 void dbuf_append(struct dbuf *dbuf, uint8_t *data, size_t length);
 void dbuf_append_c(struct dbuf *dbuf, int c);
