@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -20,6 +20,8 @@
 #include "channel.h"
 #include "mux.h"
 #include "demux.h"
+
+#define MOD_ID "mhr"
 
 #define LB_BYTES_PER_IVAL (20.0)
 #define LB_CARRY_OVER (2)
@@ -101,7 +103,7 @@ static void lb_cb(struct ev_loop *loop,  struct ev_timer *w, int revents) {
 	struct Producer *prd;
 	int channel = lb - router->lb;
 
-	dbg1("(mhr) %s() %s %s %f", __func__, router->serial, ch_channel2str(channel), lb->avail_this_ival);
+	dbg1("%s %s() %s %f", router->serial, __func__, ch_channel2str(channel), lb->avail_this_ival);
 
 	if(lb->avail_this_ival == LB_BYTES_PER_IVAL + LB_CARRY_OVER) {
 		// No data during previous ival, stop timer.
@@ -144,8 +146,7 @@ void mhr_set_bps_limit(struct mh_router *router, int channel, float bps) {
 	lb->timer.data = lb;
 	ev_timer_start(router->loop, &lb->timer);
 
-	dbg1("(mhr) %s() %s %s bytes/sec: %f ival: %f", __func__, router->serial, ch_channel2str(channel), bps, lb->ival);
-
+	dbg1("%s %s() %s bytes/sec: %f ival: %f", router->serial, __func__, ch_channel2str(channel), bps, lb->ival);
 }
 
 static void switch_producer_events(struct mh_router *router, int active) {
@@ -193,7 +194,7 @@ static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 	int c;
 	int16_t push = 0;
 
-	dbg1("(mhr) %s()", __func__);
+	dbg1("%s %s()", router->serial, __func__);
 
 	if(!b->size)
 		return;
@@ -201,13 +202,13 @@ static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 	while(-1 != (c = buf_get_c(b))) {
 
 		if( c == '1' ) {
-			dbg1("(mhr) %s() ptt on", __func__);
+			dbg1("%s %s() ptt on", router->serial, __func__);
 			newflag |= (prd->channel == CH_PTT1) ? MHC2DFL_PTT_R1 : MHC2DFL_PTT_R2;
 			push = 1;
 		}
 
 		if( c == '0' ) {
-			dbg1("(mhr) %s() ptt off", __func__);
+			dbg1("%s %s() ptt off", router->serial, __func__);
 			newflag &= (prd->channel == CH_PTT1) ? ~MHC2DFL_PTT_R1 : ~MHC2DFL_PTT_R2;
 			push = 1;
 		}
@@ -229,7 +230,7 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	prd = w->data;
 	router = prd->router;
 
-	dbg1("(mhr) %s() %s", __func__, ch_channel2str(prd->channel));
+	dbg1("%s %s() %s", router->serial, __func__, ch_channel2str(prd->channel));
 
 	if(!(revents & EV_READ))
 		return;
@@ -246,7 +247,7 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 		avail = router->lb[prd->channel].avail_this_ival;
 
 	if(!avail) {
-		dbg1("(mhr) avail 0");
+		//		dbg1("%s avail 0", router->serial);
 		ev_io_stop(loop, &prd->w);
 		return;
 	}
@@ -275,7 +276,7 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	}
 
 	if(r == 0) {
-		dbg1("(mhr) connection %d closed by remote", w->fd);
+		dbg1("%s connection %d closed by remote", router->serial, w->fd);
 		mhr_rem_producer(router, prd->fd, prd->channel);
 	}
 
@@ -326,9 +327,9 @@ static void keyer_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	avail = buf_size_avail(&router->buf_in);
 
 	r = read(router->fd, router->buf_in.data + router->buf_in.size, avail);
-	// dbg1("%s %d", __func__, r);
+	// dbg1("%s, %s %d", router->serial, __func__, r);
 	if(r > 0) {
-		dbg1_h("(mhr) fm k", router->buf_in.data + router->buf_in.size, r);
+		dbg1_h(router->serial, "fm k", router->buf_in.data + router->buf_in.size, r);
 		buf_add_size(&router->buf_in, r);
 	}
 
@@ -387,7 +388,7 @@ static void keyer_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	r = write(router->fd, b->data + b->rpos, b->size - b->rpos);
 	if(r > 0) {
-		dbg1_h("(mhr) to k", b->data + b->rpos, r);
+		dbg1_h(router->serial, "to k", b->data + b->rpos, r);
 		buf_consume(b, r);
 		switch_producer_events(router, 1); // FIXME, room for optimization
 	}
@@ -421,8 +422,10 @@ struct mh_router *mhr_create(struct ev_loop *loop, const char *serial, uint8_t h
 	struct mh_router *router;
 	int i;
 
-	dbg1("(mhr) %s()", __func__);
+	dbg1("%s %s()", serial, __func__);
 
+	dbg1_h(serial, "fm test to", "KDJRNEJSKDJFMDNEQKAJ", 20);
+	
 	router = w_calloc(1, sizeof(*router));
 	router->has_flags_channel = has_flags_channel;
 	router->serial = w_malloc(strlen(serial)+1);
@@ -454,7 +457,7 @@ void mhr_destroy(struct mh_router *router) {
 	struct StatusCb *stc;
 	int i;
 
-	dbg1("(mhr) %s()", __func__);
+	dbg1("%s %s()", router->serial, __func__);
 
 	for(i=0; i<ALL_NUM_CHANNELS; i++) {
 		if(router->lb[i].bps)
@@ -490,7 +493,7 @@ void mhr_set_keyer_fd(struct mh_router *router, int fd) {
 	if(fd == router->fd)
 		return;
 
-	dbg1("(mhr) %s() %d", __func__, fd);
+	dbg1("%s %s() %d", router->serial, __func__, fd);
 
 	if(router->fd != -1) {
 		ev_io_stop(router->loop, &router->w_in);
@@ -528,7 +531,7 @@ void mhr_add_consumer(struct mh_router *router, int fd, int channel) {
 	if(fd == -1)
 		return;
 
-	dbg1("(mhr) %s() %d %s", __func__, fd, ch_channel2str(channel));
+	dbg1("%s %s() %d %s", router->serial, __func__, fd, ch_channel2str(channel));
 
 	cns = w_calloc(1, sizeof(*cns));
 	cns->fd = fd;
@@ -551,7 +554,7 @@ void mhr_add_producer(struct mh_router *router, int fd, int channel) {
 	if(fd == -1)
 		return;
 
-	dbg1("(mhr) %s() %d %s", __func__, fd, ch_channel2str(channel));
+	dbg1("%s %s() %d %s", router->serial, __func__, fd, ch_channel2str(channel));
 
 	prd = w_calloc(1, sizeof(*prd));
 	prd->fd = fd;
@@ -575,7 +578,7 @@ void mhr_add_consumer_cb(struct mh_router *router, MHRConsumerCallback callback,
 	if(channel == MH_CHANNEL_FLAGS && !router->has_flags_channel)
 		return;
 
-	dbg1("(mhr) %s() %s", __func__, ch_channel2str(channel));
+	dbg1("%s %s() %s", router->serial, __func__, ch_channel2str(channel));
 
 	cnc = w_calloc(1, sizeof(*cnc));
 	cnc->callback = callback;
@@ -588,7 +591,7 @@ void mhr_add_consumer_cb(struct mh_router *router, MHRConsumerCallback callback,
 void mhr_add_status_cb(struct mh_router *router, MHRStatusCallback callback, void *user_data) {
 	struct StatusCb *stc;
 
-	dbg1("(mhr) %s()", __func__);
+	dbg1("%s %s()", router->serial, __func__);
 	
 	stc = w_calloc(1, sizeof(*stc));
 	stc->callback = callback;
@@ -607,7 +610,7 @@ void mhr_add_processor_cb(struct mh_router *router, MHRProcessorCallback callbac
 	if(channel == MH_CHANNEL_FLAGS && !router->has_flags_channel)
 		return;
 
-	dbg1("(mhr) %s()", __func__);
+	dbg1("%s %s()", router->serial, __func__);
 
 	prc = w_calloc(1, sizeof(*prc));
 	prc->callback = callback;
@@ -623,7 +626,7 @@ void mhr_rem_consumer(struct mh_router *router, int fd, int channel) {
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
 		return;
 
-	dbg1("(mhr) %s() %d %s", __func__, fd, ch_channel2str(channel));
+	dbg1("%s %s() %d %s", router->serial, __func__, fd, ch_channel2str(channel));
 
 	PG_SCANLIST(&router->consumer_list[channel], cns) {
 		if(cns->fd == fd) {
@@ -644,7 +647,7 @@ void mhr_rem_producer(struct mh_router *router, int fd, int channel) {
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
 		return;
 
-	dbg1("(mhr) %s() %d %s", __func__, fd, ch_channel2str(channel));
+	dbg1("%s %s() %d %s", router->serial, __func__, fd, ch_channel2str(channel));
 
 	PG_SCANLIST(&router->producer_list[channel], prd) {
 		if(prd->fd == fd) {
@@ -665,7 +668,7 @@ void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback callback,
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
 		return;
 
-	dbg1("(mhr) %s() %s", __func__, ch_channel2str(channel));
+	dbg1("%s %s() %s", router->serial, __func__, ch_channel2str(channel));
 
 	PG_SCANLIST(&router->consumer_cb_list[channel], cnc) {
 		if(cnc->callback == callback) {
@@ -680,7 +683,7 @@ void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback callback,
 void mhr_rem_status_cb(struct mh_router *router, MHRStatusCallback callback) {
 	struct StatusCb *stc;
 
-	dbg1("(mhr) %s()", __func__);
+	dbg1("%s %s()",router->serial,  __func__);
 
 	PG_SCANLIST(&router->status_cb_list, stc) {
 		if(stc->callback == callback) {
@@ -698,7 +701,7 @@ void mhr_rem_processor_cb(struct mh_router *router, MHRProcessorCallback callbac
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
 		return;
 
-	dbg1("(mhr) %s()", __func__);
+	dbg1("%s %s()", router->serial, __func__);
 
 	PG_SCANLIST(&router->processor_cb_list[channel], prc) {
 		if(prc->callback == callback) {

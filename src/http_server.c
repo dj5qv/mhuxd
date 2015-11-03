@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -23,6 +23,8 @@
 #include "pglist.h"
 #include "net.h"
 #include "logger.h"
+
+#define MOD_ID "http"
 
 #define READ_SIZE (1024)
 #define MAX_URL_SIZE (2048)
@@ -126,11 +128,11 @@ struct http_connection {
 int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *sub_path) {
 	int err;
 
-	dbg1("(http) serve dmap, path: %s file: %s", fs_path, sub_path);
+	dbg1("serve dmap, path: %s file: %s", fs_path, sub_path);
 
 	err = chdir(fs_path);
 	if(err) {
-		err_e(errno, "(http) Could not change directory to %s !", fs_path);
+		err_e(errno, "Could not change directory to %s !", fs_path);
 		switch(errno) {
 		case EACCES:
 			hs_send_error_page(hcon, 403);
@@ -148,7 +150,7 @@ int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *su
 	struct stat st;
 	err = stat(sub_path, &st);
 	if(err) {
-		err_e(errno, "(http) Could not determine file size of %s/%s !", fs_path, sub_path);
+		err_e(errno, "Could not determine file size of %s/%s !", fs_path, sub_path);
 		switch(errno) {
 		case EACCES:
 			hs_send_error_page(hcon, 403);
@@ -164,7 +166,7 @@ int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *su
 	}
 
 	if( ! (st.st_mode & S_IFREG) ) {
-		err("(http) Requested file is not a file %s/%s !", fs_path, sub_path);
+		err("Requested file is not a file %s/%s !", fs_path, sub_path);
 		hs_send_error_page(hcon, 500);
 		return 0;
 	}
@@ -172,7 +174,7 @@ int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *su
 	int fd = open(sub_path, O_RDONLY);
 
 	if(fd < 0) {
-		err_e(errno, "(http) Could not open file %s/%s !", fs_path, sub_path);
+		err_e(errno, "Could not open file %s/%s !", fs_path, sub_path);
 		switch(errno) {
 		case EACCES:
 			hs_send_error_page(hcon, 403);
@@ -191,7 +193,7 @@ int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *su
 	int rsize = read(fd, buf, st.st_size);
 
 	if(rsize != st.st_size) {
-		err_e(errno, "(http) Short read, file %s/%s !", fs_path, sub_path);
+		err_e(errno, "Short read, file %s/%s !", fs_path, sub_path);
 		hs_send_error_page(hcon, 500);
 		free(buf);
 		close(fd);
@@ -366,13 +368,13 @@ static int on_message_complete_cb (http_parser *p) {
 	hcon->url[hcon->url_len] = 0x00;
 
 	if(hcon->parser.method != HTTP_GET && hcon->parser.method != HTTP_POST) {
-		warn("(http) Method not implemented: %s", http_method_str(hcon->parser.method));
+		warn("Method not implemented: %s", http_method_str(hcon->parser.method));
 		hs_send_error_page(hcon, 501);
 		return 0;
 	}
 
 	if(hcon->response_code != 200) {
-		warn("(http) response: %d", hcon->response_code);
+		warn("response: %d", hcon->response_code);
 		hs_send_error_page(hcon, hcon->response_code);
 		return 0;
 	}
@@ -380,7 +382,7 @@ static int on_message_complete_cb (http_parser *p) {
 	memset(&url, 0, sizeof(url));
 
 	if(http_parser_parse_url(hcon->url, hcon->url_len, 0, &url)) {
-		warn("(http) URL parse error (%s)", hcon->url);
+		warn("URL parse error (%s)", hcon->url);
 		hs_send_error_page(hcon, 400);
 		return 0;
 	}
@@ -392,7 +394,7 @@ static int on_message_complete_cb (http_parser *p) {
 	path_len = url.field_data[UF_PATH].len;
 
 #if 0
-	info("(http) '%s' ('%s')", path, query);
+	info("'%s' ('%s')", path, query);
 	int i;
 	for(i=0; i<=hcon->req_header_idx && i < MAX_HEADERS; i++)
 		info("header %s: %s", hcon->req_header[i].name, hcon->req_header[i].value);
@@ -434,7 +436,7 @@ static void hcon_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 		if(r < 0) {
 			if(errno != EAGAIN) {
-				err_e(errno, "(http) error reading from http connection!");
+				err_e(errno, "error reading from http connection!");
 				rem_connection(hcon);
 			}
 			return;
@@ -450,13 +452,13 @@ static void hcon_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		*/
 
 		if(nparsed != r || HTTP_PARSER_ERRNO(&hcon->parser) != HPE_OK) {
-			dbg0("(http) Parser error: %s", http_errno_name(HTTP_PARSER_ERRNO(&hcon->parser)));
+			dbg0("Parser error: %s", http_errno_name(HTTP_PARSER_ERRNO(&hcon->parser)));
 			rem_connection(hcon);
 			return;
 		}
 
 		if(!r) {
-			dbg0("(http) connection closed");
+			dbg0("connection closed");
 			rem_connection(hcon);
 			return;
 		}
@@ -474,7 +476,7 @@ static void hcon_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		int r = write(hcon->fd, hr->data + hr->sent, hr->len - hr->sent);
 		if(r < 0) {
 			if(errno != EAGAIN) {
-				err_e(errno, "(http) error writing to http connection!");
+				err_e(errno, "error writing to http connection!");
 				rem_connection(hcon);
 			}
 			return;
@@ -526,7 +528,7 @@ static void lsnr_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 		PG_AddTail(&hs->con_list, &hcon->node);
 		ev_io_start(hs->loop, &hcon->w_in);
-		dbg1("(http) incoming connection");
+		dbg1("incoming connection");
 
 	} else {
 		warn_e(errno, "(cli) accept() failed on http port!");
@@ -538,7 +540,7 @@ int hs_add_rsp_header(struct http_connection *hcon, const char *name, const char
 	uint16_t nlen, vlen;
 
 	if(hcon->rsp_header_cnt >= MAX_HEADERS) {
-		warn("(http) header size exceeded in response!");
+		warn("header size exceeded in response!");
 		return -1;
 	}
 
@@ -546,12 +548,12 @@ int hs_add_rsp_header(struct http_connection *hcon, const char *name, const char
 	vlen = strlen(value);
 
 	if(nlen > MAX_HEADER_NAME_SIZE) {
-		warn("(http) header name length exceeded in response!");
+		warn("header name length exceeded in response!");
 		return -1;
 	}
 
 	if(vlen > MAX_HEADER_VALUE_SIZE) {
-		warn("(http) header value length exceeded in response!");
+		warn("header value length exceeded in response!");
 		return -1;
 	}
 
@@ -613,7 +615,7 @@ void hs_send_response(struct http_connection *hcon, uint16_t code, const char *c
 	hcon->rsp_header_size = 0;
 
 	if(headers_size >= MAX_HEADERS_SIZE) {
-		err("(http) response headers too large!");
+		err("response headers too large!");
 		hs_send_error_page(hcon, 500);
 		return;
 	}
@@ -648,7 +650,7 @@ struct http_server *hs_start(struct ev_loop *loop, const char *host_port) {
 	struct netlsnr *lsnr = net_create_listener(host_port);
 
 	if(lsnr == NULL) {
-		err_e(errno, "(http) Could not create listener!");
+		err_e(errno, "Could not create listener!");
 		return NULL;
 	}
 
@@ -661,7 +663,7 @@ struct http_server *hs_start(struct ev_loop *loop, const char *host_port) {
 	hs->w_lsnr.data = hs;
 	ev_io_init(&hs->w_lsnr, lsnr_cb, net_listener_get_fd(hs->lsnr), EV_READ);
 	ev_io_start(hs->loop, &hs->w_lsnr);
-	info("(http) http server started on %s", host_port);
+	info("http server started on %s", host_port);
 	return hs;
 }
 
@@ -691,7 +693,7 @@ void hs_stop(struct http_server *hs) {
 	net_destroy_lsnr(hs->lsnr);
 	free(hs);
 
-	info("(http) http server stopped");
+	info("http server stopped");
 }
 
 int hs_add_directory_map(struct http_server *hs, const char *url_path, const char *fs_path) {
@@ -716,7 +718,7 @@ struct http_handler *hs_register_handler(struct http_server *hs, const char *pat
 	len = strlen(path);
 
 	if(len > MAX_URL_SIZE || !len) {
-		err("(http) %s path too long or empty (%s)", __func__, path);
+		err("%s path too long or empty (%s)", __func__, path);
 		return NULL;
 	}
 

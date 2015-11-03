@@ -12,7 +12,6 @@
 #include <string.h>
 #include "dbuf.h"
 #include "util.h"
-#include "logger.h"
 
 #define DEFAULT_SIZE_INC (64)
 
@@ -44,7 +43,6 @@ void dbuf_append(struct dbuf *dbuf, uint8_t *data, size_t length) {
 
 	if(avail < length) {
 		dbuf->capacity += (((length / dbuf->size_inc) + 1) * dbuf->size_inc);
-		info(">>> realloc dbuf %zd", dbuf->capacity);
 		dbuf->data = w_realloc(dbuf->data, dbuf->capacity);
 	}
 

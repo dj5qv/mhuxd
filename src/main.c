@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -21,6 +21,8 @@
 #include "daemon.h"
 #include "http_server.h"
 #include "webui.h"
+
+#define MOD_ID "main"
 
 #ifndef LOGDIR
 #error LOGDIR not defined
@@ -62,7 +64,7 @@ int main(int argc, char **argv)
 	struct conmgr *conmgr;
 	FILE *pidfile = NULL;
 
-	printf("\n%s (C)2012-2014 Matthias Moeller, DJ5QV\n", PACKAGE_STRING);
+	printf("\n%s (C)2012-2015 Matthias Moeller, DJ5QV\n", PACKAGE_STRING);
 
 	// options
 	process_opts(argc, argv);
@@ -88,7 +90,7 @@ int main(int argc, char **argv)
 		dmn_daemonize();
 	}
 
-	info("%s (C)2012-2013 Matthias Moeller, DJ5QV", PACKAGE_STRING);
+	info("%s (C)2012-2015 Matthias Moeller, DJ5QV", PACKAGE_STRING);
 	info("Logfile: %s", log_file_name);
 
 	// pid file
@@ -116,9 +118,6 @@ int main(int argc, char **argv)
 		fatal("(mhuxd) Could not start webserver, exiting!");
 		exit(-1);
 	}
-
-	//hs_add_directory_map(hs, "/static/", "/home/mattes/Devel/mhuxd-0.50/http/static");
-	//hs_add_directory_map(hs, "/", "/home/mattes/Devel/mhuxd-0.50/http/root");
 
 	struct webui *webui = webui_create(hs, cfgmgr);
 

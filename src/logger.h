@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -32,35 +32,29 @@ inline static int log_get_level() {
 	return log_level;
 }
 
-
 void log_init(FILE *f);
 void log_set_ident(const char *);
 void log_set_level(int level);
 int log_set_level_by_str(const char *s);
 const char *log_get_level_str();
-void log_hex(int severity, const char *header, const char *buf, int len);
-void log_msg(int severity, const char *fmt, ...)
+void log_hex(int severity, const char *msg1, const char *msg2, const char *msg3, const char *buf, int len);
+void log_msg(int severity, const char *header, const char *fmt, ...)
 #ifdef __GNUC__
-     __attribute__ ((format (printf, 2, 3)));
+     __attribute__ ((format (printf, 3, 4)));
 #else
      ;
 #endif
 
-
-
 #define fatal(fmt, args...) do {                                        \
-	log_msg(LOGSV_CRIT, fmt"\n" , ##args);                              \
+	log_msg(LOGSV_CRIT, "("MOD_ID")", fmt"\n" , ##args);	\
         _exit(1);                                                       \
 } while (0)
-#define err(fmt, args...)               log_msg(LOGSV_ERR,  fmt"\n" , ##args)
-#define warn(fmt, args...)              log_msg(LOGSV_WARN, fmt"\n" , ##args)
-#define info(fmt, args...)              log_msg(LOGSV_INFO, fmt"\n" , ##args)
-#define dbg0(fmt, args...)              log_msg(LOGSV_DBG0, fmt"\n" , ##args)
-#define dbg1(fmt, args...)              log_msg(LOGSV_DBG1, fmt"\n" , ##args)
-
-#define dbg0_h(hdr, buf, len)           log_hex(LOGSV_DBG0, hdr, (const char*) buf, len)
-#define dbg1_h(hdr, buf, len)           log_hex(LOGSV_DBG1, hdr, (const char*) buf, len)
-
+#define err(fmt, args...)               log_msg(LOGSV_ERR,  "("MOD_ID")", fmt"\n" , ##args)
+#define warn(fmt, args...)              log_msg(LOGSV_WARN, "("MOD_ID")", fmt"\n" , ##args)
+#define info(fmt, args...)              log_msg(LOGSV_INFO, "("MOD_ID")", fmt"\n" , ##args)
+#define dbg0(fmt, args...)            log_msg(LOGSV_DBG0, "("MOD_ID")", fmt"\n", ##args)
+#define dbg1(fmt, args...)            log_msg(LOGSV_DBG1, "("MOD_ID")", fmt"\n", ##args)
+#define dbg1_h(msg1, msg2, buf, len)   log_hex(LOGSV_DBG1, "(" MOD_ID ")", msg1, msg2, (const char*) buf, len)
 #define fatal_e(e, fmt, args...)        \
         fatal(fmt" (%s)" , ##args, strerror((e))
 #define err_e(e, fmt, args...)  \

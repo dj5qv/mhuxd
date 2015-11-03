@@ -1,3 +1,11 @@
+/*
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
+ *
+ *  This program can be distributed under the terms of the GNU GPLv2.
+ *  See the file COPYING
+ */
+
 #include <stdint.h>
 #include <unistd.h>
 #include <errno.h>
@@ -6,6 +14,8 @@
 #include "buffer.h"
 #include "logger.h"
 #include "mhcontrol.h"
+
+#define MOD_ID "rot"
 
 #define ROT_MAX_CMD_SIZE (12)
 #define INVALID_BEARING (UINT16_MAX)
@@ -36,29 +46,29 @@ static void completion_cb(unsigned const char *reply_buf, int len, int result, v
 	struct proc_rotator *rot = user_data;
 
         if(result != CMD_RESULT_OK) {
-                err("(rot) %s command failed: %s!", rot->action_name, mhc_cmd_err_string(result));
+                err("%s command failed: %s!", rot->action_name, mhc_cmd_err_string(result));
                 return;
         }
-        dbg1("(rot) %s cmd ok", rot->action_name);
+        dbg1("%s cmd ok", rot->action_name);
 }
 
 static int process_cmd(struct proc_rotator *rot) {
 
 	if(rot->cmd_len < 3 || rot->cmd[rot->cmd_len - 1] != ';') {
-		err("(rot) Invalid command: %s!", rot->cmd);
+		err("Invalid command: %s!", rot->cmd);
 		return -1;
 	}
 
-	dbg1("(rot) command: %s", rot->cmd);
+	dbg1("command: %s", rot->cmd);
 
 	if(!strncmp(rot->cmd, "API", 3)) {
 		if(strlen(rot->cmd) != 7) {
-			err("(rot) Invalid parameters for API command!");
+			err("Invalid parameters for API command!");
 			return -1;
 		}
 		int bearing = atoi(rot->cmd + 3);
 		if(bearing < 0 || bearing > 359) {
-			err("(rot) Invalid bearing value for API command!");
+			err("Invalid bearing value for API command!");
 			return -1;
 		}
 
@@ -68,7 +78,7 @@ static int process_cmd(struct proc_rotator *rot) {
 
 	if(!strcmp(rot->cmd, "AM 1;")) {
 		if(rot->bearing == INVALID_BEARING) {
-			err("(rot) Can't execute AM 1; command, bearing not set!");
+			err("Can't execute AM 1; command, bearing not set!");
 			return -1;
 		}
 		rot->action_name = "TURN TO AZIMUTH";
@@ -76,7 +86,7 @@ static int process_cmd(struct proc_rotator *rot) {
 	}
 
 
-	err("(rot) Invalid command: %s!", rot->cmd);
+	err("Invalid command: %s!", rot->cmd);
 	return -1;
 }
 
@@ -86,7 +96,7 @@ void rot_cb(struct mh_router *router, int channel, struct buffer *b, int fd, voi
 	struct proc_rotator *rot = user_data;
         int c;
 
-	dbg1("(rot) %s()", __func__);
+	dbg1("%s()", __func__);
 
         while(-1 != (c = buf_get_c(b))) {
 
@@ -104,7 +114,7 @@ void rot_cb(struct mh_router *router, int channel, struct buffer *b, int fd, voi
 
 			rot->cmd[rot->cmd_len] = 0;
 			if(-1 == process_cmd(rot)) {
-				err("(rot) error processing command: %s", rot->cmd);
+				err("error processing command: %s", rot->cmd);
                         }
 			rot->cmd_len = 0;
                         continue;
@@ -112,7 +122,7 @@ void rot_cb(struct mh_router *router, int channel, struct buffer *b, int fd, voi
 
 		if(rot->cmd_len >= ROT_MAX_CMD_SIZE) {
 			rot->cmd_overflow = 1;
-			err("(rot) command too long: %s(...)", rot->cmd);
+			err("command too long: %s(...)", rot->cmd);
                         continue;
                 }
 

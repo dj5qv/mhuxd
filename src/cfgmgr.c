@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -24,6 +24,8 @@
 #include "channel.h"
 #include "wkman.h"
 #include "mhsm.h"
+
+#define MOD_ID "cfgmgr"
 
 #if !defined EV_VERSION_MAJOR || EV_VERSION_MAJOR < 4
 #define EVRUN_ONCE EVLOOP_ONESHOT
@@ -50,7 +52,7 @@ static void log_neoerr(NEOERR *err, const char *what) {
 	string_init(&str);
 
 	nerr_error_string(err, &str);
-	err("(cfgmgr) %s(%s)", what, str.buf ? str.buf : "Unkown");
+	err("%s(%s)", what, str.buf ? str.buf : "Unkown");
 	string_clear(&str);
 	nerr_ignore(&err);
 }
@@ -94,7 +96,7 @@ static int mk1_set_frbase(struct device *dev, struct cfg *param_cfg) {
 		HDF *param_hdf = (HDF *)param_cfg;
 		int mode, audioRx = -1, audioTx = -1, audioTxFootSw = -1, ptt1 = -1, ptt2 = -1;
 
-		dbg1("(cfgmgr) %s()", __func__);
+		dbg1("%s()", __func__);
 
 		mode = hdf_get_int_value(param_hdf, "r1KeyerMode", -1);
 		switch(mode) {
@@ -140,7 +142,7 @@ static int mk1_set_frbase(struct device *dev, struct cfg *param_cfg) {
 void cfgmr_state_changed_cb(const char *serial, int state, void *user_data) {
 	(void)state; (void)serial; (void)user_data;
 	//struct cfgmgr *cfgmgr = user_data;
-	dbg1("(cfgmgr) %s() %s", __func__, mhc_state_str(state));
+	dbg1("%s() %s", __func__, mhc_state_str(state));
 	//cfgmgr_update_hdf_dev(cfgmgr, serial);
 }
 
@@ -152,7 +154,7 @@ int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg)
 	const struct mh_info *mhi;
 	const char *serial = dev->serial;
 
-	dbg1("(cfgmgr) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	if(!dev || !hdf)
 		return -1;
@@ -308,7 +310,7 @@ int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg)
 	// Keyer parameters
 	err = hdf_get_node(knod, "param", &param_nod);
 	if(err != STATUS_OK) goto failed;
-	dbg1("(cfgmgr) %s set cfg from kopts", serial);
+	dbg1("%s set cfg from kopts", serial);
 	mhc_kopts_to_cfg(dev->ctl, (struct cfg *)param_nod);
 
 	// Keyer channel speed
@@ -367,7 +369,7 @@ int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg)
 	STRING str;
 	string_init(&str);
 	nerr_error_string(err, &str);
-	err("(cfgmgr) %s %s", __func__, str.buf);
+	err("%s %s", __func__, str.buf);
 	string_clear(&str);
 	nerr_ignore(&err);
 	return -1;
@@ -379,7 +381,7 @@ int cfgmgr_merge_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	struct device *dev;
 	int rval = 0;
 
-	dbg1("(cfgmgr) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	rval |= cfg_set_value(cfg, "mhuxd.daemon.loglevel", log_get_level_str());
 	rval |= cfg_merge(cfg, cfgmgr->runtime_cfg);
@@ -409,11 +411,11 @@ int cfgmgr_init(struct cfgmgr *cfgmgr) {
 	NEOERR *err;
 	int rval;
 
-	dbg1("(cfgmgr) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	err = hdf_init(&saved_hdf);
 	if(err != STATUS_OK) {
-		err("(cfgmgr) %s() could not initialize hdf!", __func__);
+		err("%s() could not initialize hdf!", __func__);
 		return -1;
 	}
 
@@ -440,7 +442,7 @@ static int check_icom_address(HDF *hdf) {
 		rig = hdf_get_int_value(hdf, "rigtype", -1);
 		if(rig > 0) {
 			icom_address = rtyp_get_icom_address(rig);
-			dbg0("(cfgmgr) %s() set icom address to 0x%02x", __func__, icom_address);
+			dbg0("%s() set icom address to 0x%02x", __func__, icom_address);
 			err = hdf_set_int_value(hdf, "icomaddress", icom_address);
 			if(err != STATUS_OK) {
 				rval--;
@@ -467,14 +469,14 @@ static int apply_keyer_params(struct cfgmgr *cfgmgr, struct device *dev, HDF *hd
 
 		val_str = hdf_obj_value(phdf);
 		if(!val_str) {
-			err("(cfgmgr) %s() no value for %s", __func__, key);
+			err("%s() no value for %s", __func__, key);
 			rval++;
 			continue;
 		}
 		val = atoi(val_str);
 		//dbg1(">>> set kopt %s/%d", key, val);
 		if(mhc_set_kopt(dev->ctl, key, val)) {
-			err("(cfgmgr) Could not set keyer parameter %s for keyer %s!",  key, dev->serial);
+			err("Could not set keyer parameter %s for keyer %s!",  key, dev->serial);
 			rval++;
 			continue;
 		}
@@ -499,14 +501,14 @@ static int apply_sm_antsw_params(struct cfgmgr *cfgmgr, struct device *dev, HDF 
 
 		val_str = hdf_obj_value(phdf);
 		if(!val_str) {
-			err("(cfgmgr) %s() no value for %s", __func__, key);
+			err("%s() no value for %s", __func__, key);
 			rval++;
 			continue;
 		}
 		val = atoi(val_str);
 
 		if(sm_antsw_set_opt(mhc_get_sm(dev->ctl), key, val)) {
-			err("(cfgmgr) Could not set keyer parameter %s for keyer %s!",  key, dev->serial);
+			err("Could not set keyer parameter %s for keyer %s!",  key, dev->serial);
 			rval++;
 			continue;
 		}
@@ -521,7 +523,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 	HDF *hdf, *base_hdf = (void*)cfg;
 	int rval = 0;
 
-	dbg1("(cfgmgr) %s() in", __func__);
+	dbg1("%s() in", __func__);
 
 	for(hdf = hdf_obj_child(hdf_get_obj(base_hdf, "mhuxd.daemon")); hdf; hdf = hdf_obj_next(hdf)) {
 		const char *sval;
@@ -529,13 +531,13 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 		if(!strcmp(name, "loglevel")) {
 			sval = hdf_obj_value(hdf);
 			if(-1 == log_set_level_by_str(sval)) {
-				err("(cfgmgr) invalid log level '%s'!", sval);
+				err("invalid log level '%s'!", sval);
 				rval++;
 				continue;
 			}
 			continue;
 		}
-		warn("(cfgmgr) unkown daemon parameter '%s'!", name);
+		warn("unkown daemon parameter '%s'!", name);
 	}
 
 	for(hdf = hdf_obj_child(hdf_get_obj(base_hdf, "mhuxd.keyer")); hdf; hdf = hdf_obj_next(hdf)) {
@@ -555,11 +557,11 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 		for(chan_hdf = hdf_obj_child(hdf_get_obj(hdf, "channel")); chan_hdf; chan_hdf = hdf_obj_next(chan_hdf)) {
 			const char *chan_name = hdf_obj_name(chan_hdf);
 
-			dbg1("(cfgmgr) %s() set speed for %s", __func__, chan_name);
+			dbg1("%s() set speed for %s", __func__, chan_name);
 
 			int channel = ch_str2channel(chan_name);
 			if(channel < 0 || channel >= MH_NUM_CHANNELS) {
-				err("(cfgmgr) can't set speed, invalid channel (%s) specified!", chan_name);
+				err("can't set speed, invalid channel (%s) specified!", chan_name);
 				rval++;
 				continue;
 			}
@@ -568,7 +570,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 
 			result = -1;
 			if(mhc_set_speed(dev->ctl, channel, (struct cfg *)chan_hdf, completion_cb, &result)) {
-				err("(cfgmgr) could not set channel speed for %s!", chan_name);
+				err("could not set channel speed for %s!", chan_name);
 				rval++;
 				continue;
 			}
@@ -578,7 +580,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 			} 
 
 			if(result != CMD_RESULT_OK) {
-				err("(cfgmgr) error setting channel speed for %s!", chan_name);
+				err("error setting channel speed for %s!", chan_name);
 				rval++;
 				continue;
 			}
@@ -591,14 +593,14 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 		if(mhc_is_online(dev->ctl)) {
 			result = -1;
 			if(mhc_load_kopts(dev->ctl, completion_cb, &result)) {
-				err("(cfgmgr) could not write config to keyer %s!", serial);
+				err("could not write config to keyer %s!", serial);
 				rval++;
 			} else {
 				while(result == -1) {
 					ev_loop(cfgmgr->loop, EVRUN_ONCE);
 				}
 				if(result != CMD_RESULT_OK) {
-					err("(cfgmgr) error writing config to keyer %s", serial);
+					err("error writing config to keyer %s", serial);
 					rval++;
 				}
 			}
@@ -626,7 +628,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 			if(mhc_is_online(dev->ctl)) {
 				werr = wkm_write_cfg(dev->wkman);
 				if(WKM_RESULT_OK != werr) {
-					err("(cfgmgr) could not write config to winkey (%s)!", wkm_err_string(werr));
+					err("could not write config to winkey (%s)!", wkm_err_string(werr));
 					rval++;
 				}
 			}
@@ -668,13 +670,13 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.connector")); pcfg; pcfg = cfg_next_child(pcfg)) {
 		const char *id_str = cfg_name(pcfg);
 		if(!id_str) {
-			err("(cfgmgr) %s %d internal error", __func__, __LINE__);
+			err("%s %d internal error", __func__, __LINE__);
 			continue;
 		}
 		int id, requested_id = atoi(id_str);
 		id = conmgr_create_con(cfgmgr->conmgr, cfgmgr->loop, pcfg, requested_id);
 		if(!id) {
-			err("(cfgmgr) failed to create connector!");
+			err("failed to create connector!");
 			rval++;
 		}
 
@@ -723,7 +725,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 	string_clear(&str);
 #endif
 
-	dbg1("(cfgmgr) %s() out", __func__);
+	dbg1("%s() out", __func__);
 
 	return rval;
 }
@@ -732,7 +734,7 @@ int cfgmgr_remove(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	int rval = 0;
 	struct cfg *pcfg;
 
-	dbg1("(cfgmgr) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	// connectors
 	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.connector")); pcfg; pcfg = cfg_next_child(pcfg)) {
@@ -751,7 +753,7 @@ int cfgmgr_remove(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 		struct device *dev = dmgr_get_device(serial);
 		struct cfg *smcfg;
 		if(!dev) {
-			err("(cfgmgr) %s() could not find device %s in device list!", __func__, serial);
+			err("%s() could not find device %s in device list!", __func__, serial);
 			continue;
 		}
 
@@ -788,7 +790,7 @@ int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	int rval = 0;
 	struct cfg *pcfg;
 
-	dbg1("(cfgmgr) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	// connectors, modify not supported
 	
@@ -798,7 +800,7 @@ int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 		struct device *dev = dmgr_get_device(serial);
 		struct cfg *smcfg;
 		if(!dev) {
-			err("(cfgmgr) %s() could not find device %s in device list!", __func__, serial);
+			err("%s() could not find device %s in device list!", __func__, serial);
 			continue;
 		}
 
@@ -818,48 +820,48 @@ int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 }
 
 int cfgmgr_sm_load(const char *serial) {
-	dbg1("(cfgmgr) %s()", __func__);
+	dbg1("%s()", __func__);
 	struct device *dev = dmgr_get_device(serial);
 	struct sm *sm;
 
 	if(!dev) {
-		err("(cfgmgr) %s keyer not found!", serial);
+		err("%s keyer not found!", serial);
 		return -1;
 	}
 
 	sm = mhc_get_sm(dev->ctl);
 
 	if(!sm) {
-		err("(cfgmgr) %s no SM structure found!", serial);
+		err("%s no SM structure found!", serial);
 		return -1;
 	}
 
 	if(0 != sm_get_antsw(sm)) {
-		err("(cfgmgr) %s could not load antsw settings!", serial);
+		err("%s could not load antsw settings!", serial);
 		return -1;
 	}
 	return 0;
 }
 
 int cfgmgr_sm_store(const char *serial) {
-	dbg1("(cfgmgr) %s()", __func__);
+	dbg1("%s()", __func__);
 	struct device *dev = dmgr_get_device(serial);
 	struct sm *sm;
 
 	if(!dev) {
-		err("(cfgmgr) %s keyer not found!", serial);
+		err("%s keyer not found!", serial);
 		return -1;
 	}
 
 	sm = mhc_get_sm(dev->ctl);
 
 	if(!sm) {
-		err("(cfgmgr) %s no SM structure found!", serial);
+		err("%s no SM structure found!", serial);
 		return -1;
 	}
 
 	if(0 != sm_antsw_store(sm)) {
-		err("(cfgmgr) %s could not store antsw settings!", serial);
+		err("%s could not store antsw settings!", serial);
 		return -1;
 	}
 
@@ -868,7 +870,7 @@ int cfgmgr_sm_store(const char *serial) {
 
 
 struct cfgmgr *cfgmgr_create(struct conmgr *conmgr, struct ev_loop *loop) {
-	dbg1("(cfgmgr) %s()", __func__);
+	dbg1("%s()", __func__);
 	struct cfg *runtime_cfg = cfg_create();
 	if(!runtime_cfg)
 		return NULL;
@@ -886,7 +888,7 @@ int cfgmgr_save_cfg(struct cfgmgr *cfgmgr) {
 	HDF *save_hdf;
 	int rval = 0;
 
-	dbg1("(cfgmgr) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	err = hdf_init(&save_hdf);
 	if(err != STATUS_OK)  {
@@ -903,7 +905,7 @@ int cfgmgr_save_cfg(struct cfgmgr *cfgmgr) {
 		STRING str;
 		string_init(&str);
 		nerr_error_string(err, &str);
-		err("(cfgmgr) could not save configuration! (%s)", str.buf);
+		err("could not save configuration! (%s)", str.buf);
 		nerr_ignore(&err);
 		string_clear(&str);
 		rval = -1;
@@ -914,7 +916,7 @@ int cfgmgr_save_cfg(struct cfgmgr *cfgmgr) {
 }
 
 void cfgmgr_destroy(struct cfgmgr *cfgmgr) {
-	dbg1("(cfgmgr) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	if(!cfgmgr)
 		return;

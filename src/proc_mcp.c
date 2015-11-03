@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -15,6 +15,8 @@
 #include "logger.h"
 #include "mhcontrol.h"
 #include "mhmk2r.h"
+
+#define MOD_ID "mcp"
 
 #define MCP_MAX_CMD_SIZE (32)
 
@@ -46,7 +48,7 @@ static void send_err_response(int fd, const char *cmd) {
 	strcat(response, "\r\n");
 	r = write(fd, response, strlen(response));
 	if(r <= 0)
-		err_e(errno, "(mcp) %s() could not write response!", __func__);
+		err_e(errno, "%s() could not write response!", __func__);
 }
 
 static void completion_cb(unsigned const char *reply_buf, int len, int result, void *user_data)  {
@@ -54,11 +56,11 @@ static void completion_cb(unsigned const char *reply_buf, int len, int result, v
 	struct proc_mcp *mcp = user_data;
 
 	if(result != CMD_RESULT_OK) {
-		err("(mcp) %s command failed: %s!", mcp->action_name, mhc_cmd_err_string(result));
+		err("%s command failed: %s!", mcp->action_name, mhc_cmd_err_string(result));
 		send_err_response(mcp->fd, mcp->cmd);
 		return;
 	}
-	dbg1("(mcp) %s cmd ok", mcp->action_name);
+	dbg1("%s cmd ok", mcp->action_name);
 }
 
 static int frd_to_hfocus(uint8_t hfocus[8], const char *frd_arg) {
@@ -118,7 +120,7 @@ static int process_cmd(struct proc_mcp *mcp) {
 	if(mcp->cmd_len < 2)
 		return -1;
 
-	dbg1("(mcp) command: %s", mcp->cmd);
+	dbg1("command: %s", mcp->cmd);
 
 	mhc_mk2r_get_hfocus(mcp->ctl, hfocus);
 
@@ -198,7 +200,7 @@ static int process_cmd(struct proc_mcp *mcp) {
 	}
 
 
-	err("(mcp) invalid command: %s", mcp->cmd);
+	err("invalid command: %s", mcp->cmd);
 
 	return -1;
 
@@ -213,7 +215,7 @@ void mcp_cb(struct mh_router *router, int channel, struct buffer *b, int fd, voi
 	struct proc_mcp *mcp = user_data;
 	int c;
 
-	dbg1("(mcp) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	mcp->fd = fd;
 
@@ -234,7 +236,7 @@ void mcp_cb(struct mh_router *router, int channel, struct buffer *b, int fd, voi
 
 			mcp->cmd[mcp->cmd_len] = 0;
 			if(-1 == process_cmd(mcp)) {
-				err("(mcp) error processing command: %s", mcp->cmd);
+				err("error processing command: %s", mcp->cmd);
 				send_err_response(fd, mcp->cmd);
 			}
 			mcp->cmd_len = 0;
@@ -243,7 +245,7 @@ void mcp_cb(struct mh_router *router, int channel, struct buffer *b, int fd, voi
 
 		if(mcp->cmd_len >= MCP_MAX_CMD_SIZE) {
 			mcp->cmd_overflow = 1;
-			err("(mcp) command too long: %s(...)", mcp->cmd);
+			err("command too long: %s(...)", mcp->cmd);
 			continue;
 		}
 

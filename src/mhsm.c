@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -17,6 +17,8 @@
 #include "mhcontrol.h"
 #include "cfgnod.h"
 #include "dbuf.h"
+
+#define MOD_ID " sm"
 
 #ifdef SMSIM
 #include "mhsm_sim.h"
@@ -85,7 +87,7 @@ struct groups_record {
 	uint8_t	num_antennas;
 	uint8_t flags;
 	uint16_t current_azimuth;
-	uint8_t rxonly : 1;        // used my mhuxd internally to map to band_record BA2.0
+	uint8_t rxonly : 1;        // used by mhuxd internally to map to band_record BA2.0
 	struct buffer raw_buf;
 };
 
@@ -427,7 +429,7 @@ static void encode_bp(struct dbuf *dbuf, struct sm_bandplan *bp) {
 		PG_SCANLIST(&o->ref_list, ref) {
 			struct object *dest_o = obj_by_id(&bp->obj_list, ref->dest_id);
 			if(!dest_o) {
-				err("(mhsm) %s() internal error!", __func__);
+				err("%s() internal error!", __func__);
 				continue;
 			}
 
@@ -445,7 +447,7 @@ static void encode_bp(struct dbuf *dbuf, struct sm_bandplan *bp) {
 				break;
 
 			default:
-				err("(mhsm) %s() reference to invalid object type %d!", __func__, dest_o->type);
+				err("%s() reference to invalid object type %d!", __func__, dest_o->type);
 				break;
 			}
 			
@@ -600,7 +602,7 @@ static void bp_destroy(struct sm_bandplan *bp) {
 
 static int16_t check_roffset_range(int16_t offset) {
 	if(offset > 180 || offset < -180) {
-		warn("(mhsm) rotator offset out of range: %d", offset);
+		warn("rotator offset out of range: %d", offset);
 		offset = offset > 180 ? 180 : -180;
 	}
 	return offset;
@@ -609,7 +611,7 @@ static int16_t check_roffset_range(int16_t offset) {
 static int decode_arec(struct antenna_record *arec) {
 	int i, c, len;
 
-	dbg1_h("(sm) arec raw: ", arec->raw_buf.data, arec->raw_buf.size);
+	dbg1_h("", "arec raw", arec->raw_buf.data, arec->raw_buf.size);
 	BGETC(&arec->raw_buf); // label len
 	len = c;
 	if(len > MAX_LABEL_LEN)
@@ -659,7 +661,7 @@ static int decode_arec(struct antenna_record *arec) {
 static int decode_grec(struct sm_bandplan *bp, struct groups_record *grec) {
 	int i, c, len;
 
-	dbg1_h("(sm) grec raw: ", grec->raw_buf.data, grec->raw_buf.size);
+	dbg1_h("", "grec raw", grec->raw_buf.data, grec->raw_buf.size);
 
 	BGETC(&grec->raw_buf); // label len
 	len = c;
@@ -714,7 +716,7 @@ static int decode_grec(struct sm_bandplan *bp, struct groups_record *grec) {
 static int decode_brec(struct sm_bandplan *bp, struct band_record *brec) {
 	int i, c, len;
 
-	dbg1_h("(sm) raw: ", brec->raw_buf.data, brec->raw_buf.size);
+	dbg1_h("", "raw ", brec->raw_buf.data, brec->raw_buf.size);
 
 	BGETC(&brec->raw_buf);
 	brec->low_freq = c;
@@ -794,32 +796,32 @@ static int decode_brec(struct sm_bandplan *bp, struct band_record *brec) {
 static int decode_obj(struct sm_bandplan *bp, struct object *o) {
 	int rval = 0;
 
-	dbg1("(sm) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	switch(o->type) {
 	case OBJ_TYPE_ANT:
 		if(-1 == decode_arec((void*)o)) {
-			err("(sm) error decoding antenna record!");
+			err("error decoding antenna record!");
 			rval = -1;
 		}
 		break;
 
 	case OBJ_TYPE_GRP:
 		if(-1 == decode_grec(bp, (void*)o)) {
-			err("(sm) error decoding groups record!");
+			err("error decoding groups record!");
 			rval = -1;
 		}
 
 		break;
 	case OBJ_TYPE_BAND:
 		if(-1 == decode_brec(bp, (void*)o)) {
-			err("(sm) error decoding band record!");
+			err("error decoding band record!");
 			rval = -1;
 		}
 
 		break;
 	default:
-		err("(sm) %s() invalid object type %d!", __func__, o->type);
+		err("%s() invalid object type %d!", __func__, o->type);
 	}
 
 	return rval;
@@ -850,13 +852,13 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 	int i;
 
 	if(result != CMD_RESULT_OK) {
-		err("(sm) %s command failed: %s!", "GET ANTSW BLOCK", mhc_cmd_err_string(result));
+		err("%s command failed: %s!", "GET ANTSW BLOCK", mhc_cmd_err_string(result));
 		sm->get_antsw_state = STATE_GET_ANTSW_EMPTY;
 		return;
 	}
 
 	if(len != 34) {
-		err("(sm) GET ANTSW BLOCK invalid response length: %d!", len);
+		err("GET ANTSW BLOCK invalid response length: %d!", len);
 		sm->get_antsw_state = STATE_GET_ANTSW_EMPTY;
 		return;
 	}
@@ -868,8 +870,8 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 	reply_buf++;
 	len -= 2;
 
-	dbg1("(sm) GET ANTSW BLOCK offset %d ok, state %d", sm->get_antsw_offset, sm->get_antsw_state);
-	dbg1_h("(sm) GET ANTSW BLOCK data:", reply_buf, len);
+	dbg1("GET ANTSW BLOCK offset %d ok, state %d", sm->get_antsw_offset, sm->get_antsw_state);
+	dbg1_h("", "GET ANTSW BLOCK data:", reply_buf, len);
 
 	for(i = 0; i < 32; i++) {
 		uint8_t c = reply_buf[i];
@@ -999,11 +1001,11 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 
 int sm_get_antsw(struct sm *sm) {
 
-	dbg1("(sm) %s", __func__);
+	dbg1("%s %s()", sm->serial, __func__);
 
 	if(sm->get_antsw_state != STATE_GET_ANTSW_EMPTY &&
 			sm->get_antsw_state != STATE_GET_ANTSW_DONE) {
-		err("(sm) %s failed, command pending!", __func__);
+		err("%s failed, command pending!", __func__);
 		return -1;
 	}
 
@@ -1056,59 +1058,59 @@ static void debug_print_antsw_values(struct sm_bandplan *bp) {
 	struct reference *ref;
 
 	int j;
-	dbg1("(sm) %s", __func__);
+	dbg1("%s", __func__);
 	citem_debug_print_values("sm antsw fixed area", sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data, 115);
 
 	PG_SCANLIST(&bp->obj_list, o) {
 		if(o->type == OBJ_TYPE_ANT) {
 			struct antenna_record *arec = (void *)o;
-			dbg1("(sm)  ant id %d", o->id);
-			dbg1("(sm)    label:       %s", arec->o.label);
-			dbg1("(sm)    name:        %s", arec->o.name);
-			dbg1("(sm)    id:          %u", arec->o.id);
-			dbg1("(sm)    output:      0x%08x", arec->output_settings);
-			dbg1("(sm)    steppir:     %d", arec->steppir);
-			dbg1("(sm)    rxonly:      %d", arec->rxonly);
-			dbg1("(sm)    paAntNumber: %d", arec->pa_ant_number);
-			dbg1("(sm)    rotator:     %d", arec->rotator);
-			dbg1("(sm)    rotator off: %d", arec->rotator_offset);
+			dbg1(" ant id %d", o->id);
+			dbg1("   label:       %s", arec->o.label);
+			dbg1("   name:        %s", arec->o.name);
+			dbg1("   id:          %u", arec->o.id);
+			dbg1("   output:      0x%08x", arec->output_settings);
+			dbg1("   steppir:     %d", arec->steppir);
+			dbg1("   rxonly:      %d", arec->rxonly);
+			dbg1("   paAntNumber: %d", arec->pa_ant_number);
+			dbg1("   rotator:     %d", arec->rotator);
+			dbg1("   rotator off: %d", arec->rotator_offset);
 		}
 
 		if(o->type == OBJ_TYPE_GRP) {
 			struct groups_record *grec = (void*)o;
-			dbg1("(sm)  groups id %d", o->id);
-			dbg1("(sm)    label:        %s", grec->o.label);
-			dbg1("(sm)    name:         %s", grec->o.name);
-			dbg1("(sm)    num antennas: %d", grec->num_antennas);
-			dbg1("(sm)    flags:        %d (%s)", grec->flags, grec->flags & 1 ? "antenna group" : "virtual rotator");
-			dbg1("(sm)    current az    %d", grec->current_azimuth);
+			dbg1(" groups id %d", o->id);
+			dbg1("   label:        %s", grec->o.label);
+			dbg1("   name:         %s", grec->o.name);
+			dbg1("   num antennas: %d", grec->num_antennas);
+			dbg1("   flags:        %d (%s)", grec->flags, grec->flags & 1 ? "antenna group" : "virtual rotator");
+			dbg1("   current az    %d", grec->current_azimuth);
 			j = 0;
 			PG_SCANLIST(&grec->o.ref_list, ref)  {
-				dbg1("(sm)    ref list element %d", j++);
-				dbg1("(sm)     ref id:          %d", ref->id);
-				dbg1("(sm)     ref dest_id:     %d", ref->dest_id);
-				dbg1("(sm)     ref type:        %s", ref->type == REF_TYPE_ANT ? "ant" : "grp");
-				dbg1("(sm)     ref min azimuth: %d", ref->min_azimuth);
-				dbg1("(sm)     ref max azimuth: %d", ref->max_azimuth);
+				dbg1("   ref list element %d", j++);
+				dbg1("    ref id:          %d", ref->id);
+				dbg1("    ref dest_id:     %d", ref->dest_id);
+				dbg1("    ref type:        %s", ref->type == REF_TYPE_ANT ? "ant" : "grp");
+				dbg1("    ref min azimuth: %d", ref->min_azimuth);
+				dbg1("    ref max azimuth: %d", ref->max_azimuth);
 			}
 		}
 
 		if(o->type == OBJ_TYPE_BAND) {
 			struct band_record *brec = (void*)o;
-			dbg1("(sm)  band id %d", o->id);
-			dbg1("(sm)    name:       %s", brec->o.name);
-			dbg1("(sm)    low:        %d", brec->low_freq);
-			dbg1("(sm)    high:       %d", brec->high_freq);
-			dbg1("(sm)    outputs:    %d", brec->outputs);
-			dbg1("(sm)    current Rx: %d", brec->currentRx);
-			dbg1("(sm)    current Tx: %d", brec->currentTx);
-			dbg1("(sm)    split:      %d", brec->split);
+			dbg1(" band id %d", o->id);
+			dbg1("   name:       %s", brec->o.name);
+			dbg1("   low:        %d", brec->low_freq);
+			dbg1("   high:       %d", brec->high_freq);
+			dbg1("   outputs:    %d", brec->outputs);
+			dbg1("   current Rx: %d", brec->currentRx);
+			dbg1("   current Tx: %d", brec->currentTx);
+			dbg1("   split:      %d", brec->split);
 			j = 0;
 			PG_SCANLIST(&brec->o.ref_list, ref) {
-				dbg1("(sm)    ref list element %d", j++);
-				dbg1("(sm)     ref id:      %d", ref->id);
-				dbg1("(sm)     ref dest_id: %d", ref->dest_id);
-				dbg1("(sm)     ref type:    %s", ref->type == REF_TYPE_ANT ? "ant" : "grp");
+				dbg1("   ref list element %d", j++);
+				dbg1("    ref id:      %d", ref->id);
+				dbg1("    ref dest_id: %d", ref->dest_id);
+				dbg1("    ref type:    %s", ref->type == REF_TYPE_ANT ? "ant" : "grp");
 			}
 		}
 	}
@@ -1125,11 +1127,11 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	if(sm->get_antsw_state != STATE_GET_ANTSW_DONE && sm->get_antsw_state != STATE_GET_ANTSW_EMPTY) {
 		// GET ANTSW pending
-		err("(sm) %s failed, invalid state %d!", __func__, sm->get_antsw_state);
+		err("%s failed, invalid state %d!", __func__, sm->get_antsw_state);
 		return -1;
 	}
 
@@ -1242,7 +1244,7 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 }
 
 void sm_antsw_clear_lists(struct sm *sm) {
-	dbg1("(mhsm) %s()", __func__);
+	dbg1("%s()", __func__);
 	clear_obj_list(sm->bp_eeprom);
 }
 
@@ -1250,7 +1252,7 @@ int sm_antsw_add_obj(struct sm *sm, struct cfg * cfg) {
 	int rval;
 	int type = cfg_get_int_val(cfg, "type", -1);
 
-	dbg1("(mhsm) %s()", __func__);
+	dbg1("%s %s()", sm->serial, __func__);
 
 	switch(type) {
 	case OBJ_TYPE_ANT:
@@ -1263,7 +1265,7 @@ int sm_antsw_add_obj(struct sm *sm, struct cfg * cfg) {
 		rval = sm_antsw_add_band(sm, cfg);
 		break;
 	default:
-		err("(mhsm) %s() invalid object type %d!", __func__, type);
+		err("%s() invalid object type %d!", __func__, type);
 		rval = -1;
 	}
 	return rval;
@@ -1273,7 +1275,7 @@ int sm_antsw_mod_obj(struct sm *sm, struct cfg * cfg) {
 	int rval;
 	int type = cfg_get_int_val(cfg, "type", -1);
 
-	dbg1("(mhsm) %s()", __func__);
+	dbg1("%s %s()", sm->serial, __func__);
 
 	switch(type) {
 	case OBJ_TYPE_ANT:
@@ -1286,7 +1288,7 @@ int sm_antsw_mod_obj(struct sm *sm, struct cfg * cfg) {
 		rval = sm_antsw_mod_band(sm, cfg);
 		break;
 	default:
-		err("(mhsm) %s() invalid object type %d!", __func__, type);
+		err("%s() invalid object type %d!", __func__, type);
 		rval = -1;
 	}
 	return rval;
@@ -1298,7 +1300,7 @@ int sm_antsw_add_ant(struct sm *sm, struct cfg *cfg) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s()", __func__);
+	dbg1("%s %s()", sm->serial, __func__);
 
 	arec = arec_create(bp, cfg_name_to_int(cfg, 0));
 	PG_AddTail(&bp->obj_list, &arec->o.node);
@@ -1313,12 +1315,12 @@ int sm_antsw_mod_ant(struct sm *sm, struct cfg *cfg) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s()", __func__);
+	dbg1("%s %s()", sm->serial, __func__);
 
 	int id = cfg_get_int_val(cfg, "id", -1);
 	arec = ant_by_id(&bp->obj_list, id);
 	if(!arec) {
-		err("(mhsm) %s() failed, antenna id %d not found!", __func__, id);
+		err("%s() failed, antenna id %d not found!", __func__, id);
 		return -1;
 	}
 
@@ -1357,7 +1359,7 @@ int sm_antsw_add_group(struct sm *sm, struct cfg *cfg) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s()", __func__);
+	dbg1("%s, %s()", sm->serial, __func__);
 
 	grec = grec_create(bp, cfg_name_to_int(cfg, 0));
 	PG_AddTail(&bp->obj_list, &grec->o.node);
@@ -1372,7 +1374,7 @@ int sm_antsw_mod_group(struct sm *sm, struct cfg *cfg) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s()", __func__);
+	dbg1("%s, %s()", sm->serial, __func__);
 
 	int id = cfg_get_int_val(cfg, "id", -1);
 	if(id == -1)
@@ -1380,7 +1382,7 @@ int sm_antsw_mod_group(struct sm *sm, struct cfg *cfg) {
 
 	grec = grp_by_id(&bp->obj_list, id);
 	if(!grec) {
-		err("(mhsm) %s() failed, group id %d not found!", __func__, id);
+		err("%s() failed, group id %d not found!", __func__, id);
 		return -1;
 	}
 
@@ -1426,7 +1428,7 @@ int sm_antsw_add_band(struct sm *sm, struct cfg *cfg) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s()", __func__);
+	dbg1("%s %s()", sm->serial, __func__);
 
 	brec = brec_create(bp, cfg_name_to_int(cfg, 0));
 	PG_AddTail(&bp->obj_list, &brec->o.node);
@@ -1441,7 +1443,7 @@ int sm_antsw_mod_band(struct sm *sm, struct cfg *cfg) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s()", __func__);
+	dbg1("%s %s()", sm->serial, __func__);
 
 	int id = cfg_get_int_val(cfg, "id", -1);
 	if(id == -1)
@@ -1449,7 +1451,7 @@ int sm_antsw_mod_band(struct sm *sm, struct cfg *cfg) {
 
 	brec = band_by_id(&bp->obj_list, id);
 	if(!brec) {
-		err("(mhsm) %s() failed, band id %d not found!", __func__, id);
+		err("%s() failed, band id %d not found!", __func__, id);
 		return -1;
 	}
 
@@ -1521,7 +1523,7 @@ int sm_antsw_rem_obj(struct sm *sm, int id) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s() id: %d", __func__, id);
+	dbg1("%s %s() id: %d", sm->serial, __func__, id);
 	//debug_print_antsw_values(sm->bp_eeprom);
 
 	// FIXME: check references to this object
@@ -1535,7 +1537,7 @@ int sm_antsw_rem_obj(struct sm *sm, int id) {
 		return 0;
 	}
 
-	err("(mhsm) could not remove object id %d, not found!", id);
+	err("could not remove object id %d, not found!", id);
 	return -1;
 }
 
@@ -1546,7 +1548,7 @@ int sm_antsw_rem_obj_ref(struct sm *sm, int obj_id, int ref_id) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s() id: %d rid %d", __func__, obj_id, ref_id);
+	dbg1("%s %s() id: %d rid %d", sm->serial, __func__, obj_id, ref_id);
 
 	o = obj_by_id(&bp->obj_list, obj_id);
 
@@ -1559,7 +1561,7 @@ int sm_antsw_rem_obj_ref(struct sm *sm, int obj_id, int ref_id) {
 		}
 	}
 
-	err("(mhsm) could not remove ref id %d from obj id %d, not found!", ref_id, obj_id);
+	err("could not remove ref id %d from obj id %d, not found!", ref_id, obj_id);
 	return -1;
 
 }
@@ -1572,7 +1574,7 @@ int sm_antsw_rem_ant(struct sm *sm, int id) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s() id: %d", __func__, id);
+	dbg1("%s %s() id: %d", sm->serial, __func__, id);
 	//debug_print_antsw_values(sm->bp_eeprom);
 
 	// FIXME: check references to this antenna and remove them.
@@ -1584,7 +1586,7 @@ int sm_antsw_rem_ant(struct sm *sm, int id) {
 		return 0;
 	}
 
-	err("(mhsm) could not remove antenna id %d, not found!", id);
+	err("could not remove antenna id %d, not found!", id);
 	return -1;
 }
 
@@ -1596,7 +1598,7 @@ int sm_antsw_rem_group(struct sm *sm, int id) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s() id: %d", __func__, id);
+	dbg1("%s %s() id: %d", sm->serial, __func__, id);
 
 	grec = grp_by_id(&bp->obj_list, id);
 	if(grec) {
@@ -1606,7 +1608,7 @@ int sm_antsw_rem_group(struct sm *sm, int id) {
 		return 0;
 	}
 
-	err("(mhsm) could not remove group id %d, not found!", id);
+	err("could not remove group id %d, not found!", id);
 	return -1;
 }
 
@@ -1617,7 +1619,7 @@ int sm_antsw_rem_band(struct sm *sm, int id) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s() id: %d", __func__, id);
+	dbg1("%s %s() id: %d", sm->serial, __func__, id);
 
 	brec = band_by_id(&bp->obj_list, id);
 	if(brec) {
@@ -1627,7 +1629,7 @@ int sm_antsw_rem_band(struct sm *sm, int id) {
 		return 0;
 	}
 	
-	err("(mhsm) could not remove band id %d, not found!", id);
+	err("could not remove band id %d, not found!", id);
 	return -1;
 }
 
@@ -1639,7 +1641,7 @@ int sm_antsw_rem_group_ref(struct sm *sm, int grp_id, int ref_id) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s() gid: %d rid %d", __func__, grp_id, ref_id);
+	dbg1("%s %s() gid: %d rid %d", sm->serial, __func__, grp_id, ref_id);
 
 	grec = grp_by_id(&bp->obj_list, grp_id);
 	if(grec) {
@@ -1651,7 +1653,7 @@ int sm_antsw_rem_group_ref(struct sm *sm, int grp_id, int ref_id) {
 		}
 	}
 
-	err("(mhsm) could not remove ref id %d from group id %d, not found!", ref_id, grp_id);
+	err("could not remove ref id %d from group id %d, not found!", ref_id, grp_id);
 	return -1;
 
 }
@@ -1664,7 +1666,7 @@ int sm_antsw_rem_band_ref(struct sm *sm, int band_id, int ref_id) {
 	if(!bp)
 		return -1;
 
-	dbg1("(mhsm) %s() gid: %d rid %d", __func__, band_id, ref_id);
+	dbg1("%s %s() gid: %d rid %d", sm->serial, __func__, band_id, ref_id);
 
 	brec = band_by_id(&bp->obj_list, band_id);
 	if(brec) {
@@ -1676,7 +1678,7 @@ int sm_antsw_rem_band_ref(struct sm *sm, int band_id, int ref_id) {
 		}
 	}
 
-	err("(mhsm) could not remove ref id %d from band id %d, not found!", ref_id, band_id);
+	err("could not remove ref id %d from band id %d, not found!", ref_id, band_id);
 	return -1;
 
 }
@@ -1692,7 +1694,7 @@ int sm_antsw_set_opt(struct sm *sm, const char *key, uint32_t val) {
 
 	ret = citem_set_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items), bp->fixed_data, sizeof(bp->fixed_data), key, val);
 
-	dbg0("(mhsm) %s set antsw option %s=%d", sm->serial, key, val);
+	dbg0("%s set antsw option %s=%d", sm->serial, key, val);
 
 	return ret;
 }
@@ -1705,10 +1707,10 @@ int sm_antsw_set_output(struct sm *sm, const char *out_name, uint8_t val) {
 	if(!bp)
 		return -1;
 
-	dbg0("(mhsm) %s set antsw output %s=%d", sm->serial, out_name, val);
+	dbg0("%s set antsw output %s=%d", sm->serial, out_name, val);
 
 	if(val >= SM_OUT_MAX) {
-		err("(mhsm) %s invalid value %u", __func__, val);
+		err("%s invalid value %u", __func__, val);
 		return -1;
 	}
 
@@ -1738,7 +1740,7 @@ int sm_antsw_set_output(struct sm *sm, const char *out_name, uint8_t val) {
 		}
 	}
 
-	err("(mhsm) %s could not find output relay %s!", __func__, out_name);
+	err("%s could not find output relay %s!", __func__, out_name);
 	return -1;
 }
 
@@ -1831,7 +1833,7 @@ int sm_antsw_validate_bp(struct sm *sm) {
 				if(cmp_ref == ref)
 					continue;
 				if(azimuth_overlap(ref->min_azimuth, ref->max_azimuth, cmp_ref->min_azimuth, cmp_ref->max_azimuth)) {
-					warn("(mhsm) overlapping azimuths in %s!", o->name);
+					warn("overlapping azimuths in %s!", o->name);
 					return SM_VALIDATE_RESULT_AZIMUTH_OVERLAP;
 				}
 			}
@@ -1840,7 +1842,7 @@ int sm_antsw_validate_bp(struct sm *sm) {
 		// check for gaps
 		for(i = 0; i < 360; i++) {
 			if(deg[i] == 0) {
-				warn("(mhsm) azimuths in %s do not cover 360 degrees!", o->name);
+				warn("azimuths in %s do not cover 360 degrees!", o->name);
 				return SM_VALIDATE_RESULT_AZIMUTH_GAPS;
 			}
 		}
@@ -1854,7 +1856,7 @@ int sm_antsw_store(struct sm *sm) {
 	int res;
 	struct sm_bandplan *bp;
 
-	dbg1("(sm) %s()", __func__);
+	dbg1("%s %s()", sm->serial, __func__);
 	
 	bp = sm->bp_eeprom;
 	if( ! bp)
@@ -1862,7 +1864,7 @@ int sm_antsw_store(struct sm *sm) {
 	
 	res = sm_antsw_validate_bp(sm);
 	if(res) {
-		warn("(mhsm) antsw validation failed!");
+		warn("antsw validation failed!");
 		return -1;
 	}
 

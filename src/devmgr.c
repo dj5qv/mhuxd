@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -21,6 +21,8 @@
 #include "cfgmgr.h"
 #include "wkman.h"
 
+#define MOD_ID "dmr"
+
 struct device_manager {
 	struct PGList device_list;
 	struct ev_loop *loop;
@@ -31,7 +33,7 @@ struct device_manager {
 struct device_manager *dman = NULL;
 
 static struct device *create_dev(const char *serial, uint16_t type) {
-	dbg1("(dmr) %s() for %s", __func__, serial);
+	dbg1("%s %s()", serial, __func__);
 
 	struct device *dev = dmgr_get_device(serial);
 	if(dev)
@@ -40,7 +42,7 @@ static struct device *create_dev(const char *serial, uint16_t type) {
 	if(!type) {
 		type = mhi_type_from_serial(serial);
 		if(type == MHT_UNKNOWN) {
-			err("(dmr) Could not determine keyer type from serial number (%s)", serial);
+			err("Could not determine keyer type from serial number (%s)", serial);
 			return NULL;
 		}
 	}
@@ -71,11 +73,11 @@ static void devmon_callback(const char *serial, int status, void *user_data) {
 	(void) user_data;
 
 
-	dbg1("(dmr) %s() status: %d", __func__, status);
+	dbg1("%s() status: %d", __func__, status);
 	//	printf("device changed: %s - %d\n", serial, status);
 
 	if(status == DEVMON_DISCONNECTED) {
-		info("(dmr) %s disconnected from USB", serial);
+		info("%s disconnected from USB", serial);
 		return;
 	}
 
@@ -84,19 +86,19 @@ static void devmon_callback(const char *serial, int status, void *user_data) {
 
 	const char *devnode = udv_dev_by_serial(serial);
 	if(devnode == NULL) {
-		err("(dmr) could not determine device node for %s!", serial);
+		err("could not determine device node for %s!", serial);
 		return;
 	}
 
-	info("(dmr) %s connected to USB on %s", serial, devnode);
+	info("%s connected to USB on %s", serial, devnode);
 
 	int fd = tty_open(devnode);
 	if(fd == -1) {
-		err_e(errno, "(dmr) could not open device %s!", devnode);
+		err_e(errno, "could not open device %s!", devnode);
 		free((void*)devnode);
 		return;
 	}
-	dbg0("(dmr) opened %s", devnode);
+	dbg0("opened %s", devnode);
 
 	struct device *dev = create_dev(serial, MHT_UNKNOWN);
 
@@ -122,7 +124,7 @@ void *dmgr_create(struct ev_loop *loop, struct cfgmgr *cfgmgr) {
 
 void dmgr_enable_monitor() {
 	if(dman->devmon) {
-		dbg0("(dmr) %s() monitor already enabled!", __func__);
+		dbg0("%s() monitor already enabled!", __func__);
 		return;
 	}
 	dman->devmon = devmon_create(dman->loop, devmon_callback, dman);

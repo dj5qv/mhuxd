@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -14,6 +14,8 @@
 #include <sys/time.h>
 #include <errno.h>
 #include "logger.h"
+
+#define MOD_ID "log"
 
 struct level {
 	const char *name;
@@ -51,7 +53,7 @@ void log_init(FILE *f) {
 void log_set_level(int level) {
 	if(level >= 0 && level <= LOGSV_MAX) {
 		log_level = level;
-		info("(log) log level changed to %s", level_map[level].name);
+		info("log level changed to %s", level_map[level].name);
 	}
 }
 
@@ -86,26 +88,30 @@ static const char *severity_strs[] = {
         [LOGSV_DBG1]         = "DBG1",
 };
 
-void log_hex(int severity, const char *header, const char *buf, int len) {
+void log_hex(int severity, const char *msg1, const char *msg2, const char *msg3, const char *buf, int len) {
 	int c_per_line;
 	const char *p;
 
 	if(severity > log_level)
-                return;
+		return;
+
+	if(msg1 == NULL)
+		msg1 = "";
+	if(msg2 == NULL)
+		msg2 = "";
+	if(msg3 == NULL)
+		msg3 = "";
 
 	if(file == NULL || severity < 0 || severity > LOGSV_MAX || len <= 0)
-                return;
+		return;
 
-	if(!header)
-		header = "HEX";
-
-	c_per_line = (80 - strlen(header)) / 3;
+	c_per_line = 81 / 3;
 
 	for(p = buf; p < buf + len; p++) {
 		if(!((p - buf) % c_per_line)) {
 			if(p > buf)
 				fputs("\n", file);
-			log_msg(severity, "%s:", header);
+			log_msg(severity, msg1, "%s%s%s:", msg2, *msg2 ? " " : "",  msg3);
 		}
 		fprintf(file, " %02x", (unsigned char)*p);
 	}
@@ -113,9 +119,10 @@ void log_hex(int severity, const char *header, const char *buf, int len) {
 		fputs("\n", file);
 
 	fflush(file);
+
 }
 
-void log_msg(int severity, const char *fmt, ...) {
+void log_msg(int severity, const char *header, const char *fmt, ...) {
 	char buf[32];
 
 	if(severity > log_level)
@@ -124,10 +131,13 @@ void log_msg(int severity, const char *fmt, ...) {
 	if(file == NULL || severity < 0 || severity > LOGSV_MAX)
 		return;
 
+	if(header == NULL)
+		header = "";
+	
 	if(current_time(buf))
 		return;
 
-	fprintf(file, "%s %s ", buf, severity_strs[severity]);
+	fprintf(file, "%s %s %s ", buf, severity_strs[severity], header);
 
 	va_list vl;
 	va_start(vl, fmt);
@@ -136,3 +146,4 @@ void log_msg(int severity, const char *fmt, ...) {
 
 	fflush(file);
 }
+

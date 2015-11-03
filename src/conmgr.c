@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -27,6 +27,8 @@
 #include "cfgnod.h"
 #include "proc_mcp.h"
 #include "proc_rotator.h"
+
+#define MOD_ID "con"
 
 enum {
 	CON_INVALID,
@@ -72,13 +74,13 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
         int sodat[2] = { -1, -1 };
         int soptt[2] = { -1, -1 };
 
-	dbg1("(con) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	if(id > 0) {
 		struct connector *ctr;
 		PG_SCANLIST(&conmgr->connector_list, ctr) {
 			if(ctr->id == id) {
-				err("(con) can't create connector id %d, already exists!", id);
+				err("can't create connector id %d, already exists!", id);
 				return 0;
 			}
 		}
@@ -102,13 +104,13 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 	// get device
 	serial = cfg_get_val(cfg, "serial", NULL);
 	if(serial == NULL) {
-		err("(con) can't create connector, missing parameter 'serial'!");
+		err("can't create connector, missing parameter 'serial'!");
 		goto fail;
 	}
 
 	ctr->dev = dmgr_get_device(serial);
 	if(ctr->dev == NULL) {
-		err("(con) can't create connector, device %s not found!", serial);
+		err("can't create connector, device %s not found!", serial);
 		goto fail;
 	}
 
@@ -117,14 +119,14 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 	channel_str = cfg_get_val(cfg, "channel", NULL);
 
 	if(channel_str == NULL) {
-		err("(con) can't create connector, missing parameter 'channel'!");
+		err("can't create connector, missing parameter 'channel'!");
 		goto fail;
 	}
 
 	ctr->channel = ch_str2channel(channel_str);
 
 	if(ctr->channel == -1) {
-		err("(con) can't create connector, invalid parameter for 'channel' (%s)!", channel_str);
+		err("can't create connector, invalid parameter for 'channel' (%s)!", channel_str);
 		goto fail;
 	}
 
@@ -132,11 +134,11 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 	type_str = cfg_get_val(cfg, "type", NULL);
 
 	if(type_str == NULL) {
-		err("(con) can't create connector, missing parameter 'type'!");
+		err("can't create connector, missing parameter 'type'!");
 		goto fail;
 	}
 
-	dbg0("(con) %s() %s %s %s", __func__, serial, type_str, channel_str);
+	dbg0("%s() %s %s %s", __func__, serial, type_str, channel_str);
 
 	if(!strcasecmp(type_str, "VSP"))
 		ctr->type = CON_VSP;
@@ -145,21 +147,21 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 
 
 	if(ctr->type == CON_INVALID) {
-		err("(con) can't create connector, invalid parameter for 'type' (%s)", type_str);
+		err("can't create connector, invalid parameter for 'type' (%s)", type_str);
 		goto fail;
 	}
 
 	// create the data sockets
 	if(socketpair(AF_UNIX, SOCK_STREAM, 0, sodat)) {
-		err_e(errno, "(con) could not create data socket for VSP!");
+		err_e(errno, "could not create data socket for VSP!");
 		goto fail;
         }
         if (fcntl(sodat[0], F_SETFL, O_NONBLOCK) < 0) {
-                err_e(errno, "(con) failed to set NONBLOCK on data socket");
+                err_e(errno, "failed to set NONBLOCK on data socket");
                 goto fail;
         }
         if (fcntl(sodat[1], F_SETFL, O_NONBLOCK) < 0) {
-                err_e(errno, "(con) failed to set NONBLOCK on data socket");
+                err_e(errno, "failed to set NONBLOCK on data socket");
                 goto fail;
         }
 	ctr->s_fd_data = sodat[0];
@@ -178,15 +180,15 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 		} else {
 			if(ctr->ptt_channel != -1) {
 				if(socketpair(AF_UNIX, SOCK_STREAM, 0, soptt)) {
-					err_e(errno, "(con) could not create ptt socket for VSP!");
+					err_e(errno, "could not create ptt socket for VSP!");
 					goto fail;
 				}
 				if (fcntl(soptt[0], F_SETFL, O_NONBLOCK) < 0) {
-					err_e(errno, "(con) failed to set NONBLOCK on ptt socket");
+					err_e(errno, "failed to set NONBLOCK on ptt socket");
 					goto fail;
 				}
 				if (fcntl(soptt[1], F_SETFL, O_NONBLOCK) < 0) {
-					err_e(errno, "(con) failed to set NONBLOCK on ptt socket");
+					err_e(errno, "failed to set NONBLOCK on ptt socket");
 					goto fail;
 				}
 				ctr->s_fd_ptt = soptt[0];
@@ -198,7 +200,7 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 	}
 
 	// create the connector
-	dbg1("(con) creating %s connector", type_str);
+	dbg1("creating %s connector", type_str);
 
 	switch(ctr->type) {
 	case CON_VSP:
@@ -208,7 +210,7 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 		ctr->instance = ctcp_create(&ctr->cspec);
 		break;
 	default:
-		err("(cmgr) create connector, invalid type %d!", ctr->type);
+		err("create connector, invalid type %d!", ctr->type);
 		goto fail;
 
 		break;
@@ -234,7 +236,7 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 		// atl_set_value_from_int(ctr->cspec.cfg, "ID", ctr->id);
 		PG_AddTail(&conmgr->connector_list, &ctr->node);
 	} else {
-		err("(con) failed to create connector!");
+		err("failed to create connector!");
 		goto fail;
 	}
 
@@ -266,7 +268,7 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 	struct connector *ctr;
 	
-	dbg1("(con) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	PG_SCANLIST(&conmgr->connector_list, ctr) {
 		if(ctr->id == id) {

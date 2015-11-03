@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -11,6 +11,8 @@
 #include "util.h"
 #include "logger.h"
 #include "citem.h"
+
+#define MOD_ID "mk2r"
 
 struct citem mok_items[] = {
 	CITEM("txFocus", 0, 0, 1),
@@ -86,7 +88,7 @@ void mk2r_debug_print_mok_values(const uint8_t mok_buffer[8]) {
 }
 
 int mk2r_set_hfocus_value(uint8_t hfocus_buffer[4], const char *key, int value) {
-	dbg1("(mk2r) %s() %s: %d", __func__, key, value);
+	dbg1("%s() %s: %d", __func__, key, value);
 
 	return citem_set_value(mk2r_hfocus_items, ARRAY_SIZE(mk2r_hfocus_items), hfocus_buffer, 4, key, value);
 }

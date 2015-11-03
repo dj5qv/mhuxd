@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -24,6 +24,8 @@
 #include "buffer.h"
 #include "conmgr.h"
 #include "cfgnod.h"
+
+#define MOD_ID "vsp"
 
 struct vsp {
 	int fd_data;
@@ -95,14 +97,14 @@ static int check_cuse_dev(const char *devname) {
 	const char *cusepath = "/dev/cuse";
 	int fd;
 
-	dbg1("(vsp) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	fd = open(cusepath, O_RDWR);
 	if (fd == -1) {
 		if (errno == ENODEV || errno == ENOENT)
-			err("(vsp) /dev/cuse device not found, try 'modprobe cuse' first\n");
+			err("/dev/cuse device not found, try 'modprobe cuse' first\n");
 		else
-			err_e(errno, "(vsp) can't open /dev/cuse!");
+			err_e(errno, "can't open /dev/cuse!");
 		return -1;
 	}
 	close(fd);
@@ -113,9 +115,9 @@ static int check_cuse_dev(const char *devname) {
 	if(-1 == stat(devpath, &buf)) {
 		if(errno == ENOENT)
 			return 0;
-		err_e(errno, "(vsp) stat() on %s failed!", devpath);
+		err_e(errno, "stat() on %s failed!", devpath);
 	}
-	err("(vsp) %s already exist!", devpath);
+	err("%s already exist!", devpath);
 
 	return -1;
 }
@@ -133,7 +135,7 @@ static int set_bits(struct vsp_session *vs, int bits) {
 		data |= 1;
 	if((bits & TIOCM_DTR) && vsp->dtr_is_ptt)
 		data |= 1;
-	dbg1("(vsp) %s() %s RTS: %d DTR %d", __func__, vsp->devname, bits & TIOCM_RTS ? 1:0, bits & TIOCM_DTR ? 1:0);
+	dbg1("%s() %s RTS: %d DTR %d", __func__, vsp->devname, bits & TIOCM_RTS ? 1:0, bits & TIOCM_DTR ? 1:0);
 
 	uint8_t state = data ? '1' : '0';
 	//	buf_append(&vs->buf_in, &state, 1);
@@ -157,7 +159,7 @@ static void chan_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct vsp *vsp = w->data;
 	struct fuse_session *se = vsp->se;
 
-	dbg1("(vsp) %s()", __func__);
+	dbg1("%s()", __func__);
 	
         int res = 0;
         struct fuse_chan *ch = fuse_session_next_chan(se, NULL);
@@ -168,7 +170,7 @@ static void chan_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		fuse_session_process(se, vsp->chan_buf, res, tmpch);
 
 	if (res <= 0 && res != -EINTR) {
-		err_e(errno, "(vsp) cuse read error!");
+		err_e(errno, "cuse read error!");
 		// FIXME: handle read error here
 		//fuse_session_reset(se);
 		;
@@ -182,13 +184,13 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	uint8_t buf[1024];
 	ssize_t size, avail;
 
-	dbg1("(vsp) %s()", __func__);
+	dbg1("%s()", __func__);
 	
 	do {
 		size = read(w->fd, buf, sizeof(buf));
 		if(size == -1 && errno != EAGAIN) {
-			err_e(errno, "(vsp) error reading data from router!");
-			err_e(errno, "(vsp) stopping vsp %s!", vsp->devname);
+			err_e(errno, "error reading data from router!");
+			err_e(errno, "stopping vsp %s!", vsp->devname);
 			ev_io_stop(vsp->loop, &vsp->w_data_in);
 			break;
 		}
@@ -196,12 +198,7 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		if(size <= 0)
 			break;
 
-		char header[32] = "(vsp) ";
-		strncat(header, vsp->devname, 6);
-		strcat(header, " k => vsp");
-
-		//snprintf(header, sizeof(header), "(vsp) %s to vsp", vsp->devname);
-		dbg1_h(header, buf, size);
+		dbg1_h(vsp->devname, "k => vsp", buf, size);
 
 		PG_SCANLIST(&vsp->session_list, vs) {
 			struct buffer *b = &vs->buf_out;
@@ -212,7 +209,7 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 			avail = buf_size_avail(b);
 
 			if(size > avail) {
-				warn("(vsp) %s not enough buffer space available (%zd/%zd) client pid %d",
+				warn("%s not enough buffer space available (%zd/%zd) client pid %d",
 				     vsp->devname, size, avail, vs->client_pid);
 				size = avail;
 			}
@@ -254,7 +251,7 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct vsp_session *vs;
 	int size, need_to_write = 0;
 
-	dbg1("(vsp) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	PG_SCANLIST(&vsp->session_list, vs) {
 		struct buffer *b = &vs->buf_in;
@@ -263,16 +260,14 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		size = write(vsp->fd_data, b->data + b->rpos, b->size - b->rpos);
 		if(size == -1 && errno != EAGAIN) {
 			//FIXME: handle error.
-			err_e(errno, "(vsp) error writing data to router!");
-			err_e(errno, "(vsp) stopping vsp %s!", vsp->devname);
+			err_e(errno, "error writing data to router!");
+			err_e(errno, "stopping vsp %s!", vsp->devname);
 			ev_io_stop(vsp->loop, &vsp->w_data_out);
 			continue;
 		}
 
 		if(size > 0) {
-			char header[32];
-			snprintf(header, sizeof(header), "(vsp) %s vsp => k", vsp->devname);
-			dbg1_h(header, b->data + b->rpos, size);
+			dbg1_h(vsp->devname, "vsp => k", b->data + b->rpos, size);
 
 			// If PTT channel, track PTT status
 			if(vsp->fd_data == vsp->fd_ptt) {
@@ -317,10 +312,10 @@ static void dv_open(fuse_req_t req, struct fuse_file_info *fi)
 {
         struct vsp *vsp = fuse_req_userdata(req);
         int err = 0;
-        info("(vsp) %s req open", vsp->devname);
+        info("%s req open", vsp->devname);
 
 	if(vsp->open_cnt >= vsp->max_con) {
-                warn("(vsp) %s open by pid %d failed, maximum number of connections reached!", 
+                warn("%s open by pid %d failed, maximum number of connections reached!", 
 		     vsp->devname, fuse_req_ctx(req)->pid);
                 err = EBUSY;
 		goto out;
@@ -349,12 +344,12 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 {
         struct vsp *vsp = fuse_req_userdata(req);
         int err = 0;
-        info("(vsp) %s req release", vsp->devname);
+        info("%s req release", vsp->devname);
 
 	struct vsp_session *vs = find_vs(vsp, fi->fh);
 	if(vs == NULL) {
 		err = EBADF;
-		err("(vsp) attempt to close a non-existent connection!");
+		err("attempt to close a non-existent connection!");
 		goto out;
 	}
 
@@ -362,7 +357,7 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 		uint8_t state = '0';
 		size_t res = write(vsp->fd_ptt, &state, 1);
 		if(res != 1)
-			err("(vsp) %s() %s could not send PTT off", __func__, vsp->devname);
+			err("%s() %s could not send PTT off", __func__, vsp->devname);
 	}
 
 	if(vs->pending_in_req)
@@ -390,7 +385,7 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 static void interrupt_func(fuse_req_t req, void *data) {
 	(void)req;
 	struct vsp_session *vs = data;
-	dbg1("(vsp) %s() %s", __func__, vs->vsp->devname);
+	dbg1("%s() %s", __func__, vs->vsp->devname);
 	if(vs->pending_in_req) {
 		fuse_reply_err(vs->pending_in_req, EINTR);
 		vs->pending_in_req = NULL;
@@ -410,18 +405,18 @@ static void dv_read(fuse_req_t req, size_t size, off_t off,
 	(void)off;
 	struct vsp *vsp = fuse_req_userdata(req);
 	int err = 0;
-	dbg1("(vsp) %s() %s request size: %zd", __func__, vsp->devname, size);
+	dbg1("%s() %s request size: %zd", __func__, vsp->devname, size);
 
 	struct vsp_session *vs = find_vs(vsp, fi->fh);
 	if(vs == NULL) {
 		err = EBADF;
-		err("(vsp) attempt to read from a non-existent connection!");
+		err("attempt to read from a non-existent connection!");
 		goto out;
 	}
 
 	if(vs->pending_out_size) {
 		err = EINVAL;
-		err("(vsp) read called while blocking read pending!");
+		err("read called while blocking read pending!");
 		goto out;
 	}
 
@@ -464,18 +459,18 @@ static void dv_write(fuse_req_t req, const char *buf, size_t size,
 	(void)off;
 	struct vsp *vsp = fuse_req_userdata(req);
 	int err = 0;
-	dbg1("(vsp) %s() %s, request size: %zd", __func__, vsp->devname, size);
+	dbg1("%s() %s, request size: %zd", __func__, vsp->devname, size);
 
 	struct vsp_session *vs = find_vs(vsp, fi->fh);
 	if(vs == NULL) {
 		err = EBADF;
-		err("(vsp) attempt to write to a non-existent connection!");
+		err("attempt to write to a non-existent connection!");
 		goto out;
 	}
 
 	if(vs->pending_in_size) {
 		err = EINVAL;
-		err("(vsp) write called while blocking write pending!");
+		err("write called while blocking write pending!");
 		goto out;
 	}
 
@@ -512,12 +507,12 @@ static void dv_poll(fuse_req_t req, struct fuse_file_info *fi,
         int err = 0;
         unsigned events = 0;
 
-	dbg1("(vsp) %s() %s, ph: %0lx", __func__, vsp->devname, (unsigned long)ph);
+	dbg1("%s() %s, ph: %0lx", __func__, vsp->devname, (unsigned long)ph);
 
 	struct vsp_session *vs = find_vs(vsp, fi->fh);
 	if(vs == NULL) {
 		err = EBADF;
-		err("(vsp) attempt to poll a non-existent connection!");
+		err("attempt to poll a non-existent connection!");
 		goto out;
 	}
 
@@ -546,12 +541,12 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 {
 	(void)flags;
 	struct vsp *vsp = fuse_req_userdata(req);
-	dbg1("(vsp) %s() %s, cmd: 0x%0x, arg: 0x%0lx, in_buf: 0x%0lx, in_buf size: %zd, out_bufsz: %zd", __func__, 
+	dbg1("%s() %s, cmd: 0x%0x, arg: 0x%0lx, in_buf: 0x%0lx, in_buf size: %zd, out_bufsz: %zd", __func__, 
 	     vsp->devname, cmd, (unsigned long)arg, (unsigned long)in_buf, in_bufsz, out_bufsz);
 
 	struct vsp_session *vs = find_vs(vsp, fi->fh);
 	if(vs == NULL) {
-		err("(vsp) attempt to ioctl on a non-existent connection!");
+		err("attempt to ioctl on a non-existent connection!");
 		fuse_reply_err(req, EBADF);
 		return;
 	}
@@ -581,9 +576,9 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 			memcpy(&vsp->termios, in_buf, in_bufsz);
 			baud = termios_baud_rate(&vsp->termios);
 			if(baud > 0) {
-				info("(vsp) %s Baud rate set to %d", vsp->devname, baud);
+				info("%s Baud rate set to %d", vsp->devname, baud);
 			} else {
-				warn("(vsp) %s unsupported baud rate!", vsp->devname);
+				warn("%s unsupported baud rate!", vsp->devname);
 				err = -1;
 			}
 
@@ -609,7 +604,7 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 		} else {
 			int avail;
 			avail = vs->buf_out.size - vs->buf_out.rpos;
-			dbg1("(vsp) %s FIONREAD returned %d, sizeof(int) %d", vsp->devname, avail, (int)sizeof(int));
+			dbg1("%s FIONREAD returned %d, sizeof(int) %d", vsp->devname, avail, (int)sizeof(int));
 			fuse_reply_ioctl(req, 0, &avail, sizeof(int));
 		}
 		break;
@@ -671,30 +666,30 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 		break;
 
 	case TIOCMIWAIT:
-		warn("(vsp) TIOCMIWAIT 1!");
+		warn("TIOCMIWAIT 1!");
 		if(!in_bufsz) {
 			struct iovec iov = { arg, sizeof(int) };
 			fuse_reply_ioctl_retry(req, &iov, 1, NULL, 0);
 		} else {
 			int arg = *((int*)in_buf);
-			warn("(vsp) TIOCMIWAIT 2!");
+			warn("TIOCMIWAIT 2!");
 
 			if(arg & TIOCM_LE)
-				dbg1("(vsp) TIOCMIWAIT / TIOCM_LE");
+				dbg1("TIOCMIWAIT / TIOCM_LE");
 			if(arg & TIOCM_RTS)
-				dbg1("(vsp) TIOCMIWAIT / TIOCM_RTS");
+				dbg1("TIOCMIWAIT / TIOCM_RTS");
 			if(arg & TIOCM_ST)
-				dbg1("(vsp) TIOCMIWAIT / TIOCM_ST");
+				dbg1("TIOCMIWAIT / TIOCM_ST");
 			if(arg & TIOCM_SR)
-				dbg1("(vsp) TIOCMIWAIT / TIOCM_SR");
+				dbg1("TIOCMIWAIT / TIOCM_SR");
 			if(arg & TIOCM_CTS)
-				dbg1("(vsp) TIOCMIWAIT / TIOCM_CTS");
+				dbg1("TIOCMIWAIT / TIOCM_CTS");
 			if(arg & TIOCM_CAR)
-				dbg1("(vsp) TIOCMIWAIT / TIOCM_CAR");
+				dbg1("TIOCMIWAIT / TIOCM_CAR");
 			if(arg & TIOCM_RNG)
-				dbg1("(vsp) TIOCMIWAIT / TIOCM_RNG");
+				dbg1("TIOCMIWAIT / TIOCM_RNG");
 			if(arg & TIOCM_DSR)
-				dbg1("(vsp) TIOCMIWAIT / TIOCM_DSR");
+				dbg1("TIOCMIWAIT / TIOCM_DSR");
 
 			fuse_reply_ioctl(req, 0, NULL, 0);
 		}
@@ -705,14 +700,14 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 			struct iovec iov = { arg, sizeof(struct serial_icounter_struct) };
 			fuse_reply_ioctl_retry(req, &iov, 1, NULL, 0);
 		} else {
-			dbg1("(vsp) TIOCGICOUNT");
+			dbg1("TIOCGICOUNT");
 			fuse_reply_ioctl(req, 0, &vs->sis, sizeof(struct serial_icounter_struct));
 		}
 		break;
 
 
 	default:
-		warn("(vsp) %s ioctl 0x%x not implemented!", vsp->devname, cmd);
+		warn("%s ioctl 0x%x not implemented!", vsp->devname, cmd);
 		fuse_reply_err(req, EINVAL);
 	}
 
@@ -740,11 +735,11 @@ struct vsp *vsp_create(struct connector_spec *cspec) {
                 .allocated = 0
         };
 
-	dbg1("(vsp) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	const char *p = cfg_get_val(cspec->cfg, "devname", NULL);
 	if(p == NULL || !*p) {
-		err("(vsp) could not create vsp device: missing device name!");
+		err("could not create vsp device: missing device name!");
 		return NULL;
 	}
 	snprintf(devname, sizeof(devname) - 1, "DEVNAME=mhuxd/%s", p);
@@ -768,18 +763,18 @@ struct vsp *vsp_create(struct connector_spec *cspec) {
         ci.dev_info_argv = dev_info_argv;
         ci.flags = CUSE_UNRESTRICTED_IOCTL;
 	if(check_cuse_dev(vsp->devname)) {
-		err("(vsp) could not setup VSP %s!", vsp->devname);
+		err("could not setup VSP %s!", vsp->devname);
 		goto failed;
 	}
 	vsp->se = cuse_lowlevel_setup(fargs.argc, fargs.argv, &ci, &vsp_clop, NULL, vsp);
         if(!vsp->se) {
-                err("(vsp) could not setup VSP %s!", vsp->devname);
+                err("could not setup VSP %s!", vsp->devname);
                 goto failed;
         }
 
 	struct fuse_chan *ch = fuse_session_next_chan(vsp->se, NULL);
 	if(ch == NULL) {
-		err("(vsp) could not obtain fuse channel!");
+		err("could not obtain fuse channel!");
 		goto failed;
 	}
 
@@ -797,7 +792,7 @@ struct vsp *vsp_create(struct connector_spec *cspec) {
 	vsp->w_data_out.data = vsp;
 	vsp->w_chan_in.data = vsp;
 
-	info("(vsp) vsp connector %s created", vsp->devname);
+	info("%s created", vsp->devname);
 
 	return vsp;
 
@@ -818,14 +813,14 @@ struct vsp *vsp_create(struct connector_spec *cspec) {
 void vsp_destroy(struct vsp *vsp) {
 	struct vsp_session *vs;
 
-	dbg1("(vsp) %s()", __func__);
+	dbg1("%s()", __func__);
 
         while((vs = (void*)PG_FIRSTENTRY(&vsp->session_list))) {
 		if(vs->ptt_status) {
 			uint8_t state = '0';
 			size_t res = write(vsp->fd_ptt, &state, 1);
 			if(res != 1)
-				err("(vsp) %s() %s could not send PTT off", __func__, vsp->devname);
+				err("%s() %s could not send PTT off", __func__, vsp->devname);
 		}
 
 		if(vs->ph)
@@ -855,7 +850,7 @@ void vsp_destroy(struct vsp *vsp) {
 	//	free(vsp->ptt_on_msg);
 	//	free(vsp->ptt_off_msg);
 
-	info("(vsp) vsp connector %s closed", vsp->devname);
+	info("vsp connector %s closed", vsp->devname);
 	free(vsp->devname);
 	free(vsp);
 

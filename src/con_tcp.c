@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -18,6 +18,8 @@
 #include "conmgr.h"
 #include "net.h"
 #include "cfgnod.h"
+
+#define MOD_ID "tcp"
 
 struct ctcp {
 	int fd_data;
@@ -64,7 +66,7 @@ static void data_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	r = read(w->fd, buf, sizeof(buf));
 	if(r < 0 || (r == 0 && errno != EAGAIN)) {
-		err_e(errno, "(tcp) error reading from data socket!");
+		err_e(errno, "error reading from data socket!");
 		ev_io_stop(loop, &ctcp->w_data_in);
 		// FIXME: better error handling needed.
 	}
@@ -75,7 +77,7 @@ static void data_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct ctcp_session *cs;
 	PG_SCANLIST(&ctcp->session_list, cs) {
 		if(r != buf_append(&cs->buf_out, buf, r))
-				warn("(tcp) buffer overflow writing to client!");
+				warn("buffer overflow writing to client!");
 		ev_io_start(loop, &cs->w_out);
 	}
 }
@@ -93,7 +95,7 @@ static void data_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 			continue;
 		size = write(ctcp->fd_data, b->data + b->rpos, b->size - b->rpos);
 		if(size < 0 || (size == 0 && errno != EAGAIN)) {
-			err_e(errno, "(tcp) error reading from data socket!");
+			err_e(errno, "error reading from data socket!");
 			ev_io_stop(loop, &ctcp->w_data_out);
 			// FIXME: better error handling needed.
 		}
@@ -118,7 +120,7 @@ static void client_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	avail = buf_size_avail(&cs->buf_in);
 	r = read(cs->fd, cs->buf_in.data + cs->buf_in.size, avail);
 	if(r < 0 || (r == 0 && errno != EAGAIN)) {
-		info("(tcp) connection on %s closed", ctcp->devname);
+		info("connection on %s closed", ctcp->devname);
 		rem_session(cs);
 		return;
 	}
@@ -135,7 +137,7 @@ static void client_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	r = write(cs->fd, cs->buf_out.data + cs->buf_out.rpos, cs->buf_out.size - cs->buf_out.rpos);
 	if(r < 0 || (r == 0 && errno != EAGAIN)) {
-		info("(tcp) connection on %s closed", ctcp->devname);
+		info("connection on %s closed", ctcp->devname);
 		rem_session(cs);
 		return;
 	}
@@ -153,12 +155,12 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	fd = net_accept(w->fd);
 	if(fd == -1) {
-		err_e(errno, "(tcp) accept() failed on tcp connector %s!", ctcp->devname);
+		err_e(errno, "accept() failed on tcp connector %s!", ctcp->devname);
 		return;
 	}
 
 	if(ctcp->open_cnt >= ctcp->max_con) {
-		info("(tcp) rejecting connect, maximum connections reached for %s", ctcp->devname);
+		info("rejecting connect, maximum connections reached for %s", ctcp->devname);
 		close(fd);
 		return;
 	}
@@ -176,18 +178,18 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	PG_AddTail(&ctcp->session_list, &cs->node);
 
-	info("(tcp) incoming connection on %s", ctcp->devname);
+	info("incoming connection on %s", ctcp->devname);
 }
 
 
 struct ctcp *ctcp_create(struct connector_spec *cpsec) {
 	struct ctcp *ctcp;
 
-	dbg1("(tcp) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	const char *port = cfg_get_val(cpsec->cfg, "devname", NULL);
 	if(port == NULL || !isdigit(*port)) {
-		err("(tcp) could not create tcp connector: no or invalid port specified!");
+		err("could not create tcp connector: no or invalid port specified!");
 		return NULL;
 	}
 
@@ -195,13 +197,13 @@ struct ctcp *ctcp_create(struct connector_spec *cpsec) {
 
 	char devname[128];
 	if(128 <= snprintf(devname, 128, "%s:%s", remote_access ? "0.0.0.0" : "127.0.0.1", port)) {
-		err("(tcp) could not create tcp connector: no or invalid parameter!");
+		err("could not create tcp connector: no or invalid parameter!");
 		return NULL;
 	}
 
 	struct netlsnr *lsnr = net_create_listener(devname);
 	if(lsnr == NULL) {
-		err_e(errno, "(tcp) could not create listener %s!", devname);
+		err_e(errno, "could not create listener %s!", devname);
 		return NULL;
 	}
 
@@ -222,7 +224,7 @@ struct ctcp *ctcp_create(struct connector_spec *cpsec) {
 
 	ev_io_start(ctcp->loop, &ctcp->w_lsnr);
 	ev_io_start(ctcp->loop, &ctcp->w_data_in);
-	info("(tcp) tcp connector %s created", ctcp->devname);
+	info("tcp connector %s created", ctcp->devname);
 
 	return ctcp;
 }
@@ -240,7 +242,7 @@ void ctcp_destroy(struct ctcp *ctcp) {
 	close(ctcp->fd_data);
 	net_destroy_lsnr(ctcp->lsnr);
 
-	info("(tcp) tcp connector %s closed", ctcp->devname);
+	info("tcp connector %s closed", ctcp->devname);
 
 	if(ctcp->devname)
 		free(ctcp->devname);

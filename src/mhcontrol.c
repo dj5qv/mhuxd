@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -22,6 +22,8 @@
 #include "mhmk2r.h"
 #include "mhmk2.h"
 #include "mhsm.h"
+
+#define MOD_ID "mhc"
 
 #define MAX_CMD_LEN 128
 #define MAX_CMD_QUEUE_SIZE 16
@@ -204,7 +206,7 @@ static uint8_t state_to_ext_state(uint8_t state) {
 		ext_state = MHC_KEYER_STATE_ONLINE;
 		break;
 	default:
-		err("(mhc) invalid CTL state %d!", state);
+		err("invalid CTL state %d!", state);
 		ext_state = MHC_KEYER_STATE_UNKNOWN;
 	}
 
@@ -241,7 +243,7 @@ static void heartbeat_completed_cb(unsigned const char *reply, int len, int resu
 	struct mh_control *ctl = user_data;
 
 	if(result == CMD_RESULT_OK) {
-		dbg0("(mhc) heartbeat pong");
+		dbg0("%s heartbeat pong", ctl->serial);
 
 		if(ctl->state == CTL_STATE_DEVICE_OFF) {
 			initializer_cb(NULL, 0, CMD_RESULT_INVALID, ctl);
@@ -251,21 +253,21 @@ static void heartbeat_completed_cb(unsigned const char *reply, int len, int resu
 	if(result == CMD_RESULT_TIMEOUT) {
 		if(ctl->state == CTL_STATE_OK) {
 			set_state(ctl,CTL_STATE_DEVICE_OFF);
-			warn("(mhc) %s heartbeat timed out!", ctl->serial);
-			info("(mhc) %s OFFLINE", ctl->serial);
+			warn("%s heartbeat timed out!", ctl->serial);
+			info("%s OFFLINE", ctl->serial);
 		} else {
-			dbg0("(mhc) %s heartbeat timed out!", ctl->serial);
+			dbg0("%s heartbeat timed out!", ctl->serial);
 		}
 		return;
 	}
 
-	err("(mhc) heartbeat invalid result!");
+	err("heartbeat invalid result!");
 }
 
 static void heartbeat_cb (struct ev_loop *loop,  struct ev_timer *w, int revents) {
 	(void)loop;(void)revents;
 	struct mh_control *ctl = w->data;
-	dbg0("(mhc) heartbeat ping");
+	dbg0("%s heartbeat ping", ctl->serial);
 	submit_cmd_simple(ctl, MHCMD_ARE_YOU_THERE, heartbeat_completed_cb, ctl);
 }
 
@@ -275,7 +277,7 @@ static void cmd_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, int reven
 	struct command *cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list);
 
 	if(cmd && cmd->state == CMD_STATE_SENT) {
-		dbg1_h("(mhc) command timed out: ", cmd->cmd, cmd->len);
+		dbg1_h(ctl->serial, "command timed out", cmd->cmd, cmd->len);
 		PG_Remove(&cmd->node);
 		if(cmd->cmd_completion_cb)
 			cmd->cmd_completion_cb(NULL, 0, CMD_RESULT_TIMEOUT, cmd->user_data);
@@ -284,7 +286,7 @@ static void cmd_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, int reven
 		push_cmds(ctl);
 		return;
 	}
-	err("(mhc) timeout received with no command pending!");
+	err("timeout received with no command pending!");
 }
 
 static const char *keyer_modes[] = {
@@ -298,7 +300,7 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 
 	if(*data == MHCMD_MPK_STATE && (ctl->mhi.type == MHT_MK2 || ctl->mhi.type == MHT_DK2)) {
 		if(len != 6) {
-			err("(mhc) invalid cmd length for MPK/DK2 state! cmd: %d len: %d", *data, len);
+			err("invalid cmd length for MPK/DK2 state! cmd: %d len: %d", *data, len);
 			return;
 		}
 		memcpy(ctl->state_buf, data + 1, 4);
@@ -308,7 +310,7 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 
 	if(*data == MHCMD_MOK_STATE && (ctl->mhi.type == MHT_MK2R || ctl->mhi.type == MHT_MK2Rp)) {
 		if(len != 10) {
-			err("(mhc) invalid cmd length for MOK state! cmd: %d len: %d", *data, len);
+			err("invalid cmd length for MOK state! cmd: %d len: %d", *data, len);
 			return;
 		}
 
@@ -319,7 +321,7 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 
 	if(*data == MHCMD_ACC_STATE && (ctl->mhi.type == MHT_MK2R || ctl->mhi.type == MHT_MK2Rp)) {
 		if(len != 10) {
-			err("(mhc) invalid cmd length for ACC state! cmd: %d len: %d", *data, len);
+			err("invalid cmd length for ACC state! cmd: %d len: %d", *data, len);
 			return;
 		}
 
@@ -331,13 +333,13 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 
 		// Older firmware versions may come with 9 bytes payload, newer with 13.
 		if(len < 11) {
-			err("(mhc) invalid cmd length for SM state! cmd: %d len: %d", *data, len);
+			err("invalid cmd length for SM state! cmd: %d len: %d", *data, len);
 			return;
 		}
 
 		len -= 2;
 		if(len > (int)sizeof(ctl->state_buf)) {
-			warn("(mhc) %d bytes of payload in SM state!", len);
+			warn("%d bytes of payload in SM state!", len);
 			len = sizeof(ctl->state_buf);
 		}
 				     
@@ -348,7 +350,7 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 	}
 
 
-	err("(mhc) invalid state cmd %d for keyer %s", *data, ctl->serial);
+	err("invalid state cmd %d for keyer %s", *data, ctl->serial);
 }
 
 static void consumer_cb(struct mh_router *router, unsigned const char *data ,int len, int channel, void *user_data) {
@@ -356,7 +358,7 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 	struct mh_control *ctl = user_data;
 	struct command *cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list);
 
-	dbg1_h("(mhc) cmd fm k: ", data, len);
+	dbg1_h(ctl->serial, "cmd fm k", data, len);
 
 	if(cmd && cmd->state == CMD_STATE_SENT && data[0] == cmd->cmd[0]) {
 		ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
@@ -390,7 +392,7 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 
 	case MHCMD_KEYER_MODE:
 		f = data[1];
-		dbg0("(mhc) %s mode  cur: %s, r1: %s, r2: %s", ctl->serial,
+		dbg0("%s mode  cur: %s, r1: %s, r2: %s", ctl->serial,
 		     keyer_modes[f & 3], keyer_modes[(f>>2) & 3],
 		     keyer_modes[(f>>4) & 3]);
 		if(ctl->kcfg)
@@ -399,15 +401,15 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 
 	case MHCMD_JUST_RESTARTED:
 		if(ctl->state == CTL_STATE_OK) {
-			info("(mhc) %s has just been restarted, initializing", ctl->serial);
+			info("%s has just been restarted, initializing", ctl->serial);
 			set_state(ctl, CTL_STATE_SET_CHANNELS);
 			initializer_cb(NULL, 0, CMD_RESULT_INVALID, ctl);
 		} else
-			info("(mhc) %s has just been restarted", ctl->serial);
+			info("%s has just been restarted", ctl->serial);
 		break;
 
 	case MHCMD_USB_RX_OVERFLOW:
-		warn("(mhc) %s usb rx overflow in keyer", ctl->serial);
+		warn("%s usb rx overflow in keyer", ctl->serial);
 		break;
 
 	default:
@@ -428,14 +430,14 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 	// previous step failed?
 	if(result != CMD_RESULT_OK && result != CMD_RESULT_INVALID) {
 		if(result == CMD_RESULT_TIMEOUT) {
-			dbg0("(mhc) %s initializer timed out", ctl->serial);
+			dbg0("%s initializer timed out", ctl->serial);
 		}
 		if(result == CMD_RESULT_NOT_SUPPORTED) {
-			dbg0("(mhc) %s cmd not supported!", ctl->serial);
+			dbg0("%s cmd not supported!", ctl->serial);
 
 		}
 		set_state(ctl, CTL_STATE_DEVICE_OFF);
-		info("(mhc) %s OFFLINE", ctl->serial);
+		info("%s OFFLINE", ctl->serial);
 		return;
 	}
 
@@ -443,32 +445,32 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 	switch(ctl->state) {
 	case CTL_STATE_DEVICE_OFF:
 		// kick off the state machine
-		info("(mhc) %s INITIALIZING", ctl->serial);
-		dbg0("(mhc) %s initializer ping", ctl->serial);
+		info("%s INITIALIZING", ctl->serial);
+		dbg0("%s initializer ping", ctl->serial);
 		set_state(ctl, CTL_STATE_INIT);
 		submit_cmd_simple(ctl, MHCMD_ARE_YOU_THERE, initializer_cb, ctl);
 		break;
 	case CTL_STATE_INIT:
-		dbg0("(mhc) %s initializer ping ok", ctl->serial);
+		dbg0("%s initializer ping ok", ctl->serial);
 		set_state(ctl, CTL_STATE_GET_VERSION);
 		submit_cmd_simple(ctl, MHCMD_GET_VERSION, initializer_cb, ctl);
-		dbg0("(mhc) %s get version", ctl->serial);
+		dbg0("%s get version", ctl->serial);
 		break;
 	case CTL_STATE_GET_VERSION:
 		mhi_parse_version(&ctl->mhi, reply, len);
-		info("(mhc) %s microHam %s firmware %d.%d", ctl->serial,
+		info("%s microHam %s firmware %d.%d", ctl->serial,
 		     ctl->mhi.type_str, ctl->mhi.ver_fw_major, ctl->mhi.ver_fw_minor);
 
 		// fall through
 	case CTL_STATE_SET_CHANNELS:
 		// speeds
 		if(ctl->state == CTL_STATE_SET_CHANNELS)
-			dbg0("(mhc) %s set channel %d ok", ctl->serial, ctl->speed_idx - 1);
+			dbg0("%s set channel %d ok", ctl->serial, ctl->speed_idx - 1);
 
 		while(ctl->speed_idx < MH_NUM_CHANNELS) {
 			if(ctl->speed_args[ctl->speed_idx]) {
 				set_state(ctl, CTL_STATE_SET_CHANNELS);
-				dbg0("(mhc) %s set channel %d", ctl->serial, ctl->speed_idx);
+				dbg0("%s set channel %d", ctl->serial, ctl->speed_idx);
 				submit_speed_cmd(ctl, ctl->speed_idx, initializer_cb, ctl);
 				ctl->speed_idx++;
 				break;
@@ -486,7 +488,7 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 			ctl->kcfg = kcfg_create(&ctl->mhi);
 
 		if(ctl->kcfg == NULL) {
-			err("(mhc) could not create keyer config!");
+			err("could not create keyer config!");
 			set_state(ctl, CTL_STATE_DEVICE_DISABLED);
 			break;
 		}
@@ -498,19 +500,19 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		buf_append_c(&buf, MHCMD_SET_SETTINGS | MSB_BIT);
 		submit_cmd(ctl, &buf, initializer_cb, ctl);
 		set_state(ctl, CTL_STATE_LOAD_CFG);
-		dbg0("(mhc) %s upload config", ctl->serial);
+		dbg0("%s upload config", ctl->serial);
 		break;
 	case CTL_STATE_LOAD_CFG:
-		dbg0("(mhc) %s requesting status information", ctl->serial);
+		dbg0("%s requesting status information", ctl->serial);
 		submit_cmd_simple(ctl, MHCMD_ON_CONNECT, initializer_cb, ctl);
 		set_state(ctl, CTL_STATE_ON_CONNECT);
 		break;
 	case CTL_STATE_ON_CONNECT:
 		if(ctl->sm && !sm_antsw_has_bandplan(ctl->sm)) {
 			if( 0 != sm_get_antsw(ctl->sm))
-				warn("(mhc) %s could not download antsw from device!", ctl->serial);
+				warn("%s could not download antsw from device!", ctl->serial);
 		}
-		info("(mhc) %s ONLINE", ctl->serial);
+		info("%s ONLINE", ctl->serial);
 		set_state(ctl, CTL_STATE_OK);
 		break;
 	}
@@ -533,23 +535,23 @@ static void flags_cb(struct mh_router *router, const uint8_t *data ,int len, int
 		}
 
 		if((*old_flag & MHD2CFL_CTS) != (data[i] & MHD2CFL_CTS)) {
-			dbg0("(mhc) >> %s fl cts r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_CTS) ? 1 : 0);
+			dbg0(">> %s fl cts r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_CTS) ? 1 : 0);
 			if(!(data[i] & MHD2CFL_CTS)) {
-				warn("(mhc) %s CTS went from 1 to 0, CTS handling not implemented!", ctl->serial);
+				warn("%s CTS went from 1 to 0, CTS handling not implemented!", ctl->serial);
 			}
 		}
 		if((*old_flag & MHD2CFL_LOCKOUT) != (data[i] & MHD2CFL_LOCKOUT))
-			dbg0("(mhc) %s fl lockout r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_LOCKOUT) ? 1 : 0);
+			dbg0("%s fl lockout r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_LOCKOUT) ? 1 : 0);
 		if((*old_flag & MHD2CFL_ANY_PTT) != (data[i] & MHD2CFL_ANY_PTT))
-			dbg0("(mhc) %s fl ptt-any r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_ANY_PTT) ? 1 : 0);
+			dbg0("%s fl ptt-any r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_ANY_PTT) ? 1 : 0);
 		if((*old_flag & MHD2CFL_SQUELCH) != (data[i] & MHD2CFL_SQUELCH))
-			dbg0("(mhc) %s fl squelch r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_SQUELCH) ? 1 : 0);
+			dbg0("%s fl squelch r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_SQUELCH) ? 1 : 0);
 		if((*old_flag & MHD2CFL_FSK_BUSY) != (data[i] & MHD2CFL_FSK_BUSY))
-			dbg0("(mhc) %s fl fsk-busy r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_FSK_BUSY) ? 1 : 0);
+			dbg0("%s fl fsk-busy r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_FSK_BUSY) ? 1 : 0);
 		if((*old_flag & MHD2CFL_NON_VOX_PTT) != (data[i] & MHD2CFL_NON_VOX_PTT))
-			dbg0("(mhc) %s fl non-vox-ptt r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_NON_VOX_PTT) ? 1 : 0);
+			dbg0("%s fl non-vox-ptt r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_NON_VOX_PTT) ? 1 : 0);
 		if((*old_flag & MHD2CFL_FOOTSWITCH) != (data[i] & MHD2CFL_FOOTSWITCH))
-			dbg0("(mhc) %s non-vox-ptt r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_FOOTSWITCH) ? 1 : 0);
+			dbg0("%s non-vox-ptt r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_FOOTSWITCH) ? 1 : 0);
 
 		*old_flag = data[i];
 	}
@@ -564,7 +566,7 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 		case CTL_STATE_DEVICE_DISC:
 		case CTL_STATE_DEVICE_OFF:
 			// kick off state machine
-			dbg0("(mhc) %s initializing", ctl->serial);
+			dbg0("%s initializing", ctl->serial);
 			set_state(ctl, CTL_STATE_DEVICE_OFF);
 			initializer_cb(NULL, 0, CMD_RESULT_INVALID, ctl);
 			break;
@@ -573,7 +575,7 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 	}
 	if(status == MHROUTER_DISCONNECTED) {
 		set_state(ctl, CTL_STATE_DEVICE_DISC);
-		info("(mhc) %s DISCONNECTED", ctl->serial);
+		info("%s DISCONNECTED", ctl->serial);
 	}
 }
 
@@ -581,7 +583,7 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, struct mh_info *mhi) {
 	struct mh_control *ctl;
 
-	dbg1("(mhc) %s()", __func__);
+	dbg1("%s %s()", mhr_get_serial(router), __func__);
 
 	ctl = w_calloc(1, sizeof(*ctl));
 	ctl->loop = loop;
@@ -645,7 +647,7 @@ void mhc_destroy(struct mh_control *ctl) {
 	struct state_changed_cb *sccb;
 	int i;
 
-	dbg1("(mhc) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	ev_timer_stop(ctl->loop, &ctl->heartbeat_timer);
 	ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
@@ -697,16 +699,16 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	int ibaud;
 	uint8_t c, cmd, rtscts, databits, has_ext;
 
-	dbg1("(mhc) %s %s()", ctl->serial, __func__);
+	dbg1("%s %s()", ctl->serial, __func__);
 
 	if(channel < 0 || channel >= MH_NUM_CHANNELS) {
-		err("(mhc) %s() invalid channel number %d!", __func__, channel);
+		err("%s() invalid channel number %d!", __func__, channel);
 		return -1;
 	}
 
 	struct cfg *cfg = ctl->speed_args[channel];
 	if(!cfg) {
-		err("(mhc) %s() no speed args defined for channel %s!", __func__, ch_channel2str(channel));
+		err("%s() no speed args defined for channel %s!", __func__, ch_channel2str(channel));
 		return -1;
 	}
 
@@ -716,7 +718,7 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	fbaud = cfg_get_float_val(cfg, "baud", -1);
 	if(!fbaud) {
 		// Avoid devision by zero
-		err("(mhc) %s() channel %s baud value must not be zero!", __func__, ch_channel2str(channel));
+		err("%s() channel %s baud value must not be zero!", __func__, ch_channel2str(channel));
 		return -1;
 	}
 
@@ -742,7 +744,7 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 			cmd = MHCMD_SET_CHANNEL_FSK_R2;
 			break;
 		default:
-			err("(mhc) can't set speed, invalid channel specified (%d)!", channel);
+			err("can't set speed, invalid channel specified (%d)!", channel);
 			return -1;
 	}
 
@@ -752,7 +754,7 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 
 	if(!databits) {
 		// Avoid devision by zero
-		err("(mhc) %s() channel %s data bits must not be zero!", __func__, ch_channel2str(channel));
+		err("%s() channel %s data bits must not be zero!", __func__, ch_channel2str(channel));
 		return -1;
 	}
 
@@ -786,24 +788,24 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 
 	submit_cmd(ctl, &buf, cb, user_data);
 
-	// atl_warn_unused(args, "(mhc) set channel");
+	// atl_warn_unused(args, "set channel");
 
 	return 0;
 }
 
 int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb cb, void *user_data) {
 
-	dbg1("(mhc) %s %s()",ctl->serial, __func__);
+	dbg1("%s %s()",ctl->serial, __func__);
 
 	if(channel < 0 || channel >= MH_NUM_CHANNELS) {
-		err("(mhc) can't set speed, invalid channel (%d) specified!", channel);
+		err("can't set speed, invalid channel (%d) specified!", channel);
 		return -1;
 	}
 
 	// baud
 	float fbaud = cfg_get_float_val(cfg,"baud", -1);
 	if(fbaud == -1) {
-		err("(mhc) can't set speed, no baud rate specified!");
+		err("can't set speed, no baud rate specified!");
 		return -1;
 	}
 
@@ -952,21 +954,21 @@ int mhc_abort_message(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *us
 
 int mhc_set_kopt(struct mh_control *ctl, const char *key, int val) {
 	if(!key || !*key) {
-		warn("(mhc) %s() nameless config item!", __func__);
+		warn("%s() nameless config item!", __func__);
 		return -1;
 	}
 
 	if(ctl->mhi.type == MHT_UNKNOWN ||ctl->kcfg == NULL) {
-		warn("(mhc) can't set parameter %s, keyer type not known!", key);
+		warn("can't set parameter %s, keyer type not known!", key);
 		return -1;
 	}
 
 	if(kcfg_set_val(ctl->kcfg, key, val)) {
-		err("(mhc) could not set keyer parameter %s=%d!", key, val);
+		err("could not set keyer parameter %s=%d!", key, val);
 		return -1;
 	}
 
-	dbg0("(mhc) %s set keyer option %s=%d", ctl->serial, key, val);
+	dbg0("%s set keyer option %s=%d", ctl->serial, key, val);
 
 	return 0;
 }
@@ -976,7 +978,7 @@ int mhc_set_kopts(struct mh_control *ctl, struct cfg *cfg) {
 	int rval = 0;
 
 	if(ctl->mhi.type == MHT_UNKNOWN ||ctl->kcfg == NULL) {
-		warn("(mhc) can't set parameter list, keyer type not known!");
+		warn("can't set parameter list, keyer type not known!");
 		return -1;
 	}
 
@@ -988,7 +990,7 @@ int mhc_set_kopts(struct mh_control *ctl, struct cfg *cfg) {
 		const char *key = cfg_name(iter);
 
 		if(!key || !*key) {
-			warn("(mhc) %s nameless cfg item!", __func__);
+			warn("%s nameless cfg item!", __func__);
 			rval++;
 			continue;
 		}
@@ -996,12 +998,12 @@ int mhc_set_kopts(struct mh_control *ctl, struct cfg *cfg) {
 		int val = cfg_get_int_val(iter, key, -1);
 		int err = kcfg_set_val(ctl->kcfg, key, val);
 		if(err) {
-			err("(mhc) could not set keyer parameter %s=%d!", key, val);
+			err("could not set keyer parameter %s=%d!", key, val);
 			rval++;
 			continue;
 		}
 
-		// dbg0("(mhc) set keyer option %s=%d", key, val);
+		// dbg0("set keyer option %s=%d", key, val);
 
 	} while((iter = cfg_next(iter)));
 
@@ -1015,7 +1017,7 @@ int mhc_kopts_to_cfg(struct mh_control *ctl, struct cfg *cfg) {
 	int val;
 
 	if(!ctl || !ctl->kcfg) {
-		//		err("(mhc) %s %p %p", __func__, ctl, ctl ? ctl->kcfg : NULL);
+		//		err("%s %p %p", __func__, ctl, ctl ? ctl->kcfg : NULL);
 		return -1;
 	}
 
@@ -1024,7 +1026,7 @@ int mhc_kopts_to_cfg(struct mh_control *ctl, struct cfg *cfg) {
 		if(!kcfg_iter_get(&iter, &key, &val))
 			cfg_set_int_value(cfg, key, val);
 		else
-			err("(mhc) %s() iterator error", __func__);
+			err("%s() iterator error", __func__);
 	}
 
 	return 0;
@@ -1062,7 +1064,7 @@ void mhc_rem_state_changed_cb(struct mh_control *ctl, mhc_state_changed_cb cb) {
 			return;
 		}
 	}
-	warn("(mhc) %s() callback not found!", __func__);
+	warn("%s() callback not found!", __func__);
 }
 
 static int push_cmds(struct mh_control *ctl) {
@@ -1073,9 +1075,9 @@ static int push_cmds(struct mh_control *ctl) {
 		return 0;
 #if 1
 	int r = mhr_send(ctl->router, cmd->cmd, cmd->len, MH_CHANNEL_CONTROL);
-	dbg1_h("(mhc) cmd to k: ", cmd->cmd, cmd->len);
+	dbg1_h(ctl->serial, "cmd to k", cmd->cmd, cmd->len);
 	if(r != cmd->len) {
-		warn("(mhc) could not send command! (%d/%d)", r, cmd->len);
+		warn("could not send command! (%d/%d)", r, cmd->len);
 		return -1;
 	}
 #endif
@@ -1096,12 +1098,12 @@ static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion
 static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb cb, void *user_data) {
 
 	if(b->size > MAX_CMD_LEN) {
-		err("(mhc) Can't queue command, command too long (%d)!", b->size);
+		err("Can't queue command, command too long (%d)!", b->size);
 		return -1;
 	}
 
 	if(PG_Count(&ctl->cmd_list) > MAX_CMD_QUEUE_SIZE) {
-		warn("(mhc) Can't queue command, queue full!");
+		warn("Can't queue command, queue full!");
 		return -1;
 	}
 

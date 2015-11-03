@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -12,6 +12,8 @@
 #include "util.h"
 #include "logger.h"
 #include "channel.h"
+
+#define MOD_ID "demux"
 
 struct dmx *dmx_create() {
 	struct dmx *dmx = w_calloc(1, sizeof(*dmx));

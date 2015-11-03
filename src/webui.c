@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -20,6 +20,8 @@
 #include "cfgmgr.h"
 #include "http_parse_query.h"
 #include "mhinfo.h"
+
+#define MOD_ID "webui"
 
 struct webui {
 	HDF *hdf;
@@ -144,7 +146,7 @@ static int encode_meta_settings(HDF *hdf) {
 		// PTT CW
 		frbase = hdf_get_obj(knod, "param.r1FrBase_Cw");
 		if(frbase) {
-			// dbg1("(webui) compose meta for type %d r1 mode cw", type);
+			// dbg1(" compose meta for type %d r1 mode cw", type);
 			err = hdf_set_value(meta, "r1.ptt_cw", compose_ptt_str(frbase, type, qsk));
 			nerr_ignore(&err);
 		}
@@ -156,7 +158,7 @@ static int encode_meta_settings(HDF *hdf) {
 		// PTT VOICE
 		frbase = hdf_get_obj(knod, "param.r1FrBase_Voice");
 		if(frbase) {
-			// dbg1("(webui) compose meta for type %d r1 mode voice", type);
+			// dbg1("compose meta for type %d r1 mode voice", type);
 			err = hdf_set_value(meta, "r1.ptt_voice", compose_ptt_str(frbase,type, qsk));
 			nerr_ignore(&err);
 		}
@@ -164,7 +166,7 @@ static int encode_meta_settings(HDF *hdf) {
 		// PTT DIGITAL
 		frbase = hdf_get_obj(knod, "param.r1FrBase_Digital");
 		if(frbase) {
-			// dbg1("(webui) compose meta for type %d r1 mode digital", type);
+			// dbg1("compose meta for type %d r1 mode digital", type);
 			err = hdf_set_value(meta, "r1.ptt_digital", compose_ptt_str(frbase,type, qsk));
 			nerr_ignore(&err);
 		}
@@ -179,7 +181,7 @@ static int encode_meta_settings(HDF *hdf) {
 		frbase = hdf_get_obj(knod, "param.r2FrBase_Cw");
 
 		if(frbase) {
-			// dbg1("(webui) compose meta for type %d r2 mode cw", type);
+			// dbg1("compose meta for type %d r2 mode cw", type);
 			err = hdf_set_value(meta, "r2.ptt_cw", compose_ptt_str(frbase,type, qsk));
 			nerr_ignore(&err);
 		}
@@ -187,7 +189,7 @@ static int encode_meta_settings(HDF *hdf) {
 		// PTT VOICE
 		frbase = hdf_get_obj(knod, "param.r2FrBase_Voice");
 		if(frbase) {
-			// dbg1("(webui) compose meta for type %d r2 mode voice", type);
+			// dbg1("compose meta for type %d r2 mode voice", type);
 			err = hdf_set_value(meta, "r2.ptt_voice", compose_ptt_str(frbase,type, qsk));
 			nerr_ignore(&err);
 		}
@@ -195,7 +197,7 @@ static int encode_meta_settings(HDF *hdf) {
 		// PTT DIGITAL
 		frbase = hdf_get_obj(knod, "param.r2FrBase_Digital");
 		if(frbase) {
-			// dbg1("(webui) compose meta for type %d r2 mode digital", type);
+			// dbg1("compose meta for type %d r2 mode digital", type);
 			err = hdf_set_value(meta, "r2.ptt_digital", compose_ptt_str(frbase,type, qsk));
 			nerr_ignore(&err);
 		}
@@ -386,7 +388,7 @@ static int cb_redirect_home(struct http_connection *hcon, const char *path, cons
 		 const char *body, uint32_t body_len, void *data) {
 	(void)path; (void)query; (void)body; (void)body_len;(void)data;
 
-	dbg1("(webui) redirect / to /cs/home.cs");
+	dbg1("redirect / to /cs/home.cs");
 	hs_add_rsp_header(hcon, "Location", "/cs/home.cs");
 	hs_send_response(hcon, 301, "text/html", NULL, 0, NULL, 0);
 	return 0;
@@ -408,7 +410,7 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 		return 0;
 	}
 
-	dbg1("(webui) cb_cs() path: %s query: %s", path, query);
+	dbg1("cb_cs() path: %s query: %s", path, query);
 
 
 	if(webui->hdf)
@@ -677,7 +679,7 @@ struct webui * webui_create(struct http_server *hs, struct cfgmgr *cfgmgr) {
 
 	hs_add_directory_map(hs, "/static/", static_path);
 
-	dbg0("(webui) WebUI started");
+	dbg0("WebUI started");
 
 	return webui;
 
@@ -696,5 +698,5 @@ void webui_destroy(struct webui *webui) {
 	cs_destroy(&webui->parse);
 	hdf_destroy(&webui->hdf);
 	free(webui);
-	dbg0("(webui) WebUI stopped");
+	dbg0("WebUI stopped");
 }

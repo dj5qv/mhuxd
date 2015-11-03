@@ -5,6 +5,7 @@
 #include "http_parse_query.h"
 #include "logger.h"
 
+#define MOD_ID "hpars"
 
 static void log_neoerr(NEOERR *err, const char *what) {
 	STRING str;
@@ -12,7 +13,7 @@ static void log_neoerr(NEOERR *err, const char *what) {
 	string_init(&str);
 
 	nerr_error_string(err, &str);
-	err(" %s(%s)", what, str.buf ? str.buf : "Unkown");
+	err("%s(%s)", what, str.buf ? str.buf : "Unkown");
 	string_clear(&str);
 	nerr_ignore(&err);
 }

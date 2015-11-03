@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -15,6 +15,8 @@
 #include "pglist.h"
 #include "util.h"
 #include "logger.h"
+
+#define MOD_ID "udev"
 
 struct devmon {
 	devmon_cb devmon_cb;
@@ -58,7 +60,7 @@ static void mon_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	const char *serial = udev_device_get_sysattr_value(pdev,"serial");
 	const char *manufacturer = udev_device_get_sysattr_value(pdev,"manufacturer");
 	const char *action = udev_device_get_action(dev);
-	dbg1("(udev)%s() action: %s pdev: %ld vend: %ld serial: %ld\n", __func__, action, (long)pdev, (long)vend, (long)serial);
+	dbg1("%s() action: %s pdev: %ld vend: %ld serial: %ld\n", __func__, action, (long)pdev, (long)vend, (long)serial);
 
 	if(vend == NULL || serial == NULL)
 		goto out;
@@ -84,7 +86,7 @@ struct devmon *devmon_create(struct ev_loop *loop, devmon_cb devmon_cb, void *us
 	struct udev *udev;
 	struct udev_monitor *mon;
 
-	dbg1("(devmon) %s()", __func__);
+	dbg1("%s()", __func__);
 
 	udev = udev_new();
 	if(udev == NULL)
@@ -194,7 +196,7 @@ struct PGList *udv_get_device_list() {
 
 	udev = udev_new();
 	if (!udev) {
-		err("(udev) Can't create udev\n");
+		err("Can't create udev\n");
 		return l;
 	}
 	udev_set_log_priority(udev, 0);
@@ -211,7 +213,7 @@ struct PGList *udv_get_device_list() {
 		ddev = udev_device_new_from_syspath(udev, path);
 
 		if(!ddev) {
-			err("(udev) udev_device_new_from_syspath() failed!");
+			err("udev_device_new_from_syspath() failed!");
 			continue;
 		}
 

@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -23,6 +23,8 @@
 #include "mhcontrol.h"
 #include "cfgnod.h"
 #include "logger.h"
+
+#define MOD_ID "wkm"
 
 #define WK_CFG_SIZE (15)
 
@@ -92,8 +94,8 @@ void read_cb(struct mh_router *router, unsigned const char *data , int len, int 
 	struct wkman *wkman = user_data;
 	int err;
 
-	dbg1("(wkman) %s() %d", __func__, len);
-	dbg1_h("(wkman)", data, len);
+	dbg1("%s %s() %d", wkman->dev->serial, __func__, len);
+	dbg1_h(wkman->dev->serial, "fm k", data, len);
 
 	switch(wkman->state) {
 	case WKM_STATE_HOST_OPEN_SENT:
@@ -132,7 +134,7 @@ static void keyer_state_changed_cb(const char *serial, int state, void *user_dat
 	(void)state; (void)serial;
 	struct wkman *wkman = user_data;
 
-	dbg1("(wkman) %s() %s", __func__, mhc_state_str(state));
+	dbg1("%s %s() %s", wkman->dev->serial, __func__, mhc_state_str(state));
 
 
 	if(state == MHC_KEYER_STATE_ONLINE) {
@@ -168,7 +170,7 @@ struct wkman *wkm_create(struct ev_loop *loop, struct device *dev) {
 	struct wkman *wkman = w_calloc(1, sizeof(*wkman));
 	uint16_t i;
 
-	dbg1("(wkman) %s()", __func__);
+	dbg1("%s %s()", dev->serial, __func__);
 
 	wkman->dev = dev;
 	wkman->loop = loop;
@@ -206,7 +208,7 @@ int wkm_cfg_to_opts(struct wkman *wkman, struct cfg *cfg) {
 	HDF *base_hdf = (HDF*)cfg;
 	HDF *hdf;
 	int rval = 0;
-	dbg1("(wkman) %s()", __func__);
+	dbg1("%s %s()", wkman->dev->serial, __func__);
 	for(hdf = hdf_obj_child(base_hdf); hdf; hdf = hdf_obj_next(hdf)) {
 		const char *key = hdf_obj_name(hdf);
 		const char *val_str = hdf_obj_value(hdf);
@@ -220,6 +222,8 @@ int wkm_reset(struct wkman *wkman) {
 	const uint8_t cmd[] = { 0x00, 0x01 };
 	int len = sizeof(cmd);
 
+	dbg1("%s %s()", wkman->dev->serial,  __func__);
+	
 	if(!mhc_is_online(wkman->dev->ctl))
 		return WKM_RESULT_DEVICE_OFFLINE;
 
@@ -235,7 +239,7 @@ int wkm_host_open(struct wkman *wkman) {
 	const uint8_t cmd[] = { 0x00, 0x02 };
 	int len = sizeof(cmd);
 
-	dbg1("(wkman) %s()", __func__);
+	dbg1("%s %s()", wkman->dev->serial,  __func__);
 
 	if(!mhc_is_online(wkman->dev->ctl))
 		return WKM_RESULT_DEVICE_OFFLINE;
@@ -277,7 +281,7 @@ int wkm_write_cfg(struct wkman *wkman) {
 	uint8_t cmd[1 + sizeof(wkman->cfg)] = { 0x0f };
 	int len = sizeof(cmd);
 
-	dbg1("(wkman) %s()", __func__);
+	dbg1("%s %s()", wkman->dev->serial, __func__);
 
 	if(!mhc_is_online(wkman->dev->ctl))
 		return WKM_RESULT_DEVICE_OFFLINE;

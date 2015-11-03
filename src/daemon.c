@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -19,12 +19,14 @@
 #include "logger.h"
 #include "cfgnod.h"
 
+#define MOD_ID "dmn"
+
 int16_t dmn_set(struct cfg *cfg) {
 	const char *p;
 
 	if((p = cfg_get_val(cfg, "LOGLEVEL", NULL))) {
 		if(-1 == log_set_level_by_str(p)) {
-			err("(dmn)invalid value for loglevel: %s", p);
+			err("invalid value for loglevel: %s", p);
 		}
 	}
 

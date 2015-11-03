@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -14,6 +14,8 @@
 #include "buffer.h"
 #include "mhinfo.h"
 #include "logger.h"
+
+#define MOD_ID "kcfg"
 
 #define AUDIO_SW_D (0)
 #define AUDIO_SW_B (1)
@@ -608,7 +610,7 @@ int kcfg_set_val(struct kcfg *kcfg, const char *key, int val) {
 
 	cp = find_citem(kcfg, key);
 	if(!cp) {
-		warn("(kcfg) unknown keyer option: %s", key);
+		warn("unknown keyer option: %s", key);
 		return -1;
 	}
 
@@ -618,12 +620,12 @@ int kcfg_set_val(struct kcfg *kcfg, const char *key, int val) {
 
 	c = get_byte(kcfg, idx) ;
 	if(c < 0) {
-		err("(kcfg) %s() index %d out of range!", __func__, idx);
+		err("%s() index %d out of range!", __func__, idx);
 		return -1;
 	}
 
 	if(val > mask) {
-		err("(kcfg) %s() invalid value %d for %s", __func__, val, key);
+		err("%s() invalid value %d for %s", __func__, val, key);
 		return -1;
 	}
 
@@ -638,7 +640,7 @@ struct kcfg *kcfg_create(const struct mh_info *mhi) {
 	uint8_t buf_size = 0;
 
 	if(mhi->type <= MHT_UNKNOWN || mhi->type >= MHT_MAX) {
-		err("(kcfg) Could not create. Unsupported keyer type!");
+		err("Could not create. Unsupported keyer type!");
 		return NULL;
 	}
 
@@ -779,7 +781,7 @@ int kcfg_iter_get(struct kcfg_iterator *iter, const char **keyp, int *valp) {
 	int16_t	c = get_byte(kcfg, idx);
 
 	if(c < 0) {
-		err("(kcfg) %s() index %d out of range!", __func__, idx);
+		err("%s() index %d out of range!", __func__, idx);
 		return -1;
 	}
 	*valp = (c >> (bit + 1 - cp->width)) & mask;

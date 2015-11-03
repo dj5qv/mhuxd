@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -10,6 +10,8 @@
 #include "citem.h"
 #include "logger.h"
 #include "cfgnod.h"
+
+#define MOD_ID "citem"
 
 const struct citem *citem_find(const struct citem *citems,  uint16_t num_citems, const char *key) {
 	uint16_t i;
@@ -34,7 +36,7 @@ int citem_get_value(const struct citem *citems, int num_citems, const uint8_t *b
 		uint8_t bytes = cp->width / 8;
 
 		if(cp->idx + bytes - 1 >= buffer_size) {
-			err("(citem) %s() idx %d out of range for key '%s'!", __func__, cp->idx + bytes - 1, key);
+			err("%s() idx %d out of range for key '%s'!", __func__, cp->idx + bytes - 1, key);
 			return -1;
 		}
 
@@ -47,7 +49,7 @@ int citem_get_value(const struct citem *citems, int num_citems, const uint8_t *b
 		uint16_t mask = width2mask(cp->width);
 
 		if(idx >= buffer_size) {
-			err("(citem) %s() idx %d out of range for key '%s'!", __func__, idx, key);
+			err("%s() idx %d out of range for key '%s'!", __func__, idx, key);
 			return -1;
 		}
 		val = (buffer[idx] >> (bit + 1 - cp->width)) & mask;;
@@ -65,7 +67,7 @@ int citem_set_value(const struct citem *citems, int num_citems, uint8_t *buffer,
 
 	cp = citem_find(citems, num_citems, key);
 	if(!cp) {
-		err("(citem) %s() unknown option: %s", __func__,  key);
+		err("%s() unknown option: %s", __func__,  key);
 		return -1;
 	}
 
@@ -77,7 +79,7 @@ int citem_set_value(const struct citem *citems, int num_citems, uint8_t *buffer,
 		int i;
 		uint8_t bytes = cp->width / 8;
 		if(cp->idx + bytes - 1 >= buffer_size) {
-			err("(citem) %s() idx %d out of range for key '%s'!", __func__, cp->idx + bytes - 1, key);
+			err("%s() idx %d out of range for key '%s'!", __func__, cp->idx + bytes - 1, key);
 			return -1;
 		}
 		for(i = 0; i < bytes; i++) {
@@ -91,13 +93,13 @@ int citem_set_value(const struct citem *citems, int num_citems, uint8_t *buffer,
 	mask = width2mask(cp->width);
 
 	if(idx >= buffer_size) {
-		err("(citem) %s() index out of range for %s", __func__, key);
+		err("%s() index out of range for %s", __func__, key);
 	}
 
 	if(cp->width == 16 && bit == 15) {
 		/* SM 16 bit values, LSB first */
 		if(value > INT16_MAX || value < INT16_MIN) {
-			err("(citem) %s() invalid value %d for %s", __func__, value, key);
+			err("%s() invalid value %d for %s", __func__, value, key);
 			return -1;
 		}
 		buffer[idx] = value & 0xff;
@@ -106,7 +108,7 @@ int citem_set_value(const struct citem *citems, int num_citems, uint8_t *buffer,
 		c = buffer[idx];
 
 		if(value > mask) {
-			err("(citem) %s() invalid value %d for %s", __func__, value, key);
+			err("%s() invalid value %d for %s", __func__, value, key);
 			return -1;
 		}
 
@@ -127,7 +129,7 @@ void citem_debug_print_values(const char *header, struct citem *citems, int num_
 		return;
 
 	for(i = 0; i < num_citems; i++) {
-		dbg1("(citem) %s %s: %d",
+		dbg1("%s %s: %d",
 		     header,
 		     citems[i].key,
 		     citem_get_value(citems, num_citems, buffer, buffer_size, citems[i].key));
@@ -146,7 +148,7 @@ int citems_to_cfg(struct cfg *cfg, const struct citem *citems, int num_citems, u
 		mask = width2mask(cp->width);
 
 		if(idx >= buffer_size) {
-			err("(citem) %s() index out of range for %s", __func__, cp->key);
+			err("%s() index out of range for %s", __func__, cp->key);
 			return -1;
 		}
 
