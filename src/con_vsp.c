@@ -840,7 +840,7 @@ void vsp_destroy(struct vsp *vsp) {
 	ev_io_stop(vsp->loop, &vsp->w_chan_in);
 
 	close(vsp->fd_data);
-	if(vsp->fd_ptt)
+	if(vsp->fd_ptt != -1)
 		close(vsp->fd_ptt);
 
 	if(vsp->se)

@@ -280,9 +280,16 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 
 			if(ctr->mcp) {
 				mhr_rem_processor_cb(ctr->dev->router, mcp_cb, CH_MCP);
-				free(ctr->mcp);
+				mcp_destroy(ctr->mcp);
+				ctr->mcp = NULL;
 			}
 
+			if(ctr->rot) {
+				mhr_rem_processor_cb(ctr->dev->router, mcp_cb, CH_ROTATOR);
+				rot_destroy(ctr->rot);
+				ctr->rot = NULL;
+			}
+			
 			mhr_rem_producer(ctr->dev->router, ctr->s_fd_data, ctr->channel);
 			mhr_rem_consumer(ctr->dev->router, ctr->s_fd_data, ctr->channel);
 

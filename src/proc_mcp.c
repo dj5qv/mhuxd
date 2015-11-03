@@ -31,12 +31,14 @@ struct proc_mcp {
 
 struct proc_mcp *mcp_create(struct mh_control *ctl) {
 	struct proc_mcp *mcp;
+	dbg1("%s()", __func__);
 	mcp = w_calloc(1, sizeof(*mcp));
 	mcp->ctl = ctl;
 	return mcp;
 }
 
 void mcp_destroy(struct proc_mcp *mcp) {
+	dbg1("%s()", __func__);
 	free(mcp);
 }
 
