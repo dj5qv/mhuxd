@@ -42,6 +42,15 @@ void mcp_destroy(struct proc_mcp *mcp) {
 	free(mcp);
 }
 
+static void send_response(int fd, const char *cmd, const char *arg) {
+	ssize_t r;
+	char response[MCP_MAX_CMD_SIZE + 3];
+	snprintf(response, sizeof(response), "%s%s\r\n", cmd, arg);
+	r = write(fd, response, strlen(response));
+	if(r <= 0)
+		err_e(errno, "%s() could not write response!", __func__);
+}
+
 static void send_err_response(int fd, const char *cmd) {
 	ssize_t r;
 	char response[MCP_MAX_CMD_SIZE + 4];
@@ -95,6 +104,61 @@ static int frd_to_hfocus(uint8_t hfocus[8], const char *frd_arg) {
 
 	return 0;
 }
+
+static int cmd_am(struct proc_mcp *mcp) {
+	uint8_t acc_outputs[4];
+	uint8_t offset = (mcp->cmd[2] == '2' ? 2 : 0);
+	int i;
+	uint16_t acc_int;
+
+	mhc_mk2r_get_acc_outputs(mcp->ctl, acc_outputs);
+
+
+	if(strlen(mcp->cmd) == 3) {
+		// query
+		char arg[16 + 1];
+		char *p = arg;
+		arg[16] = 0;
+		acc_int = acc_outputs[offset] << 8 | acc_outputs[offset + 1];
+
+		for(i = 0; i < 16; i++) {
+			*p++ = ((acc_int >> (15 - i)) & 1) ? '1' : '0';
+		}
+		send_response(mcp->fd, mcp->cmd, arg);
+		return 0;
+	}
+
+	if(strlen(mcp->cmd) == 19) {
+		// set
+		char *p = mcp->cmd + 3;
+		acc_int = 0;
+
+		for(i = 0; i < 16; i++) {
+			switch(p[i]) {
+			case '0':
+				break;
+			case '1':
+				acc_int |= (acc_int | 1 << (15 - i));
+				break;
+			default:
+				err("%s Invalid parameter!", mcp->cmd);
+				return -1;
+				break;
+
+			}
+		}
+
+		acc_outputs[offset] = acc_int >> 8;
+		acc_outputs[offset + 1] = acc_int & 0xff;
+
+		return mhc_mk2r_set_acc_outputs(mcp->ctl, acc_outputs, completion_cb, mcp);
+	}
+
+	err("%s Invalid parameter!", mcp->cmd);
+	return -1;
+}
+
+//static int am_to_acc(uint8_t acc[16]
 
 /*
  * FT1<CR> SetTxFocus(R1)
@@ -159,6 +223,10 @@ static int process_cmd(struct proc_mcp *mcp) {
 	if(!strncmp(mcp->cmd, "FRD", 3)) {
 		if(0 == frd_to_hfocus(hfocus, mcp->cmd + 3))
 			goto set_hfocus;
+	}
+
+	if(!strncmp(mcp->cmd, "AM1", 3) || !strncmp(mcp->cmd, "AM2", 3)) {
+		return cmd_am(mcp);
 	}
 
 	if(!strncmp(mcp->cmd, "SA", 2) && strlen(mcp->cmd) == 3) {

@@ -868,6 +868,21 @@ int mhc_mk2r_get_hfocus(struct mh_control *ctl, uint8_t dest[8]) {
 	return 0;
 }
 
+int mhc_mk2r_set_acc_outputs(struct mh_control *ctl, uint8_t acc_outputs[4], mhc_cmd_completion_cb cb, void *user_data) {
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_HOST_ACC_OUTPUTS_CONTROL);
+	buf_append(&b, acc_outputs, 4);
+	buf_append_c(&b, MHCMD_HOST_ACC_OUTPUTS_CONTROL | MSB_BIT);
+	memcpy(ctl->acc_state + 4, acc_outputs, 4);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
+int mhc_mk2r_get_acc_outputs(struct mh_control *ctl, uint8_t dest[4]) {
+	memcpy(dest, ctl->acc_state + 4, 4);
+	return 0;
+}
+
 int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);

@@ -62,6 +62,8 @@ int mhc_abort_message(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *us
 
 int mhc_mk2r_set_hfocus(struct mh_control *ctl, uint8_t hfocus[8], mhc_cmd_completion_cb cb, void *user_data);
 int mhc_mk2r_get_hfocus(struct mh_control *ctl, uint8_t dest[8]);
+int mhc_mk2r_set_acc_outputs(struct mh_control *ctl, uint8_t acc_outputs[4], mhc_cmd_completion_cb cb, void *user_data);
+int mhc_mk2r_get_acc_outputs(struct mh_control *ctl, uint8_t dest[4]);
 int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data);
 
 struct sm *mhc_get_sm(struct mh_control *ctl);
