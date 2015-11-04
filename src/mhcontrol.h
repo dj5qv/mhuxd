@@ -41,6 +41,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 void mhc_destroy(struct mh_control *ctl);
 int mhc_is_connected(struct mh_control *ctl);
 int mhc_is_online(struct mh_control *ctl);
+const char *mhc_get_serial(struct mh_control *ctl);
 const struct mh_info *mhc_get_mhinfo(struct mh_control *ctl);
 int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb cb, void *user_data);
 uint16_t mhc_get_type(struct mh_control *);

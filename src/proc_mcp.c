@@ -15,6 +15,7 @@
 #include "logger.h"
 #include "mhcontrol.h"
 #include "mhmk2r.h"
+#include "mhinfo.h"
 
 #define MOD_ID "mcp"
 
@@ -158,6 +159,25 @@ static int cmd_am(struct proc_mcp *mcp) {
 	return -1;
 }
 
+static int cmd_ver(struct proc_mcp *mcp) {
+	char c = mcp->cmd[1];
+
+	if(c == 'S' || c == 0) {
+		send_response(mcp->fd, "VS", mhc_get_serial(mcp->ctl));
+	}
+	if(c == 'F' || c == 0) {
+		const struct mh_info *mhi = mhc_get_mhinfo(mcp->ctl);
+		char arg[10];
+		snprintf(arg, sizeof(arg), "%02d.%02d", mhi->ver_fw_major, mhi->ver_fw_minor);
+		send_response(mcp->fd, "VF", arg);
+	}
+	if(c == 'R' || c == 0) {
+		char *arg = "08.05.06";
+		send_response(mcp->fd, "VR", arg);
+	}
+	return 0;
+}
+
 //static int am_to_acc(uint8_t acc[16]
 
 /*
@@ -227,6 +247,10 @@ static int process_cmd(struct proc_mcp *mcp) {
 
 	if(!strncmp(mcp->cmd, "AM1", 3) || !strncmp(mcp->cmd, "AM2", 3)) {
 		return cmd_am(mcp);
+	}
+
+	if(!strcmp(mcp->cmd,"VS") || !strcmp(mcp->cmd,"VF") || !strcmp(mcp->cmd,"VR") || !strcmp(mcp->cmd,"V")) {
+		return cmd_ver(mcp);
 	}
 
 	if(!strcmp(mcp->cmd, "C")) {

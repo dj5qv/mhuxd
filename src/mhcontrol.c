@@ -1159,3 +1159,7 @@ const char *mhc_cmd_err_string(int result) {
 	}
 	return "unkown command result";
 }
+
+const char *mhc_get_serial(struct mh_control *ctl) {
+	return ctl->serial;
+}
