@@ -183,7 +183,7 @@ static int cmd_am(struct proc_mcp *mcp) {
 static int process_cmd(struct proc_mcp *mcp) {
 	uint8_t hfocus[8];
 
-	if(mcp->cmd_len < 2)
+	if(mcp->cmd_len < 1)
 		return -1;
 
 	dbg1("command: %s", mcp->cmd);
@@ -229,6 +229,12 @@ static int process_cmd(struct proc_mcp *mcp) {
 		return cmd_am(mcp);
 	}
 
+	if(!strcmp(mcp->cmd, "C")) {
+		char *arg = mhc_is_online(mcp->ctl) ? "1" : "0";
+		send_response(mcp->fd, "C", arg);
+		return 0;
+	}
+
 	if(!strncmp(mcp->cmd, "SA", 2) && strlen(mcp->cmd) == 3) {
 		char arg[2];
 		arg[0] = mcp->cmd[2];
@@ -268,6 +274,7 @@ static int process_cmd(struct proc_mcp *mcp) {
 		mcp->action_name = "ABORT MESSAGE";
 		return mhc_abort_message(mcp->ctl, completion_cb, mcp);
 	}
+
 
 
 	err("invalid command: %s", mcp->cmd);
