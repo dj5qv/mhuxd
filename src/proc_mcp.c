@@ -46,7 +46,7 @@ void mcp_destroy(struct proc_mcp *mcp) {
 static void send_response(int fd, const char *cmd, const char *arg) {
 	ssize_t r;
 	char response[MCP_MAX_CMD_SIZE + 3];
-	snprintf(response, sizeof(response), "%s%s\r\n", cmd, arg);
+	snprintf(response, sizeof(response), "%s%s\r", cmd, arg);
 	r = write(fd, response, strlen(response));
 	if(r <= 0)
 		err_e(errno, "%s() could not write response!", __func__);
@@ -57,7 +57,7 @@ static void send_err_response(int fd, const char *cmd) {
 	char response[MCP_MAX_CMD_SIZE + 4];
 	*response = 'E';
 	strcpy(response + 1, cmd);
-	strcat(response, "\r\n");
+	strcat(response, "\r");
 	r = write(fd, response, strlen(response));
 	if(r <= 0)
 		err_e(errno, "%s() could not write response!", __func__);

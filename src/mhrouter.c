@@ -424,8 +424,6 @@ struct mh_router *mhr_create(struct ev_loop *loop, const char *serial, uint8_t h
 
 	dbg1("%s %s()", serial, __func__);
 
-	dbg1_h(serial, "fm test to", "KDJRNEJSKDJFMDNEQKAJ", 20);
-	
 	router = w_calloc(1, sizeof(*router));
 	router->has_flags_channel = has_flags_channel;
 	router->serial = w_malloc(strlen(serial)+1);
