@@ -175,6 +175,13 @@ static int cmd_ver(struct proc_mcp *mcp) {
 		char *arg = "08.05.06";
 		send_response(mcp->fd, "VR", arg);
 	}
+
+	if(c == 0) {
+		// Though not so in the specs, Windows router seems to add connection status here.
+		char *arg = mhc_is_online(mcp->ctl) ? "1" : "0";
+		send_response(mcp->fd, "C", arg);
+	}
+
 	return 0;
 }
 
