@@ -16,10 +16,15 @@
 #include "mhcontrol.h"
 #include "mhmk2r.h"
 #include "mhinfo.h"
+#include "mhrouter.h"
+#include "mhflags.h"
+#include "channel.h"
 
 #define MOD_ID "mcp"
 
 #define MCP_MAX_CMD_SIZE (32)
+
+static void flags_cb(struct mh_router *router, unsigned const char *data ,int len, int channel, void *user_data);
 
 struct proc_mcp {
 	struct mh_control *ctl;
@@ -28,6 +33,8 @@ struct proc_mcp {
 	unsigned cmd_overflow;
 	const char *action_name;
 	int fd;
+	uint8_t flag[2];
+	uint8_t auto_info_on;
 };
 
 struct proc_mcp *mcp_create(struct mh_control *ctl) {
@@ -35,11 +42,15 @@ struct proc_mcp *mcp_create(struct mh_control *ctl) {
 	dbg1("%s()", __func__);
 	mcp = w_calloc(1, sizeof(*mcp));
 	mcp->ctl = ctl;
+
+	mhr_add_consumer_cb(mcp->ctl, flags_cb, MH_CHANNEL_FLAGS, mcp);
+	
 	return mcp;
 }
 
 void mcp_destroy(struct proc_mcp *mcp) {
 	dbg1("%s()", __func__);
+	mhr_rem_consumer_cb(mhc_get_router(mcp->ctl), flags_cb, MH_CHANNEL_FLAGS);
 	free(mcp);
 }
 
@@ -260,12 +271,21 @@ static int process_cmd(struct proc_mcp *mcp) {
 		return cmd_ver(mcp);
 	}
 
+	if(!strcmp(mcp->cmd, "I0")) {
+		mcp->auto_info_on = 0;
+		return 0;
+	}
+
+	if(!strcmp(mcp->cmd, "I1")) {
+		mcp->auto_info_on = 1;
+		return 0;
+	}
+
 	if(!strcmp(mcp->cmd, "C")) {
 		char *arg = mhc_is_online(mcp->ctl) ? "1" : "0";
 		send_response(mcp->fd, "C", arg);
 		return 0;
 	}
-
 	if(!strncmp(mcp->cmd, "SA", 2) && strlen(mcp->cmd) == 3) {
 		char arg[2];
 		arg[0] = mcp->cmd[2];
@@ -361,5 +381,36 @@ void mcp_cb(struct mh_router *router, int channel, struct buffer *b, int fd, voi
 	}
 
 	buf_reset(b);
+}
+
+static void flags_cb(struct mh_router *router, unsigned const char *data ,int len, int channel, void *user_data) {
+	(void) router; (void) channel;
+	struct proc_mcp *mcp = user_data;
+	uint16_t i;
+	uint8_t ptt_changed = 0;
+
+	dbg1("%s()", __func__);
+	
+	for(i = 0; i < len; i++) {
+		uint8_t idx = 0;
+		
+		if(data[i] & MHD2CFL_R2) 
+			idx = 1;
+			
+		if((mcp->flag[idx] & MHD2CFL_ANY_PTT) != (data[i] & MHD2CFL_ANY_PTT)) 
+			ptt_changed = 1;
+
+		mcp->flag[idx] = data[i];
+	}
+
+	if(mcp->auto_info_on && ptt_changed) {
+		uint16_t type = mhc_get_mhinfo(mcp->ctl)->type;
+		char arg[4];
+		if(type == MHT_MK2R || type == MHT_MK2Rp || type == MHT_U2R)
+			snprintf(arg, sizeof(arg), "P%d%d\r",
+				 (mcp->flag[0] & MHD2CFL_ANY_PTT) ? 1 : 0,
+				 (mcp->flag[1] & MHD2CFL_ANY_PTT) ? 1 : 0);
+		send_response(mcp->fd, "P", arg);
+	}
 }
 

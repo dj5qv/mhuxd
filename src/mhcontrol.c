@@ -1163,3 +1163,7 @@ const char *mhc_cmd_err_string(int result) {
 const char *mhc_get_serial(struct mh_control *ctl) {
 	return ctl->serial;
 }
+
+struct mh_router *mhc_get_router(struct mh_control *ctl) {
+	return ctl->router;
+}

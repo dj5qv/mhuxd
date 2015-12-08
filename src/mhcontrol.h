@@ -73,4 +73,6 @@ int mhc_sm_get_antsw_block(struct mh_control *ctl, uint16_t offset, mhc_cmd_comp
 int mhc_sm_set_antsw_validity(struct mh_control *ctl, uint8_t param, mhc_cmd_completion_cb cb, void *user_data);
 int mhc_sm_store_antsw_block(struct mh_control *ctl, uint16_t offset, const char *data, mhc_cmd_completion_cb cb, void *user_data);
 
+struct mh_router *mhc_get_router(struct mh_control *ctl);
+
 #endif // MHCONTROL_H
