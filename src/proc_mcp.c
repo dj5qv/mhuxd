@@ -43,7 +43,7 @@ struct proc_mcp *mcp_create(struct mh_control *ctl) {
 	mcp = w_calloc(1, sizeof(*mcp));
 	mcp->ctl = ctl;
 
-	mhr_add_consumer_cb(mcp->ctl, flags_cb, MH_CHANNEL_FLAGS, mcp);
+	mhr_add_consumer_cb(mhc_get_router(mcp->ctl), flags_cb, MH_CHANNEL_FLAGS, mcp);
 	
 	return mcp;
 }
@@ -410,6 +410,9 @@ static void flags_cb(struct mh_router *router, unsigned const char *data ,int le
 			snprintf(arg, sizeof(arg), "P%d%d\r",
 				 (mcp->flag[0] & MHD2CFL_ANY_PTT) ? 1 : 0,
 				 (mcp->flag[1] & MHD2CFL_ANY_PTT) ? 1 : 0);
+		else
+			snprintf(arg, sizeof(arg), "P%d\r",
+				 (mcp->flag[0] & MHD2CFL_ANY_PTT) ? 1 : 0);
 		send_response(mcp->fd, "P", arg);
 	}
 }
