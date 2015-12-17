@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2016  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -25,6 +25,8 @@
 #define MCP_MAX_CMD_SIZE (32)
 
 static void flags_cb(struct mh_router *router, unsigned const char *data ,int len, int channel, void *user_data);
+static void mok_state_changed_cb(const char *serial, const uint8_t *state, uint8_t state_len, void *user_data);
+static void acc_state_changed_cb(const char *serial, const uint8_t *state, uint8_t state_len, void *user_data);
 
 struct proc_mcp {
 	struct mh_control *ctl;
@@ -34,7 +36,9 @@ struct proc_mcp {
 	const char *action_name;
 	int fd;
 	uint8_t flag[2];
-	uint8_t auto_info_on;
+	uint8_t mok_state[8];
+	uint8_t acc_state[4];
+	int auto_info_on : 1;
 };
 
 struct proc_mcp *mcp_create(struct mh_control *ctl) {
@@ -44,12 +48,16 @@ struct proc_mcp *mcp_create(struct mh_control *ctl) {
 	mcp->ctl = ctl;
 
 	mhr_add_consumer_cb(mhc_get_router(mcp->ctl), flags_cb, MH_CHANNEL_FLAGS, mcp);
-	
+	mhc_add_mok_state_changed_cb(mcp->ctl, mok_state_changed_cb, mcp);
+	mhc_add_acc_state_changed_cb(mcp->ctl, acc_state_changed_cb, mcp);
+
 	return mcp;
 }
 
 void mcp_destroy(struct proc_mcp *mcp) {
 	dbg1("%s()", __func__);
+	mhc_rem_acc_state_changed_cb(mcp->ctl, acc_state_changed_cb);
+	mhc_rem_mok_state_changed_cb(mcp->ctl, mok_state_changed_cb);
 	mhr_rem_consumer_cb(mhc_get_router(mcp->ctl), flags_cb, MH_CHANNEL_FLAGS);
 	free(mcp);
 }
@@ -61,6 +69,12 @@ static void send_response(int fd, const char *cmd, const char *arg) {
 	r = write(fd, response, strlen(response));
 	if(r <= 0)
 		err_e(errno, "%s() could not write response!", __func__);
+}
+
+static void send_response_int(int fd, const char *cmd, int32_t iarg) {
+	char arg[12];
+	snprintf(arg, sizeof(arg), "%d", iarg);
+	send_response(fd, cmd, arg);
 }
 
 static void send_err_response(int fd, const char *cmd) {
@@ -124,7 +138,6 @@ static int cmd_am(struct proc_mcp *mcp) {
 	uint16_t acc_int;
 
 	mhc_mk2r_get_acc_outputs(mcp->ctl, acc_outputs);
-
 
 	if(strlen(mcp->cmd) == 3) {
 		// query
@@ -387,7 +400,7 @@ static void flags_cb(struct mh_router *router, unsigned const char *data ,int le
 	(void) router; (void) channel;
 	struct proc_mcp *mcp = user_data;
 	uint16_t i;
-	uint8_t ptt_changed = 0;
+	uint8_t ptt_changed = 0, footsw_changed = 0, lockout_changed = 0;
 
 	dbg1("%s()", __func__);
 	
@@ -400,6 +413,13 @@ static void flags_cb(struct mh_router *router, unsigned const char *data ,int le
 		if((mcp->flag[idx] & MHD2CFL_ANY_PTT) != (data[i] & MHD2CFL_ANY_PTT)) 
 			ptt_changed = 1;
 
+		if((mcp->flag[idx] & MHD2CFL_FOOTSWITCH) != (data[i] & MHD2CFL_FOOTSWITCH))
+			footsw_changed = 1;
+
+		if((mcp->flag[idx] & MHD2CFL_LOCKOUT) != (data[i] & MHD2CFL_LOCKOUT))
+			lockout_changed = 1;
+
+		
 		mcp->flag[idx] = data[i];
 	}
 
@@ -407,13 +427,143 @@ static void flags_cb(struct mh_router *router, unsigned const char *data ,int le
 		uint16_t type = mhc_get_mhinfo(mcp->ctl)->type;
 		char arg[4];
 		if(type == MHT_MK2R || type == MHT_MK2Rp || type == MHT_U2R)
-			snprintf(arg, sizeof(arg), "P%d%d\r",
+			snprintf(arg, sizeof(arg), "%d%d\r",
 				 (mcp->flag[0] & MHD2CFL_ANY_PTT) ? 1 : 0,
 				 (mcp->flag[1] & MHD2CFL_ANY_PTT) ? 1 : 0);
 		else
-			snprintf(arg, sizeof(arg), "P%d\r",
+			snprintf(arg, sizeof(arg), "%d\r",
 				 (mcp->flag[0] & MHD2CFL_ANY_PTT) ? 1 : 0);
 		send_response(mcp->fd, "P", arg);
 	}
+
+	if(mcp->auto_info_on && footsw_changed) {
+		uint16_t type = mhc_get_mhinfo(mcp->ctl)->type;
+		char arg[4];
+		if(type == MHT_MK2R || type == MHT_MK2Rp || type == MHT_U2R)
+			snprintf(arg, sizeof(arg), "%d%d\r",
+				 (mcp->flag[0] & MHD2CFL_FOOTSWITCH) ? 1 : 0,
+				 (mcp->flag[1] & MHD2CFL_FOOTSWITCH) ? 1 : 0);
+		else
+			snprintf(arg, sizeof(arg), "%d\r",
+				 (mcp->flag[0] & MHD2CFL_FOOTSWITCH) ? 1 : 0);
+		send_response(mcp->fd, "H", arg);
+	}
+
+	if(mcp->auto_info_on && lockout_changed) {
+		uint16_t type = mhc_get_mhinfo(mcp->ctl)->type;
+		char arg[4];
+		if(type == MHT_MK2R || type == MHT_MK2Rp || type == MHT_U2R)
+			snprintf(arg, sizeof(arg), "%d%d\r",
+				 (mcp->flag[0] & MHD2CFL_LOCKOUT) ? 1 : 0,
+				 (mcp->flag[1] & MHD2CFL_LOCKOUT) ? 1 : 0);
+		else
+			snprintf(arg, sizeof(arg), "%d\r",
+				 (mcp->flag[0] & MHD2CFL_LOCKOUT) ? 1 : 0);
+		send_response(mcp->fd, "L", arg);
+	}
+
+}
+
+/*
+ * Provide auto-information if requested (I1).
+ * PTT info is handled by flag_cb().
+ * ACC info is handled by acc_state_changed_cb()
+ */
+static void mok_state_changed_cb(const char *serial, const uint8_t *state, uint8_t state_len, void *user_data) {
+	(void) serial;
+	struct proc_mcp *mcp = user_data;
+	
+	dbg1("%s()", __func__);
+	
+	if(state_len < 8) {
+		warn("MOK State length too short (%d)", state_len);
+		return;
+	}
+	
+	if(state_len > 8)
+		state_len = 8;
+	
+	if(mcp->auto_info_on) {
+		uint8_t val, rx_focus, rx_stereo;
+		
+		// FT
+		val = mk2r_get_mok_value(state, "txFocus");
+		if(val != mk2r_get_mok_value(mcp->mok_state, "txFocus"))
+			send_response_int(mcp->fd, "FT", val + 1);
+
+		// FTA
+		val = mk2r_get_mok_value(state, "focusAuto");
+		if(val != mk2r_get_mok_value(mcp->mok_state, "focusAuto"))
+			send_response_int(mcp->fd, "FTA", val);
+
+		// FR
+		rx_focus = mk2r_get_mok_value(state, "rxFocus");
+		rx_stereo= mk2r_get_mok_value(state, "stereoFocus");
+		if((rx_focus != mk2r_get_mok_value(mcp->mok_state, "rxFocus")) || rx_stereo != mk2r_get_mok_value(mcp->mok_state, "stereoFocus")) {
+			if(rx_stereo)
+				send_response(mcp->fd, "FRS", "");
+			else
+				send_response_int(mcp->fd, "FR", val + 1);
+
+		}
+
+		// FRD
+		if((mk2r_get_mok_value(state, "ears.left.flags") != mk2r_get_mok_value(mcp->mok_state, "ears.left.flags")) ||
+		   (mk2r_get_mok_value(state, "ears.right.flags") != mk2r_get_mok_value(mcp->mok_state, "ears.right.flags"))) {
+			char arg[13]; int i = 0;
+			arg[i++] = mk2r_get_mok_value(state, "ears.left.r1Main") ? '1' : '0';
+			arg[i++] = mk2r_get_mok_value(state, "ears.left.r1Sub") ? '1' : '0';
+			arg[i++] = mk2r_get_mok_value(state, "ears.left.scLeft") ? '1' : '0';
+			arg[i++] = mk2r_get_mok_value(state, "ears.left.scRight") ? '1' : '0';
+			arg[i++] = mk2r_get_mok_value(state, "ears.left.r2Main") ? '1' : '0';
+			arg[i++] = mk2r_get_mok_value(state, "ears.left.r2Sub") ? '1' : '0';
+			arg[i++] = mk2r_get_mok_value(state, "ears.right.r1Main") ? '1' : '0';
+			arg[i++] = mk2r_get_mok_value(state, "ears.right.r1Sub") ? '1' : '0';
+			arg[i++] = mk2r_get_mok_value(state, "ears.right.scLeft") ? '1' : '0';
+			arg[i++] = mk2r_get_mok_value(state, "ears.right.scRight") ? '1' : '0';
+			arg[i++] = mk2r_get_mok_value(state, "ears.right.r2Main") ? '1' : '0';
+			arg[i++] = mk2r_get_mok_value(state, "ears.right.r2Sub") ? '1' : '0';
+			arg[i] = 0x00;
+			send_response(mcp->fd, "FRD", arg);
+		}
+		
+	}
+
+	memcpy(mcp->mok_state, state, state_len);
+}
+
+static void acc_state_changed_cb(const char *serial, const uint8_t *state, uint8_t state_len, void *user_data) {
+	(void) serial;
+	struct proc_mcp *mcp = user_data;
+
+	if(state_len < 4) {
+		warn("ACC State length too short (%d)", state_len);
+		return;
+	}
+
+	if(state_len > 4)
+		state_len = 4;
+
+	char arg[17]; int i;
+
+	if(state[0] != mcp->acc_state[0] || state[1] != mcp->acc_state[1]) {
+		uint16_t val = (state[0] << 8) | state[1];
+		for(i = 0; i < 16; i++) {
+			arg[i] = val >> (15 - i) ? '1' : '0';
+		}
+		arg[i] = 0x00;
+		send_response(mcp->fd, "AM1", arg);
+	}
+
+	if(state[2] != mcp->acc_state[2] || state[3] != mcp->acc_state[3]) {
+		uint16_t val = (state[2] << 8) | state[3];
+		for(i = 0; i < 16; i++) {
+			arg[i] = val >> (15 - i) ? '1' : '0';
+		}
+		arg[i] = 0x00;
+		send_response(mcp->fd, "AM2", arg);
+	}
+
+	memcpy(mcp->acc_state, state, state_len);
 }
 

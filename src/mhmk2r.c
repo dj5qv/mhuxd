@@ -52,6 +52,8 @@ struct citem mok_items[] = {
 	CITEM("a1SteppirVerHi", 6, 7, 8 ),
 	CITEM("a2SteppirVerHi", 7, 7, 8 ),
 
+	CITEM("ears.left.flags", 0, 21, 6),
+	CITEM("ears.right.flags", 0, 29, 6),
 };
 
 struct citem mk2r_hfocus_items[] = {

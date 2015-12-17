@@ -60,7 +60,7 @@ static struct device *create_dev(const char *serial, uint16_t type) {
 	dev->router = mhr_create(dman->loop, serial, (mhi.flags & MHF_HAS_FLAGS_CHANNEL) ? 1 : 0);
 	dev->ctl = mhc_create(dman->loop, dev->router, &mhi);
 	PG_AddTail(&dman->device_list, &dev->node);
-	mhc_add_state_changed_cb(dev->ctl, cfgmr_state_changed_cb, dman->cfgmgr);
+	mhc_add_keyer_state_changed_cb(dev->ctl, cfgmr_state_changed_cb, dman->cfgmgr);
 	//	cfgmgr_update_hdf_dev(dman->cfgmgr, serial);
 	return dev;
 }

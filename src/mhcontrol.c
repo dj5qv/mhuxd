@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2016  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -118,9 +118,15 @@ enum {
 	CMD_STATE_SENT,
 };
 
-struct state_changed_cb {
+struct keyer_state_changed_cb {
 	struct PGNode node;
-	mhc_state_changed_cb cb;
+	mhc_keyer_state_changed_cb cb;
+	void *user_data;
+};
+
+struct state_cb {
+	struct PGNode node;
+	mhc_state_cb cb;
 	void *user_data;
 };
 
@@ -132,9 +138,9 @@ struct mh_control {
 	struct sm *sm;
 	struct PGList cmd_list;
 	struct PGList free_list;
-	struct PGList state_changed_cb_list;
-	//	mhc_state_changed_cb state_changed_cb;
-	//	void *state_chaned_cb_user_data;
+	struct PGList keyer_state_changed_cb_list;
+	struct PGList mok_state_changed_cb_list;
+	struct PGList acc_state_changed_cb_list;
 
 	ev_timer heartbeat_timer;
 	ev_timer cmd_timeout_timer;
@@ -214,7 +220,7 @@ static uint8_t state_to_ext_state(uint8_t state) {
 }
 
 static void set_state(struct mh_control *ctl, uint8_t state) {
-	struct state_changed_cb *sccb;
+	struct keyer_state_changed_cb *sccb;
 	uint8_t new_keyer_state;
 
 	ctl->state = state;
@@ -228,7 +234,7 @@ static void set_state(struct mh_control *ctl, uint8_t state) {
 
 	if(new_keyer_state != ctl->keyer_state) {
 		ctl->keyer_state = new_keyer_state;
-		PG_SCANLIST(&ctl->state_changed_cb_list, sccb)
+		PG_SCANLIST(&ctl->keyer_state_changed_cb_list, sccb)
 			if(sccb->cb)
 				sccb->cb(ctl->serial, ctl->keyer_state, sccb->user_data);
 	}
@@ -316,6 +322,12 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 
 		memcpy(ctl->state_buf, data + 1, 8);
 		mk2r_debug_print_mok_values(ctl->state_buf);
+
+		struct state_cb *scb;
+		PG_SCANLIST(&ctl->mok_state_changed_cb_list, scb) {
+			scb->cb(ctl->serial, data + 1, 8, scb->user_data);
+		}
+
 		return;
 	}
 
@@ -326,6 +338,12 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 		}
 
 		memcpy(ctl->acc_state, data + 1, 8);
+
+		struct state_cb *scb;
+		PG_SCANLIST(&ctl->acc_state_changed_cb_list, scb) {
+			scb->cb(ctl->serial, ctl->acc_state + 2, 4, scb->user_data);
+		}
+
 		return;
 	}
 
@@ -593,7 +611,9 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 
 	PG_NewList(&ctl->cmd_list);
 	PG_NewList(&ctl->free_list);
-	PG_NewList(&ctl->state_changed_cb_list);
+	PG_NewList(&ctl->keyer_state_changed_cb_list);
+	PG_NewList(&ctl->mok_state_changed_cb_list);
+	PG_NewList(&ctl->acc_state_changed_cb_list);
 
 	set_state(ctl, CTL_STATE_DEVICE_DISC);
 
@@ -644,7 +664,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 
 void mhc_destroy(struct mh_control *ctl) {
 	struct command *cmd;
-	struct state_changed_cb *sccb;
+	struct keyer_state_changed_cb *sccb;
 	int i;
 
 	dbg1("%s()", __func__);
@@ -657,7 +677,7 @@ void mhc_destroy(struct mh_control *ctl) {
 
 	mhr_rem_status_cb(ctl->router, router_status_cb);
 
-	while((sccb = (void*)PG_FIRSTENTRY(&ctl->state_changed_cb_list))) {
+	while((sccb = (void*)PG_FIRSTENTRY(&ctl->keyer_state_changed_cb_list))) {
 		PG_Remove(&sccb->node);
 		free(sccb);
 	}
@@ -874,12 +894,12 @@ int mhc_mk2r_set_acc_outputs(struct mh_control *ctl, uint8_t acc_outputs[4], mhc
 	buf_append_c(&b, MHCMD_HOST_ACC_OUTPUTS_CONTROL);
 	buf_append(&b, acc_outputs, 4);
 	buf_append_c(&b, MHCMD_HOST_ACC_OUTPUTS_CONTROL | MSB_BIT);
-	memcpy(ctl->acc_state + 4, acc_outputs, 4);
+	memcpy(ctl->acc_state + 2, acc_outputs, 4);
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
 int mhc_mk2r_get_acc_outputs(struct mh_control *ctl, uint8_t dest[4]) {
-	memcpy(dest, ctl->acc_state + 4, 4);
+	memcpy(dest, ctl->acc_state + 2, 4);
 	return 0;
 }
 
@@ -1057,22 +1077,22 @@ const struct cfg *mhc_get_speed_cfg(struct mh_control *ctl, int channel) {
 	return ctl->speed_args[channel];
 }
 
-void mhc_add_state_changed_cb(struct mh_control *ctl, mhc_state_changed_cb cb, void *user_data) {
+void mhc_add_keyer_state_changed_cb(struct mh_control *ctl, mhc_keyer_state_changed_cb cb, void *user_data) {
 	if(!ctl)
 		return;
 
-	struct state_changed_cb *sccb;
+	struct keyer_state_changed_cb *sccb;
 	sccb = w_malloc(sizeof(*sccb));
 	sccb->cb = cb;
 	sccb->user_data = user_data;
-	PG_AddTail(&ctl->state_changed_cb_list, &sccb->node);
+	PG_AddTail(&ctl->keyer_state_changed_cb_list, &sccb->node);
 
 	sccb->cb(ctl->serial, ctl->keyer_state, sccb->user_data);
 }
 
-void mhc_rem_state_changed_cb(struct mh_control *ctl, mhc_state_changed_cb cb) {
-	struct state_changed_cb *sccb;
-	PG_SCANLIST(&ctl->state_changed_cb_list, sccb) {
+void mhc_rem_keyer_state_changed_cb(struct mh_control *ctl, mhc_keyer_state_changed_cb cb) {
+	struct keyer_state_changed_cb *sccb;
+	PG_SCANLIST(&ctl->keyer_state_changed_cb_list, sccb) {
 		if(sccb->cb == cb) {
 			PG_Remove(&sccb->node);
 			free(sccb);
@@ -1081,6 +1101,56 @@ void mhc_rem_state_changed_cb(struct mh_control *ctl, mhc_state_changed_cb cb) {
 	}
 	warn("%s() callback not found!", __func__);
 }
+
+static struct state_cb *add_state_cb(struct PGList *list, mhc_state_cb cb, void *user_data) {
+	struct state_cb *scb;
+	scb = w_malloc(sizeof(*scb));
+	scb->cb = cb;
+	scb->user_data = user_data;
+	PG_AddTail(list, &scb->node);
+	return scb;
+}
+
+static void rem_state_cb(struct PGList *list, mhc_state_cb cb) {
+	struct state_cb *scb;
+	PG_SCANLIST(list, scb) {
+		if(scb->cb == cb) {
+			PG_Remove(&scb->node);
+			free(scb);
+			return;
+		}
+	}
+	warn("%s() callback not found!", __func__);
+}
+
+void mhc_add_mok_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb, void *user_data) {
+	if(!ctl)
+		return;
+	if((ctl->mhi.type != MHT_MK2R) && (ctl->mhi.type != MHT_MK2Rp))
+		return;
+	struct state_cb *scb = add_state_cb(&ctl->mok_state_changed_cb_list, cb, user_data);
+	if(mhc_is_online(ctl))
+		scb->cb(ctl->serial, ctl->state_buf, 8, scb->user_data);
+}
+
+void mhc_rem_mok_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb) {
+	rem_state_cb(&ctl->mok_state_changed_cb_list, cb);
+}
+
+void mhc_add_acc_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb, void *user_data) {
+	if(!ctl)
+		return;
+	if((ctl->mhi.type != MHT_MK2R) && (ctl->mhi.type != MHT_MK2Rp))
+		return;
+	struct state_cb *scb = add_state_cb(&ctl->acc_state_changed_cb_list, cb, user_data);
+	if(mhc_is_online(ctl))
+		scb->cb(ctl->serial, ctl->state_buf, 4, scb->user_data);
+}
+
+void mhc_rem_acc_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb) {
+	rem_state_cb(&ctl->acc_state_changed_cb_list, cb);
+}
+
 
 static int push_cmds(struct mh_control *ctl) {
 	struct command *cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list);

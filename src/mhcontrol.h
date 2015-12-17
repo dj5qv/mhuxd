@@ -1,7 +1,7 @@
 
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2016  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -28,7 +28,9 @@ enum {
 };
 
 typedef void (*mhc_cmd_completion_cb)(unsigned const char *reply, int len, int result, void *user_data);
-typedef void (*mhc_state_changed_cb)(const char *serial, int state, void *user_data);
+typedef void (*mhc_keyer_state_changed_cb)(const char *serial, int mhc_keyer_state, void *user_data);
+typedef void (*mhc_state_cb)(const char *serial, const uint8_t *state, uint8_t state_len, void *user_data);
+typedef void (*mhc_mode_cb)(const char *serial, uint8_t mode_cur, uint8_t mode_r1, uint8_t mode_r2);
 
 struct mh_control;
 struct mh_router;
@@ -49,8 +51,12 @@ const struct cfg *mhc_get_speed_cfg(struct mh_control *ctl, int channel);
 int mhc_set_kopt(struct mh_control *ctl, const char *key, int val);
 int mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_data);
 int mhc_kopts_to_cfg(struct mh_control *ctl, struct cfg *cfg);
-void mhc_add_state_changed_cb(struct mh_control *ctl, mhc_state_changed_cb cb, void *user_data);
-void mhc_rem_state_changed_cb(struct mh_control *ctl, mhc_state_changed_cb cb);
+void mhc_add_keyer_state_changed_cb(struct mh_control *ctl, mhc_keyer_state_changed_cb cb, void *user_data);
+void mhc_rem_keyer_state_changed_cb(struct mh_control *ctl, mhc_keyer_state_changed_cb cb);
+void mhc_add_mok_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb, void *user_data);
+void mhc_rem_mok_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb);
+void mhc_add_acc_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb, void *user_data);
+void mhc_rem_acc_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb);
 uint8_t mhc_get_state(struct mh_control *ctl);
 const char *mhc_state_str(int state);
 int mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb cb, void *user_data);

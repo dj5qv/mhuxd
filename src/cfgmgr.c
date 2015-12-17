@@ -139,6 +139,7 @@ static int mk1_set_frbase(struct device *dev, struct cfg *param_cfg) {
 	return rval;
 }
 
+//FIXME: remove this
 void cfgmr_state_changed_cb(const char *serial, int state, void *user_data) {
 	(void)state; (void)serial; (void)user_data;
 	//struct cfgmgr *cfgmgr = user_data;
