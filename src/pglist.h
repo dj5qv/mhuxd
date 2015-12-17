@@ -28,6 +28,7 @@ void PG_Insert (struct PGList *, struct PGNode *new, struct PGNode *after);
 void PG_Remove(struct PGNode *);
 int PG_Contains(struct PGList *l, struct PGNode *n);
 int PG_Count(struct PGList *l);
+int PG_CheckedRemove(struct PGList *l, struct PGNode *n);
 
 #define PG_SCANLIST(l, n) \
    for(n=(void*)(l)->pl_Head;     \

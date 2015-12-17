@@ -27,6 +27,7 @@
 static void flags_cb(struct mh_router *router, unsigned const char *data ,int len, int channel, void *user_data);
 static void mok_state_changed_cb(const char *serial, const uint8_t *state, uint8_t state_len, void *user_data);
 static void acc_state_changed_cb(const char *serial, const uint8_t *state, uint8_t state_len, void *user_data);
+void mode_changed_cb(const char *serial, uint8_t mode_cur, uint8_t mode_r1, uint8_t mode_r2, void *user_data);
 
 struct proc_mcp {
 	struct mh_control *ctl;
@@ -34,6 +35,8 @@ struct proc_mcp {
 	uint8_t cmd_len;
 	unsigned cmd_overflow;
 	const char *action_name;
+	struct mhc_mode_callback *mcb;
+	struct mhc_state_callback *acccb, *mokcb;
 	int fd;
 	uint8_t flag[2];
 	uint8_t mok_state[8];
@@ -48,16 +51,18 @@ struct proc_mcp *mcp_create(struct mh_control *ctl) {
 	mcp->ctl = ctl;
 
 	mhr_add_consumer_cb(mhc_get_router(mcp->ctl), flags_cb, MH_CHANNEL_FLAGS, mcp);
-	mhc_add_mok_state_changed_cb(mcp->ctl, mok_state_changed_cb, mcp);
-	mhc_add_acc_state_changed_cb(mcp->ctl, acc_state_changed_cb, mcp);
+	mcp->mokcb = mhc_add_mok_state_changed_cb(mcp->ctl, mok_state_changed_cb, mcp);
+	mcp->acccb = mhc_add_acc_state_changed_cb(mcp->ctl, acc_state_changed_cb, mcp);
+	mcp->mcb = mhc_add_mode_changed_cb(mcp->ctl, mode_changed_cb, mcp);
 
 	return mcp;
 }
 
 void mcp_destroy(struct proc_mcp *mcp) {
 	dbg1("%s()", __func__);
-	mhc_rem_acc_state_changed_cb(mcp->ctl, acc_state_changed_cb);
-	mhc_rem_mok_state_changed_cb(mcp->ctl, mok_state_changed_cb);
+	mhc_rem_mode_changed_cb(mcp->ctl, mcp->mcb);
+	mhc_rem_acc_state_changed_cb(mcp->ctl, mcp->acccb);
+	mhc_rem_mok_state_changed_cb(mcp->ctl, mcp->mokcb);
 	mhr_rem_consumer_cb(mhc_get_router(mcp->ctl), flags_cb, MH_CHANNEL_FLAGS);
 	free(mcp);
 }
@@ -567,3 +572,19 @@ static void acc_state_changed_cb(const char *serial, const uint8_t *state, uint8
 	memcpy(mcp->acc_state, state, state_len);
 }
 
+static const char *keyer_modes[] = {
+	"C", "V", "F", "D",
+};
+
+void mode_changed_cb(const char *serial, uint8_t mode_cur, uint8_t mode_r1, uint8_t mode_r2, void *user_data) {
+	(void) serial;
+	struct proc_mcp *mcp = user_data;
+	uint16_t type = mhc_get_mhinfo(mcp->ctl)->type;
+
+	if(type == MHT_MK2R || type == MHT_MK2Rp || type == MHT_U2R) {
+		send_response(mcp->fd, "K1", keyer_modes[mode_r1]);
+		send_response(mcp->fd, "K1", keyer_modes[mode_r2]);
+	} else {
+		send_response(mcp->fd, "K", keyer_modes[mode_cur]);
+	}
+}

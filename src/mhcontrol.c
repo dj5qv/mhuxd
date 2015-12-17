@@ -118,15 +118,21 @@ enum {
 	CMD_STATE_SENT,
 };
 
-struct keyer_state_changed_cb {
+struct mhc_keyer_state_callback {
 	struct PGNode node;
-	mhc_keyer_state_changed_cb cb;
+	mhc_keyer_state_cb_fn func;
 	void *user_data;
 };
 
-struct state_cb {
+struct mhc_state_callback {
 	struct PGNode node;
-	mhc_state_cb cb;
+	mhc_state_cb_fn func;
+	void *user_data;
+};
+
+struct mhc_mode_callback {
+	struct PGNode node;
+	mhc_mode_cb_fn func;
 	void *user_data;
 };
 
@@ -141,6 +147,7 @@ struct mh_control {
 	struct PGList keyer_state_changed_cb_list;
 	struct PGList mok_state_changed_cb_list;
 	struct PGList acc_state_changed_cb_list;
+	struct PGList mode_changed_cb_list;
 
 	ev_timer heartbeat_timer;
 	ev_timer cmd_timeout_timer;
@@ -161,14 +168,14 @@ struct command {
 	struct PGNode node;
 	uint16_t len;
 	uint8_t state;
-	mhc_cmd_completion_cb cmd_completion_cb;
+	mhc_cmd_completion_cb_fn cmd_completion_cb;
 	void *user_data;
 	uint8_t cmd[MAX_CMD_LEN];
 };
 
-static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb cb, void *user_data);
-static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb cb, void *user_data);
-static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb cb, void *user_data);
+static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb_fn cb, void *user_data);
+static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb_fn cb, void *user_data);
+static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb_fn cb, void *user_data);
 static void initializer_cb(unsigned const char *reply, int len, int result, void *user_data);
 static int push_cmds(struct mh_control *ctl);
 
@@ -220,7 +227,7 @@ static uint8_t state_to_ext_state(uint8_t state) {
 }
 
 static void set_state(struct mh_control *ctl, uint8_t state) {
-	struct keyer_state_changed_cb *sccb;
+	struct mhc_keyer_state_callback *sccb;
 	uint8_t new_keyer_state;
 
 	ctl->state = state;
@@ -235,8 +242,8 @@ static void set_state(struct mh_control *ctl, uint8_t state) {
 	if(new_keyer_state != ctl->keyer_state) {
 		ctl->keyer_state = new_keyer_state;
 		PG_SCANLIST(&ctl->keyer_state_changed_cb_list, sccb)
-			if(sccb->cb)
-				sccb->cb(ctl->serial, ctl->keyer_state, sccb->user_data);
+			if(sccb->func)
+				sccb->func(ctl->serial, ctl->keyer_state, sccb->user_data);
 	}
 }
 
@@ -323,9 +330,9 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 		memcpy(ctl->state_buf, data + 1, 8);
 		mk2r_debug_print_mok_values(ctl->state_buf);
 
-		struct state_cb *scb;
+		struct mhc_state_callback *scb;
 		PG_SCANLIST(&ctl->mok_state_changed_cb_list, scb) {
-			scb->cb(ctl->serial, data + 1, 8, scb->user_data);
+			scb->func(ctl->serial, data + 1, 8, scb->user_data);
 		}
 
 		return;
@@ -339,9 +346,9 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 
 		memcpy(ctl->acc_state, data + 1, 8);
 
-		struct state_cb *scb;
+		struct mhc_state_callback *scb;
 		PG_SCANLIST(&ctl->acc_state_changed_cb_list, scb) {
-			scb->cb(ctl->serial, ctl->acc_state + 2, 4, scb->user_data);
+			scb->func(ctl->serial, ctl->acc_state + 2, 4, scb->user_data);
 		}
 
 		return;
@@ -415,6 +422,13 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 		     keyer_modes[(f>>4) & 3]);
 		if(ctl->kcfg)
 			kcfg_update_keyer_mode(ctl->kcfg, f & 3, (f>>2) & 3, (f>>4) & 3);
+
+		struct mhc_mode_callback *mcb;
+		PG_SCANLIST(&ctl->mode_changed_cb_list, mcb) {
+			if(mcb->func)
+				mcb->func(ctl->serial, f & 3, (f>>2) & 3, (f>>4) & 3, mcb->user_data);
+		}
+
 		break;
 
 	case MHCMD_JUST_RESTARTED:
@@ -614,6 +628,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	PG_NewList(&ctl->keyer_state_changed_cb_list);
 	PG_NewList(&ctl->mok_state_changed_cb_list);
 	PG_NewList(&ctl->acc_state_changed_cb_list);
+	PG_NewList(&ctl->mode_changed_cb_list);
 
 	set_state(ctl, CTL_STATE_DEVICE_DISC);
 
@@ -664,7 +679,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 
 void mhc_destroy(struct mh_control *ctl) {
 	struct command *cmd;
-	struct keyer_state_changed_cb *sccb;
+	struct mhc_keyer_state_callback *kscb;
 	int i;
 
 	dbg1("%s()", __func__);
@@ -677,9 +692,8 @@ void mhc_destroy(struct mh_control *ctl) {
 
 	mhr_rem_status_cb(ctl->router, router_status_cb);
 
-	while((sccb = (void*)PG_FIRSTENTRY(&ctl->keyer_state_changed_cb_list))) {
-		PG_Remove(&sccb->node);
-		free(sccb);
+	while((kscb = (void*)PG_FIRSTENTRY(&ctl->keyer_state_changed_cb_list))) {
+		mhc_rem_keyer_state_changed_cb(ctl, kscb);
 	}
 
 	while((cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list))) {
@@ -714,7 +728,7 @@ const struct mh_info *mhc_get_mhinfo(struct mh_control *ctl)  {
 	return &ctl->mhi;
 }
 
-static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb cb, void *user_data) {
+static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	float fbaud, stopbits, bytes_per_sec;
 	int ibaud;
 	uint8_t c, cmd, rtscts, databits, has_ext;
@@ -813,7 +827,7 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	return 0;
 }
 
-int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data) {
 
 	dbg1("%s %s()",ctl->serial, __func__);
 
@@ -845,7 +859,7 @@ int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_
 
 }
 
-int mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	if(mhc_is_online(ctl)) {
 		struct buffer b;
 		buf_reset(&b);
@@ -859,7 +873,7 @@ int mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb cb, voi
 	return 0;
 }
 
-int mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	if(!mhc_is_online(ctl)) {
 		return -1;
 	}
@@ -873,7 +887,7 @@ int mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_
 	return submit_cmd(ctl, &buf, cb, user_data);
 }
 
-int mhc_mk2r_set_hfocus(struct mh_control *ctl, uint8_t hfocus[8], mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_mk2r_set_hfocus(struct mh_control *ctl, uint8_t hfocus[8], mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_HOST_FOCUS_CONTROL);
@@ -888,7 +902,7 @@ int mhc_mk2r_get_hfocus(struct mh_control *ctl, uint8_t dest[8]) {
 	return 0;
 }
 
-int mhc_mk2r_set_acc_outputs(struct mh_control *ctl, uint8_t acc_outputs[4], mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_mk2r_set_acc_outputs(struct mh_control *ctl, uint8_t acc_outputs[4], mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_HOST_ACC_OUTPUTS_CONTROL);
@@ -903,7 +917,7 @@ int mhc_mk2r_get_acc_outputs(struct mh_control *ctl, uint8_t dest[4]) {
 	return 0;
 }
 
-int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_APPLY_SCENARIO);
@@ -912,7 +926,7 @@ int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completio
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_sm_turn_to_azimuth(struct mh_control *ctl, uint16_t bearing, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_sm_turn_to_azimuth(struct mh_control *ctl, uint16_t bearing, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_TURN_TO_AZIMUTH);
@@ -922,7 +936,7 @@ int mhc_sm_turn_to_azimuth(struct mh_control *ctl, uint16_t bearing, mhc_cmd_com
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_sm_get_antsw_block(struct mh_control *ctl, uint16_t offset, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_sm_get_antsw_block(struct mh_control *ctl, uint16_t offset, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_GET_ANTSW_BLOCK);
@@ -932,7 +946,7 @@ int mhc_sm_get_antsw_block(struct mh_control *ctl, uint16_t offset, mhc_cmd_comp
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_sm_set_antsw_validity(struct mh_control *ctl, uint8_t param, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_sm_set_antsw_validity(struct mh_control *ctl, uint8_t param, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_SET_ANTSW_VALIDITY);
@@ -941,7 +955,7 @@ int mhc_sm_set_antsw_validity(struct mh_control *ctl, uint8_t param, mhc_cmd_com
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_sm_store_antsw_block(struct mh_control *ctl, uint16_t offset, const char *data, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_sm_store_antsw_block(struct mh_control *ctl, uint16_t offset, const char *data, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_GET_ANTSW_BLOCK);
@@ -952,7 +966,7 @@ int mhc_sm_store_antsw_block(struct mh_control *ctl, uint16_t offset, const char
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_record_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_record_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_RECORD_FSK_CW_MSG);
@@ -961,7 +975,7 @@ int mhc_record_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_c
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_stop_recording(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_stop_recording(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_RECORD_FSK_CW_MSG);
@@ -970,7 +984,7 @@ int mhc_stop_recording(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *u
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_play_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_play_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_PLAY_FSK_CW_MSG);
@@ -979,7 +993,7 @@ int mhc_play_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb 
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_abort_message(struct mh_control *ctl, mhc_cmd_completion_cb cb, void *user_data) {
+int mhc_abort_message(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_ABORT_FSK_CW_MSG);
@@ -1077,80 +1091,76 @@ const struct cfg *mhc_get_speed_cfg(struct mh_control *ctl, int channel) {
 	return ctl->speed_args[channel];
 }
 
-void mhc_add_keyer_state_changed_cb(struct mh_control *ctl, mhc_keyer_state_changed_cb cb, void *user_data) {
-	if(!ctl)
-		return;
-
-	struct keyer_state_changed_cb *sccb;
-	sccb = w_malloc(sizeof(*sccb));
-	sccb->cb = cb;
-	sccb->user_data = user_data;
-	PG_AddTail(&ctl->keyer_state_changed_cb_list, &sccb->node);
-
-	sccb->cb(ctl->serial, ctl->keyer_state, sccb->user_data);
+struct mhc_keyer_state_callback *mhc_add_keyer_state_changed_cb(struct mh_control *ctl, mhc_keyer_state_cb_fn func, void *user_data) {
+	struct mhc_keyer_state_callback *cb;
+	cb = w_malloc(sizeof(*cb));
+	cb->func = func;
+	cb->user_data = user_data;
+	PG_AddTail(&ctl->keyer_state_changed_cb_list, &cb->node);
+	cb->func(ctl->serial, ctl->keyer_state, cb->user_data);
+	return cb;
 }
 
-void mhc_rem_keyer_state_changed_cb(struct mh_control *ctl, mhc_keyer_state_changed_cb cb) {
-	struct keyer_state_changed_cb *sccb;
-	PG_SCANLIST(&ctl->keyer_state_changed_cb_list, sccb) {
-		if(sccb->cb == cb) {
-			PG_Remove(&sccb->node);
-			free(sccb);
-			return;
-		}
-	}
-	warn("%s() callback not found!", __func__);
+void mhc_rem_keyer_state_changed_cb(struct mh_control *ctl, struct mhc_keyer_state_callback *cb) {
+	if(PG_CheckedRemove(&ctl->keyer_state_changed_cb_list, &cb->node))
+		free(cb);
+	else
+		warn("%s() callback not found!", __func__);
+
 }
 
-static struct state_cb *add_state_cb(struct PGList *list, mhc_state_cb cb, void *user_data) {
-	struct state_cb *scb;
+static struct mhc_state_callback *add_state_cb(struct PGList *list, mhc_state_cb_fn func, void *user_data) {
+	struct mhc_state_callback *scb;
 	scb = w_malloc(sizeof(*scb));
-	scb->cb = cb;
+	scb->func = func;
 	scb->user_data = user_data;
 	PG_AddTail(list, &scb->node);
 	return scb;
 }
 
-static void rem_state_cb(struct PGList *list, mhc_state_cb cb) {
-	struct state_cb *scb;
-	PG_SCANLIST(list, scb) {
-		if(scb->cb == cb) {
-			PG_Remove(&scb->node);
-			free(scb);
-			return;
-		}
-	}
-	warn("%s() callback not found!", __func__);
+static void rem_state_cb(struct PGList *list, struct mhc_state_callback *scb) {
+	if(PG_CheckedRemove(list, &scb->node))
+		free(scb);
+	else
+		warn("%s() callback not found!", __func__);
 }
 
-void mhc_add_mok_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb, void *user_data) {
-	if(!ctl)
-		return;
-	if((ctl->mhi.type != MHT_MK2R) && (ctl->mhi.type != MHT_MK2Rp))
-		return;
-	struct state_cb *scb = add_state_cb(&ctl->mok_state_changed_cb_list, cb, user_data);
+struct mhc_state_callback *mhc_add_mok_state_changed_cb(struct mh_control *ctl, mhc_state_cb_fn func, void *user_data) {
+	struct mhc_state_callback *scb = add_state_cb(&ctl->mok_state_changed_cb_list, func, user_data);
 	if(mhc_is_online(ctl))
-		scb->cb(ctl->serial, ctl->state_buf, 8, scb->user_data);
+		scb->func(ctl->serial, ctl->state_buf, 8, scb->user_data);
+	return scb;
 }
 
-void mhc_rem_mok_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb) {
-	rem_state_cb(&ctl->mok_state_changed_cb_list, cb);
+void mhc_rem_mok_state_changed_cb(struct mh_control *ctl, struct mhc_state_callback *scb) {
+	rem_state_cb(&ctl->mok_state_changed_cb_list, scb);
 }
 
-void mhc_add_acc_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb, void *user_data) {
-	if(!ctl)
-		return;
-	if((ctl->mhi.type != MHT_MK2R) && (ctl->mhi.type != MHT_MK2Rp))
-		return;
-	struct state_cb *scb = add_state_cb(&ctl->acc_state_changed_cb_list, cb, user_data);
+struct mhc_state_callback *mhc_add_acc_state_changed_cb(struct mh_control *ctl, mhc_state_cb_fn func, void *user_data) {
+	struct mhc_state_callback *scb = add_state_cb(&ctl->acc_state_changed_cb_list, func, user_data);
 	if(mhc_is_online(ctl))
-		scb->cb(ctl->serial, ctl->state_buf, 4, scb->user_data);
+		scb->func(ctl->serial, ctl->state_buf, 4, scb->user_data);
+	return scb;
 }
 
-void mhc_rem_acc_state_changed_cb(struct mh_control *ctl, mhc_state_cb cb) {
-	rem_state_cb(&ctl->acc_state_changed_cb_list, cb);
+void mhc_rem_acc_state_changed_cb(struct mh_control *ctl, struct mhc_state_callback *scb) {
+	rem_state_cb(&ctl->acc_state_changed_cb_list, scb);
 }
 
+struct mhc_mode_callback *mhc_add_mode_changed_cb(struct mh_control *ctl, mhc_mode_cb_fn func, void *user_data) {
+	struct mhc_mode_callback *mcb = w_malloc(sizeof(*mcb));
+	mcb->func = func;
+	mcb->user_data = user_data;
+	PG_AddTail(&ctl->mode_changed_cb_list, &mcb->node);
+	return mcb;
+}
+
+void mhc_rem_mode_changed_cb(struct mh_control *ctl, struct mhc_mode_callback *mcb) {
+	if(PG_CheckedRemove(&ctl->mode_changed_cb_list, &mcb->node))
+		free(mcb);
+	else
+		warn("%s() callback not found!", __func__);
+}
 
 static int push_cmds(struct mh_control *ctl) {
 	struct command *cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list);
@@ -1172,7 +1182,7 @@ static int push_cmds(struct mh_control *ctl) {
 	return 0;
 }
 
-static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb cb, void *user_data) {
+static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer buf;
 	buf_reset(&buf);
 	buf_append_c(&buf, cmd);
@@ -1180,7 +1190,7 @@ static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion
 	return submit_cmd(ctl, &buf, cb, user_data);
 }
 
-static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb cb, void *user_data) {
+static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb_fn cb, void *user_data) {
 
 	if(b->size > MAX_CMD_LEN) {
 		err("Can't queue command, command too long (%d)!", b->size);

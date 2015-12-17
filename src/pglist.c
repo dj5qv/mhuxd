@@ -48,6 +48,17 @@ void PG_Remove(struct PGNode *n) {
   n->pn_Pred->pn_Succ = n->pn_Succ;
 }
 
+int PG_CheckedRemove(struct PGList *l, struct PGNode *n) {
+	struct PGNode *s;
+	PG_SCANLIST(l, s) {
+			if(n == s) {
+				PG_Remove(n);
+				return 1;
+			}
+	}
+	return 0;
+}
+
 int PG_Contains(struct PGList *l, struct PGNode *n) {
 	struct PGNode *ns;
 	PG_SCANLIST(l, ns) {

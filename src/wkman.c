@@ -46,6 +46,7 @@ struct wkman {
 	struct device *dev;
 	struct ev_loop *loop;
 	ev_timer timeout_timer;
+	struct mhc_keyer_state_callback *kscb;
 	uint8_t cfg[WK_CFG_SIZE];
 	uint8_t read_size;
 	uint8_t state;
@@ -185,7 +186,7 @@ struct wkman *wkm_create(struct ev_loop *loop, struct device *dev) {
 
 	wkman->state = mhc_is_online(wkman->dev->ctl) ? WKM_STATE_HOST_CLOSED : WKM_STATE_OFFLINE;
 
-	mhc_add_keyer_state_changed_cb(dev->ctl, keyer_state_changed_cb, wkman);
+	wkman->kscb = mhc_add_keyer_state_changed_cb(dev->ctl, keyer_state_changed_cb, wkman);
 
 	mhr_add_consumer_cb(wkman->dev->router, read_cb, MH_CHANNEL_WINKEY, wkman);
 
@@ -197,7 +198,7 @@ void wkm_destroy(struct wkman *wkman) {
 		return;
 	ev_timer_stop(wkman->loop, &wkman->timeout_timer);
 	mhr_rem_consumer_cb(wkman->dev->router, read_cb, MH_CHANNEL_WINKEY);
-	mhc_rem_keyer_state_changed_cb(wkman->dev->ctl, keyer_state_changed_cb);
+	mhc_rem_keyer_state_changed_cb(wkman->dev->ctl, wkman->kscb);
 	free(wkman);
 }
 
