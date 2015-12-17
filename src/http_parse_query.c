@@ -51,6 +51,9 @@ int http_parse_query(HDF *hdf, char *query) {
 	char *k, *v;
 	char *saveptr;
 
+	if(!query)
+		return 0;
+
 	k = strtok_r(query, "&", &saveptr);
 	while(k && *k) {
 		v = strchr(k, '=');
