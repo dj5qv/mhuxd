@@ -71,6 +71,9 @@ static void send_response(int fd, const char *cmd, const char *arg) {
 	ssize_t r;
 	char response[MCP_MAX_CMD_SIZE + 3];
 	snprintf(response, sizeof(response), "%s%s\r", cmd, arg);
+
+	dbg1("%s(): %s", __func__, response);
+
 	r = write(fd, response, strlen(response));
 	if(r <= 0)
 		err_e(errno, "%s() could not write response!", __func__);
@@ -88,6 +91,9 @@ static void send_err_response(int fd, const char *cmd) {
 	*response = 'E';
 	strcpy(response + 1, cmd);
 	strcat(response, "\r");
+
+	dbg1("%s(): %s", __func__, response);
+
 	r = write(fd, response, strlen(response));
 	if(r <= 0)
 		err_e(errno, "%s() could not write response!", __func__);
@@ -541,6 +547,8 @@ static void acc_state_changed_cb(const char *serial, const uint8_t *state, uint8
 	(void) serial;
 	struct proc_mcp *mcp = user_data;
 
+	dbg1("%s()", __func__);
+
 	if(state_len < 4) {
 		warn("ACC State length too short (%d)", state_len);
 		return;
@@ -581,9 +589,11 @@ void mode_changed_cb(const char *serial, uint8_t mode_cur, uint8_t mode_r1, uint
 	struct proc_mcp *mcp = user_data;
 	uint16_t type = mhc_get_mhinfo(mcp->ctl)->type;
 
+	dbg1("%s()", __func__);
+
 	if(type == MHT_MK2R || type == MHT_MK2Rp || type == MHT_U2R) {
 		send_response(mcp->fd, "K1", keyer_modes[mode_r1]);
-		send_response(mcp->fd, "K1", keyer_modes[mode_r2]);
+		send_response(mcp->fd, "K2", keyer_modes[mode_r2]);
 	} else {
 		send_response(mcp->fd, "K", keyer_modes[mode_cur]);
 	}
