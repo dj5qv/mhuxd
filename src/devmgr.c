@@ -84,6 +84,11 @@ static void devmon_callback(const char *serial, int status, void *user_data) {
 	if(status != DEVMON_CONNECTED)
 		return;
 
+	if(MHT_UNKNOWN == mhi_type_from_serial(serial)) {
+		err("Could not determine keyer type from serial number (%s)", serial);
+		return;
+	}
+
 	const char *devnode = udv_dev_by_serial(serial);
 	if(devnode == NULL) {
 		err("could not determine device node for %s!", serial);
@@ -92,20 +97,18 @@ static void devmon_callback(const char *serial, int status, void *user_data) {
 
 	info("%s connected to USB on %s", serial, devnode);
 
+	int fd = tty_open(devnode);
+	if(fd == -1) {
+		err_e(errno, "could not open device %s!", devnode);
+		free((void*)devnode);
+		return;
+	}
+	dbg0("opened %s", devnode);
+
 	struct device *dev = create_dev(serial, MHT_UNKNOWN);
 
-	if(dev) {
-
-		int fd = tty_open(devnode);
-		if(fd == -1) {
-			err_e(errno, "could not open device %s!", devnode);
-			free((void*)devnode);
-			return;
-		}
-		dbg0("opened %s", devnode);
-
+	if(dev)
 		mhr_set_keyer_fd(dev->router, fd);
-	}
 
 	free((void*)devnode);
 }
