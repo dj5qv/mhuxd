@@ -17,19 +17,40 @@
 #include <termios.h>
 #include "tty.h"
 #include "logger.h"
+#include "pglist.h"
+#include "util.h"
 
 #define MOD_ID "tty"
 
+struct fd_node {
+	struct PGNode node;
+	int fd;
+	struct termios termios;
+};
+
+static int is_initialized = 0;
+struct PGList fd_list;
+
 int tty_open(const char *name) {
 	int fd;
+	struct fd_node *fd_node;
 
 	if(!name)
 		return -1;
+
+	if(!is_initialized) {
+		PG_NewList(&fd_list);
+		is_initialized = 1;
+	}
 
 	fd = open(name, O_RDWR | O_NOCTTY | O_NONBLOCK);
 
 	if(fd == -1)
 		return -1;
+
+	fd_node = w_calloc(1, sizeof(*fd_node));
+	fd_node->fd = fd;
+	tcgetattr(fd, &fd_node->termios);
 
 	ioctl(fd, TIOCEXCL, NULL);
 
@@ -47,10 +68,30 @@ int tty_open(const char *name) {
 
 	tcflush(fd, TCIOFLUSH);
 
+	PG_AddTail(&fd_list, &fd_node->node);
+
 	return fd;
 }
 
 int tty_close(int fd) {
+	struct fd_node *fd_node;
+	int restored = 0;
+
+	if(is_initialized) {
+		PG_SCANLIST(&fd_list, fd_node) {
+			if(fd_node->fd == fd) {
+				tcsetattr(fd, TCSANOW, &fd_node->termios);
+				PG_Remove(&fd_node->node);
+				free(fd_node);
+				restored = 1;
+				break;
+			}
+		}
+	}
+
+	if(!restored)
+		warn("Could not restore serial port attributes!");
+
 	return close(fd);
 }
 
