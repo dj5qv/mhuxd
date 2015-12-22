@@ -92,18 +92,20 @@ static void devmon_callback(const char *serial, int status, void *user_data) {
 
 	info("%s connected to USB on %s", serial, devnode);
 
-	int fd = tty_open(devnode);
-	if(fd == -1) {
-		err_e(errno, "could not open device %s!", devnode);
-		free((void*)devnode);
-		return;
-	}
-	dbg0("opened %s", devnode);
-
 	struct device *dev = create_dev(serial, MHT_UNKNOWN);
 
-	if(dev)
+	if(dev) {
+
+		int fd = tty_open(devnode);
+		if(fd == -1) {
+			err_e(errno, "could not open device %s!", devnode);
+			free((void*)devnode);
+			return;
+		}
+		dbg0("opened %s", devnode);
+
 		mhr_set_keyer_fd(dev->router, fd);
+	}
 
 	free((void*)devnode);
 }
