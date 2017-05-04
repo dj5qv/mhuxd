@@ -49,6 +49,7 @@ struct proc_mcp *mcp_create(struct mh_control *ctl) {
 	dbg1("%s()", __func__);
 	mcp = w_calloc(1, sizeof(*mcp));
 	mcp->ctl = ctl;
+	mcp->fd = -1;
 
 	mhr_add_consumer_cb(mhc_get_router(mcp->ctl), flags_cb, MH_CHANNEL_FLAGS, mcp);
 	mcp->mokcb = mhc_add_mok_state_changed_cb(mcp->ctl, mok_state_changed_cb, mcp);
@@ -70,6 +71,10 @@ void mcp_destroy(struct proc_mcp *mcp) {
 static void send_response(int fd, const char *cmd, const char *arg) {
 	ssize_t r;
 	char response[MCP_MAX_CMD_SIZE + 3];
+
+	if(fd == -1)
+		return;
+
 	snprintf(response, sizeof(response), "%s%s\r", cmd, arg);
 
 	dbg1("%s(): %s", __func__, response);
