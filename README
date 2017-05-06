@@ -58,7 +58,7 @@ INSTALLATION
 
     To compile mhuxd you'll need the development packages for libudev, libfuse,
     libev and pkg-config.
-    (For Ubuntu that would be libev-dev, libfuse-dev, libudev-dev and 
+    (For Debian & Ubuntu that would be libev-dev, libfuse-dev, libudev-dev and 
      pkg-config).
 
     './configure --prefix=/usr/local/mhuxd'
@@ -66,6 +66,9 @@ INSTALLATION
     'make install'
 
     This would install everything into /usr/local/mhuxd.
+
+    If you cloned the source code from GITHUB then you also need the packages
+    autoconf and automake and run ./autogen.sh first.
 
 
 ACKNOWLEDGEMENTS
