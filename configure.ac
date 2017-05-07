@@ -120,7 +120,7 @@ AC_SUBST(RUNDIR)
 WEBUIDIR='${datadir}/mhuxd/webui'
 AC_ARG_WITH([webuidir],
         [  --with-webuidir=DIR     webui files [[DATADIR/mhuxd/webui]]],
-        RUNDIR=$withval)
+        WEBUIDIR=$withval)
 if test ! -z "$WEBUIDIR"; then
   if test "$WEBUIDIR" = "yes" -o "$WEBUIDIR" = "no"; then
     AC_MSG_ERROR([--with-webuidir must specify a path])
@@ -132,7 +132,7 @@ AC_SUBST(WEBUIDIR)
 HDFDIR='${datadir}/mhuxd/hdf'
 AC_ARG_WITH([hdfdir],
         [  --with-hdfdir=DIR       hdf files [[DATADIR/mhuxd/hdf]]],
-        RUNDIR=$withval)
+        HDFDIR=$withval)
 if test ! -z "$HDFDIR"; then
   if test "$HDFDIR" = "yes" -o "$HDFDIR" = "no"; then
     AC_MSG_ERROR([--with-hdfdir must specify a path])
