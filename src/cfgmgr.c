@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2017  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -9,8 +9,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <ctype.h>
-#include <util/neo_hdf.h>
 #include <ev.h>
+#include "clearsilver/util/neo_hdf.h"
 #include "cfgmgr.h"
 #include "logger.h"
 #include "util.h"

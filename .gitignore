@@ -1,6 +1,8 @@
 Makefile.am.user*
 ar-lib
 compile
+webui/static/arimo400.woff
+webui/static/arimo700.woff
 *.o
 *~
 .*
