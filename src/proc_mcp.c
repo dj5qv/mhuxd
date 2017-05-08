@@ -37,19 +37,19 @@ struct proc_mcp {
 	const char *action_name;
 	struct mhc_mode_callback *mcb;
 	struct mhc_state_callback *acccb, *mokcb;
-	int fd;
+	int channel;
 	uint8_t flag[2];
 	uint8_t mok_state[8];
 	uint8_t acc_state[4];
 	int auto_info_on : 1;
 };
 
-struct proc_mcp *mcp_create(struct mh_control *ctl) {
+struct proc_mcp *mcp_create(struct mh_control *ctl, int channel) {
 	struct proc_mcp *mcp;
 	dbg1("%s()", __func__);
 	mcp = w_calloc(1, sizeof(*mcp));
 	mcp->ctl = ctl;
-	mcp->fd = -1;
+	mcp->channel = channel;
 
 	mhr_add_consumer_cb(mhc_get_router(mcp->ctl), flags_cb, MH_CHANNEL_FLAGS, mcp);
 	mcp->mokcb = mhc_add_mok_state_changed_cb(mcp->ctl, mok_state_changed_cb, mcp);
@@ -68,30 +68,23 @@ void mcp_destroy(struct proc_mcp *mcp) {
 	free(mcp);
 }
 
-static void send_response(int fd, const char *cmd, const char *arg) {
-	ssize_t r;
+static void send_response(struct proc_mcp *mcp, const char *cmd, const char *arg) {
 	char response[MCP_MAX_CMD_SIZE + 3];
-
-	if(fd == -1)
-		return;
 
 	snprintf(response, sizeof(response), "%s%s\r", cmd, arg);
 
 	dbg1("%s(): %s", __func__, response);
 
-	r = write(fd, response, strlen(response));
-	if(r <= 0)
-		err_e(errno, "%s() could not write response!", __func__);
+	mhr_send_out(mhc_get_router(mcp->ctl), (uint8_t *) response, strlen(response), mcp->channel);
 }
 
-static void send_response_int(int fd, const char *cmd, int32_t iarg) {
+static void send_response_int(struct proc_mcp *mcp, const char *cmd, int32_t iarg) {
 	char arg[12];
 	snprintf(arg, sizeof(arg), "%d", iarg);
-	send_response(fd, cmd, arg);
+	send_response(mcp, cmd, arg);
 }
 
-static void send_err_response(int fd, const char *cmd) {
-	ssize_t r;
+static void send_err_response(struct proc_mcp *mcp, const char *cmd) {
 	char response[MCP_MAX_CMD_SIZE + 4];
 	*response = 'E';
 	strcpy(response + 1, cmd);
@@ -99,9 +92,7 @@ static void send_err_response(int fd, const char *cmd) {
 
 	dbg1("%s(): %s", __func__, response);
 
-	r = write(fd, response, strlen(response));
-	if(r <= 0)
-		err_e(errno, "%s() could not write response!", __func__);
+	mhr_send_out(mhc_get_router(mcp->ctl), (uint8_t *)response, strlen(response), mcp->channel);
 }
 
 static void completion_cb(unsigned const char *reply_buf, int len, int result, void *user_data)  {
@@ -110,7 +101,7 @@ static void completion_cb(unsigned const char *reply_buf, int len, int result, v
 
 	if(result != CMD_RESULT_OK) {
 		err("%s command failed: %s!", mcp->action_name, mhc_cmd_err_string(result));
-		send_err_response(mcp->fd, mcp->cmd);
+		send_err_response(mcp, mcp->cmd);
 		return;
 	}
 	dbg1("%s cmd ok", mcp->action_name);
@@ -165,7 +156,7 @@ static int cmd_am(struct proc_mcp *mcp) {
 		for(i = 0; i < 16; i++) {
 			*p++ = ((acc_int >> (15 - i)) & 1) ? '1' : '0';
 		}
-		send_response(mcp->fd, mcp->cmd, arg);
+		send_response(mcp, mcp->cmd, arg);
 		return 0;
 	}
 
@@ -203,23 +194,23 @@ static int cmd_ver(struct proc_mcp *mcp) {
 	char c = mcp->cmd[1];
 
 	if(c == 'S' || c == 0) {
-		send_response(mcp->fd, "VS", mhc_get_serial(mcp->ctl));
+		send_response(mcp, "VS", mhc_get_serial(mcp->ctl));
 	}
 	if(c == 'F' || c == 0) {
 		const struct mh_info *mhi = mhc_get_mhinfo(mcp->ctl);
 		char arg[10];
 		snprintf(arg, sizeof(arg), "%02d.%02d", mhi->ver_fw_major, mhi->ver_fw_minor);
-		send_response(mcp->fd, "VF", arg);
+		send_response(mcp, "VF", arg);
 	}
 	if(c == 'R' || c == 0) {
 		char *arg = "08.05.06";
-		send_response(mcp->fd, "VR", arg);
+		send_response(mcp, "VR", arg);
 	}
 
 	if(c == 0) {
 		// Though not so in the specs, Windows router seems to add connection status here.
 		char *arg = mhc_is_online(mcp->ctl) ? "1" : "0";
-		send_response(mcp->fd, "C", arg);
+		send_response(mcp, "C", arg);
 	}
 
 	return 0;
@@ -312,7 +303,7 @@ static int process_cmd(struct proc_mcp *mcp) {
 
 	if(!strcmp(mcp->cmd, "C")) {
 		char *arg = mhc_is_online(mcp->ctl) ? "1" : "0";
-		send_response(mcp->fd, "C", arg);
+		send_response(mcp, "C", arg);
 		return 0;
 	}
 	if(!strncmp(mcp->cmd, "SA", 2) && strlen(mcp->cmd) == 3) {
@@ -367,14 +358,12 @@ set_hfocus:
 
 }
 
-void mcp_cb(struct mh_router *router, int channel, struct buffer *b, int fd, void *user_data) {
-	(void)router; (void)channel;
+void mcp_cb(struct mh_router *router, struct buffer *b, void *user_data) {
+	(void)router;
 	struct proc_mcp *mcp = user_data;
 	int c;
 
 	dbg1("%s()", __func__);
-
-	mcp->fd = fd;
 
 	while(-1 != (c = buf_get_c(b))) {
 
@@ -382,7 +371,7 @@ void mcp_cb(struct mh_router *router, int channel, struct buffer *b, int fd, voi
 			if(c == 0x0d || c == 0x0a) {
 				mcp->cmd_overflow = 0;
 				mcp->cmd_len = 0;
-				send_err_response(fd, mcp->cmd);
+				send_err_response(mcp, mcp->cmd);
 			}
 			continue;
 		}
@@ -394,7 +383,7 @@ void mcp_cb(struct mh_router *router, int channel, struct buffer *b, int fd, voi
 			mcp->cmd[mcp->cmd_len] = 0;
 			if(-1 == process_cmd(mcp)) {
 				err("error processing command: %s", mcp->cmd);
-				send_err_response(fd, mcp->cmd);
+				send_err_response(mcp, mcp->cmd);
 			}
 			mcp->cmd_len = 0;
 			continue;
@@ -449,7 +438,7 @@ static void flags_cb(struct mh_router *router, unsigned const char *data ,int le
 		else
 			snprintf(arg, sizeof(arg), "%d\r",
 				 (mcp->flag[0] & MHD2CFL_ANY_PTT) ? 1 : 0);
-		send_response(mcp->fd, "P", arg);
+		send_response(mcp, "P", arg);
 	}
 
 	if(mcp->auto_info_on && footsw_changed) {
@@ -462,7 +451,7 @@ static void flags_cb(struct mh_router *router, unsigned const char *data ,int le
 		else
 			snprintf(arg, sizeof(arg), "%d\r",
 				 (mcp->flag[0] & MHD2CFL_FOOTSWITCH) ? 1 : 0);
-		send_response(mcp->fd, "H", arg);
+		send_response(mcp, "H", arg);
 	}
 
 	if(mcp->auto_info_on && lockout_changed) {
@@ -475,7 +464,7 @@ static void flags_cb(struct mh_router *router, unsigned const char *data ,int le
 		else
 			snprintf(arg, sizeof(arg), "%d\r",
 				 (mcp->flag[0] & MHD2CFL_LOCKOUT) ? 1 : 0);
-		send_response(mcp->fd, "L", arg);
+		send_response(mcp, "L", arg);
 	}
 
 }
@@ -505,21 +494,21 @@ static void mok_state_changed_cb(const char *serial, const uint8_t *state, uint8
 		// FT
 		val = mk2r_get_mok_value(state, "txFocus");
 		if(val != mk2r_get_mok_value(mcp->mok_state, "txFocus"))
-			send_response_int(mcp->fd, "FT", val + 1);
+			send_response_int(mcp, "FT", val + 1);
 
 		// FTA
 		val = mk2r_get_mok_value(state, "focusAuto");
 		if(val != mk2r_get_mok_value(mcp->mok_state, "focusAuto"))
-			send_response_int(mcp->fd, "FTA", val);
+			send_response_int(mcp, "FTA", val);
 
 		// FR
 		rx_focus = mk2r_get_mok_value(state, "rxFocus");
 		rx_stereo= mk2r_get_mok_value(state, "stereoFocus");
 		if((rx_focus != mk2r_get_mok_value(mcp->mok_state, "rxFocus")) || rx_stereo != mk2r_get_mok_value(mcp->mok_state, "stereoFocus")) {
 			if(rx_stereo)
-				send_response(mcp->fd, "FRS", "");
+				send_response(mcp, "FRS", "");
 			else
-				send_response_int(mcp->fd, "FR", val + 1);
+				send_response_int(mcp, "FR", val + 1);
 
 		}
 
@@ -540,7 +529,7 @@ static void mok_state_changed_cb(const char *serial, const uint8_t *state, uint8
 			arg[i++] = mk2r_get_mok_value(state, "ears.right.r2Main") ? '1' : '0';
 			arg[i++] = mk2r_get_mok_value(state, "ears.right.r2Sub") ? '1' : '0';
 			arg[i] = 0x00;
-			send_response(mcp->fd, "FRD", arg);
+			send_response(mcp, "FRD", arg);
 		}
 		
 	}
@@ -570,7 +559,7 @@ static void acc_state_changed_cb(const char *serial, const uint8_t *state, uint8
 			arg[i] = val >> (15 - i) ? '1' : '0';
 		}
 		arg[i] = 0x00;
-		send_response(mcp->fd, "AM1", arg);
+		send_response(mcp, "AM1", arg);
 	}
 
 	if(state[2] != mcp->acc_state[2] || state[3] != mcp->acc_state[3]) {
@@ -579,7 +568,7 @@ static void acc_state_changed_cb(const char *serial, const uint8_t *state, uint8
 			arg[i] = val >> (15 - i) ? '1' : '0';
 		}
 		arg[i] = 0x00;
-		send_response(mcp->fd, "AM2", arg);
+		send_response(mcp, "AM2", arg);
 	}
 
 	memcpy(mcp->acc_state, state, state_len);
@@ -597,9 +586,9 @@ void mode_changed_cb(const char *serial, uint8_t mode_cur, uint8_t mode_r1, uint
 	dbg1("%s()", __func__);
 
 	if(type == MHT_MK2R || type == MHT_MK2Rp || type == MHT_U2R) {
-		send_response(mcp->fd, "K1", keyer_modes[mode_r1]);
-		send_response(mcp->fd, "K2", keyer_modes[mode_r2]);
+		send_response(mcp, "K1", keyer_modes[mode_r1]);
+		send_response(mcp, "K2", keyer_modes[mode_r2]);
 	} else {
-		send_response(mcp->fd, "K", keyer_modes[mode_cur]);
+		send_response(mcp, "K", keyer_modes[mode_cur]);
 	}
 }

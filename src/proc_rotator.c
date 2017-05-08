@@ -22,6 +22,7 @@
 
 struct proc_rotator {
         struct mh_control *ctl;
+	int channel;
 	char cmd[ROT_MAX_CMD_SIZE + 1];
         uint8_t cmd_len;
         unsigned cmd_overflow;
@@ -29,10 +30,11 @@ struct proc_rotator {
         const char *action_name;
 };
 
-struct proc_rotator *rot_create(struct mh_control *ctl) {
+struct proc_rotator *rot_create(struct mh_control *ctl, int channel){
 	struct proc_rotator *rot;
         rot = w_calloc(1, sizeof(*rot));
         rot->ctl = ctl;
+	rot->channel = channel;
 	rot->bearing = INVALID_BEARING;
         return rot;
 }
@@ -91,8 +93,8 @@ static int process_cmd(struct proc_rotator *rot) {
 }
 
 
-void rot_cb(struct mh_router *router, int channel, struct buffer *b, int fd, void *user_data) {
-	(void)router; (void)channel; (void)fd;
+void rot_cb(struct mh_router *router, struct buffer *b, void *user_data) {
+	(void)router;
 	struct proc_rotator *rot = user_data;
         int c;
 

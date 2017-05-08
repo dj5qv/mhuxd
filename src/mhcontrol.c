@@ -1169,7 +1169,7 @@ static int push_cmds(struct mh_control *ctl) {
 	if(cmd->state == CMD_STATE_SENT)
 		return 0;
 #if 1
-	int r = mhr_send(ctl->router, cmd->cmd, cmd->len, MH_CHANNEL_CONTROL);
+	int r = mhr_send_in(ctl->router, cmd->cmd, cmd->len, MH_CHANNEL_CONTROL);
 	dbg1_h(ctl->serial, "cmd to k", cmd->cmd, cmd->len);
 	if(r != cmd->len) {
 		warn("could not send command! (%d/%d)", r, cmd->len);

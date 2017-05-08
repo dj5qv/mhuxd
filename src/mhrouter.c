@@ -215,7 +215,7 @@ static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 	}	      
 
 	if(push) {
-		r = mhr_send(router, &newflag, 1, MH_CHANNEL_FLAGS);
+		r = mhr_send_in(router, &newflag, 1, MH_CHANNEL_FLAGS);
 		if(r != 1)
 			err("(mhr) error sending data to flags channel!");
 	}
@@ -266,7 +266,7 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 			process_ptt_producer(prd, b);
 
 		PG_SCANLIST(&router->processor_cb_list[prd->channel], prc) {
-			prc->callback(router, prd->channel, b, prd->fd, prc->user_data);
+			prc->callback(router, b, prc->user_data);
 		}
 
 		ev_io_start(loop, &router->w_out);
@@ -505,7 +505,6 @@ void mhr_set_keyer_fd(struct mh_router *router, int fd) {
 		ev_io_init(&router->w_in, keyer_in_cb, fd, EV_READ);
 		ev_io_init(&router->w_out, keyer_out_cb, fd, EV_WRITE);
 		ev_io_start(router->loop, &router->w_in);
-		// ev_io_start(router->loop, &router->w_out);
 	}
 
 	switch_producer_events(router, fd != -1);
@@ -712,7 +711,7 @@ void mhr_rem_processor_cb(struct mh_router *router, MHRProcessorCallback callbac
 	warn("(mhr) %s() callback not found", __func__);
 }
 
-int mhr_send(struct mh_router *router, const uint8_t *data, unsigned int len, int channel) {
+int mhr_send_in(struct mh_router *router, const uint8_t *data, unsigned int len, int channel) {
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
 		return -1;
 
@@ -734,6 +733,27 @@ int mhr_send(struct mh_router *router, const uint8_t *data, unsigned int len, in
 	len = buf_append(&router->channel_buf_out[channel], data, len);
 	ev_io_start(router->loop, &router->w_out);
 	return len;
+}
+
+void mhr_send_out(struct mh_router *router, const uint8_t *data, unsigned int len, int channel) {
+	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
+		return;
+
+	struct Consumer *cns;
+	struct ConsumerCb *cnc;
+
+	PG_SCANLIST(&router->consumer_list[channel], cns) {
+		if(len <= buf_size_avail(&cns->buf)) {
+			buf_append(&cns->buf, data, len);
+			ev_io_start(router->loop, &cns->w);
+		} else
+			warn("(mhr) %s buffer overflow channel %d", __func__, channel);
+
+	}
+
+	PG_SCANLIST(&router->consumer_cb_list[channel], cnc) {
+		cnc->callback(router, data, len, channel, cnc->user_data);
+	}
 }
 
 const char *mhr_get_serial(struct mh_router *router) {

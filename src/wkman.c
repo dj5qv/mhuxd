@@ -229,7 +229,7 @@ int wkm_reset(struct wkman *wkman) {
 	if(!mhc_is_online(wkman->dev->ctl))
 		return WKM_RESULT_DEVICE_OFFLINE;
 
-	if(len != mhr_send(wkman->dev->router, cmd, len, MH_CHANNEL_WINKEY))
+	if(len != mhr_send_in(wkman->dev->router, cmd, len, MH_CHANNEL_WINKEY))
 		return WKM_RESULT_IO_ERROR;
 
 	wkman->state = WKM_STATE_HOST_CLOSED;
@@ -250,7 +250,7 @@ int wkm_host_open(struct wkman *wkman) {
 		return WKM_RESULT_BUSY;
 	}
 
-	if(len != mhr_send(wkman->dev->router, cmd, len, MH_CHANNEL_WINKEY))
+	if(len != mhr_send_in(wkman->dev->router, cmd, len, MH_CHANNEL_WINKEY))
 		return WKM_RESULT_IO_ERROR;
 
 	ev_timer_start(wkman->loop, &wkman->timeout_timer);
@@ -271,7 +271,7 @@ int wkm_host_close(struct wkman *wkman) {
 		return WKM_RESULT_BUSY;
 	}
 
-	if(len != mhr_send(wkman->dev->router, cmd, len, MH_CHANNEL_WINKEY))
+	if(len != mhr_send_in(wkman->dev->router, cmd, len, MH_CHANNEL_WINKEY))
 		return WKM_RESULT_IO_ERROR;
 
 	wkman->state = WKM_STATE_HOST_CLOSED;
@@ -294,7 +294,7 @@ int wkm_write_cfg(struct wkman *wkman) {
 
 	memcpy(cmd + 1, wkman->cfg, sizeof(wkman->cfg));
 
-	if(len != mhr_send(wkman->dev->router, cmd, len, MH_CHANNEL_WINKEY))
+	if(len != mhr_send_in(wkman->dev->router, cmd, len, MH_CHANNEL_WINKEY))
 		return WKM_RESULT_IO_ERROR;
 
 	return WKM_RESULT_OK;

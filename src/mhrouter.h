@@ -20,7 +20,7 @@ enum {
 
 typedef void (*MHRConsumerCallback)(struct mh_router *, unsigned const char *data ,int len, int channel, void *user_data);
 typedef void (*MHRStatusCallback)(struct mh_router *, int status, void *user_data);
-typedef void (*MHRProcessorCallback)(struct mh_router *, int channel, struct buffer *, int fd, void *user_data);
+typedef void (*MHRProcessorCallback)(struct mh_router *, struct buffer *, void *user_data);
 
 
 // core functions
@@ -28,7 +28,7 @@ struct mh_router *mhr_create(struct ev_loop *loop, const char *serial, uint8_t h
 void mhr_destroy(struct mh_router *router);
 void mhr_set_keyer_fd(struct mh_router *, int fd);
 const char *mhr_get_serial(struct mh_router *);
-int mhr_send(struct mh_router *router, const uint8_t *data, unsigned int len, int channel);
+int mhr_send_in(struct mh_router *router, const uint8_t *data, unsigned int len, int channel);
 void mhr_set_bps_limit(struct mh_router *router, int channel, float bps);
 
 
@@ -43,11 +43,11 @@ void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback, int chan
 // processor interface (deprecated)
 void mhr_add_processor_cb(struct mh_router *router, MHRProcessorCallback callback, int channel, void *user_data);
 void mhr_rem_processor_cb(struct mh_router *router, MHRProcessorCallback callback, int channel);
+void mhr_send_out(struct mh_router *router, const uint8_t *data, unsigned int len, int channel);
 
 // generic callbacks
 void mhr_add_status_cb(struct mh_router *router, MHRStatusCallback callback, void *user_data);
 void mhr_rem_status_cb(struct mh_router *router, MHRStatusCallback callback);
-
 
 
 #endif // MHROUTER_H
