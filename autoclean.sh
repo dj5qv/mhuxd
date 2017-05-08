@@ -10,3 +10,7 @@ rm -f install-sh
 rm -f Makefile.in
 rm -f missing
 rm -f config.h.in
+rm -f ./webui/Makefile.in
+rm -f ./src/Makefile.in
+rm -f ./src/clearsilver/Makefile.in
+
