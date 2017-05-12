@@ -35,6 +35,90 @@ struct devinfo {
 	char *device;
 };
 
+static struct PGList *udv_get_device_list() {
+	struct udev *udev;
+	struct udev_enumerate *enumerate;
+	struct udev_list_entry *devices, *dev_list_entry;
+	struct PGList *l;
+
+	l = w_malloc(sizeof(*l));
+	PG_NewList(l);
+
+	udev = udev_new();
+	if (!udev) {
+		err("Can't create udev\n");
+		return l;
+	}
+	udev_set_log_priority(udev, 0);
+
+	enumerate = udev_enumerate_new(udev);
+	udev_enumerate_add_match_subsystem(enumerate, "tty");
+	udev_enumerate_scan_devices(enumerate);
+	devices = udev_enumerate_get_list_entry(enumerate);
+
+	udev_list_entry_foreach(dev_list_entry, devices) {
+		struct udev_device *ddev, *pdev;
+		const char *path;
+		path = udev_list_entry_get_name(dev_list_entry);
+		ddev = udev_device_new_from_syspath(udev, path);
+
+		if(!ddev) {
+			err("udev_device_new_from_syspath() failed!");
+			continue;
+		}
+
+		pdev = udev_device_get_parent_with_subsystem_devtype(
+								    ddev,
+								    "usb",
+								    "usb_device");
+
+		if(!pdev || strcmp(udev_device_get_sysattr_value(pdev,"idVendor"), "0403")) {
+			udev_device_unref(ddev);
+			continue;
+		}
+
+		const char *manu = udev_device_get_sysattr_value(pdev,"manufacturer");
+		const char *prod = udev_device_get_sysattr_value(pdev,"product");
+
+		if(strcasecmp(manu, "microham")) {
+			udev_device_unref(ddev);
+			continue;
+		}
+
+		struct devinfo *di = w_calloc(1, sizeof(*di));
+		di->device = w_strdup(udev_device_get_devnode(ddev));
+
+		di->name = w_malloc(strlen(manu) + strlen(prod) + 3);
+		*di->name = 0x00;
+		sprintf(di->name, "%s %s", manu, prod);
+		di->serial = w_strdup(udev_device_get_sysattr_value(pdev, "serial"));
+
+		PG_AddTail(l, &di->node);
+
+		udev_device_unref(ddev);
+	}
+
+	udev_enumerate_unref(enumerate);
+	udev_unref(udev);
+
+	return l;
+}
+
+static void udv_free_device_list(struct PGList *l) {
+	struct devinfo *di;
+	while((di = (void*)PG_FIRSTENTRY(l))) {
+		PG_Remove(&di->node);
+		if(di->device)
+			free(di->device);
+		if(di->name)
+			free(di->name);
+		if(di->serial)
+			free(di->serial);
+		free(di);
+	}
+	free(l);
+}
+
 static void mon_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)loop; (void)revents;
 
@@ -185,75 +269,6 @@ int test_wait_for_device() {
 }
 #endif
 
-struct PGList *udv_get_device_list() {
-	struct udev *udev;
-	struct udev_enumerate *enumerate;
-	struct udev_list_entry *devices, *dev_list_entry;
-	struct PGList *l;
-
-	l = w_malloc(sizeof(*l));
-	PG_NewList(l);
-
-	udev = udev_new();
-	if (!udev) {
-		err("Can't create udev\n");
-		return l;
-	}
-	udev_set_log_priority(udev, 0);
-
-	enumerate = udev_enumerate_new(udev);
-	udev_enumerate_add_match_subsystem(enumerate, "tty");
-	udev_enumerate_scan_devices(enumerate);
-	devices = udev_enumerate_get_list_entry(enumerate);
-
-	udev_list_entry_foreach(dev_list_entry, devices) {
-		struct udev_device *ddev, *pdev;
-		const char *path;
-		path = udev_list_entry_get_name(dev_list_entry);
-		ddev = udev_device_new_from_syspath(udev, path);
-
-		if(!ddev) {
-			err("udev_device_new_from_syspath() failed!");
-			continue;
-		}
-
-		pdev = udev_device_get_parent_with_subsystem_devtype(
-								    ddev,
-								    "usb",
-								    "usb_device");
-
-		if(!pdev || strcmp(udev_device_get_sysattr_value(pdev,"idVendor"), "0403")) {
-			udev_device_unref(ddev);
-			continue;
-		}
-
-		const char *manu = udev_device_get_sysattr_value(pdev,"manufacturer");
-		const char *prod = udev_device_get_sysattr_value(pdev,"product");
-
-		if(strcasecmp(manu, "microham")) {
-			udev_device_unref(ddev);
-			continue;
-		}
-
-		struct devinfo *di = w_calloc(1, sizeof(*di));
-		di->device = w_strdup(udev_device_get_devnode(ddev));
-
-		di->name = w_malloc(strlen(manu) + strlen(prod) + 3);
-		*di->name = 0x00;
-		sprintf(di->name, "%s %s", manu, prod);
-		di->serial = w_strdup(udev_device_get_sysattr_value(pdev, "serial"));
-
-		PG_AddTail(l, &di->node);
-
-		udev_device_unref(ddev);
-	}
-
-	udev_enumerate_unref(enumerate);
-	udev_unref(udev);
-
-	return l;
-}
-
 void udv_print_device_list(FILE *f) {
 	struct devinfo *di;
 	struct PGList *l = udv_get_device_list();
@@ -269,21 +284,6 @@ void udv_print_device_list(FILE *f) {
 			"Device:   %s\n\n\n", di->name, di->serial, di->device);
 	}
 	udv_free_device_list(l);
-}
-
-void udv_free_device_list(struct PGList *l) {
-	struct devinfo *di;
-	while((di = (void*)PG_FIRSTENTRY(l))) {
-		PG_Remove(&di->node);
-		if(di->device)
-			free(di->device);
-		if(di->name)
-			free(di->name);
-		if(di->serial)
-			free(di->serial);
-		free(di);
-	}
-	free(l);
 }
 
 const char *udv_dev_by_serial(const char *serial) {
