@@ -410,6 +410,11 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 		return 0;
 	}
 
+	if(!*path) {
+		hs_send_error_page(hcon, 403);
+		return 0;
+	}
+
 	dbg1("cb_cs() path: %s query: %s", path, query);
 
 
