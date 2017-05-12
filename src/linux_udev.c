@@ -124,7 +124,7 @@ struct devmon *devmon_create(struct ev_loop *loop, devmon_cb devmon_cb, void *us
 		cnt++;
 	}
 	udv_free_device_list(l);
-	dbg0("(devmon) %d device(s) found!", cnt);
+	dbg0("%d device(s) found!", cnt);
 
 
 	return devmon;
