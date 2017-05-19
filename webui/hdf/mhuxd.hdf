@@ -104,6 +104,13 @@ mhuxd.webui.menus {
                   include = keyer_winkey.cs
                   depends = has.winkey
              }
+     	     cw_messages {
+                  display = CW/FSK Messages
+                  title = Messages
+                  include = messages.cs
+                  depends = has.winkey
+             }
+
 	     sm_antsw_load_store {
 	          display = Switching / Load, Store
                   title = Antenna Switching / Load & Store
@@ -893,6 +900,61 @@ mhuxd.webui.options {
 	          display = sub RX frequency
 	     }
        }
+
+       cw_messages {
+             1 {
+	          display = Message #1
+             }
+	     2 {
+	          display = Message #2
+             }
+	     3 {
+	          display = Message #3
+             }
+	     4 {
+	          display = Message #4
+             }
+	     5 {
+	          display = Message #5
+             }
+	     6 {
+	          display = Message #6
+	     }
+	     7 {
+	          display = Message #7
+	     }
+	     8 {
+	          display = Message #8
+             }
+       }
+
+       fsk_messages {
+             1 {
+	          display = Message #1
+             }
+	     2 {
+	          display = Message #2
+             }
+	     3 {
+	          display = Message #3
+             }
+	     4 {
+	          display = Message #4
+             }
+	     5 {
+	          display = Message #5
+             }
+	     6 {
+	          display = Message #6
+	     }
+	     7 {
+	          display = Message #7
+	     }
+	     8 {
+	          display = Message #8
+             }
+       }
+
 
        1 {   # CK
              default_menu = mode
