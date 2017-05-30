@@ -65,14 +65,15 @@ static void data_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	uint8_t buf[1024];
 
 	r = read(w->fd, buf, sizeof(buf));
-	if(r < 0 || (r == 0 && errno != EAGAIN)) {
+	if(r <= 0) {
 		err_e(errno, "error reading from data socket!");
 		ev_io_stop(loop, &ctcp->w_data_in);
 		// FIXME: better error handling needed.
 	}
 
-	if(r == 0)
+	if(r == 0) {
 		return;
+	}
 
 	struct ctcp_session *cs;
 	PG_SCANLIST(&ctcp->session_list, cs) {
@@ -119,7 +120,7 @@ static void client_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	avail = buf_size_avail(&cs->buf_in);
 	r = read(cs->fd, cs->buf_in.data + cs->buf_in.size, avail);
-	if(r < 0 || (r == 0 && errno != EAGAIN)) {
+	if(r <= 0) {
 		info("connection on %s closed", ctcp->devname);
 		rem_session(cs);
 		return;
