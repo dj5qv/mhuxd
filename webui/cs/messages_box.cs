@@ -12,7 +12,7 @@
 
 	    <?cs call:string("Message #"+name(item),
 		 "set.mhuxd.keyer."+unit+"."+chan+"."+name(item)+".text",
-		 mhuxd.keyer[unit][chan][item].text, 50) ?>
+		 mhuxd.keyer[unit][chan][name(item)].text, 50) ?>
 
 	    <?cs if:!last(item) ?>
 	    <tr><td class="dividersettingscell" colspan="3"><img src="/static/dot.gif" alt="" border="0" height="1" width="1"></td></tr>

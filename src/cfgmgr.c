@@ -163,7 +163,7 @@ int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg)
 	mhi = mhc_get_mhinfo(dev->ctl);
 
 	// Keyer node
-	HDF *knod, *param_nod, *flags_nod, *chan_nod, *run_nod, *winkey_nod;
+	HDF *knod, *param_nod, *flags_nod, *chan_nod, *run_nod, *winkey_nod, *cw_messages_nod, *fsk_messages_nod;
 
 	snprintf(full_key, MAX_HDF_PATH_LEN, "mhuxd.keyer.%s", serial);
 	err = hdf_get_node(hdf, full_key, &knod);
@@ -335,6 +335,47 @@ int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg)
 			}
 		}
 	}
+
+	// CW / FSK messages
+	int i;
+	err = hdf_get_node(knod, "cw_messages", &cw_messages_nod);
+	if(err != STATUS_OK) goto failed;
+
+	for(i = 1; i <= 9; i++) {
+		const char *text;
+		HDF *idx_nod;
+		uint8_t next_idx, delay;
+		char idx_str[2];
+		text = mhc_get_cw_message(dev->ctl, i, &next_idx, &delay);
+		if(!text)
+			continue;
+		snprintf(idx_str, 2, "%d", i);
+		err = hdf_get_node(cw_messages_nod, idx_str, &idx_nod);
+		if(err != STATUS_OK) goto failed;
+		hdf_set_value(idx_nod, "text", text);
+		hdf_set_int_value(idx_nod, "next_idx", next_idx);
+		hdf_set_int_value(idx_nod, "delay", delay);
+	}
+
+	err = hdf_get_node(knod, "fsk_messages", &fsk_messages_nod);
+	if(err != STATUS_OK) goto failed;
+
+	for(i = 1; i <= 9; i++) {
+		const char *text;
+		HDF *idx_nod;
+		uint8_t next_idx, delay;
+		char idx_str[2];
+		text = mhc_get_fsk_message(dev->ctl, i, &next_idx, &delay);
+		if(!text)
+			continue;
+		snprintf(idx_str, 2, "%d", i);
+		err = hdf_get_node(fsk_messages_nod, idx_str, &idx_nod);
+		if(err != STATUS_OK) goto failed;
+		hdf_set_value(idx_nod, "text", text);
+		hdf_set_int_value(idx_nod, "next_idx", next_idx);
+		hdf_set_int_value(idx_nod, "delay", delay);
+	}
+
 
 	// Winkey config
 	if((mhi->flags & MHF_HAS_WINKEY)) {
@@ -602,6 +643,60 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 				}
 				if(result != CMD_RESULT_OK) {
 					err("error writing config to keyer %s", serial);
+					rval++;
+				}
+			}
+		}
+
+		// CW / FSK messages
+		HDF *msg_hdf;
+		for(msg_hdf = hdf_obj_child(hdf_get_obj(hdf, "cw_messages")); msg_hdf; msg_hdf = hdf_obj_next(msg_hdf)) {
+			const char *idx_str = hdf_obj_name(msg_hdf);
+			const char *text;
+			uint8_t idx = atoi(idx_str);
+			result = -1;
+
+			text = hdf_get_value(msg_hdf, "text", NULL);
+			if(text == NULL) {
+				err("%s %s() index %d text missing!", serial, __func__, idx);
+				continue;
+			}
+
+			if(mhc_store_cw_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result)) {
+				err("%s could not store cw message on index %d", serial, idx);
+				rval++;
+			} else {
+				while(result == -1) {
+					ev_loop(cfgmgr->loop, EVRUN_ONCE);
+				}
+				if(result != CMD_RESULT_OK) {
+					err("%s error store cw message %d", serial, idx);
+					rval++;
+				}
+			}
+		}
+
+		for(msg_hdf = hdf_obj_child(hdf_get_obj(hdf, "fsk_messages")); msg_hdf; msg_hdf = hdf_obj_next(msg_hdf)) {
+			const char *idx_str = hdf_obj_name(msg_hdf);
+			const char *text;
+			uint8_t idx = atoi(idx_str);
+			result = -1;
+
+			text = hdf_get_value(msg_hdf, "text", NULL);
+			if(text == NULL) {
+				err("%s %s() index %d text missing!", serial, __func__, idx);
+				continue;
+			}
+
+			if(mhc_store_fsk_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result)) {
+				err("%s could not store fsk message on index %d", serial, idx);
+				rval++;
+			} else {
+				while(result == -1) {
+					ev_loop(cfgmgr->loop, EVRUN_ONCE);
+				}
+				if(result != CMD_RESULT_OK) {
+					err("%s error store fsk message %d", serial, idx);
 					rval++;
 				}
 			}

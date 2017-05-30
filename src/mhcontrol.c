@@ -32,6 +32,8 @@
 #define IVAL_HEARTBEAT 2.0
 #define CMD_TIMEOUT 1.0
 
+#define MAX_CW_FSK_MESSAGE_LEN 50
+
 // microHam commands
 enum {
 	MHCMD_NOP             = 0x00,
@@ -50,6 +52,15 @@ enum {
 	MHCMD_PLAY_FSK_CW_MSG     = 0x0d,
 	MHCMD_ABORT_FSK_CW_MSG    = 0x0e,
 	MHCMD_WINKEY_NO_RESPONSE  = 0x0f,
+	MHCMD_STORE_CW_FSK_MSG_1  = 0x10,
+	MHCMD_STORE_CW_FSK_MSG_2  = 0x11,
+	MHCMD_STORE_CW_FSK_MSG_3  = 0x12,
+	MHCMD_STORE_CW_FSK_MSG_4  = 0x13,
+	MHCMD_STORE_CW_FSK_MSG_5  = 0x14,
+	MHCMD_STORE_CW_FSK_MSG_6  = 0x15,
+	MHCMD_STORE_CW_FSK_MSG_7  = 0x16,
+	MHCMD_STORE_CW_FSK_MSG_8  = 0x17,
+	MHCMD_STORE_CW_FSK_MSG_9  = 0x18,
 	MHCMD_ON_CONNECT          = 0x1a,
 	MHCMD_STORE_CHANNEL_R1    = 0x1b,
 	MHCMD_STORE_CHANNEL_R2    = 0x1c,
@@ -136,6 +147,12 @@ struct mhc_mode_callback {
 	void *user_data;
 };
 
+struct cw_fsk_message {
+	uint8_t text[MAX_CW_FSK_MESSAGE_LEN + 1];
+	uint8_t next_idx;
+	uint8_t delay;
+};
+
 struct mh_control {
 	const char *serial;
 	struct mh_router *router;
@@ -162,6 +179,8 @@ struct mh_control {
 	uint8_t state_buf[13];
 	uint8_t acc_state[8];
 	uint8_t hfocus[8];
+	struct cw_fsk_message cw_message[9];
+	struct cw_fsk_message fsk_message[9];
 };
 
 struct command {
@@ -999,6 +1018,88 @@ int mhc_abort_message(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void 
 	buf_append_c(&b, MHCMD_ABORT_FSK_CW_MSG);
 	buf_append_c(&b, MHCMD_ABORT_FSK_CW_MSG | MSB_BIT);
 	return submit_cmd(ctl, &b, cb, user_data);
+}
+
+int mhc_store_cw_message(struct mh_control *ctl, uint8_t idx, const char *text, uint8_t next_idx, uint8_t delay, mhc_cmd_completion_cb_fn cb, void *user_data) {
+	struct buffer b;
+	size_t len = strlen(text);
+	if(len > MAX_CW_FSK_MESSAGE_LEN) {
+		err("%s() message too longer that %d characters!", __func__, MAX_CW_FSK_MESSAGE_LEN);
+		return -1;
+	}
+
+	if(idx < 1 || idx > 9) {
+		err("%s() invalid index %d!", __func__, idx);
+		return -1;
+	}
+
+	memcpy(ctl->cw_message[idx-1].text, text, len);
+	ctl->cw_message[idx-1].next_idx = next_idx;
+	ctl->cw_message[idx-1].delay = delay;
+
+	if(!mhc_is_online(ctl)) {
+		if(cb)
+			cb((uint8_t*)"", 0, CMD_RESULT_OK, user_data);
+		return 0;
+	}
+
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_STORE_CW_FSK_MSG_1 + (idx - 1));
+	buf_append_c(&b, next_idx);
+	buf_append_c(&b, delay);
+	buf_append(&b, (uint8_t*)text, len);
+	buf_append_c(&b, (MHCMD_STORE_CW_FSK_MSG_1 + (idx - 1)) | MSB_BIT);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
+int mhc_store_fsk_message(struct mh_control *ctl, uint8_t idx, const char *text, uint8_t next_idx, uint8_t delay, mhc_cmd_completion_cb_fn cb, void *user_data) {
+	struct buffer b;
+	size_t len = strlen(text);
+	if(len > 50) {
+		err("%s() message too longer that 50 characters!", __func__);
+		return -1;
+	}
+
+	if(idx < 1 || idx > 9) {
+		err("%s() invalid index %d!", __func__, idx);
+		return -1;
+	}
+
+	memcpy(ctl->fsk_message[idx-1].text, text, len);
+	ctl->fsk_message[idx-1].next_idx = next_idx;
+	ctl->fsk_message[idx-1].delay = delay;
+
+	if(!mhc_is_online(ctl)) {
+		if(cb)
+			cb((uint8_t*)"", 0, CMD_RESULT_OK, user_data);
+		return 0;
+	}
+
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_STORE_FSK_MSG_1 + (idx - 1));
+	buf_append_c(&b, next_idx);
+	buf_append_c(&b, delay);
+	buf_append(&b, (uint8_t*)text, len);
+	buf_append_c(&b, (MHCMD_STORE_FSK_MSG_1 + (idx - 1)) | MSB_BIT);
+	return submit_cmd(ctl, &b, cb, user_data);
+}
+
+const char *mhc_get_cw_message(struct mh_control *ctl, uint8_t idx, uint8_t *next_idx_out, uint8_t *delay_out) {
+	if(idx < 1 || idx > 9)
+		return NULL;
+
+	*next_idx_out = ctl->cw_message[idx - 1].next_idx;
+	*delay_out = ctl->cw_message[idx - 1].delay;
+	return (const char *)ctl->cw_message[idx - 1].text;
+}
+
+const char *mhc_get_fsk_message(struct mh_control *ctl, uint8_t idx, uint8_t *next_idx_out, uint8_t *delay_out) {
+	if(idx < 1 || idx > 9)
+		return NULL;
+
+	*next_idx_out = ctl->fsk_message[idx - 1].next_idx;
+	*delay_out = ctl->fsk_message[idx - 1].delay;
+	return (const char *)ctl->fsk_message[idx - 1].text;
 }
 
 int mhc_set_kopt(struct mh_control *ctl, const char *key, int val) {
