@@ -1,3 +1,8 @@
+0.52  
+  * bug fixes
+  * initial StationMaster support (alpha, incomplete)
+  * additional MCP commands implemented
+
 0.50rc3
   * implemented MCP channel, supporting commands FT, FR, FRS, SA, MR, MRS, MP,
     MA
