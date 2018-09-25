@@ -15,10 +15,14 @@
 
 const struct rig_type rig_types[] = {
     {0xFE , 0x00 , "none"},
+    {0x8F , 0x00 , "Apache Labs ANAN 100/200"},
     {0x44 , 0x00 , "Elecraft K2"},
     {0x62 , 0x00 , "Elecraft K3"},
     {0x75 , 0x00 , "Elecraft K3 (patched)"},
     {0x7A , 0x00 , "Elecraft K3 (patched 2)"},
+    {0x8C , 0x00 , "Expert Electronics MB1"},
+    {0x8D , 0x00 , "Flex 5000"},
+    {0x8E , 0x00 , "Flex 6000 series"},
     {0x82 , 0x00 , "Hilberling PT8000"},
     {0x12 , 0x62 , "Icom IC-78"},
     {0x5D , 0x10 , "Icom IC-275E"},
@@ -51,12 +55,21 @@ const struct rig_type rig_types[] = {
     {0x13 , 0x26 , "Icom IC-781"},
     {0x5A , 0x70 , "Icom IC-7000"},
     {0x80 , 0x88 , "Icom IC-7100"},
+    {0x89 , 0x88 , "Icom IC-7100 fw v1.10(E4)+"},
     {0x74 , 0x76 , "Icom IC-7200"},
+    {0x88 , 0x94 , "Icom IC-7300"},
     {0x49 , 0x66 , "Icom IC-7400"},
     {0x7B , 0x80 , "Icom IC-7410"},
     {0x76 , 0x7A , "Icom IC-7600"}, // ??
+    {0x8A , 0x7A , "Icom IC-7600 fw v2.00+"}, // ??
+    {0x91 , 0x98 , "Icom IC-7610"},
     {0x73 , 0x74 , "Icom IC-7700"},
+    {0x8B , 0x74 , "Icom IC-7700 fw v2.10+"},
     {0x4B , 0x6A , "Icom IC-7800"},
+    {0x85 , 0x6A , "Icom IC-7800 fw v3.10+"},
+    {0x86 , 0x8E , "Icom IC-7850"},
+    {0x87 , 0x8E , "Icom IC-7851"},
+    {0x90 , 0x4C , "Icom IC-821H"}, // ?
     {0x5C , 0x60 , "Icom IC-910H"},
     {0x7C , 0x7C , "Icom IC-9100"},
     {0x5B , 0x00 , "JRC JST-145/245"},
@@ -101,6 +114,7 @@ const struct rig_type rig_types[] = {
     {0x3B , 0x00 , "Yaesu FT-920"},
     {0x67 , 0x00 , "Yaesu FT-950"},
     {0x3C , 0x00 , "Yaesu FT-990"},
+    {0x84 , 0x00 , "Yaesu FT-991"},
     {0x1F , 0x00 , "Yaesu FT-1000"},
     {0x20 , 0x00 , "Yaesu FT-1000D"},
     {0x21 , 0x00 , "Yaesu FT-1000MP"},
@@ -116,7 +130,9 @@ const struct rig_type rig_types[] = {
     {0x69 , 0x00 , "Yaesu FTdx9000MP"},
     {0x6A , 0x00 , "Yaesu FTdx9000MP (patched)"},
     {0x6B , 0x00 , "Yaesu FTdx9000 Contest"},
-    {0x6C , 0x00 , "Yaesu FTdx9000 Contest (patched)"}
+    {0x6C , 0x00 , "Yaesu FTdx9000 Contest (patched)"},
+    {0x78 , 0x00 , "Microtelecom PERSEUS"},
+    {0x83 , 0x00 , "TS 2000 compatible SDR"}
 };
 
 const int num_rig_types = ARRAY_SIZE(rig_types);
