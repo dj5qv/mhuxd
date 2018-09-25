@@ -1,8 +1,13 @@
 Makefile.am.user*
+Makefile
+Makefile.in
 ar-lib
 compile
+debian/autoreconf.after
+debian/autoreconf.before
 webui/static/arimo400.woff
 webui/static/arimo700.woff
 *.o
+*.a
 *~
 .*

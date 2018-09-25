@@ -49,7 +49,6 @@ static struct PGList *udv_get_device_list() {
 		err("Can't create udev\n");
 		return l;
 	}
-	udev_set_log_priority(udev, 0);
 
 	enumerate = udev_enumerate_new(udev);
 	udev_enumerate_add_match_subsystem(enumerate, "tty");
