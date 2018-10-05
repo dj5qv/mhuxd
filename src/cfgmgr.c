@@ -256,7 +256,10 @@ int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg)
 	if(err != STATUS_OK) goto failed;
 	err = hdf_set_int_value(flags_nod, "has.sm_commands", mhi->flags & MHF_HAS_SM_COMMANDS ? 1 : 0);
 	if(err != STATUS_OK) goto failed;
-
+	err = hdf_set_int_value(flags_nod, "has.pfsk", mhi->flags & MHF_HAS_PFSK ? 1 : 0);
+	if(err != STATUS_OK) goto failed;
+	err = hdf_set_int_value(flags_nod, "has.pcw", mhi->flags & MHF_HAS_PCW ? 1 : 0);
+	if(err != STATUS_OK) goto failed;
 
 	// Keyer channels
 	// FIXME: move this logic into mhuxd.hdf,

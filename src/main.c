@@ -150,6 +150,7 @@ int main(int argc, char **argv)
 		dmgr_add_device("D2_DEMO_DK2_1", 0);
 		dmgr_add_device("MK_DEMO_MK_1", 0);
 		dmgr_add_device("M2_DEMO_MK2_1", 0);
+		dmgr_add_device("M3_DEMO_MK3_1", 0);
 		dmgr_add_device("2R_DEMO_MK2R_1", 0);
 		dmgr_add_device("2P_DEMO_MK2Rp_1", 0);
 		dmgr_add_device("UR_DEMO_U2R_1", 0);

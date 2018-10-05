@@ -32,7 +32,7 @@ const struct mh_info_map mh_info_map[] = {
 	  .flags = MHF_MHUXD_SUPPORTED|MHF_HAS_R1|MHF_HAS_R1_RADIO_SUPPORT|MHF_HAS_WINKEY|MHF_HAS_FSK1|
 		MHF_HAS_FRBASE_CW|MHF_HAS_FRBASE_DIGITAL|
 		MHF_HAS_LNA_PA_PTT|MHF_HAS_LNA_PA_PTT_TAIL|MHF_HAS_SOUNDCARD_PTT|MHF_HAS_FOLLOW_TX_MODE|
-		MHF_HAS_PTT_SETTINGS|MHF_HAS_KEYER_MODE|MHF_HAS_FLAGS_CHANNEL|MHF_HAS_MCP_SUPPORT
+		MHF_HAS_PTT_SETTINGS|MHF_HAS_KEYER_MODE|MHF_HAS_FLAGS_CHANNEL|MHF_HAS_MCP_SUPPORT|MHF_HAS_PFSK|MHF_HAS_PCW
 #ifdef _SMSIM
 			|MHF_HAS_SM_COMMANDS
 #endif
@@ -53,7 +53,16 @@ const struct mh_info_map mh_info_map[] = {
 		MHF_HAS_DISPLAY|MHF_HAS_FOLLOW_TX_MODE|MHF_HAS_PTT_SETTINGS|
 		MHF_HAS_KEYER_MODE|MHF_HAS_FLAGS_CHANNEL|MHF_HAS_MCP_SUPPORT},
 
-	{ .type = MHT_MK2R,    
+	{ .type = MHT_MK3,
+	  .name = "micro KEYER III",
+	  .flags = MHF_MHUXD_SUPPORTED|MHF_HAS_R1|MHF_HAS_R1_RADIO_SUPPORT|MHF_HAS_AUX|
+		MHF_HAS_WINKEY|MHF_HAS_FRBASE_VOICE|
+		MHF_HAS_FRBASE_DIGITAL|MHF_HAS_FRBASE_CW|MHF_HAS_FSK1|MHF_HAS_LNA_PA_PTT|
+		MHF_HAS_LNA_PA_PTT_TAIL|MHF_HAS_SOUNDCARD_PTT|MHF_HAS_CW_IN_VOICE|MHF_HAS_AUDIO_SWITCHING|
+		MHF_HAS_DISPLAY|MHF_HAS_FOLLOW_TX_MODE|MHF_HAS_PTT_SETTINGS|
+		MHF_HAS_KEYER_MODE|MHF_HAS_FLAGS_CHANNEL|MHF_HAS_MCP_SUPPORT|MHF_HAS_PFSK|MHF_HAS_PCW},
+
+	{ .type = MHT_MK2R,
 	  .name = "MK2R",
 	  .flags = MHF_MHUXD_SUPPORTED|MHF_HAS_R1|MHF_HAS_R1_RADIO_SUPPORT|MHF_HAS_R2|
 		MHF_HAS_R2_RADIO_SUPPORT|MHF_HAS_WINKEY|MHF_HAS_FRBASE_VOICE|
@@ -118,6 +127,9 @@ int mhi_parse_version(struct mh_info *mhi, const uint8_t *data, uint16_t len) {
 	case 0x1201:
 		mhi->type = MHT_MK2;
 		break;
+	case 0x1701:
+		mhi->type = MHT_MK3;
+		break;
 	case 0x1601:
 		mhi->type = MHT_DK2;
 		break;
@@ -176,7 +188,6 @@ void mhi_init(struct mh_info *mhi, int type) {
 int mhi_type_from_serial(const char *serial) {
 	uint16_t head;
 
-
 	head = (serial[0] << 8) | serial[1];
 	switch(head) {
 	case 0x4d4b:
@@ -187,6 +198,8 @@ int mhi_type_from_serial(const char *serial) {
 		return MHT_CK;
 	case 0x4d32:
 		return MHT_MK2;
+	case 0x4d33:
+		return MHT_MK3;
 	case 0x4432:
 		return MHT_DK2;
 	case 0x3252:

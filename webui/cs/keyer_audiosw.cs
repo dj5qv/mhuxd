@@ -1,7 +1,7 @@
 
 
 
-<?cs if:mhuxd.run.keyer[mhuxd.webui.session.unit].info.type == 5 ?>
+<?cs if:mhuxd.run.keyer[mhuxd.webui.session.unit].info.type == 5 || mhuxd.run.keyer[mhuxd.webui.session.unit].info.type == 11 ?>
 
 
 <?cs call:sectionheader("Audio Switching", "foobar_help") ?>

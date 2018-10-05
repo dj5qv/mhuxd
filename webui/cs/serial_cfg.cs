@@ -157,15 +157,12 @@
 		 mhuxd.keyer[mhuxd.webui.session.unit].param.r1InvertFsk) ?>
 	    <?cs /if ?>
 	    
-
-	    <?cs if:mhuxd.run.keyer[mhuxd.webui.session.unit].info.type == 3 ?>
-	    <!-- DK2 -->
+            <?cs if:mhuxd.run.keyer[mhuxd.webui.session.unit].flags.has.pfsk ?>
 	    <tr><td class="dividersettingscell" colspan="3"><img src="/static/dot.gif" alt="" border="0" height="1" width="1"></td></tr>
 	    <?cs call:opt_bool("Pseudo FSK", 
 		 "set.mhuxd.keyer."+mhuxd.webui.session.unit+".param.usePFsk", 
 		 mhuxd.keyer[mhuxd.webui.session.unit].param.usePFsk) ?>
 	    <?cs /if ?>
-
 
 	    <?cs if:chan=="fsk2" ?>
 	    <?cs call:opt_bool("Invert FSK", 

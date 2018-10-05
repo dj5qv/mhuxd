@@ -15,7 +15,7 @@
 /* Supported microHam device types */
 
 enum { MHT_UNKNOWN, MHT_CK, MHT_DK, MHT_DK2, MHT_MK, MHT_MK2,
-       MHT_MK2R, MHT_MK2Rp, MHT_SM, MHT_SMD, MHT_U2R,  MHT_MAX };
+       MHT_MK2R, MHT_MK2Rp, MHT_SM, MHT_SMD, MHT_U2R, MHT_MK3, MHT_MAX };
 
 
 /* Feature flags */
@@ -49,6 +49,9 @@ enum {
 	MHF_HAS_MCP_SUPPORT = (1<<22),
 	MHF_HAS_ROTATOR_SUPPORT = (1<<23),
 	MHF_HAS_SM_COMMANDS = (1<<24),
+
+	MHF_HAS_PFSK = (1<<25),
+	MHF_HAS_PCW = (1<<26),
 
 	MHF_MHUXD_SUPPORTED = (1<<31)
 

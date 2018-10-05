@@ -223,6 +223,110 @@ struct citem c_mk2[] = {
 	/* X44-X55 = keyFuncFh2[0] - keyFuncFh2[11], to be implemented seperately */
 };
 
+struct citem c_mk3[] = {
+#if 0
+	{ "r1FrMpkExtra_Digital",12, 7, 8,  0 },
+#endif
+	{ "r1FrMpkExtra_Digital.pwmMonctr",12, 4, 5,  0 },
+	{ "r1FrMpkExtra_Digital.reserve",12, 5, 1,  0 },
+	{ "r1FrMpkExtra_Digital.onAirRecActive",12, 6, 1,  0 },
+	{ "r1FrMpkExtra_Digital.onAirRecControlByRouter",12, 7, 1,  0 },
+
+	{ "pwmContrast",	13, 4, 5, 15 },
+	{ "pwmBlight",		14, 4, 5, 25 },
+	{ "dispBg0",		15, 7, 8, 0x06 }, /* RX freq */
+	{ "dispBg1",		16, 7, 8, 0x05 }, /* WPM / speed pot */
+
+	{ "dispEv.recMsg",      17, 0, 1, 0 },
+	{ "dispEv.playMsg",     17, 1, 1, 0 },
+	{ "dispEv.txDecoder",   17, 2, 1, 0 },
+	{ "dispEv.rxDecoder",   17, 3, 1, 0 },
+	{ "dispEv.recDecoder",  17, 4, 1, 0 },
+	{ "dispEv.wpmChange",   17, 5, 1, 0 },
+	{ "dispEv.steppirCmd",  17, 6, 1, 0 },
+	{ "dispEv.rxFreqChange",17, 7, 1, 0 },
+	{ "dispEv.txFreqChange",17, 8, 1, 0 },
+	{ "dispEv.modeChange",  17, 9, 1, 0 },
+	{ "dispEv.micChange",   17, 10, 1, 0 },
+	{ "dispEv.steppirLock", 17, 11, 1, 0 },
+	{ "dispEv.sysPwr",      17, 12, 1, 1 },
+	{ "dispEv.wpmInCwMode", 17, 13, 1, 0 },
+	{ "dispEv.cfgOverriden",17, 14, 1, 0 },
+	{ "dispEv.wpmSnControlChange",17, 15, 1, 0 },
+	{ "dispEv.snChange",    17, 16, 1, 0 },
+	{ "dispEv.snInCwMode",  17, 17, 1, 0 },
+	{ "dispEv.wpmSnInCwMode",  17, 18, 1, 0 },
+	{ "dispEv.operFreqChange", 17, 19, 1, 0 },
+	{ "dispEv.vfoAFreqChange", 17, 20, 1, 0 },
+	{ "dispEv.vfoBFreqChange", 17, 21, 1, 0 },
+	{ "dispEv.steppirState",   17, 22, 1, 0 },
+	{ "dispEv.smLock",         17, 23, 1, 0 },
+	{ "dispEv.subRxFreqChange",17, 24, 1, 0 },
+	{ "dispEv.presetChange",   17, 25, 1, 0 },
+
+	{ "dispEvLn.recMsg",      21, 0, 1, 0 },
+	{ "dispEvLn.playMsg",     21, 1, 1, 0 },
+	{ "dispEvLn.txDecoder",   21, 2, 1, 0 },
+	{ "dispEvLn.rxDecoder",   21, 3, 1, 0 },
+	{ "dispEvLn.recDecoder",  21, 4, 1, 0 },
+	{ "dispEvLn.wpmChange",   21, 5, 1, 0 },
+	{ "dispEvLn.steppirCmd",  21, 6, 1, 0 },
+	{ "dispEvLn.rxFreqChange",21, 7, 1, 0 },
+	{ "dispEvLn.txFreqChange",21, 8, 1, 0 },
+	{ "dispEvLn.modeChange",  21, 9, 1, 0 },
+	{ "dispEvLn.micChange",   21, 10, 1, 0 },
+	{ "dispEvLn.steppirLock", 21, 11, 1, 0 },
+	{ "dispEvLn.sysPwr",      21, 12, 1, 1 },
+	{ "dispEvLn.wpmInCwMode", 21, 13, 1, 0 },
+	{ "dispEvLn.cfgOverriden",21, 14, 1, 0 },
+	{ "dispEvLn.wpmSnControlChange",21, 15, 1, 0 },
+	{ "dispEvLn.snChange",    21, 16, 1, 0 },
+	{ "dispEvLn.snInCwMode",  21, 17, 1, 0 },
+	{ "dispEvLn.wpmSnInCwMode",  21, 18, 1, 0 },
+	{ "dispEvLn.operFreqChange", 21, 19, 1, 0 },
+	{ "dispEvLn.vfoAFreqChange", 21, 20, 1, 0 },
+	{ "dispEvLn.vfoBFreqChange", 21, 21, 1, 0 },
+	{ "dispEvLn.steppirState",   21, 22, 1, 0 },
+	{ "dispEvLn.smLock",         21, 23, 1, 0 },
+	{ "dispEvLn.subRxFreqChange",21, 24, 1, 0 },
+	{ "dispEvLn.presetChange",   21, 25, 1, 0 },
+
+	/* off 17 - 24 to be implemented seperately (dispEv / dispEvLn) */
+	{ "dispEvTime",		25, 7, 8, 200 },
+#if 0
+	{ "r1FrMpkExtra_Cw",	26, 7, 8,  0 },
+#endif
+	{ "r1FrMpkExtra_Cw.pwmMonctr",26, 4, 5,  0 },
+	{ "r1FrMpkExtra_Cw.reserve",26, 5, 1,  0 },
+	{ "r1FrMpkExtra_Cw.onAirRecActive",26, 6, 1,  0 },
+	{ "r1FrMpkExtra_Cw.onAirRecControlByRouter",26, 7, 1,  0 },
+#if 0
+	{ "r1FrMpkExtra_Voice",	27, 7, 8,  0 },
+#endif
+	{ "r1FrMpkExtra_Voice.pwmMonctr",27, 4, 5,  0 },
+	{ "r1FrMpkExtra_Voice.reserve",27, 5, 1,  0 },
+	{ "r1FrMpkExtra_Voice.onAirRecActive",27, 6, 1,  1 },
+	{ "r1FrMpkExtra_Voice.onAirRecControlByRouter",27, 7, 1,  1 },
+
+
+	{ "micSelAuto",		28, 0, 1,  1 },
+	{ "micSelFront",	28, 1, 1,  0 },
+	{ "useAutoPtt",		28, 2, 1,  0 },
+	{ "paddleOnlySideTone",	28, 3, 1,  0 },
+	{ "enableSleepMode",	28, 4, 1,  0 },
+	{ "downstreamOverFootSw",28, 5, 1,  0 },
+	{ "useQCw",             28, 6, 1,  0 },
+	{ "usePFsk",            28, 7, 1,  0 },
+	{ "extSerBaudRate",	29, 7, 8,  24 }, /* 9600 */
+	/* off 30 - 39 keyFuncPs[0-9] to be implemented seperately. */
+
+	{ "civAddress",		40, 7, 8,  0x70 }, /* IC-7000 */
+	{ "civBaudRate",	41, 7, 8,  0x24 }, /* 9600 */
+	{ "civFunc",		42, 7, 8,  0x00 }, /* none */
+	/* 43 reserve */
+	/* X44-X55 = keyFuncFh2[0] - keyFuncFh2[11], to be implemented seperately */
+};
+
 struct citem c_mk2r[] = {
 #if 0
 	{ "r1FrMokExtra_Digital", 12, 7, 8, 0 },
@@ -546,6 +650,7 @@ struct citem c_sm[] = {
 #define MK1_SIZE (sizeof(c_mk1))
 #define DK2_SIZE (sizeof(c_dk2))
 #define MK2_SIZE (sizeof(c_mk2))
+#define MK3_SIZE (sizeof(c_mk3))
 #define MK2R_SIZE (sizeof(c_mk2r))
 #define U2R_SIZE (sizeof(c_u2r))
 #define SM_SIZE (sizeof(c_sm))
@@ -556,10 +661,11 @@ struct citem c_sm[] = {
 */
 #define LARGEST1 (MK1_SIZE > DK2_SIZE ? MK1_SIZE : DK2_SIZE)
 #define LARGEST2 (LARGEST1 > MK2_SIZE ? LARGEST1 : MK2_SIZE)
-#define LARGEST3 (LARGEST2 > MK2R_SIZE ? LARGEST2 : MK2R_SIZE)
-#define LARGEST4 (LARGEST3 > U2R_SIZE ? LARGEST3 : U2R_SIZE)
-#define LARGEST5 (LARGEST4 > SM_SIZE ? LARGEST4 : SM_SIZE)
-#define MAX_NUM_CITEMS (LARGEST5)
+#define LARGEST3 (LARGEST2 > MK3_SIZE ? LARGEST2 : MK3_SIZE)
+#define LARGEST4 (LARGEST3 > MK2R_SIZE ? LARGEST3 : MK2R_SIZE)
+#define LARGEST5 (LARGEST4 > U2R_SIZE ? LARGEST4 : U2R_SIZE)
+#define LARGEST6 (LARGEST5 > SM_SIZE ? LARGEST5 : SM_SIZE)
+#define MAX_NUM_CITEMS (LARGEST6)
 
 struct kcfg {
 	struct buffer b;
@@ -677,6 +783,11 @@ struct kcfg *kcfg_create(const struct mh_info *mhi) {
 		kcfg->num_citems = ARRAY_SIZE(c_base) + ARRAY_SIZE(c_mk2);
 		buf_size = 56;
 		break;
+	case MHT_MK3:
+		memcpy(&kcfg->citem[ARRAY_SIZE(c_base)], c_mk3, sizeof(c_mk3));
+		kcfg->num_citems = ARRAY_SIZE(c_base) + ARRAY_SIZE(c_mk3);
+		buf_size = 56;
+		break;
 	case MHT_MK2R:
 	case MHT_MK2Rp:
 		memcpy(&kcfg->citem[ARRAY_SIZE(c_base)], c_mk2r, sizeof(c_mk2r));
@@ -718,8 +829,8 @@ struct kcfg *kcfg_create(const struct mh_info *mhi) {
 		kcfg_set_val(kcfg, "r1FrBase_Cw.ptt2", 1);
 	}
 
-	// Overwrite some defaults for MK2
-	if(mhi->type == MHT_MK2) {
+	// Overwrite some defaults for MK2/MK3
+	if(mhi->type == MHT_MK2 || mhi->type == MHT_MK3) {
 		kcfg_set_val(kcfg, "r1FrBase_Cw.audioRx", AUDIO_SW_A);
 		kcfg_set_val(kcfg, "r1FrBase_Cw.audioTx", AUDIO_SW_A);
 		kcfg_set_val(kcfg, "r1FrBase_Cw.audioTxFootSw", AUDIO_SW_A);

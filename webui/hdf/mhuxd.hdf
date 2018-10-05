@@ -1062,6 +1062,51 @@ mhuxd.webui.options {
 	     digital.audioTxFootSw.0 :  mhuxd.webui.options.audio.0
        }
 
+       11 {   # MK3
+             default_menu = mode
+             dispbg : mhuxd.webui.options.mk2_dispbg
+             dispev : mhuxd.webui.options.mk2_dispev
+             cw.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             cw.ptt_opts.qsk :  mhuxd.webui.options.ptt.qsk
+             cw.ptt_opts.semi : mhuxd.webui.options.ptt.semi
+             cw.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2
+             voice.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             voice.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2
+             digital.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1
+             digital.ptt_opts.ptt2 : mhuxd.webui.options.ptt.ptt2
+             digital.ptt_opts.ptt12 : mhuxd.webui.options.ptt.ptt12
+
+             cw.audioRx.2 :  mhuxd.webui.options.audio.2
+             cw.audioTx.2 :  mhuxd.webui.options.audio.2
+             cw.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+
+             voice.audioRx.2 :  mhuxd.webui.options.audio.2
+             voice.audioRx.1 :  mhuxd.webui.options.audio.1
+             voice.audioRx.3 :  mhuxd.webui.options.audio.3
+             voice.audioRx.0 :  mhuxd.webui.options.audio.0
+             voice.audioTx.2 :  mhuxd.webui.options.audio.2
+             voice.audioTx.1 :  mhuxd.webui.options.audio.1
+             voice.audioTx.3 :  mhuxd.webui.options.audio.3
+             voice.audioTx.0 :  mhuxd.webui.options.audio.0
+             voice.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+             voice.audioTxFootSw.1 :  mhuxd.webui.options.audio.1
+             voice.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
+             voice.audioTxFootSw.0 :  mhuxd.webui.options.audio.0
+
+             digital.audioRx.2 :  mhuxd.webui.options.audio.2
+             digital.audioRx.1 :  mhuxd.webui.options.audio.1
+             digital.audioRx.3 :  mhuxd.webui.options.audio.3
+             digital.audioRx.0 :  mhuxd.webui.options.audio.0
+             digital.audioTx.2 :  mhuxd.webui.options.audio.2
+             digital.audioTx.1 :  mhuxd.webui.options.audio.1
+             digital.audioTx.3 : mhuxd.webui.options.audio.3
+             digital.audioTx.0 :  mhuxd.webui.options.audio.0
+             digital.audioTxFootSw.2 :  mhuxd.webui.options.audio.2
+             digital.audioTxFootSw.1 :  mhuxd.webui.options.audio.1
+             digital.audioTxFootSw.3 :  mhuxd.webui.options.audio.3
+             digital.audioTxFootSw.0 :  mhuxd.webui.options.audio.0
+       }
+
        6 {   # MK2R
              default_menu = mode
              cw.ptt_opts.ptt1 : mhuxd.webui.options.ptt.ptt1

@@ -330,7 +330,7 @@ static const char *keyer_modes[] = {
  */
 static void process_keyer_states(struct mh_control *ctl, unsigned const char *data, int len) {
 
-	if(*data == MHCMD_MPK_STATE && (ctl->mhi.type == MHT_MK2 || ctl->mhi.type == MHT_DK2)) {
+	if(*data == MHCMD_MPK_STATE && (ctl->mhi.type == MHT_MK2 || ctl->mhi.type == MHT_MK3 || ctl->mhi.type == MHT_DK2)) {
 		if(len != 6) {
 			err("invalid cmd length for MPK/DK2 state! cmd: %d len: %d", *data, len);
 			return;

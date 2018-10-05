@@ -76,6 +76,7 @@ static const char *compose_ptt_str(HDF *hdf, uint16_t type, uint8_t qsk) {
 			return "ptt2";
 		return "qsk";
 	case MHT_MK2:
+	case MHT_MK3:
 	case MHT_MK2R:
 	case MHT_MK2Rp:
 		if(ptt1 && ptt2)
@@ -95,7 +96,7 @@ static const char *compose_ptt_str(HDF *hdf, uint16_t type, uint8_t qsk) {
 }
 
 static const char *mk2_compose_mic_str(HDF *hdf, uint16_t type) {
-	if(type != MHT_MK2)
+	if(type != MHT_MK2 && type != MHT_MK3)
 		return NULL;
 
 	if(hdf_get_int_value(hdf, "micSelAuto", 0) == 1)
@@ -135,7 +136,7 @@ static int encode_meta_settings(HDF *hdf) {
 		}
 
 		// MK2 MicSel
-		if(type == MHT_MK2) {
+		if(type == MHT_MK2 || type == MHT_MK3) {
 			frbase = hdf_get_obj(knod, "param");
 			if(frbase) {
 				err = hdf_set_value(meta, "r1.mk2micsel", mk2_compose_mic_str(frbase, type));
@@ -220,6 +221,12 @@ struct decompose_ptt_map decompose_ptt_map[] = {
 { MHT_MK2, "ptt12", 1, 1, 0 },
 { MHT_MK2, "semi", 0, 0, 0 },
 { MHT_MK2, "qsk", 0, 0, 1 },
+
+{ MHT_MK3, "ptt1", 1, 0, 0 },
+{ MHT_MK3, "ptt2", 0, 1, 0 },
+{ MHT_MK3, "ptt12", 1, 1, 0 },
+{ MHT_MK3, "semi", 0, 0, 0 },
+{ MHT_MK3, "qsk", 0, 0, 1 },
 
 { MHT_MK, "ptt1", 1, 0, 0 },
 { MHT_MK, "ptt2", 0, 1, 0 },
