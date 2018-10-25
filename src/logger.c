@@ -42,8 +42,18 @@ static int current_time(char buf[32]) {
 
 	gettimeofday(&tv, NULL);
 	localtime_r(&tv.tv_sec, &tm);
-	r = strftime(buf, 32, "%Y-%m-%d %H:%M:%S", &tm);
-	return !r;
+
+	r = snprintf(buf, 32, "%04d-%02d-%02d %02d:%02d:%02d.%03ld",
+		 tm.tm_year + 1900,
+		 tm.tm_mon + 1,
+		 tm.tm_mday,
+		 tm.tm_hour,
+		 tm.tm_min,
+		 tm.tm_sec,
+		 tv.tv_usec / 1000
+		 );
+
+	return r<=0;
 }
 
 void log_init(FILE *f) {
