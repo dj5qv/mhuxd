@@ -29,8 +29,8 @@
 #define MAX_CMD_QUEUE_SIZE 16
 #define MSB_BIT (1<<7)
 
-#define IVAL_HEARTBEAT 2.0
-#define CMD_TIMEOUT 1.0
+#define IVAL_HEARTBEAT 3.0
+#define CMD_TIMEOUT 2.0
 
 #define MAX_CW_FSK_MESSAGE_LEN 50
 
@@ -503,9 +503,9 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		break;
 	case CTL_STATE_INIT:
 		dbg0("%s initializer ping ok", ctl->serial);
+		dbg0("%s get version", ctl->serial);
 		set_state(ctl, CTL_STATE_GET_VERSION);
 		submit_cmd_simple(ctl, MHCMD_GET_VERSION, initializer_cb, ctl);
-		dbg0("%s get version", ctl->serial);
 		break;
 	case CTL_STATE_GET_VERSION:
 		mhi_parse_version(&ctl->mhi, reply, len);
@@ -545,13 +545,13 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		}
 		struct buffer *kb = kcfg_get_buffer(ctl->kcfg);
 		struct buffer buf;
+		dbg0("%s upload config", ctl->serial);
 		buf_reset(&buf);
 		buf_append_c(&buf, MHCMD_SET_SETTINGS);
 		buf_append(&buf, kb->data, kb->size);
 		buf_append_c(&buf, MHCMD_SET_SETTINGS | MSB_BIT);
 		submit_cmd(ctl, &buf, initializer_cb, ctl);
 		set_state(ctl, CTL_STATE_LOAD_CFG);
-		dbg0("%s upload config", ctl->serial);
 		break;
 	case CTL_STATE_LOAD_CFG:
 		dbg0("%s requesting status information", ctl->serial);
