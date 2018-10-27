@@ -155,7 +155,8 @@ int mhi_parse_version(struct mh_info *mhi, const uint8_t *data, uint16_t len) {
 
 	mhi->ver_winkey = p[16];
 	mhi->ver_fw_major = p[9];
-	mhi->ver_fw_minor = p[10];
+	mhi->ver_fw_minor = p[10] & 0x7f;
+	mhi->ver_fw_beta = (p[10] >> 7);
 
 	int i;
 	for(i = 0; i < mh_info_map_size; i++) {

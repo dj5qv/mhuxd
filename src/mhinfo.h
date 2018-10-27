@@ -61,6 +61,7 @@ struct mh_info {
 	uint16_t type;
 	uint16_t ver_fw_major;
 	uint16_t ver_fw_minor;
+	unsigned int ver_fw_beta;
 	uint16_t ver_winkey;
 	uint32_t flags;
 	const char *type_str;

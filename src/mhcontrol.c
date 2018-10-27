@@ -509,8 +509,8 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		break;
 	case CTL_STATE_GET_VERSION:
 		mhi_parse_version(&ctl->mhi, reply, len);
-		info("%s microHam %s firmware %d.%d", ctl->serial,
-		     ctl->mhi.type_str, ctl->mhi.ver_fw_major, ctl->mhi.ver_fw_minor);
+		info("%s microHam %s firmware %d.%d %s", ctl->serial,
+		     ctl->mhi.type_str, ctl->mhi.ver_fw_major, ctl->mhi.ver_fw_minor, ctl->mhi.ver_fw_beta ? "beta" : "");
 
 		// fall through
 	case CTL_STATE_SET_CHANNELS:
