@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2018  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -301,8 +301,6 @@ static int decompose_ptt_str(HDF *hdf, uint16_t type, const char *chan_str, cons
 
 static int mk2_decompose_mic_str(HDF *hdf, uint16_t type, const char *key, const char *val) {
 	NEOERR *err;
-
-	err("%s()", __func__);
 
 	if(type != MHT_MK2)
 		return -1;
