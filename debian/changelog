@@ -1,3 +1,8 @@
+mhuxd (0.53) unstable; urgency=low
+  * microHAM MKIII support
+
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sat, 17 Nov 2018 00:41:00 +0100
+
 mhuxd (0.52) unstable; urgency=low
   * bug fixes
   * initial StationMaster support (alpha, incomplete)

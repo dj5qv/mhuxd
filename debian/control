@@ -2,9 +2,9 @@ Source: mhuxd
 Section: hamradio
 Priority: extra
 Maintainer: Matthias Moeller <dj5qv@maxec.de>
-Build-Depends: debhelper (>= 7.4.15), autotools-dev, dh-autoreconf, libev-dev (>= 1), libfuse-dev (>= 2.8.0), libudev-dev (>= 151), pkg-config (>= 0.22)
+Build-Depends: debhelper (>= 9), autotools-dev, dh-autoreconf, libev-dev (>= 1), libfuse-dev (>= 2.8.0), libudev-dev (>= 151), pkg-config (>= 0.22)
 Standards-Version: 3.9.2
-Homepage: http://maxec.de/dj5qv/apps/mhuxd
+Homepage: http://mhuxd.dj5qv.de
 
 Package: mhuxd
 Architecture: any
