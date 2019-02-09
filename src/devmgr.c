@@ -86,6 +86,7 @@ static void devmon_callback(const char *serial, int status, void *user_data) {
 
 	if(MHT_UNKNOWN == mhi_type_from_serial(serial)) {
 		err("Could not determine keyer type from serial number (%s)", serial);
+		err("Or keyer not supported!");
 		return;
 	}
 

@@ -76,13 +76,13 @@ static struct PGList *udv_get_device_list() {
 			continue;
 		}
 
-		const char *manu = udev_device_get_sysattr_value(pdev,"manufacturer");
-		const char *prod = udev_device_get_sysattr_value(pdev,"product");
-
-		if(strcasecmp(manu, "microham")) {
+		if(strcasecmp(udev_device_get_sysattr_value(pdev,"idProduct"), "EEEF")) {
 			udev_device_unref(ddev);
 			continue;
 		}
+
+		const char *manu = udev_device_get_sysattr_value(pdev,"manufacturer");
+		const char *prod = udev_device_get_sysattr_value(pdev,"product");
 
 		struct devinfo *di = w_calloc(1, sizeof(*di));
 		di->device = w_strdup(udev_device_get_devnode(ddev));
@@ -140,15 +140,15 @@ static void mon_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		goto out;
 
 	const char *vend = udev_device_get_sysattr_value(pdev,"idVendor");
+	const char *prod = udev_device_get_sysattr_value(pdev,"idProduct");
 	const char *serial = udev_device_get_sysattr_value(pdev,"serial");
-	const char *manufacturer = udev_device_get_sysattr_value(pdev,"manufacturer");
 	const char *action = udev_device_get_action(dev);
-	dbg1("%s() action: %s pdev: %ld vend: %ld serial: %ld\n", __func__, action, (long)pdev, (long)vend, (long)serial);
+	dbg1("%s() action: %s pdev: %ld vend: %ld prod: %ld serial: %ld\n", __func__, action, (long)pdev, (long)vend, (long)prod, (long)serial);
 
 	if(vend == NULL || serial == NULL)
 		goto out;
 
-	if(!strcmp(vend, "0403") && !strcasecmp(manufacturer, "microham") && devmon->devmon_cb) {
+	if(!strcmp(vend, "0403") && !strcasecmp(prod, "EEEF") && devmon->devmon_cb) {
 		int what = -1;
 		if(!strcmp(action, "remove"))
 			what = DEVMON_DISCONNECTED;
