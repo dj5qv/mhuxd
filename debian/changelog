@@ -1,3 +1,8 @@
+mhuxd (0.54) unstable; urgency=low
+  * Did not USB recognize some older keyers
+
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sat, 10 Feb 2019 00:56:00 +0100
+
 mhuxd (0.53) unstable; urgency=low
   * microHAM MKIII support
 

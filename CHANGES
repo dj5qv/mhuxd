@@ -1,3 +1,7 @@
+0.54
+  * mhuxd did not recognize some keyers with iManufacturer FTDI instead of
+    microHAM
+
 0.53 
   * MKIII support
   * minor fixes
