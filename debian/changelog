@@ -1,3 +1,7 @@
+mhuxd (0.55) unstable; urgency=low
+  * Fixed minor compilation issue on Ubuntu 20.10
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sat, 27 Aug 2020 00:06:00 +0100
+
 mhuxd (0.54) unstable; urgency=low
   * Did not USB recognize some older keyers
 

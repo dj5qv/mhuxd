@@ -1,7 +1,7 @@
 SUBDIRS = clearsilver
 sbin_PROGRAMS = mhuxd 
 
-mhuxd_CFLAGS = -g -Wall -Wextra -Wno-strict-aliasing -D_GNU_SOURCE -DEV_NO_THREADS $(FUSE_CFLAGS) \
+mhuxd_CFLAGS = -g -Wall -Wno-format-truncation -Wno-strict-aliasing -D_GNU_SOURCE -DEV_NO_THREADS $(FUSE_CFLAGS) \
 	$(UDEV_CFLAGS) -DLOGDIR=\"$(LOGDIR)\" -DSTATEDIR=\"$(STATEDIR)\" -DRUNDIR=\"$(RUNDIR)\" \
 	-DDATADIR=\"$(datadir)\" -DWEBUIDIR=\"$(WEBUIDIR)\" -DHDFDIR=\"$(HDFDIR)\" \
 	-I$(srcdir)/clearsilver

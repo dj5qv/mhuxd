@@ -12,7 +12,7 @@
 
 struct ev_loop;
 struct connector;
-struct cfg *cfg;
+struct cfg;
 
 struct connector_spec {
 	struct ev_loop *loop;
