@@ -862,7 +862,7 @@ int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_
 		return -1;
 	}
 
-	if(ctl->speed_args)
+	if(ctl->speed_args[channel])
 		cfg_destroy(ctl->speed_args[channel]);
 	ctl->speed_args[channel] = cfg_copy(cfg);
 
