@@ -20,6 +20,7 @@
 #include "daemon.h"
 #include "http_server.h"
 #include "webui.h"
+#include "restapi.h"
 
 #define MOD_ID "main"
 
@@ -118,10 +119,18 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
+	struct restapi *restapi = restapi_create(hs);
+	if(!restapi) {
+		fatal("(mhuxd) Could not start REST API, exiting!");
+		hs_stop(hs);
+		exit(-1);
+	}
+
 	struct webui *webui = webui_create(hs, cfgmgr);
 
 	if(!webui) {
 		fatal("(mhuxd) Could not start webui, exiting!");
+		restapi_destroy(restapi);
 		hs_stop(hs);
 		exit(-1);
 	}
@@ -171,6 +180,7 @@ int main(int argc, char **argv)
 	dmgr_destroy();
 	
 	webui_destroy(webui);
+	restapi_destroy(restapi);
 	hs_stop(hs);
 
 	ev_default_destroy();
