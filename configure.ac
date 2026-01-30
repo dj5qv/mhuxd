@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([mhuxd], [0.56], [mhuxd@maxec.de])
+AC_INIT([mhuxd], [0.57beta], [mhuxd@maxec.de])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 AC_PROG_CC
@@ -61,6 +61,15 @@ UDEV_CFLAGS="$UDEV_CFLAGS"
 AC_SUBST(UDEV_CFLAGS)
 AC_SUBST(UDEV_LIBS) 
 LIBS="${UDEV_LIBS} ${LIBS}"
+
+#JANSSON
+PKG_CHECK_MODULES(JANSSON,jansson,[ have_jansson=true ],[
+  AC_MSG_ERROR([JANSSON: no jansson pkg-config(1) module was found. Install 'libjansson-dev' package.])
+])
+
+AC_SUBST(JANSSON_CFLAGS)
+AC_SUBST(JANSSON_LIBS)
+LIBS="${JANSSON_LIBS} ${LIBS}"
 
 #EV
 AC_CHECK_HEADERS([ev.h], [], [AC_MSG_ERROR("ev.h not found. Install 'libev-dev'.")])
@@ -139,6 +148,18 @@ if test ! -z "$HDFDIR"; then
   fi
 fi
 AC_SUBST(HDFDIR)
+
+# Add jsondir option
+JSONDIR='${datadir}/mhuxd/json'
+AC_ARG_WITH([jsondir],
+        [  --with-jsondir=DIR      json files [[DATADIR/mhuxd/json]]],
+        JSONDIR=$withval)
+if test ! -z "$JSONDIR"; then
+  if test "$JSONDIR" = "yes" -o "$JSONDIR" = "no"; then
+    AC_MSG_ERROR([--with-jsondir must specify a path])
+  fi
+fi
+AC_SUBST(JSONDIR)
 
 # finish
 AC_OUTPUT

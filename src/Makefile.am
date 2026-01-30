@@ -1,12 +1,12 @@
 SUBDIRS = clearsilver
 sbin_PROGRAMS = mhuxd 
 
-mhuxd_CFLAGS = -g -Wall -Wno-format-truncation -Wno-strict-aliasing -D_GNU_SOURCE -DEV_NO_THREADS $(FUSE_CFLAGS) \
+mhuxd_CFLAGS = -g -Wall -Wno-format-truncation -Wno-strict-aliasing -D_GNU_SOURCE -DEV_NO_THREADS $(FUSE_CFLAGS) $(JANSSON_CFLAGS) \
 	$(UDEV_CFLAGS) -DLOGDIR=\"$(LOGDIR)\" -DSTATEDIR=\"$(STATEDIR)\" -DRUNDIR=\"$(RUNDIR)\" \
-	-DDATADIR=\"$(datadir)\" -DWEBUIDIR=\"$(WEBUIDIR)\" -DHDFDIR=\"$(HDFDIR)\" \
+	-DDATADIR=\"$(datadir)\" -DWEBUIDIR=\"$(WEBUIDIR)\" -DHDFDIR=\"$(HDFDIR)\" -DJSONDIR=\"$(JSONDIR)\" \
 	-I$(srcdir)/clearsilver
 mhuxd_DEPENDENCIES = clearsilver/libclearsilver.a
-mhuxd_LDADD  = -Lclearsilver -lclearsilver
+mhuxd_LDADD  = -Lclearsilver -lclearsilver $(JANSSON_LIBS)
 mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 		mhcontrol.c mhinfo.c mhrouter.c mux.c net.c opts.c pglist.c tty.c util.c \
 		conmgr.c con_vsp.c con_tcp.c linux_termios.c channel.c cfgmgr.c \
