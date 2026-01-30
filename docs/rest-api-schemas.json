@@ -13,7 +13,7 @@
           "type": "array",
           "items": {"$ref": "#/$defs/RigType"}
         },
-        "devices": {
+        "devicetypes": {
           "type": "array",
           "items": {"$ref": "#/$defs/DeviceType"}
         }

@@ -26,7 +26,7 @@ struct restapi {
 	struct http_handler *runtime_handler;
 	struct http_handler *metadata_handler;
 	json_t *rigtypes;
-	json_t *devices;
+	json_t *devicetypes;
 	time_t start_time;
 };
 
@@ -68,9 +68,9 @@ static const struct mh_flag_name mh_flag_names[] = {
 	{ MHF_MHUXD_SUPPORTED, "MHUXD_SUPPORTED" }
 };
 
-static json_t *build_devices_array(void) {
-	json_t *devices = json_array();
-	if(!devices)
+static json_t *build_devicetypes_array(void) {
+	json_t *devicetypes = json_array();
+	if(!devicetypes)
 		return NULL;
 
 	for(int i = 0; i < mh_info_map_size; i++) {
@@ -82,7 +82,7 @@ static json_t *build_devices_array(void) {
 				json_decref(device);
 			if(flags)
 				json_decref(flags);
-			json_decref(devices);
+			json_decref(devicetypes);
 			return NULL;
 		}
 
@@ -90,7 +90,7 @@ static json_t *build_devices_array(void) {
 		   json_object_set_new(device, "name", json_string(info->name)) != 0 ||
 		   json_object_set_new(device, "flags", flags) != 0) {
 			json_decref(device);
-			json_decref(devices);
+			json_decref(devicetypes);
 			return NULL;
 		}
 
@@ -98,19 +98,19 @@ static json_t *build_devices_array(void) {
 			if(info->flags & mh_flag_names[f].flag) {
 				if(json_array_append_new(flags, json_string(mh_flag_names[f].name)) != 0) {
 					json_decref(device);
-					json_decref(devices);
+					json_decref(devicetypes);
 					return NULL;
 				}
 			}
 		}
 
-		if(json_array_append_new(devices, device) != 0) {
-			json_decref(devices);
+		if(json_array_append_new(devicetypes, device) != 0) {
+			json_decref(devicetypes);
 			return NULL;
 		}
 	}
 
-	return devices;
+	return devicetypes;
 }
 
 static int cb_metadata(struct http_connection *hcon, const char *path, const char *query,
@@ -119,7 +119,7 @@ static int cb_metadata(struct http_connection *hcon, const char *path, const cha
 	struct restapi *api = data;
 
 	json_t *root = json_object();
-	if(!root || !api->devices) {
+	if(!root || !api->devicetypes) {
 		if(root)
 			json_decref(root);
 		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
@@ -127,7 +127,7 @@ static int cb_metadata(struct http_connection *hcon, const char *path, const cha
 	}
 
 	json_object_set(root, "rigtypes", api->rigtypes);
-	json_object_set(root, "devices", api->devices);
+	json_object_set(root, "devicetypes", api->devicetypes);
 
 	char *payload = json_dumps(root, JSON_COMPACT);
 	if(!payload) {
@@ -212,9 +212,9 @@ struct restapi *restapi_create(struct http_server *hs) {
         goto fail;
     }
 
-    api->devices = build_devices_array();
-    if(!api->devices) {
-        err("%s() failed to build devices array", __func__);
+    api->devicetypes = build_devicetypes_array();
+    if(!api->devicetypes) {
+        err("%s() failed to build devicetypes array", __func__);
         goto fail;
     }
 
@@ -237,8 +237,8 @@ fail:
             hs_unregister_handler(hs, api->metadata_handler);
         if(api->rigtypes)
             json_decref(api->rigtypes);
-        if(api->devices)
-            json_decref(api->devices);
+        if(api->devicetypes)
+            json_decref(api->devicetypes);
         free(api);
     }
     return NULL;
@@ -254,7 +254,7 @@ void restapi_destroy(struct restapi *api) {
 		hs_unregister_handler(api->hs, api->metadata_handler);
 	if(api->rigtypes)
 		json_decref(api->rigtypes);
-	if(api->devices)
-		json_decref(api->devices);
+	if(api->devicetypes)
+		json_decref(api->devicetypes);
 	free(api);
 }
