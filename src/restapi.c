@@ -167,7 +167,6 @@ static int cb_runtime(struct http_connection *hcon, const char *path, const char
 		return 0;
 	}
 
-	json_object_set_new(root, "status", json_string("ok"));
 	json_object_set_new(daemon, "name", json_string("mhuxd"));
 	json_object_set_new(daemon, "version", json_string(_package_version));
 	json_object_set_new(daemon, "logfile", json_string(log_file_name ? log_file_name : ""));
