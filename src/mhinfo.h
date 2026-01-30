@@ -73,6 +73,9 @@ struct mh_info_map {
 	uint16_t    type;
 };
 
+extern const struct mh_info_map mh_info_map[];
+extern int mh_info_map_size;
+
 void mhi_init(struct mh_info *mhi, int type);
 int mhi_parse_version(struct mh_info *mhi, const uint8_t *data, uint16_t len);
 int mhi_type_from_serial(const char *serial);
