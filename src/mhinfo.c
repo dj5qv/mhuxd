@@ -96,7 +96,7 @@ const struct mh_info_map mh_info_map[] = {
 	  .flags = MHF_HAS_WINKEY|MHF_HAS_FSK1|MHF_HAS_FSK2|MHF_HAS_AUDIO_SWITCHING|MHF_HAS_PTT_SETTINGS|MHF_HAS_KEYER_MODE|MHF_HAS_FLAGS_CHANNEL }
 };
 
-int mh_info_map_size = ARRAY_SIZE(mh_info_map);
+const int mh_info_map_size = ARRAY_SIZE(mh_info_map);
 
 int mhi_parse_version(struct mh_info *mhi, const uint8_t *data, uint16_t len) {
 	const uint8_t *p;
