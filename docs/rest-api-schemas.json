@@ -7,14 +7,16 @@
     "Metadata": {
       "$id": "https://mhuxd.local/api/v1/schemas/metadata",
       "type": "object",
-      "required": ["rigtypes", "devices"],
+      "required": ["rigtypes", "devicetypes"],
       "properties": {
         "rigtypes": {
           "type": "array",
+          "description": "Microham rig/id mapping.",
           "items": {"$ref": "#/$defs/RigType"}
         },
         "devicetypes": {
           "type": "array",
+          "description": "List of supported device types.",
           "items": {"$ref": "#/$defs/DeviceType"}
         }
       },
@@ -41,14 +43,14 @@
       },
       "additionalProperties": false
     },
-    "Keyers": {
-      "$id": "https://mhuxd.local/api/v1/schemas/keyers",
+    "Devices": {
+      "$id": "https://mhuxd.local/api/v1/schemas/devices",
       "type": "object",
-      "required": ["keyers"],
+      "required": ["devices"],
       "properties": {
-        "keyers": {
+        "devices": {
           "type": "array",
-          "items": {"$ref": "#/$defs/Keyer"}
+          "items": {"$ref": "#/$defs/Device"}
         }
       },
       "additionalProperties": false
@@ -68,15 +70,10 @@
         },
         "keyers": {
           "type": "array",
-          "items": {"$ref": "#/$defs/ConfigKeyer"}
+          "items": {"$ref": "#/$defs/KeyerConfig"}
         }
       },
       "additionalProperties": false
-    },
-    "Devices": {
-      "$id": "https://mhuxd.local/api/v1/schemas/devices",
-      "type": "array",
-      "items": {"$ref": "#/$defs/DeviceType"}
     }
   },
   "$defs": {
@@ -90,32 +87,20 @@
       },
       "additionalProperties": false
     },
-    "Keyer": {
+    "Device": {
       "type": "object",
-      "required": ["serial", "info", "flags"],
+      "required": ["serial"],
       "properties": {
         "serial": {"type": "string"},
-        "info": {
-          "type": "object",
-          "required": ["type", "name", "status"],
-          "properties": {
-            "type": {"type": "integer"},
-            "name": {"type": "string"},
-            "status": {"type": "string"},
-            "verFwMajor": {"type": "integer"},
-            "verFwMinor": {"type": "integer"},
-            "verWinkey": {"type": "integer"}
-          },
-          "additionalProperties": true
-        },
-        "flags": {
-          "type": "object",
-          "additionalProperties": {"type": "boolean"}
-        }
+        "status": {"type": "string"},
+        "verFwMajor": {"type": "integer"},
+        "verFwMinor": {"type": "integer"},
+        "verFwBeta": {"type": "boolean"},
+        "verWinkey": {"type": "integer"}
       },
       "additionalProperties": false
     },
-    "ConfigKeyer": {
+    "KeyerConfig": {
       "type": "object",
       "required": ["serial", "type"],
       "properties": {
@@ -145,6 +130,20 @@
       },
       "additionalProperties": false
     },
+    "DisplayOption": {
+      "type": "object",
+      "required": ["value", "display"],
+      "properties": {
+        "value": {
+          "oneOf": [
+            {"type": "integer"},
+            {"type": "string"}
+          ]
+        },
+        "display": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
     "DeviceType": {
       "type": "object",
       "required": ["type", "name", "flags"],
@@ -154,6 +153,14 @@
         "flags": {
           "type": "array",
           "items": {"type": "string"}
+        },
+        "displaybackground": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/DisplayOption"}
+        },
+        "displayevent": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/DisplayOption"}
         }
       },
       "additionalProperties": false

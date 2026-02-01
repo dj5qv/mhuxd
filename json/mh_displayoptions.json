@@ -1,0 +1,100 @@
+{
+  "displayOptionSets": {
+    "mk2": {
+      "displaybackground": [
+        {"value": 0, "display": "Empty"},
+        {"value": 1, "display": "Welcome Message"},
+        {"value": 3, "display": "TX data"},
+        {"value": 4, "display": "Recording Monitor"},
+        {"value": 5, "display": "Current WPM and Speed Pot"},
+        {"value": 6, "display": "RX Frequency"},
+        {"value": 7, "display": "TX Frequency"},
+        {"value": 8, "display": "RX or TX Frequency according to PTT"},
+        {"value": 9, "display": "System Power Supply Voltage"},
+        {"value": 10, "display": "Current Serial Number"},
+        {"value": 11, "display": "Current WPM and Serial Number"},
+        {"value": 12, "display": "Operating Frequency"},
+        {"value": 13, "display": "VFO A Frequency"},
+        {"value": 14, "display": "VFO B Frequency"},
+        {"value": 15, "display": "SeppIR/UltraBeam State"},
+        {"value": 16, "display": "Sub RX Frequency"},
+        {"value": 17, "display": "Keyer Mode"},
+        {"value": 18, "display": "Current Router Preset"}
+      ],
+      "displayevent": [
+        {"value": "recMsg", "display": "Recording Message State"},
+        {"value": "playMsg", "display": "Playing Message State"},
+        {"value": "txDecoder", "display": "Monitor during Transmission"},
+        {"value": "recDecoder", "display": "Monitor during DVK Recording"},
+        {"value": "wpmChange", "display": "WPM on Change"},
+        {"value": "rxFreqChange", "display": "RX Frequency Change"},
+        {"value": "txFreqChange", "display": "TX Frequency Change"},
+        {"value": "modeChange", "display": "Mode Change"},
+        {"value": "micChange", "display": "Microphone Input Change"},
+        {"value": "steppirLock", "display": "SteppIR/UltraBeam lock (tuning, home)"},
+        {"value": "sysPwr", "display": "Supply Voltage when it is Out of Range"},
+        {"value": "wpmInCwMode", "display": "WPM in cw mode"},
+        {"value": "cfgOverriden", "display": "Config Overriding by Key"},
+        {"value": "wpmSnControlChange", "display": "WPM and SN on Change"},
+        {"value": "snChange", "display": "SN on Change"},
+        {"value": "snInCwMode", "display": "SN in CW Mode"},
+        {"value": "wpmSnInCwMode", "display": "WPM and SN in CW Mode"},
+        {"value": "operFreqChange", "display": "Operating Frequency Change"},
+        {"value": "vfoAFreqChange", "display": "VFO A Frequency Change"},
+        {"value": "vfoBFreqChange", "display": "VFO B Frequency Change"},
+        {"value": "steppirState", "display": "SteppIR/UltraBeam State"},
+        {"value": "smLock", "display": "Station Master Lock"},
+        {"value": "subRxFreqChange", "display": "Sub-RX Frequency Change"},
+        {"value": "presetChange", "display": "Preset Change"}
+      ]
+    },
+    "sm": {
+      "displaybackground": [
+        {"value": 0, "display": "Empty"},
+        {"value": 1, "display": "Welcome Message"},
+        {"value": 2, "display": "RX frequency"},
+        {"value": 3, "display": "TX frequency"},
+        {"value": 4, "display": "RX or TX frequency, according to PTT"},
+        {"value": 5, "display": "operating frequency (as reported by radio)"},
+        {"value": 6, "display": "VFO A frequency"},
+        {"value": 7, "display": "VFO B frequency"},
+        {"value": 8, "display": "port A power supply voltage"},
+        {"value": 9, "display": "port B power supply voltage"},
+        {"value": 10, "display": "current SteppIR state"},
+        {"value": 11, "display": "RX antenna + TX antenna"},
+        {"value": 12, "display": "current antenna"},
+        {"value": 13, "display": "rotator state"},
+        {"value": 14, "display": "current band"},
+        {"value": 15, "display": "antenna selection"},
+        {"value": 16, "display": "detailed antenna selection, type 1"},
+        {"value": 17, "display": "detailed antenna selection, type 2"}
+      ],
+      "displayevent": [
+        {"value": "steppirState", "display": "SteppIR state, if controlled"},
+        {"value": "steppirLock", "display": "SteppIR lock (tuning, home)"},
+        {"value": "steppirCommands", "display": "SteppIR commands (manual)"},
+        {"value": "portAVolt", "display": "port A voltage, when out of range"},
+        {"value": "portBVolt", "display": "port B voltage, when out of range"},
+        {"value": "txFreqChange", "display": "TX frequency change"},
+        {"value": "rxFreqChange", "display": "RX frequency change"},
+        {"value": "operFreqChange", "display": "operating frequency change"},
+        {"value": "vfoAFreqChange", "display": "VFO A frequency change"},
+        {"value": "vfoBFreqChange", "display": "VFO B frequency change"},
+        {"value": "curAntChange", "display": "current antenna change"},
+        {"value": "rotatorStateChange", "display": "rotator state change"},
+        {"value": "bandChange", "display": "band change"},
+        {"value": "antChange", "display": "antenna selection change"},
+        {"value": "txAntChange", "display": "TX antenna change (in RX state; in TX state: RX antenna change)"},
+        {"value": "virtRotatorStateChange", "display": "virtual rotator state change"},
+        {"value": "andSelectionSplit", "display": "RX and TX antenna selection, if split is active"},
+        {"value": "group", "display": "group, if automatic scanning is active"}
+      ]
+    }
+  },
+  "deviceTypeMap": {
+    "5": "mk2",
+    "11": "mk2",
+    "8": "sm",
+    "9": "sm"
+  }
+}
