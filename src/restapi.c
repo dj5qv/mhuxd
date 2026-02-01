@@ -151,39 +151,6 @@ static json_t *build_devicetypes_array(json_t *displayoptions) {
 	return devicetypes;
 }
 
-static json_t *build_device_type_from_mhi(const struct mh_info *mhi) {
-	if(!mhi)
-		return NULL;
-
-	json_t *device_type = json_object();
-	json_t *flags = json_array();
-	if(!device_type || !flags) {
-		if(device_type)
-			json_decref(device_type);
-		if(flags)
-			json_decref(flags);
-		return NULL;
-	}
-
-	if(json_object_set_new(device_type, "type", json_integer((json_int_t)mhi->type)) != 0 ||
-	   json_object_set_new(device_type, "name", json_string(mhi->type_str ? mhi->type_str : "")) != 0 ||
-	   json_object_set_new(device_type, "flags", flags) != 0) {
-		json_decref(device_type);
-		return NULL;
-	}
-
-	for(size_t f = 0; f < ARRAY_SIZE(mh_flag_names); f++) {
-		if(mhi->flags & mh_flag_names[f].flag) {
-			if(json_array_append_new(flags, json_string(mh_flag_names[f].name)) != 0) {
-				json_decref(device_type);
-				return NULL;
-			}
-		}
-	}
-
-	return device_type;
-}
-
 static int cb_metadata(struct http_connection *hcon, const char *path, const char *query,
 		 const char *body, uint32_t body_len, void *data) {
 	(void)path; (void)query; (void)body; (void)body_len;
@@ -384,6 +351,8 @@ fail:
             json_decref(api->rigtypes);
         if(api->devicetypes)
             json_decref(api->devicetypes);
+		if(api->displayoptions)
+			json_decref(api->displayoptions);
         free(api);
     }
     return NULL;
@@ -403,8 +372,6 @@ void restapi_destroy(struct restapi *api) {
 		json_decref(api->rigtypes);
 	if(api->devicetypes)
 		json_decref(api->devicetypes);
-	if(api->displayoptions)
-		json_decref(api->displayoptions);
 	if(api->displayoptions)
 		json_decref(api->displayoptions);
 	free(api);
