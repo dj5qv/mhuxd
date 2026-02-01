@@ -367,7 +367,8 @@ static int on_message_complete_cb (http_parser *p) {
 
 	hcon->url[hcon->url_len] = 0x00;
 
-	if(hcon->parser.method != HTTP_GET && hcon->parser.method != HTTP_POST) {
+	if(hcon->parser.method != HTTP_GET && hcon->parser.method != HTTP_POST &&
+	   hcon->parser.method != HTTP_PUT && hcon->parser.method != HTTP_PATCH) {
 		warn("Method not implemented: %s", http_method_str(hcon->parser.method));
 		hs_send_error_page(hcon, 501);
 		return 0;
@@ -747,6 +748,24 @@ void hs_unregister_handler(struct http_server *hs, struct http_handler *h) {
 		}
 	}
 	warn("%s handler not found!", __func__);
+}
+
+int16_t hs_get_method(struct http_connection *hcon) {
+	int16_t method = HS_HTTP_UNKNOWN;
+
+	if(!hcon)
+		return -1;
+
+	switch(hcon->parser.method) {
+		case HTTP_GET: method = HS_HTTP_GET; break;
+		case HTTP_POST: method = HS_HTTP_POST; break;
+		case HTTP_PUT: method = HS_HTTP_PUT; break;
+		case HTTP_PATCH: method = HS_HTTP_PATCH; break;
+		case HTTP_DELETE: method = HS_HTTP_DELETE; break;
+		case HTTP_HEAD: method = HS_HTTP_HEAD; break;
+		case HTTP_OPTIONS: method = HS_HTTP_OPTIONS; break;
+	}
+	return method;
 }
 
 static const char *DAY_NAMES[] =

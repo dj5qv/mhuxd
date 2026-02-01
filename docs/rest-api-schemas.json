@@ -55,25 +55,33 @@
       },
       "additionalProperties": false
     },
-    "Config": {
-      "$id": "https://mhuxd.local/api/v1/schemas/config",
+    "ConfigDaemon": {
+      "$id": "https://mhuxd.local/api/v1/schemas/config/daemon",
       "type": "object",
-      "required": ["daemon", "keyers"],
+      "required": ["loglevel"],
       "properties": {
-        "daemon": {
-          "type": "object",
-          "required": ["loglevel"],
-          "properties": {
-            "loglevel": {"type": "string"}
-          },
-          "additionalProperties": true
-        },
-        "keyers": {
+        "loglevel": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "ConfigDevices": {
+      "$id": "https://mhuxd.local/api/v1/schemas/config/devices",
+      "type": "object",
+      "required": ["devices"],
+      "properties": {
+        "devices": {
           "type": "array",
-          "items": {"$ref": "#/$defs/KeyerConfig"}
+          "items": {"$ref": "#/$defs/DeviceConfig"}
         }
       },
       "additionalProperties": false
+    },
+    "ConfigDevice": {
+      "$id": "https://mhuxd.local/api/v1/schemas/config/device",
+      "type": "object",
+      "allOf": [
+        {"$ref": "#/$defs/DeviceConfig"}
+      ]
     }
   },
   "$defs": {
@@ -100,7 +108,7 @@
       },
       "additionalProperties": false
     },
-    "KeyerConfig": {
+    "DeviceConfig": {
       "type": "object",
       "required": ["serial", "type"],
       "properties": {
@@ -126,7 +134,9 @@
       "required": ["index", "text"],
       "properties": {
         "index": {"type": "integer", "minimum": 1},
-        "text": {"type": "string"}
+        "text": {"type": "string"},
+        "nextIdx": {"type": "integer", "minimum": 0},
+        "delay": {"type": "integer", "minimum": 0}
       },
       "additionalProperties": false
     },
