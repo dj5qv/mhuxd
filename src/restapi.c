@@ -17,6 +17,7 @@
 #include "mhinfo.h"
 #include "mhcontrol.h"
 #include "devmgr.h"
+#include "cfgmgrj.h"
 #include "util.h"
 #include "version.h"
 #include "logger.h"
@@ -25,10 +26,13 @@
 
 struct restapi {
 	struct http_server *hs;
+	struct cfgmgrj *cfgmgrj;
 	struct http_handler *runtime_handler;
 	struct http_handler *metadata_handler;
 	struct http_handler *devices_handler;
 	struct http_handler *config_daemon_handler;
+	struct http_handler *config_devices_handler;
+	struct http_handler *config_device_handler;
 	json_t *rigtypes;
 	json_t *devicetypes;
 	json_t *displayoptions;
@@ -349,7 +353,217 @@ static int cb_config_daemon(struct http_connection *hcon, const char *path, cons
 	return 0;
 }
 
-struct restapi *restapi_create(struct http_server *hs) {
+static json_t *find_device_in_devices(json_t *devices, const char *serial) {
+	if(!devices || !json_is_array(devices) || !serial)
+		return NULL;
+	for(size_t i = 0; i < json_array_size(devices); i++) {
+		json_t *device = json_array_get(devices, i);
+		json_t *s = json_object_get(device, "serial");
+		if(s && json_is_string(s) && !strcmp(json_string_value(s), serial))
+			return device;
+	}
+	return NULL;
+}
+
+static int send_json_payload(struct http_connection *hcon, json_t *root) {
+	char *payload = json_dumps(root, JSON_COMPACT);
+	if(!payload) {
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+	hs_add_rsp_header(hcon, "Cache-Control", "no-store");
+	hs_send_response(hcon, 200, "application/json", payload, strlen(payload), NULL, 0);
+	free(payload);
+	return 0;
+}
+
+static int cb_config_devices(struct http_connection *hcon, const char *path, const char *query,
+		 const char *body, uint32_t body_len, void *data) {
+	(void)path; (void)query;
+	struct restapi *api = data;
+	int16_t method = hs_get_method(hcon);
+
+	if(!api || !api->cfgmgrj) {
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(method == HS_HTTP_GET) {
+		json_t *root = cfgmgrj_build_json(api->cfgmgrj);
+		if(!root) {
+			hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+			return 0;
+		}
+		json_t *devices = json_object_get(root, "devices");
+		json_t *rsp = json_object();
+		if(!rsp) {
+			json_decref(root);
+			hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+			return 0;
+		}
+		json_object_set_new(rsp, "devices", devices ? json_incref(devices) : json_array());
+		json_decref(root);
+		send_json_payload(hcon, rsp);
+		json_decref(rsp);
+		return 0;
+	}
+
+	if(method != HS_HTTP_POST && method != HS_HTTP_PUT && method != HS_HTTP_PATCH) {
+		hs_send_response(hcon, 400, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(!body || !body_len) {
+		hs_send_response(hcon, 400, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	json_error_t jerr;
+	json_t *root = json_loadb(body, body_len, 0, &jerr);
+	if(!root || !json_is_object(root)) {
+		if(root)
+			json_decref(root);
+		hs_send_response(hcon, 400, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(cfgmgrj_apply_json(api->cfgmgrj, root) != 0 || cfgmgrj_save_cfg(api->cfgmgrj) != 0) {
+		json_decref(root);
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+	json_decref(root);
+
+	json_t *rsp_root = cfgmgrj_build_json(api->cfgmgrj);
+	if(!rsp_root) {
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+	json_t *devices = json_object_get(rsp_root, "devices");
+	json_t *rsp = json_object();
+	if(!rsp) {
+		json_decref(rsp_root);
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+	json_object_set_new(rsp, "devices", devices ? json_incref(devices) : json_array());
+	json_decref(rsp_root);
+	send_json_payload(hcon, rsp);
+	json_decref(rsp);
+	return 0;
+}
+
+static int cb_config_device(struct http_connection *hcon, const char *path, const char *query,
+		 const char *body, uint32_t body_len, void *data) {
+	(void)query;
+	struct restapi *api = data;
+	int16_t method = hs_get_method(hcon);
+	const char *serial = (path && *path) ? path : NULL;
+
+	if(!api || !api->cfgmgrj || !serial) {
+		hs_send_response(hcon, 404, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(method == HS_HTTP_GET) {
+		json_t *root = cfgmgrj_build_json(api->cfgmgrj);
+		if(!root) {
+			hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+			return 0;
+		}
+		json_t *devices = json_object_get(root, "devices");
+		json_t *device = find_device_in_devices(devices, serial);
+		if(!device) {
+			json_decref(root);
+			hs_send_response(hcon, 404, "application/json", "{}", 2, NULL, 0);
+			return 0;
+		}
+		json_t *rsp = json_deep_copy(device);
+		json_decref(root);
+		if(!rsp) {
+			hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+			return 0;
+		}
+		send_json_payload(hcon, rsp);
+		json_decref(rsp);
+		return 0;
+	}
+
+	if(method != HS_HTTP_POST && method != HS_HTTP_PUT && method != HS_HTTP_PATCH) {
+		hs_send_response(hcon, 400, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(!body || !body_len) {
+		hs_send_response(hcon, 400, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	json_error_t jerr;
+	json_t *device = json_loadb(body, body_len, 0, &jerr);
+	if(!device || !json_is_object(device)) {
+		if(device)
+			json_decref(device);
+		hs_send_response(hcon, 400, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	json_t *serial_val = json_object_get(device, "serial");
+	if(serial_val && json_is_string(serial_val)) {
+		if(strcmp(json_string_value(serial_val), serial) != 0) {
+			json_decref(device);
+			hs_send_response(hcon, 400, "application/json", "{}", 2, NULL, 0);
+			return 0;
+		}
+	} else {
+		json_object_set_new(device, "serial", json_string(serial));
+	}
+
+	json_t *root = json_object();
+	json_t *devices = json_array();
+	if(!root || !devices) {
+		if(root)
+			json_decref(root);
+		if(devices)
+			json_decref(devices);
+		json_decref(device);
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+	json_array_append_new(devices, device);
+	json_object_set_new(root, "devices", devices);
+
+	if(cfgmgrj_apply_json(api->cfgmgrj, root) != 0 || cfgmgrj_save_cfg(api->cfgmgrj) != 0) {
+		json_decref(root);
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+	json_decref(root);
+
+	json_t *rsp_root = cfgmgrj_build_json(api->cfgmgrj);
+	if(!rsp_root) {
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+	json_t *rsp_devices = json_object_get(rsp_root, "devices");
+	json_t *rsp_device = find_device_in_devices(rsp_devices, serial);
+	if(!rsp_device) {
+		json_decref(rsp_root);
+		hs_send_response(hcon, 404, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+	json_t *rsp = json_deep_copy(rsp_device);
+	json_decref(rsp_root);
+	if(!rsp) {
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+	send_json_payload(hcon, rsp);
+	json_decref(rsp);
+	return 0;
+}
+
+struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) {
     struct restapi *api = NULL;
     json_error_t jerr;
 	const char *rigtypes_path = JSONDIR "/mh_rigtypes.json";
@@ -387,12 +601,16 @@ struct restapi *restapi_create(struct http_server *hs) {
     }
 
     api->hs = hs;
+	api->cfgmgrj = cfgmgrj;
     api->start_time = time(NULL);
 	api->runtime_handler = hs_register_handler(hs, "/api/v1/runtime", cb_runtime, api);
 	api->metadata_handler = hs_register_handler(hs, "/api/v1/metadata", cb_metadata, api);
 	api->devices_handler = hs_register_handler(hs, "/api/v1/devices", cb_devices, api);
 	api->config_daemon_handler = hs_register_handler(hs, "/api/v1/config/daemon", cb_config_daemon, api);
-	if(!api->runtime_handler || !api->metadata_handler || !api->devices_handler || !api->config_daemon_handler) {
+	api->config_devices_handler = hs_register_handler(hs, "/api/v1/config/devices", cb_config_devices, api);
+	api->config_device_handler = hs_register_handler(hs, "/api/v1/config/devices/", cb_config_device, api);
+	if(!api->runtime_handler || !api->metadata_handler || !api->devices_handler || !api->config_daemon_handler ||
+	   !api->config_devices_handler || !api->config_device_handler) {
         err("%s() failed to register rest api handlers", __func__);
         goto fail;
     }
@@ -409,6 +627,10 @@ fail:
 			hs_unregister_handler(hs, api->devices_handler);
 		if(api->config_daemon_handler)
 			hs_unregister_handler(hs, api->config_daemon_handler);
+		if(api->config_devices_handler)
+			hs_unregister_handler(hs, api->config_devices_handler);
+		if(api->config_device_handler)
+			hs_unregister_handler(hs, api->config_device_handler);
         if(api->rigtypes)
             json_decref(api->rigtypes);
         if(api->devicetypes)
@@ -432,6 +654,10 @@ void restapi_destroy(struct restapi *api) {
 		hs_unregister_handler(api->hs, api->devices_handler);
 	if(api->config_daemon_handler)
 		hs_unregister_handler(api->hs, api->config_daemon_handler);
+	if(api->config_devices_handler)
+		hs_unregister_handler(api->hs, api->config_devices_handler);
+	if(api->config_device_handler)
+		hs_unregister_handler(api->hs, api->config_device_handler);
 	if(api->rigtypes)
 		json_decref(api->rigtypes);
 	if(api->devicetypes)

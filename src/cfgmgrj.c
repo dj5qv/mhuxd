@@ -31,6 +31,18 @@ struct cfgmgrj {
     struct ev_loop *loop;
  };
 
+static json_t *build_speed_obj(const struct mhc_speed_cfg *cfg);
+static int param_builder_cb(const char *key, int val, void *user_data);
+static int winkey_builder_cb(const char *key, int val, void *user_data);
+
+struct json_param_builder {
+    json_t *obj;
+};
+
+struct json_winkey_builder {
+    json_t *obj;
+};
+
 static void completion_cb(unsigned const char *reply_buf, int len, int result, void *user_data) {
     (void)reply_buf; (void)len;
     int *notify = user_data;
@@ -320,97 +332,19 @@ static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
     return 0;
 }
 
-static json_t *build_speed_obj(const struct mhc_speed_cfg *cfg) {
-    json_t *obj = json_object();
-    if(!obj)
-        return NULL;
-
-    json_object_set_new(obj, "baud", json_real(cfg->baud));
-    json_object_set_new(obj, "stopbits", json_real(cfg->stopbits));
-    json_object_set_new(obj, "databits", json_integer(cfg->databits));
-    json_object_set_new(obj, "rtscts", json_integer(cfg->rtscts));
-    if(cfg->rigtype)
-        json_object_set_new(obj, "rigtype", json_integer(cfg->rigtype));
-    if(cfg->icomaddress)
-        json_object_set_new(obj, "icomaddress", json_integer(cfg->icomaddress));
-    if(cfg->icomsimulateautoinfo)
-        json_object_set_new(obj, "icomsimulateautoinfo", json_integer(cfg->icomsimulateautoinfo));
-    if(cfg->digitalovervoicerule)
-        json_object_set_new(obj, "digitalovervoicerule", json_integer(cfg->digitalovervoicerule));
-    if(cfg->usedecoderifconnected)
-        json_object_set_new(obj, "usedecoderifconnected", json_integer(cfg->usedecoderifconnected));
-    if(cfg->dontinterfereusbcontrol)
-        json_object_set_new(obj, "dontinterfereusbcontrol", json_integer(cfg->dontinterfereusbcontrol));
-    return obj;
+int cfgmgrj_apply_json(struct cfgmgrj *cfgmgrj, json_t *root) {
+    return apply_config_json(cfgmgrj, root);
 }
 
-struct json_param_builder {
-    json_t *obj;
-};
-
-static int param_builder_cb(const char *key, int val, void *user_data) {
-    struct json_param_builder *pb = user_data;
-    if(!pb || !pb->obj)
-        return -1;
-    if(json_object_set_new(pb->obj, key, json_integer(val)) != 0)
-        return -1;
-    return 0;
-}
-
-struct json_winkey_builder {
-    json_t *obj;
-};
-
-static int winkey_builder_cb(const char *key, int val, void *user_data) {
-    struct json_winkey_builder *wb = user_data;
-    if(!wb || !wb->obj)
-        return -1;
-    if(json_object_set_new(wb->obj, key, json_integer(val)) != 0)
-        return -1;
-    return 0;
-}
-
-struct cfgmgrj *cfgmgrj_create(struct ev_loop *loop) {
-    struct cfgmgrj *cfgmgrj = w_calloc(1, sizeof(*cfgmgrj));
-    if(!cfgmgrj)
-        return NULL;
-
-    cfgmgrj->loop = loop;
-    return cfgmgrj;
-}
-
- void cfgmgrj_destroy(struct cfgmgrj *cfgmgrj) {
-    if(!cfgmgrj)
-        return;
-
-    free(cfgmgrj);
-    return;
-}
-
-int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
-    json_error_t jerr;
-    json_t *root = json_load_file(CFGFILE, 0, &jerr);
-    if(!root) {
-        if(jerr.line == 0)
-            return 0;
-        err("cfgmgrj: failed to read %s: %s", CFGFILE, jerr.text);
-        return -1;
-    }
-
-    int rc = apply_config_json(cfgmgrj, root);
-    json_decref(root);
-    return rc;
-}
-
-int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj) {
+static json_t *build_config_json(void) {
     json_t *root = json_object();
     if(!root)
-        return -1;
+        return NULL;
 
     json_t *daemon = json_object();
     if(!daemon) {
         json_decref(root);
-        return -1;
+        return NULL;
     }
     json_object_set_new(daemon, "loglevel", json_string(log_get_level_str()));
     json_object_set_new(root, "daemon", daemon);
@@ -418,7 +352,7 @@ int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj) {
     json_t *devices = json_array();
     if(!devices) {
         json_decref(root);
-        return -1;
+        return NULL;
     }
 
     struct PGList *list = dmgr_get_device_list();
@@ -429,7 +363,7 @@ int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj) {
             if(!device) {
                 json_decref(devices);
                 json_decref(root);
-                return -1;
+                return NULL;
             }
 
             json_object_set_new(device, "serial", json_string(dev->serial ? dev->serial : ""));
@@ -524,6 +458,92 @@ int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj) {
     }
 
     json_object_set_new(root, "devices", devices);
+    return root;
+}
+
+json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj) {
+    (void)cfgmgrj;
+    return build_config_json();
+}
+
+static json_t *build_speed_obj(const struct mhc_speed_cfg *cfg) {
+    json_t *obj = json_object();
+    if(!obj)
+        return NULL;
+
+    json_object_set_new(obj, "baud", json_real(cfg->baud));
+    json_object_set_new(obj, "stopbits", json_real(cfg->stopbits));
+    json_object_set_new(obj, "databits", json_integer(cfg->databits));
+    json_object_set_new(obj, "rtscts", json_integer(cfg->rtscts));
+    if(cfg->rigtype)
+        json_object_set_new(obj, "rigtype", json_integer(cfg->rigtype));
+    if(cfg->icomaddress)
+        json_object_set_new(obj, "icomaddress", json_integer(cfg->icomaddress));
+    if(cfg->icomsimulateautoinfo)
+        json_object_set_new(obj, "icomsimulateautoinfo", json_integer(cfg->icomsimulateautoinfo));
+    if(cfg->digitalovervoicerule)
+        json_object_set_new(obj, "digitalovervoicerule", json_integer(cfg->digitalovervoicerule));
+    if(cfg->usedecoderifconnected)
+        json_object_set_new(obj, "usedecoderifconnected", json_integer(cfg->usedecoderifconnected));
+    if(cfg->dontinterfereusbcontrol)
+        json_object_set_new(obj, "dontinterfereusbcontrol", json_integer(cfg->dontinterfereusbcontrol));
+    return obj;
+}
+
+static int param_builder_cb(const char *key, int val, void *user_data) {
+    struct json_param_builder *pb = user_data;
+    if(!pb || !pb->obj)
+        return -1;
+    if(json_object_set_new(pb->obj, key, json_integer(val)) != 0)
+        return -1;
+    return 0;
+}
+
+static int winkey_builder_cb(const char *key, int val, void *user_data) {
+    struct json_winkey_builder *wb = user_data;
+    if(!wb || !wb->obj)
+        return -1;
+    if(json_object_set_new(wb->obj, key, json_integer(val)) != 0)
+        return -1;
+    return 0;
+}
+
+struct cfgmgrj *cfgmgrj_create(struct ev_loop *loop) {
+    struct cfgmgrj *cfgmgrj = w_calloc(1, sizeof(*cfgmgrj));
+    if(!cfgmgrj)
+        return NULL;
+
+    cfgmgrj->loop = loop;
+    return cfgmgrj;
+}
+
+ void cfgmgrj_destroy(struct cfgmgrj *cfgmgrj) {
+    if(!cfgmgrj)
+        return;
+
+    free(cfgmgrj);
+    return;
+}
+
+int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
+    json_error_t jerr;
+    json_t *root = json_load_file(CFGFILE, 0, &jerr);
+    if(!root) {
+        if(jerr.line == 0)
+            return 0;
+        err("cfgmgrj: failed to read %s: %s", CFGFILE, jerr.text);
+        return -1;
+    }
+
+    int rc = apply_config_json(cfgmgrj, root);
+    json_decref(root);
+    return rc;
+}
+
+int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj) {
+    json_t *root = build_config_json();
+    if(!root)
+        return -1;
 
     if(json_dump_file(root, CFGFILE, JSON_INDENT(2) | JSON_PRESERVE_ORDER) != 0) {
         json_decref(root);

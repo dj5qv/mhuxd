@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
-	struct restapi *restapi = restapi_create(hs);
+	struct restapi *restapi = restapi_create(hs, cfgmgrj);
 	if(!restapi) {
 		fatal("(mhuxd) Could not start REST API, exiting!");
 		hs_stop(hs);
