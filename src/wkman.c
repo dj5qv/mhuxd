@@ -90,6 +90,19 @@ int wkm_set_value(struct wkman *wkman, const char *key, uint8_t val) {
 	return r;
 }
 
+int wkm_foreach(struct wkman *wkman, int (*cb)(const char *key, int val, void *user_data), void *user_data) {
+	if(!wkman || !cb)
+		return -1;
+	for(size_t i = 0; i < ARRAY_SIZE(citems); i++) {
+		int val = citem_get_value(citems, ARRAY_SIZE(citems), wkman->cfg, sizeof(wkman->cfg), citems[i].key);
+		if(val < 0)
+			continue;
+		if(cb(citems[i].key, val, user_data) != 0)
+			return -1;
+	}
+	return 0;
+}
+
 void read_cb(struct mh_router *router, unsigned const char *data , int len, int channel, void *user_data) {
 	(void)router; (void)channel;
 	struct wkman *wkman = user_data;

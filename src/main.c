@@ -21,6 +21,7 @@
 #include "http_server.h"
 #include "webui.h"
 #include "restapi.h"
+#include "cfgmgrj.h"
 
 #define MOD_ID "main"
 
@@ -58,9 +59,10 @@ static void sighup_cb(struct ev_loop *loop, struct ev_signal *w, int revents) {
 
 int main(int argc, char **argv)
 {
-        struct ev_signal w_sigint, w_sigterm, w_sigpipe, w_sighup;
-        struct ev_loop *loop;
+    struct ev_signal w_sigint, w_sigterm, w_sigpipe, w_sighup;
+    struct ev_loop *loop;
 	struct cfgmgr *cfgmgr;
+	struct cfgmgrj *cfgmgrj; 
 	struct conmgr *conmgr;
 	FILE *pidfile = NULL;
 
@@ -111,6 +113,13 @@ int main(int argc, char **argv)
 		fatal("(mhuxd) Could not create configuration manager, exiting!");
 		exit(-1);
 	}
+
+	cfgmgrj = cfgmgrj_create(loop);
+	if(!cfgmgrj) {
+		fatal("(mhuxd) Could not create json manager, exiting!");
+		exit(-1);
+	}
+
 
 	// start webserver & webui
 	struct http_server *hs = hs_start(loop, webui_host_port);
@@ -173,8 +182,10 @@ int main(int argc, char **argv)
 		info("*** %s received!", strsignal(signum));
 
 	cfgmgr_save_cfg(cfgmgr);
-	cfgmgr_destroy(cfgmgr);
+	cfgmgrj_save_cfg(cfgmgrj);
 
+	cfgmgr_destroy(cfgmgr);
+	cfgmgrj_destroy(cfgmgrj);
 	conmgr_destroy(conmgr);
 
 	dmgr_destroy();

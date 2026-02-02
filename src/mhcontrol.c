@@ -170,6 +170,8 @@ struct mh_control {
 	ev_timer cmd_timeout_timer;
 	struct mh_info mhi;
 	struct cfg *speed_args[MH_NUM_CHANNELS];
+	struct mhc_speed_cfg speed_params[MH_NUM_CHANNELS];
+	uint8_t speed_params_valid[MH_NUM_CHANNELS];
 	uint8_t speed_idx;
 	uint8_t state;
 	uint8_t keyer_state;
@@ -846,6 +848,107 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	return 0;
 }
 
+static int submit_speed_cmd_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
+		mhc_cmd_completion_cb_fn cb, void *user_data) {
+	float fbaud, stopbits, bytes_per_sec;
+	int ibaud;
+	uint8_t c, cmd, rtscts, databits, has_ext;
+
+	if(channel < 0 || channel >= MH_NUM_CHANNELS || !cfg) {
+		err("%s() invalid channel or config", __func__);
+		return -1;
+	}
+
+	fbaud = (float)cfg->baud;
+	if(fbaud == 0) {
+		err("%s() channel %s baud value must not be zero!", __func__, ch_channel2str(channel));
+		return -1;
+	}
+
+	has_ext = 0;
+	switch(channel) {
+		case MH_CHANNEL_R1:
+			ibaud = 11059200 / fbaud;
+			cmd = MHCMD_SET_CHANNEL_R1;
+			has_ext = ctl->mhi.flags & MHF_HAS_R1_RADIO_SUPPORT;
+			break;
+		case MH_CHANNEL_R2:
+			ibaud = 11059200 / fbaud;
+			cmd = MHCMD_SET_CHANNEL_AUX_R2;
+			has_ext = ctl->mhi.flags & MHF_HAS_R2_RADIO_SUPPORT;
+			break;
+		case MH_CHANNEL_R1_FSK:
+			ibaud = 2700 / fbaud;
+			cmd = MHCMD_SET_CHANNEL_FSK_R1;
+			break;
+		case MH_CHANNEL_R2_FSK:
+			ibaud = 2700 / fbaud;
+			cmd = MHCMD_SET_CHANNEL_FSK_R2;
+			break;
+		default:
+			err("can't set speed, invalid channel specified (%d)!", channel);
+			return -1;
+	}
+
+	stopbits = (float)cfg->stopbits;
+	rtscts = (uint8_t)cfg->rtscts;
+	databits = (uint8_t)cfg->databits;
+
+	if(!databits) {
+		err("%s() channel %s data bits must not be zero!", __func__, ch_channel2str(channel));
+		return -1;
+	}
+
+	bytes_per_sec = fbaud / (databits + stopbits);
+
+	if(stopbits == 1.5)
+		stopbits = 3;
+
+	struct buffer buf;
+	buf_reset(&buf);
+	buf_append_c(&buf, cmd);
+	buf_append_c(&buf, ibaud & 0xff);
+	buf_append_c(&buf, ibaud >> 8);
+	c = (((int)stopbits) - 1) << 2;
+	c |= rtscts << 4;
+	c |= (databits - 5) << 5;
+	buf_append_c(&buf, c);
+
+	if(has_ext) {
+		c = (uint8_t)cfg->rigtype;
+		buf_append_c(&buf, c);
+		c = (uint8_t)cfg->icomaddress;
+		buf_append_c(&buf, c);
+		c = (uint8_t)cfg->icomsimulateautoinfo << 0;
+		c |= (uint8_t)cfg->digitalovervoicerule << 1;
+		c |= (uint8_t)cfg->usedecoderifconnected << 3;
+		c |= (uint8_t)cfg->dontinterfereusbcontrol << 4;
+		buf_append_c(&buf, c);
+	}
+	buf_append_c(&buf, cmd | MSB_BIT);
+
+	mhr_set_bps_limit(ctl->router, channel, bytes_per_sec);
+
+	submit_cmd(ctl, &buf, cb, user_data);
+
+	return 0;
+}
+
+static void speed_params_from_cfg(struct mhc_speed_cfg *dst, struct cfg *cfg) {
+	if(!dst || !cfg)
+		return;
+	dst->baud = cfg_get_float_val(cfg, "baud", -1);
+	dst->stopbits = cfg_get_float_val(cfg, "stopbits", 1);
+	dst->databits = cfg_get_int_val(cfg, "databits", 8);
+	dst->rtscts = cfg_get_int_val(cfg, "rtscts", 0);
+	dst->rigtype = cfg_get_int_val(cfg, "rigtype", 0);
+	dst->icomaddress = cfg_get_int_val(cfg, "icomaddress", 0);
+	dst->icomsimulateautoinfo = cfg_get_int_val(cfg, "icomsimulateautoinfo", 0);
+	dst->digitalovervoicerule = cfg_get_int_val(cfg, "digitalovervoicerule", 0);
+	dst->usedecoderifconnected = cfg_get_int_val(cfg, "usedecoderifconnected", 0);
+	dst->dontinterfereusbcontrol = cfg_get_int_val(cfg, "dontinterfereusbcontrol", 0);
+}
+
 int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data) {
 
 	dbg1("%s %s()",ctl->serial, __func__);
@@ -865,6 +968,8 @@ int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_
 	if(ctl->speed_args[channel])
 		cfg_destroy(ctl->speed_args[channel]);
 	ctl->speed_args[channel] = cfg_copy(cfg);
+	speed_params_from_cfg(&ctl->speed_params[channel], cfg);
+	ctl->speed_params_valid[channel] = 1;
 
 	int r = 0;
 
@@ -876,6 +981,34 @@ int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_
 
 	return r;
 
+}
+
+int mhc_set_speed_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
+		mhc_cmd_completion_cb_fn cb, void *user_data) {
+	if(!ctl || !cfg)
+		return -1;
+	if(channel < 0 || channel >= MH_NUM_CHANNELS)
+		return -1;
+
+	ctl->speed_params[channel] = *cfg;
+	ctl->speed_params_valid[channel] = 1;
+
+	if(mhc_is_online(ctl))
+		return submit_speed_cmd_params(ctl, channel, cfg, cb, user_data);
+	if(cb)
+		cb((uint8_t*)"", 0, CMD_RESULT_OK, user_data);
+	return 0;
+}
+
+int mhc_get_speed_params(struct mh_control *ctl, int channel, struct mhc_speed_cfg *out) {
+	if(!ctl || !out)
+		return -1;
+	if(channel < 0 || channel >= MH_NUM_CHANNELS)
+		return -1;
+	if(!ctl->speed_params_valid[channel])
+		return -1;
+	*out = ctl->speed_params[channel];
+	return 0;
 }
 
 int mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb, void *user_data) {
@@ -1177,6 +1310,28 @@ int mhc_kopts_to_cfg(struct mh_control *ctl, struct cfg *cfg) {
 			cfg_set_int_value(cfg, key, val);
 		else
 			err("%s() iterator error", __func__);
+	}
+
+	return 0;
+}
+
+int mhc_kopts_foreach(struct mh_control *ctl, int (*cb)(const char *key, int val, void *user_data), void *user_data) {
+	struct kcfg_iterator iter;
+	const char *key;
+	int val;
+
+	if(!ctl || !ctl->kcfg || !cb)
+		return -1;
+
+	kcfg_iter_begin(ctl->kcfg, &iter);
+	while(kcfg_iter_next(&iter)) {
+		if(!kcfg_iter_get(&iter, &key, &val)) {
+			if(cb(key, val, user_data) != 0)
+				return -1;
+		} else {
+			err("%s() iterator error", __func__);
+			return -1;
+		}
 	}
 
 	return 0;

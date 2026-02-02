@@ -51,9 +51,26 @@ const struct mh_info *mhc_get_mhinfo(struct mh_control *ctl);
 int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data);
 uint16_t mhc_get_type(struct mh_control *);
 const struct cfg *mhc_get_speed_cfg(struct mh_control *ctl, int channel);
+
+struct mhc_speed_cfg {
+	double baud;
+	double stopbits;
+	int databits;
+	int rtscts;
+	int rigtype;
+	int icomaddress;
+	int icomsimulateautoinfo;
+	int digitalovervoicerule;
+	int usedecoderifconnected;
+	int dontinterfereusbcontrol;
+};
+
+int mhc_set_speed_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data);
+int mhc_get_speed_params(struct mh_control *ctl, int channel, struct mhc_speed_cfg *out);
 int mhc_set_kopt(struct mh_control *ctl, const char *key, int val);
 int mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data);
 int mhc_kopts_to_cfg(struct mh_control *ctl, struct cfg *cfg);
+int mhc_kopts_foreach(struct mh_control *ctl, int (*cb)(const char *key, int val, void *user_data), void *user_data);
 
 struct mhc_keyer_state_callback *mhc_add_keyer_state_changed_cb(struct mh_control *ctl, mhc_keyer_state_cb_fn func, void *user_data);
 void mhc_rem_keyer_state_changed_cb(struct mh_control *ctl, struct mhc_keyer_state_callback *);
