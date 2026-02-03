@@ -256,6 +256,16 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
     if(!dev)
         return -1;
 
+    {
+        char *payload = json_dumps(device_obj, JSON_COMPACT);
+        if(payload) {
+            dbg0("cfgmgrj apply device %s: %s", serial, payload);
+            free(payload);
+        } else {
+            dbg0("cfgmgrj apply device %s: <json_dumps failed>", serial);
+        }
+    }
+
     struct mh_control *ctl = dev->ctl;
 
     json_t *param = json_object_get(device_obj, "param");

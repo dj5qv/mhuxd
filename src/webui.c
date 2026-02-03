@@ -34,6 +34,7 @@ struct webui {
 
 static const char cs_path[] = WEBUIDIR "/cs";
 static const char static_path[] = WEBUIDIR "/static";
+static const char svelte_path[] = WEBUIDIR "/svelte";
 static const char mhuxd_hdf[] = HDFDIR "/mhuxd.hdf";
 
 static NEOERR* out_func(void *user_data, char *data) {
@@ -688,6 +689,7 @@ struct webui * webui_create(struct http_server *hs, struct cfgmgr *cfgmgr) {
 	webui->handler_redir = hs_register_handler(hs, "/", cb_redirect_home, webui);
 
 	hs_add_directory_map(hs, "/static/", static_path);
+	hs_add_directory_map(hs, "/svelte/", svelte_path);
 
 	dbg0("WebUI started");
 

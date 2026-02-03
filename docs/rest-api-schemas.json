@@ -97,9 +97,10 @@
     },
     "Device": {
       "type": "object",
-      "required": ["serial"],
+      "required": ["serial", "name"],
       "properties": {
         "serial": {"type": "string"},
+        "name": {"type": "string"},
         "status": {"type": "string"},
         "verFwMajor": {"type": "integer"},
         "verFwMinor": {"type": "integer"},

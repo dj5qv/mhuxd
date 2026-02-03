@@ -77,6 +77,14 @@ static const struct mh_flag_name mh_flag_names[] = {
 	{ MHF_MHUXD_SUPPORTED, "MHUXD_SUPPORTED" }
 };
 
+static const char *device_name_from_type(uint16_t type) {
+	for(int i = 0; i < mh_info_map_size; i++) {
+		if(mh_info_map[i].type == type)
+			return mh_info_map[i].name ? mh_info_map[i].name : "";
+	}
+	return "";
+}
+
 static void attach_display_options(json_t *device, json_t *displayoptions, uint16_t type) {
 	if(!device || !displayoptions)
 		return;
@@ -263,6 +271,7 @@ static int cb_devices(struct http_connection *hcon, const char *path, const char
 			}
 
 			json_object_set_new(device, "serial", json_string(dev->serial ? dev->serial : ""));
+			json_object_set_new(device, "name", json_string(device_name_from_type(mhi ? mhi->type : MHT_UNKNOWN)));
 			json_object_set_new(device, "status", json_string(mhc_state_str(mhc_get_state(dev->ctl))));
 			json_object_set_new(device, "verFwMajor", json_integer((json_int_t)(mhi ? mhi->ver_fw_major : 0)));
 			json_object_set_new(device, "verFwMinor", json_integer((json_int_t)(mhi ? mhi->ver_fw_minor : 0)));

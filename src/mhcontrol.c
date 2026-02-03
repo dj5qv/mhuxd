@@ -854,6 +854,8 @@ static int submit_speed_cmd_params(struct mh_control *ctl, int channel, const st
 	int ibaud;
 	uint8_t c, cmd, rtscts, databits, has_ext;
 
+	dbg1("%s %s()",ctl->serial, __func__);
+
 	if(channel < 0 || channel >= MH_NUM_CHANNELS || !cfg) {
 		err("%s() invalid channel or config", __func__);
 		return -1;
@@ -951,7 +953,7 @@ static void speed_params_from_cfg(struct mhc_speed_cfg *dst, struct cfg *cfg) {
 
 int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data) {
 
-	dbg1("%s %s()",ctl->serial, __func__);
+	dbg1("%s %s() channel %d / %s",ctl->serial, __func__, channel, ch_channel2str(channel));
 
 	if(channel < 0 || channel >= MH_NUM_CHANNELS) {
 		err("can't set speed, invalid channel (%d) specified!", channel);
@@ -985,6 +987,9 @@ int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_
 
 int mhc_set_speed_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
 		mhc_cmd_completion_cb_fn cb, void *user_data) {
+
+	dbg1("%s %s()",ctl->serial, __func__);
+
 	if(!ctl || !cfg)
 		return -1;
 	if(channel < 0 || channel >= MH_NUM_CHANNELS)
@@ -1001,6 +1006,8 @@ int mhc_set_speed_params(struct mh_control *ctl, int channel, const struct mhc_s
 }
 
 int mhc_get_speed_params(struct mh_control *ctl, int channel, struct mhc_speed_cfg *out) {
+	dbg1("%s %s() channel %d / %s",ctl->serial, __func__, channel, ch_channel2str(channel));
+
 	if(!ctl || !out)
 		return -1;
 	if(channel < 0 || channel >= MH_NUM_CHANNELS)
@@ -1012,6 +1019,8 @@ int mhc_get_speed_params(struct mh_control *ctl, int channel, struct mhc_speed_c
 }
 
 int mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb, void *user_data) {
+	dbg1("%s %s()",ctl->serial, __func__);
+
 	if(mhc_is_online(ctl)) {
 		struct buffer b;
 		buf_reset(&b);

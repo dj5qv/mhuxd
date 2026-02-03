@@ -1,6 +1,11 @@
 hdfdir = $(HDFDIR)
 webuistaticdir = $(WEBUIDIR)/static
 webuicsdir = $(WEBUIDIR)/cs
+webuisveltedir = $(WEBUIDIR)/svelte
+
+SVELTE_DIR = $(srcdir)/svelte
+SVELTE_BUILD_DIR = $(SVELTE_DIR)/dist
+SVELTE_NPM ?= npm
 
 hdf_DATA = hdf/mhuxd.hdf
 
@@ -79,4 +84,26 @@ webuics_DATA = \
 	cs/sm_antsw_grp_list.cs \
 	cs/sm_antsw_band_list.cs \
 	cs/sm_antsw_load_store.cs
+
+install-data-local:
+	@set -e; \
+	if test -d "$(SVELTE_DIR)"; then \
+		if command -v "$(SVELTE_NPM)" >/dev/null 2>&1; then \
+			cd "$(SVELTE_DIR)" && "$(SVELTE_NPM)" install && "$(SVELTE_NPM)" run build; \
+			$(MKDIR_P) "$(DESTDIR)$(webuisveltedir)"; \
+			cp -R "$(SVELTE_BUILD_DIR)"/* "$(DESTDIR)$(webuisveltedir)"/; \
+		else \
+			echo "Error: npm is required to build the Svelte UI"; \
+			exit 1; \
+		fi; \
+	fi
+
+uninstall-local:
+	@rm -rf "$(DESTDIR)$(webuisveltedir)"
+
+clean-local:
+	@rm -rf "$(SVELTE_BUILD_DIR)"
+
+distclean-local:
+	@rm -rf "$(SVELTE_BUILD_DIR)" "$(SVELTE_DIR)/node_modules"
 

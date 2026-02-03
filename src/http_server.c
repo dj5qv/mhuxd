@@ -44,6 +44,11 @@ static char *rfc1123_current_date_time(char buf[30]);
 
 static const char ct_text_html[] = "text/html";
 static const char ct_text_css[] = "text/css";
+static const char ct_text_js[] = "application/javascript";
+static const char ct_app_json[] = "application/json";
+static const char ct_image_svg[] = "image/svg+xml";
+static const char ct_font_woff[] = "font/woff";
+static const char ct_font_woff2[] = "font/woff2";
 static const char ct_image_gif[] = "image/gif";
 static const char ct_image_png[] = "image/png";
 
@@ -207,6 +212,18 @@ int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *su
 		content_type = ct_image_png;
 	if(hcon->url_len >= 4 && !strncasecmp(hcon->url + hcon->url_len - 4, ".css", 4))
 		content_type = ct_text_css;
+	if(hcon->url_len >= 3 && !strncasecmp(hcon->url + hcon->url_len - 3, ".js", 3))
+		content_type = ct_text_js;
+	if(hcon->url_len >= 4 && !strncasecmp(hcon->url + hcon->url_len - 4, ".mjs", 4))
+		content_type = ct_text_js;
+	if(hcon->url_len >= 5 && !strncasecmp(hcon->url + hcon->url_len - 5, ".json", 5))
+		content_type = ct_app_json;
+	if(hcon->url_len >= 4 && !strncasecmp(hcon->url + hcon->url_len - 4, ".svg", 4))
+		content_type = ct_image_svg;
+	if(hcon->url_len >= 5 && !strncasecmp(hcon->url + hcon->url_len - 5, ".woff", 5))
+		content_type = ct_font_woff;
+	if(hcon->url_len >= 6 && !strncasecmp(hcon->url + hcon->url_len - 6, ".woff2", 6))
+		content_type = ct_font_woff2;
 
 	hs_send_response(hcon, 200, content_type, buf, st.st_size, &st.st_mtime, 3600);
 	free(buf);

@@ -1,0 +1,8 @@
+1) REST-API endpoint /config/devices to support retrieval for a specific device like /config/devices/<serial>
+   Have UI use this where appropiate. 
+
+2) restapi.c, check if we can get rig of device_name_from_type(), feels misplaced here.
+
+3) AUX configuration not working as it shares the channel id with R2.
+
+4) Performance friendly debug output of JSON objects. That is do json_dump() only if the loglevel matches.
