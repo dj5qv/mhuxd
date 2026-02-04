@@ -329,7 +329,7 @@ int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg)
 
 		for(i = 0; i < MH_NUM_CHANNELS; i++) {
 			if((speed_cfg = mhc_get_speed_cfg(dev->ctl, i))) {
-				strncpy(name, ch_channel2str(i), sizeof(name) - 1);
+				strncpy(name, ch_channel2str_new(i, mhc_get_mhinfo(dev->ctl)), sizeof(name) - 1);
 				for (p = name ; *p; ++p) *p = tolower(*p);
 
 				snprintf(buf, sizeof(buf)-1, "channel.%s", name);

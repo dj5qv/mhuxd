@@ -1,6 +1,7 @@
 #include <string.h>
 #include "channel.h"
 #include "util.h"
+#include "mhinfo.h"
 
 struct channel_map {
 	const char *channel_str;
@@ -54,6 +55,32 @@ const char *ch_channel2str(int channel) {
 		if(channel_map[i].channel == channel)
 			return channel_map[i].channel_str;
 	return "Unknown";
+}
+
+// Support the differentiation between AUX and R2 which use the same channel,
+// based on keyer type.
+const char *ch_channel2str_new(int channel, const struct mh_info *mhi)
+ {
+	unsigned i;
+	const char *channel_str = "UNKNOWN";
+
+	// Edge case for shared AUX/R2 channel
+	if(channel == MH_CHANNEL_R2) {
+		if(mhi->flags & MHF_HAS_R2) {
+			channel_str = "R2";
+		} else {
+			channel_str = "AUX";
+		}
+		return channel_str;
+	}
+
+	for(i = 0; i < ARRAY_SIZE(channel_map); i++)
+		if(channel_map[i].channel == channel) {
+			channel_str = channel_map[i].channel_str;
+			break;
+		}
+	
+	return channel_str;
 }
 
 int ch_str2channel(const char *str) {

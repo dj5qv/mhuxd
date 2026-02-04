@@ -3,7 +3,7 @@
 
 // microHam channels
 enum {
-	MH_CHANNEL_FLAGS   = 0, /* 1-3 must match byte position in keyer frame. */
+	MH_CHANNEL_FLAGS   = 0, /* 0-3 must match byte position in keyer frame. */
 	MH_CHANNEL_CONTROL = 1,
 	MH_CHANNEL_WINKEY  = 2,
 	MH_CHANNEL_PS2     = 3,
@@ -20,9 +20,10 @@ enum {
 	ALL_NUM_CHANNELS
 };
 
-
+struct mh_info;
 
 const char *ch_channel2str(int channel);
+const char *ch_channel2str_new(int channel, const struct mh_info *mhi);
 int ch_str2channel(const char *str);
 int ch_ptt_channel(int channel);
 
