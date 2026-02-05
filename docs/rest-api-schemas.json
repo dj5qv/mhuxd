@@ -117,6 +117,7 @@
         "type": {"type": "integer"},
         "channel": {"type": "object"},
         "param": {"type": "object"},
+        "ptt": {"$ref": "#/$defs/PttConfig"},
         "winkey": {"type": "object"},
         "cwMessages": {
           "type": "array",
@@ -152,6 +153,23 @@
           ]
         },
         "display": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "PttMode": {
+      "type": "object",
+      "properties": {
+        "cw": {"type": "string"},
+        "voice": {"type": "string"},
+        "digital": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "PttConfig": {
+      "type": "object",
+      "properties": {
+        "r1": {"$ref": "#/$defs/PttMode"},
+        "r2": {"$ref": "#/$defs/PttMode"}
       },
       "additionalProperties": false
     },

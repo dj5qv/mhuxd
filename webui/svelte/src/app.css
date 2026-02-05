@@ -189,6 +189,44 @@ h1 {
   padding: 8px 10px;
   font-size: 13px;
   align-items: center;
+  justify-items: start;
+}
+
+.table-header > div,
+.table-row > div {
+  justify-self: start;
+  text-align: left;
+}
+
+.panel.table .select {
+  width: 100%;
+  max-width: 220px;
+}
+
+.audio-grid-4 .table-header,
+.audio-grid-4 .table-row {
+  grid-template-columns: 140px minmax(220px, 1fr) minmax(220px, 1fr) minmax(240px, 1fr);
+  column-gap: 16px;
+}
+
+.audio-grid-8 .table-header,
+.audio-grid-8 .table-row {
+  grid-template-columns:
+    120px
+    minmax(160px, 1fr)
+    60px
+    minmax(160px, 1fr)
+    60px
+    minmax(200px, 1fr)
+    60px
+    minmax(120px, 1fr);
+  column-gap: 12px;
+}
+
+.display-grid .table-header,
+.display-grid .table-row {
+  grid-template-columns: 2fr 120px 160px;
+  column-gap: 16px;
 }
 
 .table-header {
@@ -227,6 +265,10 @@ h1 {
   margin-top: 8px;
   font-size: 12px;
   color: #2d5f2e;
+}
+
+.inline-status.error {
+  color: #a10000;
 }
 
 .placeholder {

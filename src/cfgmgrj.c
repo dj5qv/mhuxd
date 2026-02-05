@@ -15,6 +15,7 @@
 #include "util.h"
 #include "logger.h"
 #include "devmgr.h"
+#include "mhinfo.h"
 #include "mhcontrol.h"
 #include "wkman.h"
 #include "mhsm.h"
@@ -60,6 +61,252 @@ static int json_get_int(json_t *obj, const char *key, int defval) {
     if(json_is_real(val))
         return (int)json_real_value(val);
     return defval;
+}
+
+static int json_has_key(json_t *obj, const char *key) {
+    if(!obj || !json_is_object(obj))
+        return 0;
+    return json_object_get(obj, key) != NULL;
+}
+
+struct ptt_map_entry {
+    uint16_t keyer_type;
+    const char *ptt_str;
+    unsigned ptt1 : 1;
+    unsigned ptt2 : 1;
+    unsigned qsk : 1;
+};
+
+static const struct ptt_map_entry ptt_map[] = {
+    { MHT_MK2, "ptt1", 1, 0, 0 },
+    { MHT_MK2, "ptt2", 0, 1, 0 },
+    { MHT_MK2, "ptt12", 1, 1, 0 },
+    { MHT_MK2, "semi", 0, 0, 0 },
+    { MHT_MK2, "qsk", 0, 0, 1 },
+
+    { MHT_MK3, "ptt1", 1, 0, 0 },
+    { MHT_MK3, "ptt2", 0, 1, 0 },
+    { MHT_MK3, "ptt12", 1, 1, 0 },
+    { MHT_MK3, "semi", 0, 0, 0 },
+    { MHT_MK3, "qsk", 0, 0, 1 },
+
+    { MHT_MK, "ptt1", 1, 0, 0 },
+    { MHT_MK, "ptt2", 0, 1, 0 },
+    { MHT_MK, "ptt12", 1, 1, 0 },
+    { MHT_MK, "qsk", 0, 0, 1 },
+
+    { MHT_DK, "ptt", 0, 1, 0 },
+    { MHT_DK, "semi", 0, 0, 0 },
+    { MHT_DK, "qsk", 0, 0, 1 },
+
+    { MHT_DK2, "ptt", 0, 1, 0 },
+    { MHT_DK2, "semi", 0, 0, 0 },
+    { MHT_DK2, "qsk", 0, 0, 1 },
+
+    { MHT_CK, "ptt", 0, 1, 0 },
+    { MHT_CK, "qsk", 0, 0, 1 },
+    { MHT_CK, "noptt", 0, 0, 0 },
+
+    { MHT_MK2R, "ptt1", 1, 0, 0 },
+    { MHT_MK2R, "ptt2", 0, 1, 0 },
+    { MHT_MK2R, "ptt12", 1, 1, 0 },
+    { MHT_MK2R, "semi", 0, 0, 0 },
+    { MHT_MK2R, "qsk", 0, 0, 1 },
+
+    { MHT_MK2Rp, "ptt1", 1, 0, 0 },
+    { MHT_MK2Rp, "ptt2", 0, 1, 0 },
+    { MHT_MK2Rp, "ptt12", 1, 1, 0 },
+    { MHT_MK2Rp, "semi", 0, 0, 0 },
+    { MHT_MK2Rp, "qsk", 0, 0, 1 }
+};
+
+static const char *compose_ptt_str(int type, int ptt1, int ptt2, int qsk) {
+    switch(type) {
+    case MHT_CK:
+        return ptt2 ? "ptt" : "qsk";
+    case MHT_DK:
+    case MHT_DK2:
+        if(ptt2)
+            return "ptt";
+        return qsk ? "qsk" : "semi";
+    case MHT_MK:
+        if(ptt1 && ptt2)
+            return "ptt12";
+        if(ptt1)
+            return "ptt1";
+        if(ptt2)
+            return "ptt2";
+        return "qsk";
+    case MHT_MK2:
+    case MHT_MK3:
+    case MHT_MK2R:
+    case MHT_MK2Rp:
+        if(ptt1 && ptt2)
+            return "ptt12";
+        if(ptt1)
+            return "ptt1";
+        if(ptt2)
+            return "ptt2";
+        if(qsk)
+            return "qsk";
+        return "semi";
+    default:
+        return "_invalid_";
+    }
+}
+
+static int apply_ptt_value(struct mh_control *ctl, int type, const char *chan, const char *mode, const char *val) {
+    if(!ctl || !chan || !mode || !val)
+        return -1;
+
+    const char *suffix = NULL;
+    if(!strcmp(mode, "cw"))
+        suffix = "FrBase_Cw";
+    else if(!strcmp(mode, "voice"))
+        suffix = "FrBase_Voice";
+    else if(!strcmp(mode, "digital"))
+        suffix = "FrBase_Digital";
+    else
+        return -1;
+
+    const struct ptt_map_entry *match = NULL;
+    for(size_t i = 0; i < ARRAY_SIZE(ptt_map); i++) {
+        if(ptt_map[i].keyer_type == type && strcmp(ptt_map[i].ptt_str, val) == 0) {
+            match = &ptt_map[i];
+            break;
+        }
+    }
+    if(!match) {
+        warn("cfgmgrj: invalid ptt value '%s' for type %d", val, type);
+        return -1;
+    }
+
+    char base[48];
+    char key1[64];
+    char key2[64];
+    snprintf(base, sizeof(base), "%s%s", chan, suffix);
+    snprintf(key1, sizeof(key1), "%s.ptt1", base);
+    snprintf(key2, sizeof(key2), "%s.ptt2", base);
+
+    if(mhc_set_kopt(ctl, key1, match->ptt1))
+        return -1;
+    if(mhc_set_kopt(ctl, key2, match->ptt2))
+        return -1;
+
+    if(!strcmp(mode, "cw")) {
+        char qsk_key[32];
+        snprintf(qsk_key, sizeof(qsk_key), "%sQsk", chan);
+        if(mhc_set_kopt(ctl, qsk_key, match->qsk))
+            return -1;
+    }
+
+    return 0;
+}
+
+static int apply_ptt_channel_from_json(struct mh_control *ctl, int type, const char *chan, json_t *chan_obj, int *changed) {
+    if(!chan_obj || !json_is_object(chan_obj))
+        return 0;
+
+    const char *modes[] = { "cw", "voice", "digital" };
+    for(size_t i = 0; i < ARRAY_SIZE(modes); i++) {
+        json_t *val = json_object_get(chan_obj, modes[i]);
+        if(!val)
+            continue;
+        if(!json_is_string(val))
+            return -1;
+        if(apply_ptt_value(ctl, type, chan, modes[i], json_string_value(val)) != 0)
+            return -1;
+        if(changed)
+            *changed = 1;
+    }
+
+    return 0;
+}
+
+static int apply_ptt_from_json(struct mh_control *ctl, int type, json_t *ptt_obj, int *changed) {
+    if(!ptt_obj || !json_is_object(ptt_obj))
+        return 0;
+
+    json_t *r1 = json_object_get(ptt_obj, "r1");
+    if(apply_ptt_channel_from_json(ctl, type, "r1", r1, changed) != 0)
+        return -1;
+
+    json_t *r2 = json_object_get(ptt_obj, "r2");
+    if(apply_ptt_channel_from_json(ctl, type, "r2", r2, changed) != 0)
+        return -1;
+
+    return 0;
+}
+
+static int param_get_int(json_t *param, const char *key, int defval) {
+    if(!param || !json_is_object(param))
+        return defval;
+    return json_get_int(param, key, defval);
+}
+
+static int ptt_mode_supported(int type) {
+    return !(type == MHT_DK || type == MHT_DK2 || type == MHT_CK);
+}
+
+static json_t *build_ptt_channel_json(int type, json_t *param, const char *chan) {
+    if(!param || !chan)
+        return NULL;
+
+    char key1[64];
+    char key2[64];
+    char qsk_key[32];
+    snprintf(key1, sizeof(key1), "%sFrBase_Cw.ptt1", chan);
+    snprintf(key2, sizeof(key2), "%sFrBase_Cw.ptt2", chan);
+    snprintf(qsk_key, sizeof(qsk_key), "%sQsk", chan);
+
+    if(!json_has_key(param, key1) && !json_has_key(param, key2) && !json_has_key(param, qsk_key))
+        return NULL;
+
+    int ptt1 = param_get_int(param, key1, 0);
+    int ptt2 = param_get_int(param, key2, 0);
+    int qsk = param_get_int(param, qsk_key, 0);
+
+    json_t *obj = json_object();
+    if(!obj)
+        return NULL;
+    json_object_set_new(obj, "cw", json_string(compose_ptt_str(type, ptt1, ptt2, qsk)));
+
+    if(ptt_mode_supported(type)) {
+        snprintf(key1, sizeof(key1), "%sFrBase_Voice.ptt1", chan);
+        snprintf(key2, sizeof(key2), "%sFrBase_Voice.ptt2", chan);
+        ptt1 = param_get_int(param, key1, 0);
+        ptt2 = param_get_int(param, key2, 0);
+        json_object_set_new(obj, "voice", json_string(compose_ptt_str(type, ptt1, ptt2, qsk)));
+
+        snprintf(key1, sizeof(key1), "%sFrBase_Digital.ptt1", chan);
+        snprintf(key2, sizeof(key2), "%sFrBase_Digital.ptt2", chan);
+        ptt1 = param_get_int(param, key1, 0);
+        ptt2 = param_get_int(param, key2, 0);
+        json_object_set_new(obj, "digital", json_string(compose_ptt_str(type, ptt1, ptt2, qsk)));
+    }
+
+    return obj;
+}
+
+static json_t *build_ptt_meta_json(int type, json_t *param) {
+    json_t *ptt = json_object();
+    if(!ptt)
+        return NULL;
+
+    json_t *r1 = build_ptt_channel_json(type, param, "r1");
+    if(r1)
+        json_object_set_new(ptt, "r1", r1);
+
+    json_t *r2 = build_ptt_channel_json(type, param, "r2");
+    if(r2)
+        json_object_set_new(ptt, "r2", r2);
+
+    if(json_object_size(ptt) == 0) {
+        json_decref(ptt);
+        return NULL;
+    }
+
+    return ptt;
 }
 
 static double json_get_double(json_t *obj, const char *key, double defval) {
@@ -267,11 +514,32 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
     }
 
     struct mh_control *ctl = dev->ctl;
+    if(type == 0)
+        type = mhc_get_type(ctl);
+
+    int ptt_changed = 0;
+    json_t *ptt = json_object_get(device_obj, "ptt");
+    if(ptt) {
+        if(apply_ptt_from_json(ctl, type, ptt, &ptt_changed))
+            return -1;
+    }
 
     json_t *param = json_object_get(device_obj, "param");
     if(json_is_object(param)) {
         if(apply_kopts_from_json(ctl, param, ""))
             return -1;
+        if(mhc_is_online(ctl)) {
+            int result = -1;
+            if(mhc_load_kopts(ctl, completion_cb, &result))
+                return -1;
+            while(result == -1)
+                ev_loop(cfgmgrj->loop, EVRUN_ONCE);
+            if(result != CMD_RESULT_OK)
+                return -1;
+        }
+    }
+
+    if(ptt_changed && (!param || !json_is_object(param))) {
         if(mhc_is_online(ctl)) {
             int result = -1;
             if(mhc_load_kopts(ctl, completion_cb, &result))
@@ -405,6 +673,9 @@ static json_t *build_config_json(void) {
             if(param) {
                 struct json_param_builder pb = { .obj = param };
                 if(mhc_kopts_foreach(dev->ctl, param_builder_cb, &pb) == 0) {
+                    json_t *ptt = build_ptt_meta_json((int)mhc_get_type(dev->ctl), param);
+                    if(ptt)
+                        json_object_set_new(device, "ptt", ptt);
                     if(json_object_size(param) > 0)
                         json_object_set_new(device, "param", param);
                     else
