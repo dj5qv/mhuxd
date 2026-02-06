@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <jansson.h>
 #include "logger.h"
 
 #define MOD_ID "log"
@@ -91,7 +92,7 @@ const char *log_get_level_str() {
 
 static const char *severity_strs[] = {
         [LOGSV_CRIT]         = "CRIT",
-	[LOGSV_ERR]          = "ERR ",
+		[LOGSV_ERR]          = "ERR ",
         [LOGSV_WARN]         = "WARN",
         [LOGSV_INFO]         = "INFO",
         [LOGSV_DBG0]         = "DBG0",
@@ -130,6 +131,29 @@ void log_hex(int severity, const char *msg1, const char *msg2, const char *msg3,
 
 	fflush(file);
 
+}
+
+void log_json(int severity, const char *msg1, const char *msg2, const char *msg3, const json_t *obj) {
+	char *json_str;
+
+	if(severity > log_level)
+		return;
+
+	if(msg1 == NULL)
+		msg1 = "";
+	if(msg2 == NULL)
+		msg2 = "";
+	if(msg3 == NULL)
+		msg3 = "";
+
+	if(file == NULL || severity < 0 || severity > LOGSV_MAX || !obj)
+		return;
+
+	json_str = json_dumps(obj, JSON_COMPACT);
+	if(json_str) {
+		log_msg(severity, msg1, " %s %s %s", msg2, msg3, json_str);
+		free(json_str);
+	}
 }
 
 void log_msg(int severity, const char *header, const char *fmt, ...) {

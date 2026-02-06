@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <jansson.h>
 
 enum {
 	LOGSV_MUTE,
@@ -38,6 +39,7 @@ void log_set_level(int level);
 int log_set_level_by_str(const char *s);
 const char *log_get_level_str();
 void log_hex(int severity, const char *msg1, const char *msg2, const char *msg3, const char *buf, int len);
+void log_json(int severity, const char *msg1, const char *msg2, const char *msg3, const json_t *obj);
 void log_msg(int severity, const char *header, const char *fmt, ...)
 #ifdef __GNUC__
      __attribute__ ((format (printf, 3, 4)));
@@ -52,9 +54,10 @@ void log_msg(int severity, const char *header, const char *fmt, ...)
 #define err(fmt, args...)               log_msg(LOGSV_ERR,  "("MOD_ID")", fmt"\n" , ##args)
 #define warn(fmt, args...)              log_msg(LOGSV_WARN, "("MOD_ID")", fmt"\n" , ##args)
 #define info(fmt, args...)              log_msg(LOGSV_INFO, "("MOD_ID")", fmt"\n" , ##args)
-#define dbg0(fmt, args...)            log_msg(LOGSV_DBG0, "("MOD_ID")", fmt"\n", ##args)
-#define dbg1(fmt, args...)            log_msg(LOGSV_DBG1, "("MOD_ID")", fmt"\n", ##args)
-#define dbg1_h(msg1, msg2, buf, len)   log_hex(LOGSV_DBG1, "(" MOD_ID ")", msg1, msg2, (const char*) buf, len)
+#define dbg0(fmt, args...)              if(log_level >= LOGSV_DBG0) log_msg(LOGSV_DBG0, "("MOD_ID")", fmt"\n", ##args)
+#define dbg1(fmt, args...)              if(log_level >= LOGSV_DBG1) log_msg(LOGSV_DBG1, "("MOD_ID")", fmt"\n", ##args)
+#define dbg1_h(msg1, msg2, buf, len)    if(log_level >= LOGSV_DBG1) log_hex(LOGSV_DBG1, "(" MOD_ID ")", msg1, msg2, (const char*) buf, len)
+#define dbg1_j(msg1, msg2, obj)         if(log_level >= LOGSV_DBG1) log_json(LOGSV_DBG1, "(" MOD_ID ")", msg1, msg2, obj)
 #define fatal_e(e, fmt, args...)        \
         fatal(fmt" (%s)" , ##args, strerror((e))
 #define err_e(e, fmt, args...)  \
@@ -64,9 +67,9 @@ void log_msg(int severity, const char *header, const char *fmt, ...)
 #define info_e(e, fmt, args...) \
         info(fmt" (%s)" , ##args, strerror(e))
 #define dbg0_e(e, fmt, args...) \
-        dbg0(fmt" (%s)" , ##args, strerror(e))
+        if(log_level >= LOGSV_DBG0) dbg0(fmt" (%s)" , ##args, strerror(e))
 #define dbg1_e(e, fmt, args...) \
-        dbg1(fmt" (%s)" , ##args, strerror(e))
+        if(log_level >= LOGSV_DBG1) dbg1(fmt" (%s)" , ##args, strerror(e))
 
 
 #endif // LOGGER_H
