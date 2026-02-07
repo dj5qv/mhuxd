@@ -17,7 +17,6 @@
 #include "pglist.h"
 #include "conmgr.h"
 #include "net.h"
-#include "cfgnod.h"
 
 #define MOD_ID "tcp"
 
@@ -183,18 +182,18 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 }
 
 
-struct ctcp *ctcp_create(struct connector_spec *cpsec) {
+struct ctcp *ctcp_create(const struct connector_spec *cpsec) {
 	struct ctcp *ctcp;
 
 	dbg1("%s()", __func__);
 
-	const char *port = cfg_get_val(cpsec->cfg, "devname", NULL);
+	const char *port = cpsec->tcp.port;
 	if(port == NULL || !isdigit(*port)) {
 		err("could not create tcp connector: no or invalid port specified!");
 		return NULL;
 	}
 
-	int8_t remote_access = cfg_get_int_val(cpsec->cfg, "remote_access", 0);
+	int8_t remote_access = (int8_t)(cpsec->tcp.remote_access ? 1 : 0);
 
 	char devname[128];
 	if(128 <= snprintf(devname, 128, "%s:%s", remote_access ? "0.0.0.0" : "127.0.0.1", port)) {
@@ -214,7 +213,7 @@ struct ctcp *ctcp_create(struct connector_spec *cpsec) {
 	ctcp->devname = w_strdup(devname);
 	ctcp->lsnr = lsnr;
 	ctcp->fd_data = cpsec->fd_data;
-	ctcp->max_con = cfg_get_int_val(cpsec->cfg, "maxcon", 1);
+	ctcp->max_con = (cpsec->tcp.maxcon > 0) ? cpsec->tcp.maxcon : 1;
 
 	ev_io_init(&ctcp->w_data_in, data_in_cb, ctcp->fd_data, EV_READ);
 	ev_io_init(&ctcp->w_data_out, data_out_cb, ctcp->fd_data, EV_WRITE);

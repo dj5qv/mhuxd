@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <ctype.h>
+#include <strings.h>
 #include <ev.h>
 #include "clearsilver/util/neo_hdf.h"
 #include "cfgmgr.h"
@@ -45,6 +46,38 @@ struct cfgmgr {
 	struct conmgr *conmgr;
 	struct cfg *runtime_cfg;
 };
+
+// Wrapper during HDF/JSON transition
+int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *cfg, int id) {
+	struct con_cfg ccfg = { 0 };
+	const char *serial = cfg_get_val(cfg, "serial", NULL);
+	const char *channel_str = cfg_get_val(cfg, "channel", NULL);
+	const char *type_str = cfg_get_val(cfg, "type", NULL);
+
+	ccfg.serial = serial;
+	ccfg.channel = channel_str ? ch_str2channel(channel_str) : -1;
+	ccfg.type = CON_INVALID;
+
+	if(type_str) {
+		if(!strcasecmp(type_str, "VSP"))
+			ccfg.type = CON_VSP;
+		else if(!strcasecmp(type_str, "TCP"))
+			ccfg.type = CON_TCP;
+	}
+
+	if(ccfg.type == CON_VSP) {
+		ccfg.vsp.devname = cfg_get_val(cfg, "devname", NULL);
+		ccfg.vsp.maxcon = cfg_get_int_val(cfg, "maxcon", 1);
+		ccfg.vsp.ptt_rts = cfg_get_int_val(cfg, "ptt_rts", 0);
+		ccfg.vsp.ptt_dtr = cfg_get_int_val(cfg, "ptt_dtr", 0);
+	} else if(ccfg.type == CON_TCP) {
+		ccfg.tcp.port = cfg_get_val(cfg, "devname", NULL);
+		ccfg.tcp.maxcon = cfg_get_int_val(cfg, "maxcon", 1);
+		ccfg.tcp.remote_access = cfg_get_int_val(cfg, "remote_access", 0);
+	}
+
+	return conmgr_create_con_cfg(conmgr, loop, &ccfg, id);
+}
 
 static void log_neoerr(NEOERR *err, const char *what) {
 	STRING str;

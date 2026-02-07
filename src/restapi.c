@@ -404,6 +404,7 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 			return 0;
 		}
 		json_t *devices = json_object_get(root, "devices");
+		json_t *connectors = json_object_get(root, "connectors");
 		json_t *rsp = json_object();
 		if(!rsp) {
 			json_decref(root);
@@ -411,6 +412,8 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 			return 0;
 		}
 		json_object_set_new(rsp, "devices", devices ? json_incref(devices) : json_array());
+		if(connectors && json_is_array(connectors))
+			json_object_set_new(rsp, "connectors", json_incref(connectors));
 		json_decref(root);
 		send_json_payload(hcon, rsp);
 		json_decref(rsp);
@@ -449,6 +452,7 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 		return 0;
 	}
 	json_t *devices = json_object_get(rsp_root, "devices");
+	json_t *connectors = json_object_get(rsp_root, "connectors");
 	json_t *rsp = json_object();
 	if(!rsp) {
 		json_decref(rsp_root);
@@ -456,6 +460,8 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 		return 0;
 	}
 	json_object_set_new(rsp, "devices", devices ? json_incref(devices) : json_array());
+	if(connectors && json_is_array(connectors))
+		json_object_set_new(rsp, "connectors", json_incref(connectors));
 	json_decref(rsp_root);
 	send_json_payload(hcon, rsp);
 	json_decref(rsp);

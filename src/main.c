@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
-	cfgmgrj = cfgmgrj_create(loop);
+	cfgmgrj = cfgmgrj_create(loop, conmgr);
 	if(!cfgmgrj) {
 		fatal("(mhuxd) Could not create json manager, exiting!");
 		exit(-1);

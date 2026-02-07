@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <strings.h>
 #include <ev.h>
 #include <jansson.h>
 #include "config.h"
@@ -20,6 +21,7 @@
 #include "wkman.h"
 #include "mhsm.h"
 #include "channel.h"
+#include "conmgr.h"
 
 #ifndef STATEDIR
 #define STATEDIR "."
@@ -30,6 +32,8 @@
 
 struct cfgmgrj {
     struct ev_loop *loop;
+    struct conmgr *conmgr;
+    json_t *connectors;
  };
 
 static json_t *build_speed_obj(const struct mhc_speed_cfg *cfg);
@@ -42,6 +46,10 @@ struct json_param_builder {
 
 struct json_winkey_builder {
     json_t *obj;
+};
+
+struct json_connectors_builder {
+    json_t *arr;
 };
 
 static void completion_cb(unsigned const char *reply_buf, int len, int result, void *user_data) {
@@ -576,6 +584,101 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
     return 0;
 }
 
+static int apply_connector_from_json(struct cfgmgrj *cfgmgrj, json_t *conn_obj) {
+    if(!cfgmgrj || !cfgmgrj->conmgr || !json_is_object(conn_obj))
+        return -1;
+
+    json_t *serial_val = json_object_get(conn_obj, "serial");
+    json_t *channel_val = json_object_get(conn_obj, "channel");
+    json_t *type_val = json_object_get(conn_obj, "type");
+    if(!serial_val || !json_is_string(serial_val) || !channel_val || !json_is_string(channel_val) ||
+       !type_val || !json_is_string(type_val))
+        return -1;
+
+    const char *serial = json_string_value(serial_val);
+    const char *channel_str = json_string_value(channel_val);
+    const char *type_str = json_string_value(type_val);
+    int channel = ch_str2channel(channel_str);
+    if(channel < 0)
+        return -1;
+
+    struct con_cfg ccfg = { 0 };
+    ccfg.serial = serial;
+    ccfg.channel = channel;
+    ccfg.type = CON_INVALID;
+
+    if(!strcasecmp(type_str, "VSP"))
+        ccfg.type = CON_VSP;
+    else if(!strcasecmp(type_str, "TCP"))
+        ccfg.type = CON_TCP;
+
+    if(ccfg.type == CON_VSP) {
+        json_t *devname_val = json_object_get(conn_obj, "devname");
+        if(!devname_val || !json_is_string(devname_val))
+            return -1;
+        ccfg.vsp.devname = json_string_value(devname_val);
+        ccfg.vsp.maxcon = json_get_int(conn_obj, "maxcon", 1);
+        ccfg.vsp.ptt_rts = json_get_int(conn_obj, "ptt_rts", 0);
+        ccfg.vsp.ptt_dtr = json_get_int(conn_obj, "ptt_dtr", 0);
+    } else if(ccfg.type == CON_TCP) {
+        json_t *devname_val = json_object_get(conn_obj, "devname");
+        if(!devname_val || !json_is_string(devname_val))
+            return -1;
+        ccfg.tcp.port = json_string_value(devname_val);
+        ccfg.tcp.maxcon = json_get_int(conn_obj, "maxcon", 1);
+        ccfg.tcp.remote_access = json_get_int(conn_obj, "remote_access", 0);
+    } else {
+        return -1;
+    }
+
+    int id = json_get_int(conn_obj, "id", 0);
+    if(!conmgr_create_con_cfg(cfgmgrj->conmgr, cfgmgrj->loop, &ccfg, id))
+        return -1;
+
+    return 0;
+}
+
+static void connectors_builder_cb(const struct con_info *info, void *user_data) {
+    struct json_connectors_builder *b = user_data;
+    if(!b || !b->arr || !info)
+        return;
+
+    if(!info->serial || !info->devname)
+        return;
+
+    const char *type_str = NULL;
+    if(info->type == CON_VSP)
+        type_str = "VSP";
+    else if(info->type == CON_TCP)
+        type_str = "TCP";
+
+    if(!type_str)
+        return;
+
+    json_t *obj = json_object();
+    if(!obj)
+        return;
+
+    json_object_set_new(obj, "serial", json_string(info->serial));
+    json_object_set_new(obj, "channel", json_string(ch_channel2str(info->channel)));
+    json_object_set_new(obj, "type", json_string(type_str));
+    json_object_set_new(obj, "devname", json_string(info->devname));
+
+    if(info->id > 0)
+        json_object_set_new(obj, "id", json_integer(info->id));
+    if(info->maxcon > 0)
+        json_object_set_new(obj, "maxcon", json_integer(info->maxcon));
+
+    if(info->type == CON_VSP) {
+        json_object_set_new(obj, "ptt_rts", json_boolean(info->ptt_rts ? 1 : 0));
+        json_object_set_new(obj, "ptt_dtr", json_boolean(info->ptt_dtr ? 1 : 0));
+    } else if(info->type == CON_TCP) {
+        json_object_set_new(obj, "remote_access", json_boolean(info->remote_access ? 1 : 0));
+    }
+
+    json_array_append_new(b->arr, obj);
+}
+
 static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
     if(!json_is_object(root))
         return -1;
@@ -599,6 +702,29 @@ static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
         }
     }
 
+    json_t *connectors = json_object_get(root, "connectors");
+    if(connectors && json_is_array(connectors)) {
+        size_t idx;
+        json_t *connector;
+        json_array_foreach(connectors, idx, connector) {
+            if(apply_connector_from_json(cfgmgrj, connector))
+                return -1;
+        }
+    }
+
+    json_t *connectors_remove = json_object_get(root, "connectorsRemove");
+    if(connectors_remove && json_is_array(connectors_remove)) {
+        size_t idx;
+        json_t *id_val;
+        json_array_foreach(connectors_remove, idx, id_val) {
+            if(!json_is_integer(id_val))
+                return -1;
+            int id = (int)json_integer_value(id_val);
+            if(conmgr_destroy_con(cfgmgrj->conmgr, id) != 0)
+                return -1;
+        }
+    }
+
     return 0;
 }
 
@@ -606,7 +732,7 @@ int cfgmgrj_apply_json(struct cfgmgrj *cfgmgrj, json_t *root) {
     return apply_config_json(cfgmgrj, root);
 }
 
-static json_t *build_config_json(void) {
+static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
     json_t *root = json_object();
     if(!root)
         return NULL;
@@ -731,12 +857,24 @@ static json_t *build_config_json(void) {
     }
 
     json_object_set_new(root, "devices", devices);
+    if(cfgmgrj && cfgmgrj->conmgr) {
+        json_t *connectors = json_array();
+        if(connectors) {
+            struct json_connectors_builder b = { .arr = connectors };
+            conmgr_foreach(cfgmgrj->conmgr, connectors_builder_cb, &b);
+            if(json_array_size(connectors) > 0)
+                json_object_set_new(root, "connectors", connectors);
+            else
+                json_decref(connectors);
+        }
+    } else if(cfgmgrj && cfgmgrj->connectors && json_is_array(cfgmgrj->connectors)) {
+        json_object_set_new(root, "connectors", json_incref(cfgmgrj->connectors));
+    }
     return root;
 }
 
 json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj) {
-    (void)cfgmgrj;
-    return build_config_json();
+    return build_config_json(cfgmgrj);
 }
 
 static json_t *build_speed_obj(const struct mhc_speed_cfg *cfg) {
@@ -781,18 +919,21 @@ static int winkey_builder_cb(const char *key, int val, void *user_data) {
     return 0;
 }
 
-struct cfgmgrj *cfgmgrj_create(struct ev_loop *loop) {
+struct cfgmgrj *cfgmgrj_create(struct ev_loop *loop, struct conmgr *conmgr) {
     struct cfgmgrj *cfgmgrj = w_calloc(1, sizeof(*cfgmgrj));
     if(!cfgmgrj)
         return NULL;
 
     cfgmgrj->loop = loop;
+    cfgmgrj->conmgr = conmgr;
     return cfgmgrj;
 }
 
  void cfgmgrj_destroy(struct cfgmgrj *cfgmgrj) {
     if(!cfgmgrj)
         return;
+    if(cfgmgrj->connectors)
+        json_decref(cfgmgrj->connectors);
 
     free(cfgmgrj);
     return;
@@ -814,7 +955,7 @@ int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
 }
 
 int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj) {
-    json_t *root = build_config_json();
+    json_t *root = build_config_json(cfgmgrj);
     if(!root)
         return -1;
 

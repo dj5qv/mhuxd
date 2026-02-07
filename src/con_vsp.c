@@ -23,7 +23,6 @@
 #include "logger.h"
 #include "buffer.h"
 #include "conmgr.h"
-#include "cfgnod.h"
 
 #define MOD_ID "vsp"
 
@@ -723,7 +722,7 @@ static const struct cuse_lowlevel_ops vsp_clop = {
         .poll           = dv_poll,
 };
 
-struct vsp *vsp_create(struct connector_spec *cspec) {
+struct vsp *vsp_create(const struct connector_spec *cspec) {
 	struct vsp *vsp;
 	char devname[128];
 	const char *dev_info_argv[] = { devname };
@@ -737,7 +736,7 @@ struct vsp *vsp_create(struct connector_spec *cspec) {
 
 	dbg1("%s()", __func__);
 
-	const char *p = cfg_get_val(cspec->cfg, "devname", NULL);
+	const char *p = cspec->vsp.devname;
 	if(p == NULL || !*p) {
 		err("could not create vsp device: missing device name!");
 		return NULL;
@@ -751,9 +750,9 @@ struct vsp *vsp_create(struct connector_spec *cspec) {
 	vsp->loop = cspec->loop;
 	//	vsp->ptt_on_msg = w_strdup(cspec->ptt_on_msg);
 	//	vsp->ptt_off_msg = w_strdup(cspec->ptt_off_msg);
-	vsp->rts_is_ptt = cfg_get_int_val(cspec->cfg, "ptt_rts", 0);
-	vsp->dtr_is_ptt = cfg_get_int_val(cspec->cfg, "ptt_dtr", 0);
-	vsp->max_con = cfg_get_int_val(cspec->cfg, "maxcon", 1);
+	vsp->rts_is_ptt = cspec->vsp.ptt_rts ? 1 : 0;
+	vsp->dtr_is_ptt = cspec->vsp.ptt_dtr ? 1 : 0;
+	vsp->max_con = (cspec->vsp.maxcon > 0) ? cspec->vsp.maxcon : 1;
 	vsp->fd_data = cspec->fd_data;
 	vsp->fd_ptt = cspec->fd_ptt;
 

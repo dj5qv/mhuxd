@@ -72,6 +72,14 @@
         "devices": {
           "type": "array",
           "items": {"$ref": "#/$defs/DeviceConfig"}
+        },
+        "connectors": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/ConnectorConfig"}
+        },
+        "connectorsRemove": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 1}
         }
       },
       "additionalProperties": false
@@ -190,6 +198,37 @@
         "displayevent": {
           "type": "array",
           "items": {"$ref": "#/$defs/DisplayOption"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConnectorConfig": {
+      "type": "object",
+      "required": ["serial", "channel", "type", "devname"],
+      "properties": {
+        "id": {"type": "integer", "minimum": 1},
+        "serial": {"type": "string"},
+        "channel": {"type": "string"},
+        "type": {"type": "string"},
+        "devname": {"type": "string"},
+        "maxcon": {"type": "integer", "minimum": 1},
+        "ptt_rts": {
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        },
+        "ptt_dtr": {
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        },
+        "remote_access": {
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
         }
       },
       "additionalProperties": false

@@ -229,6 +229,17 @@ h1 {
   column-gap: 16px;
 }
 
+.ports-grid .table-header,
+.ports-grid .table-row {
+  grid-template-columns: 30px 60px 70px 150px 80px 110px 80px 80px 180px 150px 80px;
+  column-gap: 12px;
+}
+
+.ports-grid .table-header > div:first-child,
+.ports-grid .table-row > div:first-child {
+  justify-self: center;
+}
+
 .table-header {
   background: #ccc;
   font-weight: 700;
@@ -291,4 +302,17 @@ h1 {
 .btn:disabled {
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+.inline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
 }

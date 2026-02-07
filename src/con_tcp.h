@@ -11,7 +11,7 @@
 #define CON_TCP_H
 
 struct connector_spec;
-struct ctcp *ctcp_create(struct connector_spec *cpsec);
+struct ctcp *ctcp_create(const struct connector_spec *cpsec);
 void ctcp_destroy(struct ctcp *ctcp);
 
 #endif // CON_TCP_H

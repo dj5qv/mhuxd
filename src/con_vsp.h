@@ -11,7 +11,7 @@
 #define CON_VSP_H
 
 struct connector_spec;
-struct vsp *vsp_create(struct connector_spec *cpsec);
+struct vsp *vsp_create(const struct connector_spec *cpsec);
 void vsp_destroy(struct vsp *vsp);
 
 #endif // CON_VSP_H
