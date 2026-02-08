@@ -173,8 +173,10 @@ struct mh_control {
 	struct mhc_speed_cfg speed_params[MH_NUM_CHANNELS];
 	uint8_t speed_params_valid[MH_NUM_CHANNELS];
 	uint8_t speed_idx;
-	uint8_t state;
-	uint8_t keyer_state;
+	uint8_t state; 			// internal state machine state
+	uint8_t keyer_state;	// state of the keyer as reported to the outside, derived from internal state.
+	uint8_t keyer_mode;     // as received from keyer
+	uint8_t keyer_mode_r1, keyer_mode_r2; // as received from keyer, for MK2R.
 	uint8_t in_flag_r1, in_flag_r2;
 	uint8_t out_flag;
 	uint8_t set_mode;
@@ -197,6 +199,8 @@ struct command {
 static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb_fn cb, void *user_data);
 static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb_fn cb, void *user_data);
 static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb_fn cb, void *user_data);
+static int submit_speed_cmd_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
+		mhc_cmd_completion_cb_fn cb, void *user_data);
 static void initializer_cb(unsigned const char *reply, int len, int result, void *user_data);
 static int push_cmds(struct mh_control *ctl);
 
@@ -438,16 +442,30 @@ static void consumer_cb(struct mh_router *router, unsigned const char *data ,int
 
 	case MHCMD_KEYER_MODE:
 		f = data[1];
+		int old_keyer_mode = ctl->keyer_mode;
+
+		ctl->keyer_mode = f & 3;
+		ctl->keyer_mode_r1 = (f >> 2) & 3;
+		ctl->keyer_mode_r2 = (f >> 4) & 3;
+
 		dbg0("%s mode  cur: %s, r1: %s, r2: %s", ctl->serial,
-		     keyer_modes[f & 3], keyer_modes[(f>>2) & 3],
-		     keyer_modes[(f>>4) & 3]);
-		if(ctl->kcfg)
-			kcfg_update_keyer_mode(ctl->kcfg, f & 3, (f>>2) & 3, (f>>4) & 3);
+			keyer_modes[ctl->keyer_mode], keyer_modes[ctl->keyer_mode_r1],
+			keyer_modes[ctl->keyer_mode_r2]);
+
+
+	 	if(ctl->kcfg)
+			kcfg_update_keyer_mode(ctl->kcfg, ctl->keyer_mode, ctl->keyer_mode_r1, ctl->keyer_mode_r2);
+
+		if(ctl->mhi.type == MHT_MK && old_keyer_mode != ctl->keyer_mode) {
+			// Special handling of MK1 model. No mode specific r1FrBase.
+			kcfg_update_mk1_frbase(ctl->kcfg, ctl->keyer_mode);
+			mhc_load_kopts(ctl, NULL, NULL);
+		}
 
 		struct mhc_mode_callback *mcb;
 		PG_SCANLIST(&ctl->mode_changed_cb_list, mcb) {
 			if(mcb->func)
-				mcb->func(ctl->serial, f & 3, (f>>2) & 3, (f>>4) & 3, mcb->user_data);
+				mcb->func(ctl->serial, ctl->keyer_mode, ctl->keyer_mode_r1, ctl->keyer_mode_r2, mcb->user_data);
 		}
 
 		break;
@@ -521,10 +539,15 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 			dbg0("%s set channel %d ok", ctl->serial, ctl->speed_idx - 1);
 
 		while(ctl->speed_idx < MH_NUM_CHANNELS) {
-			if(ctl->speed_args[ctl->speed_idx]) {
+			// old config logic speed_idx, new speed_params_valid.
+			// FIXME: old logic to be removed.
+			if(ctl->speed_args[ctl->speed_idx] || ctl->speed_params_valid[ctl->speed_idx]) {
 				set_state(ctl, CTL_STATE_SET_CHANNELS);
 				dbg0("%s set channel %d", ctl->serial, ctl->speed_idx);
-				submit_speed_cmd(ctl, ctl->speed_idx, initializer_cb, ctl);
+				if(ctl->speed_args[ctl->speed_idx])
+					submit_speed_cmd(ctl, ctl->speed_idx, initializer_cb, ctl);
+				else
+					submit_speed_cmd_params(ctl, ctl->speed_idx, &ctl->speed_params[ctl->speed_idx], initializer_cb, ctl);
 				ctl->speed_idx++;
 				break;
 			}
@@ -643,6 +666,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	ctl->router = router;
 	ctl->serial = mhr_get_serial(router);
 	ctl->set_mode = -1;
+	ctl->keyer_mode = -1;
 
 	PG_NewList(&ctl->cmd_list);
 	PG_NewList(&ctl->free_list);
@@ -747,6 +771,10 @@ int mhc_is_online(struct mh_control *ctl) {
 
 const struct mh_info *mhc_get_mhinfo(struct mh_control *ctl)  {
 	return &ctl->mhi;
+}
+
+const int mhc_get_keyer_mode(struct mh_control *ctl) {
+	return ctl->keyer_mode;
 }
 
 static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb_fn cb, void *user_data) {
@@ -1000,8 +1028,11 @@ int mhc_set_speed_params(struct mh_control *ctl, int channel, const struct mhc_s
 
 	if(mhc_is_online(ctl))
 		return submit_speed_cmd_params(ctl, channel, cfg, cb, user_data);
-	if(cb)
-		cb((uint8_t*)"", 0, CMD_RESULT_OK, user_data);
+	else {
+		if(cb)
+			cb((uint8_t*)"", 0, CMD_RESULT_OK, user_data);
+		dbg1("%s %s not online, state %s / %d", ctl->serial, __func__, mhc_state_str(ctl->keyer_state), ctl->state);
+	}
 	return 0;
 }
 
@@ -1039,7 +1070,7 @@ int mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *us
 		return -1;
 	}
 
-	struct buffer *kb = kcfg_get_buffer(ctl->kcfg);
+	const struct buffer *kb = kcfg_get_buffer(ctl->kcfg);
 	struct buffer buf;
 	buf_reset(&buf);
 	buf_append_c(&buf, MHCMD_SET_SETTINGS);

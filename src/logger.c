@@ -151,7 +151,7 @@ void log_json(int severity, const char *msg1, const char *msg2, const char *msg3
 
 	json_str = json_dumps(obj, JSON_COMPACT);
 	if(json_str) {
-		log_msg(severity, msg1, " %s %s %s", msg2, msg3, json_str);
+		log_msg(severity, msg1, " %s %s %s\n", msg2, msg3, json_str);
 		free(json_str);
 	}
 }

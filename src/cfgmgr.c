@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2017  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -111,13 +111,6 @@ static int merge_runtime_cfg(struct cfg *cfg) {
 	}
 	return rval;
 }
-
-enum {
-        MOD_CW,
-        MOD_VOICE,
-	MOD_FSK,
-        MOD_DIGITAL,
-};
 
 static int mk1_set_frbase(struct device *dev, struct cfg *param_cfg) {
 	int rval = 0;

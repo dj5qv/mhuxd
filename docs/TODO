@@ -6,3 +6,7 @@
 3) AUX configuration not working as it shares the channel id with R2.
 
 4) Performance friendly debug output of JSON objects. That is do json_dump() only if the loglevel matches.
+
+5) memory leak, should call tty_clode() instead of close(router->fd)
+
+6) Check struct mh_control, set_mode, used for what? Can be removed?

@@ -496,6 +496,9 @@ static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
 }
 
 static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
+    dbg1("%s", __func__);
+    dbg1_j("device object", "", device_obj);
+
     if(!json_is_object(device_obj))
         return -1;
 
@@ -581,6 +584,7 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
             return -1;
     }
 
+    dbg1("%s done", __func__);
     return 0;
 }
 
@@ -683,6 +687,7 @@ static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
     if(!json_is_object(root))
         return -1;
 
+    dbg1("%s daemon", __func__);
     json_t *daemon = json_object_get(root, "daemon");
     if(json_is_object(daemon)) {
         json_t *loglevel = json_object_get(daemon, "loglevel");
@@ -692,6 +697,7 @@ static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
         }
     }
 
+    dbg1("%s devices", __func__);
     json_t *devices = json_object_get(root, "devices");
     if(devices && json_is_array(devices)) {
         size_t idx;
@@ -702,6 +708,7 @@ static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
         }
     }
 
+    dbg1("%s connectors", __func__);
     json_t *connectors = json_object_get(root, "connectors");
     if(connectors && json_is_array(connectors)) {
         size_t idx;
@@ -712,6 +719,7 @@ static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
         }
     }
 
+    dbg1("%s connectorsRemove", __func__);
     json_t *connectors_remove = json_object_get(root, "connectorsRemove");
     if(connectors_remove && json_is_array(connectors_remove)) {
         size_t idx;
@@ -942,6 +950,9 @@ struct cfgmgrj *cfgmgrj_create(struct ev_loop *loop, struct conmgr *conmgr) {
 int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
     json_error_t jerr;
     json_t *root = json_load_file(CFGFILE, 0, &jerr);
+
+    dbg1("%s", __func__);
+
     if(!root) {
         if(jerr.line == 0)
             return 0;

@@ -19,6 +19,7 @@ enum  {
 	CMD_RESULT_NOT_SUPPORTED,
 };
 
+// Keyer states, as returned by mhc_get_state() and in the keyer state change callback.
 enum {
 	MHC_KEYER_STATE_UNKNOWN,
 	MHC_KEYER_STATE_DISABLED,
@@ -26,6 +27,15 @@ enum {
 	MHC_KEYER_STATE_DISC,
 	MHC_KEYER_STATE_ONLINE,
 };
+
+// Keyer modes.
+enum {
+    MOD_CW = 0,
+    MOD_VOICE = 1,
+    MOD_FSK = 2,
+    MOD_DIGITAL = 3
+};
+
 
 typedef void (*mhc_cmd_completion_cb_fn)(unsigned const char *reply, int len, int result, void *user_data);
 typedef void (*mhc_keyer_state_cb_fn)(const char *serial, int mhc_keyer_state, void *user_data);
@@ -44,6 +54,7 @@ struct mhc_mode_callback;
 
 struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, struct mh_info *mhi);
 void mhc_destroy(struct mh_control *ctl);
+const int mhc_get_keyer_mode(struct mh_control *ctl);
 int mhc_is_connected(struct mh_control *ctl);
 int mhc_is_online(struct mh_control *ctl);
 const char *mhc_get_serial(struct mh_control *ctl);

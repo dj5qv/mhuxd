@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -21,6 +21,15 @@
 #define AUDIO_SW_B (1)
 #define AUDIO_SW_A (2)
 #define AUDIO_SW_C (3)
+
+
+// Keyer modes.
+enum {
+    MOD_CW = 0,
+    MOD_VOICE = 1,
+    MOD_FSK = 2,
+    MOD_DIGITAL = 3
+};
 
 struct citem {
 	const char	*key;
@@ -907,5 +916,22 @@ void kcfg_update_keyer_mode(struct kcfg *kcfg, uint8_t cur, uint8_t r1, uint8_t 
 		kcfg_set_val(kcfg, "r2KeyerMode", r2);
 	} else {
 		kcfg_set_val(kcfg, "r1KeyerMode", cur);
+	}
+}
+
+void kcfg_update_mk1_frbase(struct kcfg *kcfg, int8_t mode) {
+	if(!kcfg || kcfg->mhi->type != MHT_MK)
+		return;
+
+	switch(mode) {
+	case MOD_CW:
+		kcfg_set_val(kcfg, "r1FrBase", kcfg->b.data[10]);
+		break;
+	case MOD_VOICE:
+		kcfg_set_val(kcfg, "r1FrBase", kcfg->b.data[11]);
+		break;
+	case MOD_DIGITAL:
+		kcfg_set_val(kcfg, "r1FrBase", kcfg->b.data[12]);
+		break;
 	}
 }

@@ -156,9 +156,12 @@ int main(int argc, char **argv)
 	ev_signal_start (loop, &w_sighup);
 
 	dmgr_create(loop, cfgmgr);
-
+/*
 	if(cfgmgr_init(cfgmgr))
 		err("(main) error initializing config manager!");
+*/
+	if(cfgmgrj_load_cfg(cfgmgrj))
+		err("(main) error initializing json config manager!");
 
 	dmgr_enable_monitor();
 
