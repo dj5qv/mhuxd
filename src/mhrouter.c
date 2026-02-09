@@ -722,8 +722,11 @@ int mhr_send_in(struct mh_router *router, const uint8_t *data, unsigned int len,
 
 	if(len > BUFFER_CAPACITY)
 		return -1;
-	if(router->fd == -1)
+	if(router->fd == -1) {
+		warn("%s() %s Attempt to send data but keyer/SM not online, fd == -1!", __func__, router->serial);
+		warn("%s() %s Can happen if we just lost the connection to keyer/SM, otherwise: bug!", __func__, router->serial);
 		return -1;
+	}
 
 	if(len > buf_size_avail(&router->channel_buf_out[channel])) {
 		err("%s() insufficient buffer space for %d bytes!", __func__, len);

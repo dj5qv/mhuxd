@@ -155,7 +155,7 @@ int main(int argc, char **argv)
 	ev_signal_start (loop, &w_sigpipe);
 	ev_signal_start (loop, &w_sighup);
 
-	dmgr_create(loop, cfgmgr);
+	dmgr_create(loop);
 /*
 	if(cfgmgr_init(cfgmgr))
 		err("(main) error initializing config manager!");

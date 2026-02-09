@@ -881,6 +881,7 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
     return root;
 }
 
+// Build the complete JSON config.
 json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj) {
     return build_config_json(cfgmgrj);
 }

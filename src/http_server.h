@@ -39,6 +39,7 @@ struct http_handler *hs_register_handler(struct http_server *hs, const char *pat
 void hs_unregister_handler(struct http_server *hs, struct http_handler *h);
 
 int16_t hs_get_method(struct http_connection *hcon);
+const char *hs_method_str(int16_t method);
 
 void hs_send_response(struct http_connection *hcon, uint16_t code, const char *content_type, const char *body, size_t len, time_t *, int max_age);
 void hs_send_error_page(struct http_connection *hcon, uint16_t code);

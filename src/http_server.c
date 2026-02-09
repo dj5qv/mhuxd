@@ -411,11 +411,11 @@ static int on_message_complete_cb (http_parser *p) {
 	query[url.field_data[UF_QUERY].len] = 0x00;
 	path_len = url.field_data[UF_PATH].len;
 
-#if 0
-	info("'%s' ('%s')", path, query);
-	int i;
-	for(i=0; i<=hcon->req_header_idx && i < MAX_HEADERS; i++)
-		info("header %s: %s", hcon->req_header[i].name, hcon->req_header[i].value);
+#if 1
+	dbg1("%s '%s' ('%s')", http_method_str(hcon->parser.method), path, query);
+	// int i;
+	// for(i=0; i<=hcon->req_header_idx && i < MAX_HEADERS; i++)
+	//	dbg1("header %s: %s", hcon->req_header[i].name, hcon->req_header[i].value);
 #endif
 
 	PG_SCANLIST(&hcon->hs->handler_list, h) {
@@ -783,6 +783,19 @@ int16_t hs_get_method(struct http_connection *hcon) {
 		case HTTP_OPTIONS: method = HS_HTTP_OPTIONS; break;
 	}
 	return method;
+}
+
+const char *hs_method_str(int16_t method) {
+	switch(method) {
+		case HS_HTTP_GET: return "GET";
+		case HS_HTTP_POST: return "POST";
+		case HS_HTTP_PUT: return "PUT";
+		case HS_HTTP_PATCH: return "PATCH";
+		case HS_HTTP_DELETE: return "DELETE";
+		case HS_HTTP_HEAD: return "HEAD";
+		case HS_HTTP_OPTIONS: return "OPTIONS";
+		default: return "UNKNOWN";
+	}
 }
 
 static const char *DAY_NAMES[] =

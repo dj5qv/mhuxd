@@ -22,14 +22,12 @@ struct device {
 };
 
 struct ev_loop;
-struct cfgmgr;
 
-void *dmgr_create(struct ev_loop *loop, struct cfgmgr *cfgmgr);
+void *dmgr_create(struct ev_loop *loop);
 void dmgr_enable_monitor();
 struct device *dmgr_add_device(const char *serial, uint16_t type);
 void dmgr_destroy();
 struct device *dmgr_get_device(const char *serial);
 struct PGList *dmgr_get_device_list();
-struct cfgmgr *dmgr_get_cfgmgr();
 
 #endif // DEVMGR_H

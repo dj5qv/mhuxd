@@ -18,7 +18,6 @@
 #include "mhrouter.h"
 #include "mhcontrol.h"
 #include "mhinfo.h"
-#include "cfgmgr.h"
 #include "wkman.h"
 
 #define MOD_ID "dmr"
@@ -27,7 +26,6 @@ struct device_manager {
 	struct PGList device_list;
 	struct ev_loop *loop;
 	struct devmon *devmon;
-	struct cfgmgr *cfgmgr;
 };
 
 struct device_manager *dman = NULL;
@@ -60,8 +58,6 @@ static struct device *create_dev(const char *serial, uint16_t type) {
 	dev->router = mhr_create(dman->loop, serial, (mhi.flags & MHF_HAS_FLAGS_CHANNEL) ? 1 : 0);
 	dev->ctl = mhc_create(dman->loop, dev->router, &mhi);
 	PG_AddTail(&dman->device_list, &dev->node);
-	mhc_add_keyer_state_changed_cb(dev->ctl, cfgmr_state_changed_cb, dman->cfgmgr);
-	//	cfgmgr_update_hdf_dev(dman->cfgmgr, serial);
 	return dev;
 }
 
@@ -114,7 +110,7 @@ static void devmon_callback(const char *serial, int status, void *user_data) {
 	free((void*)devnode);
 }
 
-void *dmgr_create(struct ev_loop *loop, struct cfgmgr *cfgmgr) {
+void *dmgr_create(struct ev_loop *loop) {
 
 	if(dman != NULL) {
 		// this is a singleton
@@ -124,7 +120,6 @@ void *dmgr_create(struct ev_loop *loop, struct cfgmgr *cfgmgr) {
 	dman = w_calloc(1, sizeof(*dman));
 	PG_NewList(&dman->device_list);
 	dman->loop = loop;
-	dman->cfgmgr = cfgmgr;
 	return dman;
 }
 
@@ -172,6 +167,3 @@ struct device *dmgr_get_device(const char *serial) {
 	return NULL;
 }
 
-struct cfgmgr *dmgr_get_cfgmgr() {
-	return dman->cfgmgr;
-}

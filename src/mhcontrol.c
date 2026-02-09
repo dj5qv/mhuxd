@@ -403,7 +403,7 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 	err("invalid state cmd %d for keyer %s", *data, ctl->serial);
 }
 
-static void consumer_cb(struct mh_router *router, unsigned const char *data ,int len, int channel, void *user_data) {
+static void control_channel_cb(struct mh_router *router, unsigned const char *data ,int len, int channel, void *user_data) {
 	(void)router; (void)channel;
 	struct mh_control *ctl = user_data;
 	struct command *cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list);
@@ -689,7 +689,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 
 	mhr_add_status_cb(router, router_status_cb, ctl);
 
-	mhr_add_consumer_cb(router, consumer_cb, MH_CHANNEL_CONTROL, ctl);
+	mhr_add_consumer_cb(router, control_channel_cb, MH_CHANNEL_CONTROL, ctl);
 
 	if(mhi->flags & MHF_HAS_FLAGS_CHANNEL)
 		mhr_add_consumer_cb(router, flags_cb, MH_CHANNEL_FLAGS, ctl);
@@ -1469,6 +1469,7 @@ static int push_cmds(struct mh_control *ctl) {
 	dbg1_h(ctl->serial, "cmd to k", cmd->cmd, cmd->len);
 	if(r != cmd->len) {
 		warn("could not send command! (%d/%d)", r, cmd->len);
+		cmd->cmd_completion_cb((uint8_t*)"", 0, CMD_RESULT_INVALID, cmd->user_data);
 		return -1;
 	}
 #endif
@@ -1488,13 +1489,23 @@ static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion
 
 static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb_fn cb, void *user_data) {
 
+	dbg1("%s %s() cmd 0x%02x", ctl->serial, __func__, b->data[0]);
+
+	if(!mhc_is_online(ctl)) {
+		warn("%s() %s Can't submit command %d, keyer not online!", __func__, ctl->serial, b->data[0]);
+		if(cb) cb((uint8_t*)"", 0, CMD_RESULT_INVALID, user_data);
+		return -1;
+	}
+
 	if(b->size > MAX_CMD_LEN) {
 		err("Can't queue command, command too long (%d)!", b->size);
+		if(cb) cb((uint8_t*)"", 0, CMD_RESULT_INVALID, user_data);
 		return -1;
 	}
 
 	if(PG_Count(&ctl->cmd_list) > MAX_CMD_QUEUE_SIZE) {
 		warn("Can't queue command, queue full!");
+		if(cb) cb((uint8_t*)"", 0, CMD_RESULT_INVALID, user_data);
 		return -1;
 	}
 

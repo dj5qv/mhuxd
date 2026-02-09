@@ -165,14 +165,6 @@ static int mk1_set_frbase(struct device *dev, struct cfg *param_cfg) {
 	return rval;
 }
 
-//FIXME: remove this
-void cfgmr_state_changed_cb(const char *serial, int state, void *user_data) {
-	(void)state; (void)serial; (void)user_data;
-	//struct cfgmgr *cfgmgr = user_data;
-	dbg1("%s() %s", __func__, mhc_state_str(state));
-	//cfgmgr_update_hdf_dev(cfgmgr, serial);
-}
-
 // Merge device configuration into cfg
 int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg) {
 	NEOERR *err;

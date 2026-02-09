@@ -309,6 +309,8 @@ static int cb_config_daemon(struct http_connection *hcon, const char *path, cons
 	(void)path; (void)query; (void)data;
 	int16_t method = hs_get_method(hcon);
 
+	dbg1("%s %s", __func__, hs_method_str(method));
+
 	if(method != HS_HTTP_GET && method != HS_HTTP_POST && method != HS_HTTP_PUT && method != HS_HTTP_PATCH) {
 		hs_send_response(hcon, 400, "application/json", "{}", 2, NULL, 0);
 		return 0;
@@ -392,6 +394,8 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 	struct restapi *api = data;
 	int16_t method = hs_get_method(hcon);
 
+	dbg1("%s %s", __func__, hs_method_str(method));
+
 	if(!api || !api->cfgmgrj) {
 		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
 		return 0;
@@ -474,6 +478,8 @@ static int cb_config_device(struct http_connection *hcon, const char *path, cons
 	struct restapi *api = data;
 	int16_t method = hs_get_method(hcon);
 	const char *serial = (path && *path) ? path : NULL;
+
+	dbg1("%s %s serial: %s", __func__, hs_method_str(method), serial ? serial : "NULL");
 
 	if(!api || !api->cfgmgrj || !serial) {
 		hs_send_response(hcon, 404, "application/json", "{}", 2, NULL, 0);

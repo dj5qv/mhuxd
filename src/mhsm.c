@@ -851,6 +851,8 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 	struct sm_bandplan *bp;
 	int i;
 
+	dbg1("%s() result %d, len %d", __func__, result, len);
+
 	if(result != CMD_RESULT_OK) {
 		err("%s command failed: %s!", "GET ANTSW BLOCK", mhc_cmd_err_string(result));
 		sm->get_antsw_state = STATE_GET_ANTSW_EMPTY;
