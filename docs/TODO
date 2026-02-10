@@ -10,3 +10,13 @@
 5) memory leak, should call tty_clode() instead of close(router->fd)
 
 6) Check struct mh_control, set_mode, used for what? Can be removed?
+
+7) Make submit_cmd() and derived functions as void return. Currently it returns -1 on failure, but the caller does not always check this. 
+   Instead submit_cmd() should call the callbacks even when it fails, so that the caller can react to this. This way error handling has 
+   to happen in one place, the callbacks.
+   After some reading, even if sumit_cmd() immediately fails, the callback should be called async, that is from the main event loop. See
+   ev_idle.
+
+8) Check renamed functions in libev 4, e.g. ev_unloop() -> ev_break(). We still seem to use old ones.
+
+9) Check signal handler in main.c.  

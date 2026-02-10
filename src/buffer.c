@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -46,7 +46,7 @@ int buf_append_c(struct buffer *b, unsigned char c) {
 	return 0;
 }
 
-int buf_append(struct buffer *b, const unsigned char *p, ssize_t len) {
+int buf_append(struct buffer *b, const unsigned char *p, uint16_t len) {
 	uint16_t avail = buf_size_avail(b);
 	if(len > avail)
 		len = avail;
