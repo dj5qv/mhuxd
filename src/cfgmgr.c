@@ -632,11 +632,8 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 			check_icom_address(chan_hdf);
 
 			result = -1;
-			if(mhc_set_speed(dev->ctl, channel, (struct cfg *)chan_hdf, completion_cb, &result)) {
-				err("could not set channel speed for %s!", chan_name);
-				rval++;
-				continue;
-			}
+
+			mhc_set_speed(dev->ctl, channel, (struct cfg *)chan_hdf, completion_cb, &result);
 
 			while(result == -1) {
 				ev_loop(cfgmgr->loop, EVRUN_ONCE);
@@ -655,17 +652,13 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 
 		if(mhc_is_online(dev->ctl)) {
 			result = -1;
-			if(mhc_load_kopts(dev->ctl, completion_cb, &result)) {
-				err("could not write config to keyer %s!", serial);
+			mhc_load_kopts(dev->ctl, completion_cb, &result);
+			while(result == -1) {
+				ev_loop(cfgmgr->loop, EVRUN_ONCE);
+			}
+			if(result != CMD_RESULT_OK) {
+				err("error writing config to keyer %s", serial);
 				rval++;
-			} else {
-				while(result == -1) {
-					ev_loop(cfgmgr->loop, EVRUN_ONCE);
-				}
-				if(result != CMD_RESULT_OK) {
-					err("error writing config to keyer %s", serial);
-					rval++;
-				}
 			}
 		}
 
@@ -683,17 +676,13 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 				continue;
 			}
 
-			if(mhc_store_cw_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result)) {
-				err("%s could not store cw message on index %d", serial, idx);
+			mhc_store_cw_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result);
+			while(result == -1) {
+				ev_loop(cfgmgr->loop, EVRUN_ONCE);
+			}
+			if(result != CMD_RESULT_OK) {
+				err("%s error store cw message %d", serial, idx);
 				rval++;
-			} else {
-				while(result == -1) {
-					ev_loop(cfgmgr->loop, EVRUN_ONCE);
-				}
-				if(result != CMD_RESULT_OK) {
-					err("%s error store cw message %d", serial, idx);
-					rval++;
-				}
 			}
 		}
 
@@ -709,17 +698,13 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 				continue;
 			}
 
-			if(mhc_store_fsk_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result)) {
-				err("%s could not store fsk message on index %d", serial, idx);
+			mhc_store_fsk_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result);
+			while(result == -1) {
+				ev_loop(cfgmgr->loop, EVRUN_ONCE);
+			}
+			if(result != CMD_RESULT_OK) {
+				err("%s error store fsk message %d", serial, idx);
 				rval++;
-			} else {
-				while(result == -1) {
-					ev_loop(cfgmgr->loop, EVRUN_ONCE);
-				}
-				if(result != CMD_RESULT_OK) {
-					err("%s error store fsk message %d", serial, idx);
-					rval++;
-				}
 			}
 		}
 

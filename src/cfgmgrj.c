@@ -380,8 +380,7 @@ static int apply_speed_from_json(struct cfgmgrj *cfgmgrj, struct mh_control *ctl
         cfg.dontinterfereusbcontrol = json_get_int(chan_cfg, "dontinterfereusbcontrol", 0);
 
         int result = -1;
-        if(mhc_set_speed_params(ctl, channel, &cfg, completion_cb, &result))
-            return -1;
+        mhc_set_speed_params(ctl, channel, &cfg, completion_cb, &result);
         while(result == -1)
             ev_loop(cfgmgrj->loop, EVRUN_ONCE);
         if(result != CMD_RESULT_OK)
@@ -408,11 +407,9 @@ static int apply_messages_from_json(struct cfgmgrj *cfgmgrj, struct mh_control *
 
         int result = -1;
         if(is_cw) {
-            if(mhc_store_cw_message(ctl, (uint8_t)index, text, (uint8_t)next_idx, (uint8_t)delay, completion_cb, &result))
-                return -1;
+            mhc_store_cw_message(ctl, (uint8_t)index, text, (uint8_t)next_idx, (uint8_t)delay, completion_cb, &result);
         } else {
-            if(mhc_store_fsk_message(ctl, (uint8_t)index, text, (uint8_t)next_idx, (uint8_t)delay, completion_cb, &result))
-                return -1;
+            mhc_store_fsk_message(ctl, (uint8_t)index, text, (uint8_t)next_idx, (uint8_t)delay, completion_cb, &result);
         }
         while(result == -1)
             ev_loop(cfgmgrj->loop, EVRUN_ONCE);
@@ -533,8 +530,7 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
             return -1;
         if(mhc_is_online(ctl)) {
             int result = -1;
-            if(mhc_load_kopts(ctl, completion_cb, &result))
-                return -1;
+            mhc_load_kopts(ctl, completion_cb, &result);
             while(result == -1)
                 ev_loop(cfgmgrj->loop, EVRUN_ONCE);
             if(result != CMD_RESULT_OK)
@@ -545,8 +541,7 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
     if(ptt_changed && (!param || !json_is_object(param))) {
         if(mhc_is_online(ctl)) {
             int result = -1;
-            if(mhc_load_kopts(ctl, completion_cb, &result))
-                return -1;
+            mhc_load_kopts(ctl, completion_cb, &result);
             while(result == -1)
                 ev_loop(cfgmgrj->loop, EVRUN_ONCE);
             if(result != CMD_RESULT_OK)

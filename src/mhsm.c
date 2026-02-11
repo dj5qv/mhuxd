@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -970,12 +970,8 @@ static void get_antsw_completion_cb(unsigned const char *reply_buf, int len, int
 			buf_append_c(&b, 0x43 | (1<<7)); // GET ANTSW BLOCK
 			get_antsw_completion_cb(b.data, b.size, CMD_RESULT_OK, sm);
 		}
-
 #else
-		if(-1 == mhc_sm_get_antsw_block(sm->ctl, sm->get_antsw_offset, get_antsw_completion_cb, sm)) {
-			sm->get_antsw_state = STATE_GET_ANTSW_EMPTY;
-			return;
-		}
+		mhc_sm_get_antsw_block(sm->ctl, sm->get_antsw_offset, get_antsw_completion_cb, sm);
 #endif
 	} else {
 		struct object *o;
@@ -1034,10 +1030,7 @@ int sm_get_antsw(struct sm *sm) {
 		get_antsw_completion_cb(b.data, b.size, CMD_RESULT_OK, sm);
 	}
 #else
-	if(-1 == mhc_sm_get_antsw_block(sm->ctl, sm->get_antsw_offset, get_antsw_completion_cb, sm)) {
-		sm->get_antsw_state = STATE_GET_ANTSW_EMPTY;
-		return -1;
-	}
+	mhc_sm_get_antsw_block(sm->ctl, sm->get_antsw_offset, get_antsw_completion_cb, sm);
 #endif
 
 	while(sm->get_antsw_state != STATE_GET_ANTSW_EMPTY && sm->get_antsw_state != STATE_GET_ANTSW_DONE) {

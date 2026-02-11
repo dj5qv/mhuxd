@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2024  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -196,10 +196,10 @@ struct command {
 	uint8_t cmd[MAX_CMD_LEN];
 };
 
-static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb_fn cb, void *user_data);
-static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb_fn cb, void *user_data);
-static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb_fn cb, void *user_data);
-static int submit_speed_cmd_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
+static void submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb_fn cb, void *user_data);
+static void submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb_fn cb, void *user_data);
+static void submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb_fn cb, void *user_data);
+static void submit_speed_cmd_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
 		mhc_cmd_completion_cb_fn cb, void *user_data);
 static void initializer_cb(unsigned const char *reply, int len, int result, void *user_data);
 static int push_cmds(struct mh_control *ctl);
@@ -211,6 +211,41 @@ static const char *state_strings[] = {
 	[MHC_KEYER_STATE_DISC] = "DISCONNECTED",
 	[MHC_KEYER_STATE_ONLINE] = "ONLINE",
 };
+
+// async error reporting
+typedef struct {
+    ev_idle idle;
+    mhc_cmd_completion_cb_fn cb;
+    int result;
+	void *user_data;
+} deferred_task_t;
+
+static int8_t is_connected(struct mh_control *ctl)
+{
+	// this is different from mhc_is_online() as for being "online", the device must be fully initialized.
+	// Here we look at the internal state and already return true even if the device is in the initialization phase.
+	return (ctl->state != CTL_STATE_DEVICE_DISC) && (ctl->state != CTL_STATE_DEVICE_OFF);
+}
+
+static void handle_deferred(struct ev_loop *loop, ev_idle *w, int revents) {
+	deferred_task_t *task = (deferred_task_t*)w;
+	ev_idle_stop(loop, w);
+	task->cb((uint8_t*)"", 0, task->result, task->user_data);
+	free(task);
+}
+
+void defer_callback(struct ev_loop *loop, mhc_cmd_completion_cb_fn cb, int result, void *user_data) {
+    deferred_task_t *task;
+	if(!cb) 
+		return;
+	task = w_malloc(sizeof(*task));
+    task->cb = cb;
+    task->result = result;
+	task->user_data = user_data;
+    ev_idle_init(&task->idle, handle_deferred);
+    ev_idle_start(loop, &task->idle);
+}
+
 
 uint8_t mhc_get_state(struct mh_control *ctl) {
 	return ctl->keyer_state;
@@ -284,7 +319,7 @@ static void heartbeat_completed_cb(unsigned const char *reply, int len, int resu
 		dbg0("%s heartbeat pong", ctl->serial);
 
 		if(ctl->state == CTL_STATE_DEVICE_OFF) {
-			initializer_cb(NULL, 0, CMD_RESULT_INVALID, ctl);
+			initializer_cb(NULL, 0, CMD_RESULT_ERROR, ctl);
 		}
 		return;
 	}
@@ -474,7 +509,7 @@ static void control_channel_cb(struct mh_router *router, unsigned const char *da
 		if(ctl->state == CTL_STATE_OK) {
 			info("%s has just been restarted, initializing", ctl->serial);
 			set_state(ctl, CTL_STATE_SET_CHANNELS);
-			initializer_cb(NULL, 0, CMD_RESULT_INVALID, ctl);
+			initializer_cb(NULL, 0, CMD_RESULT_ERROR, ctl);
 		} else
 			info("%s has just been restarted", ctl->serial);
 		break;
@@ -489,7 +524,7 @@ static void control_channel_cb(struct mh_router *router, unsigned const char *da
 
 out:
 	if(ctl->state == CTL_STATE_DEVICE_OFF) {
-		initializer_cb(NULL, 0, CMD_RESULT_INVALID, ctl);
+		initializer_cb(NULL, 0, CMD_RESULT_ERROR, ctl);
 	}
 
 	push_cmds(ctl);
@@ -499,7 +534,7 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 	struct mh_control *ctl = user_data;
 
 	// previous step failed?
-	if(result != CMD_RESULT_OK && result != CMD_RESULT_INVALID) {
+	if(result != CMD_RESULT_OK && result != CMD_RESULT_ERROR) {
 		if(result == CMD_RESULT_TIMEOUT) {
 			dbg0("%s initializer timed out", ctl->serial);
 		}
@@ -644,7 +679,7 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 			// kick off state machine
 			dbg0("%s initializing", ctl->serial);
 			set_state(ctl, CTL_STATE_DEVICE_OFF);
-			initializer_cb(NULL, 0, CMD_RESULT_INVALID, ctl);
+			initializer_cb(NULL, 0, CMD_RESULT_ERROR, ctl);
 			break;
 
 		}
@@ -665,7 +700,6 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	ctl->loop = loop;
 	ctl->router = router;
 	ctl->serial = mhr_get_serial(router);
-	ctl->set_mode = -1;
 	ctl->keyer_mode = -1;
 
 	PG_NewList(&ctl->cmd_list);
@@ -777,7 +811,7 @@ const int mhc_get_keyer_mode(struct mh_control *ctl) {
 	return ctl->keyer_mode;
 }
 
-static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb_fn cb, void *user_data) {
+static void submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	float fbaud, stopbits, bytes_per_sec;
 	int ibaud;
 	uint8_t c, cmd, rtscts, databits, has_ext;
@@ -786,13 +820,15 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 
 	if(channel < 0 || channel >= MH_NUM_CHANNELS) {
 		err("%s() invalid channel number %d!", __func__, channel);
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	struct cfg *cfg = ctl->speed_args[channel];
 	if(!cfg) {
 		err("%s() no speed args defined for channel %s!", __func__, ch_channel2str(channel));
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	struct buffer buf;
@@ -802,7 +838,8 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	if(!fbaud) {
 		// Avoid devision by zero
 		err("%s() channel %s baud value must not be zero!", __func__, ch_channel2str(channel));
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	has_ext = 0;
@@ -828,7 +865,8 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 			break;
 		default:
 			err("can't set speed, invalid channel specified (%d)!", channel);
-			return -1;
+			defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+			return;
 	}
 
 	stopbits = cfg_get_float_val(cfg, "stopbits", 1);
@@ -838,7 +876,8 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	if(!databits) {
 		// Avoid devision by zero
 		err("%s() channel %s data bits must not be zero!", __func__, ch_channel2str(channel));
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	bytes_per_sec = fbaud / (databits + stopbits);
@@ -872,11 +911,9 @@ static int submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_complet
 	submit_cmd(ctl, &buf, cb, user_data);
 
 	// atl_warn_unused(args, "set channel");
-
-	return 0;
 }
 
-static int submit_speed_cmd_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
+static void submit_speed_cmd_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
 		mhc_cmd_completion_cb_fn cb, void *user_data) {
 	float fbaud, stopbits, bytes_per_sec;
 	int ibaud;
@@ -886,13 +923,15 @@ static int submit_speed_cmd_params(struct mh_control *ctl, int channel, const st
 
 	if(channel < 0 || channel >= MH_NUM_CHANNELS || !cfg) {
 		err("%s() invalid channel or config", __func__);
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	fbaud = (float)cfg->baud;
 	if(fbaud == 0) {
 		err("%s() channel %s baud value must not be zero!", __func__, ch_channel2str(channel));
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	has_ext = 0;
@@ -917,7 +956,8 @@ static int submit_speed_cmd_params(struct mh_control *ctl, int channel, const st
 			break;
 		default:
 			err("can't set speed, invalid channel specified (%d)!", channel);
-			return -1;
+			defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+			return;
 	}
 
 	stopbits = (float)cfg->stopbits;
@@ -926,7 +966,8 @@ static int submit_speed_cmd_params(struct mh_control *ctl, int channel, const st
 
 	if(!databits) {
 		err("%s() channel %s data bits must not be zero!", __func__, ch_channel2str(channel));
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	bytes_per_sec = fbaud / (databits + stopbits);
@@ -960,8 +1001,6 @@ static int submit_speed_cmd_params(struct mh_control *ctl, int channel, const st
 	mhr_set_bps_limit(ctl->router, channel, bytes_per_sec);
 
 	submit_cmd(ctl, &buf, cb, user_data);
-
-	return 0;
 }
 
 static void speed_params_from_cfg(struct mhc_speed_cfg *dst, struct cfg *cfg) {
@@ -979,20 +1018,21 @@ static void speed_params_from_cfg(struct mhc_speed_cfg *dst, struct cfg *cfg) {
 	dst->dontinterfereusbcontrol = cfg_get_int_val(cfg, "dontinterfereusbcontrol", 0);
 }
 
-int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data) {
 
 	dbg1("%s %s() channel %d / %s",ctl->serial, __func__, channel, ch_channel2str(channel));
 
 	if(channel < 0 || channel >= MH_NUM_CHANNELS) {
 		err("can't set speed, invalid channel (%d) specified!", channel);
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	// baud
 	float fbaud = cfg_get_float_val(cfg,"baud", -1);
 	if(fbaud == -1) {
 		err("can't set speed, no baud rate specified!");
-		return -1;
+		return;
 	}
 
 	if(ctl->speed_args[channel])
@@ -1001,39 +1041,34 @@ int mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_
 	speed_params_from_cfg(&ctl->speed_params[channel], cfg);
 	ctl->speed_params_valid[channel] = 1;
 
-	int r = 0;
-
 	if(mhc_is_online(ctl))
-		r = submit_speed_cmd(ctl, channel, cb, user_data);
+		submit_speed_cmd(ctl, channel, cb, user_data);
 	else
 		if(cb)
 			cb((uint8_t*)"", 0, CMD_RESULT_OK, user_data);
 
-	return r;
-
 }
 
-int mhc_set_speed_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
+void mhc_set_speed_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
 		mhc_cmd_completion_cb_fn cb, void *user_data) {
 
 	dbg1("%s %s()",ctl->serial, __func__);
 
-	if(!ctl || !cfg)
-		return -1;
-	if(channel < 0 || channel >= MH_NUM_CHANNELS)
-		return -1;
+	if(!ctl || !cfg || channel < 0 || channel >= MH_NUM_CHANNELS) {
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
+	}
 
 	ctl->speed_params[channel] = *cfg;
 	ctl->speed_params_valid[channel] = 1;
 
-	if(mhc_is_online(ctl))
-		return submit_speed_cmd_params(ctl, channel, cfg, cb, user_data);
-	else {
-		if(cb)
-			cb((uint8_t*)"", 0, CMD_RESULT_OK, user_data);
+	if(mhc_is_online(ctl)) {
+		submit_speed_cmd_params(ctl, channel, cfg, cb, user_data);
+		return;
+	} else {
 		dbg1("%s %s not online, state %s / %d", ctl->serial, __func__, mhc_state_str(ctl->keyer_state), ctl->state);
+		defer_callback(ctl->loop, cb, CMD_RESULT_OK, user_data);
 	}
-	return 0;
 }
 
 int mhc_get_speed_params(struct mh_control *ctl, int channel, struct mhc_speed_cfg *out) {
@@ -1049,105 +1084,95 @@ int mhc_get_speed_params(struct mh_control *ctl, int channel, struct mhc_speed_c
 	return 0;
 }
 
-int mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	dbg1("%s %s()",ctl->serial, __func__);
 
-	if(mhc_is_online(ctl)) {
-		struct buffer b;
-		buf_reset(&b);
-		buf_append_c(&b, MHCMD_SET_KEYER_MODE);
-		buf_append_c(&b, mode);
-		buf_append_c(&b, MHCMD_SET_KEYER_MODE | MSB_BIT);
-		return submit_cmd(ctl, &b, cb, user_data);
-	}
-	
-	ctl->set_mode = mode;
-	return 0;
+
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_SET_KEYER_MODE);
+	buf_append_c(&b, mode);
+	buf_append_c(&b, MHCMD_SET_KEYER_MODE | MSB_BIT);
+	submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
-	if(!mhc_is_online(ctl)) {
-		return -1;
-	}
-
+void mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	const struct buffer *kb = kcfg_get_buffer(ctl->kcfg);
 	struct buffer buf;
 	buf_reset(&buf);
 	buf_append_c(&buf, MHCMD_SET_SETTINGS);
 	buf_append(&buf, kb->data, kb->size);
 	buf_append_c(&buf, MHCMD_SET_SETTINGS | MSB_BIT);
-	return submit_cmd(ctl, &buf, cb, user_data);
+	submit_cmd(ctl, &buf, cb, user_data);
 }
 
-int mhc_mk2r_set_hfocus(struct mh_control *ctl, uint8_t hfocus[8], mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_mk2r_set_hfocus(struct mh_control *ctl, uint8_t hfocus[8], mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_HOST_FOCUS_CONTROL);
 	buf_append(&b, hfocus, 8);
 	buf_append_c(&b, MHCMD_HOST_FOCUS_CONTROL | MSB_BIT);
 	memcpy(ctl->hfocus, hfocus, 8);
-	return submit_cmd(ctl, &b, cb, user_data);
+	submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_mk2r_get_hfocus(struct mh_control *ctl, uint8_t dest[8]) {
+void mhc_mk2r_get_hfocus(struct mh_control *ctl, uint8_t dest[8]) {
 	memcpy(dest, ctl->hfocus, 8);
-	return 0;
 }
 
-int mhc_mk2r_set_acc_outputs(struct mh_control *ctl, uint8_t acc_outputs[4], mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_mk2r_set_acc_outputs(struct mh_control *ctl, uint8_t acc_outputs[4], mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_HOST_ACC_OUTPUTS_CONTROL);
 	buf_append(&b, acc_outputs, 4);
 	buf_append_c(&b, MHCMD_HOST_ACC_OUTPUTS_CONTROL | MSB_BIT);
 	memcpy(ctl->acc_state + 2, acc_outputs, 4);
-	return submit_cmd(ctl, &b, cb, user_data);
+	submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_mk2r_get_acc_outputs(struct mh_control *ctl, uint8_t dest[4]) {
+void mhc_mk2r_get_acc_outputs(struct mh_control *ctl, uint8_t dest[4]) {
 	memcpy(dest, ctl->acc_state + 2, 4);
-	return 0;
 }
 
-int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_APPLY_SCENARIO);
 	buf_append_c(&b, idx);
 	buf_append_c(&b, MHCMD_APPLY_SCENARIO | MSB_BIT);
-	return submit_cmd(ctl, &b, cb, user_data);
+	submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_sm_turn_to_azimuth(struct mh_control *ctl, uint16_t bearing, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_sm_turn_to_azimuth(struct mh_control *ctl, uint16_t bearing, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_TURN_TO_AZIMUTH);
 	buf_append_c(&b, bearing & 0xff);
 	buf_append_c(&b, (bearing >> 8) & 0xff);
 	buf_append_c(&b, MHCMD_TURN_TO_AZIMUTH | MSB_BIT);
-	return submit_cmd(ctl, &b, cb, user_data);
+	submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_sm_get_antsw_block(struct mh_control *ctl, uint16_t offset, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_sm_get_antsw_block(struct mh_control *ctl, uint16_t offset, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_GET_ANTSW_BLOCK);
 	buf_append_c(&b, offset & 0xff);
 	buf_append_c(&b, (offset >> 8) & 0xff);
 	buf_append_c(&b, MHCMD_GET_ANTSW_BLOCK | MSB_BIT);
-	return submit_cmd(ctl, &b, cb, user_data);
+	submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_sm_set_antsw_validity(struct mh_control *ctl, uint8_t param, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_sm_set_antsw_validity(struct mh_control *ctl, uint8_t param, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_SET_ANTSW_VALIDITY);
 	buf_append_c(&b, param);
 	buf_append_c(&b, MHCMD_SET_ANTSW_VALIDITY | MSB_BIT);
-	return submit_cmd(ctl, &b, cb, user_data);
+	submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_sm_store_antsw_block(struct mh_control *ctl, uint16_t offset, const char *data, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_sm_store_antsw_block(struct mh_control *ctl, uint16_t offset, const char *data, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_GET_ANTSW_BLOCK);
@@ -1158,7 +1183,7 @@ int mhc_sm_store_antsw_block(struct mh_control *ctl, uint16_t offset, const char
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_record_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_record_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_RECORD_FSK_CW_MSG);
@@ -1167,7 +1192,7 @@ int mhc_record_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_c
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_stop_recording(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_stop_recording(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_RECORD_FSK_CW_MSG);
@@ -1176,7 +1201,7 @@ int mhc_stop_recording(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_play_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_play_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_PLAY_FSK_CW_MSG);
@@ -1185,7 +1210,7 @@ int mhc_play_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_abort_message(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_abort_message(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_ABORT_FSK_CW_MSG);
@@ -1193,17 +1218,19 @@ int mhc_abort_message(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void 
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_store_cw_message(struct mh_control *ctl, uint8_t idx, const char *text, uint8_t next_idx, uint8_t delay, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_store_cw_message(struct mh_control *ctl, uint8_t idx, const char *text, uint8_t next_idx, uint8_t delay, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	size_t len = strlen(text);
 	if(len > MAX_CW_FSK_MESSAGE_LEN) {
 		err("%s() message too longer that %d characters!", __func__, MAX_CW_FSK_MESSAGE_LEN);
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	if(idx < 1 || idx > 9) {
 		err("%s() invalid index %d!", __func__, idx);
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	memcpy(ctl->cw_message[idx-1].text, text, len);
@@ -1211,9 +1238,8 @@ int mhc_store_cw_message(struct mh_control *ctl, uint8_t idx, const char *text, 
 	ctl->cw_message[idx-1].delay = delay;
 
 	if(!mhc_is_online(ctl)) {
-		if(cb)
-			cb((uint8_t*)"", 0, CMD_RESULT_OK, user_data);
-		return 0;
+		defer_callback(ctl->loop, cb, CMD_RESULT_OK, user_data);
+		return;
 	}
 
 	buf_reset(&b);
@@ -1225,17 +1251,19 @@ int mhc_store_cw_message(struct mh_control *ctl, uint8_t idx, const char *text, 
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
-int mhc_store_fsk_message(struct mh_control *ctl, uint8_t idx, const char *text, uint8_t next_idx, uint8_t delay, mhc_cmd_completion_cb_fn cb, void *user_data) {
+void mhc_store_fsk_message(struct mh_control *ctl, uint8_t idx, const char *text, uint8_t next_idx, uint8_t delay, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	size_t len = strlen(text);
 	if(len > 50) {
 		err("%s() message too longer that 50 characters!", __func__);
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	if(idx < 1 || idx > 9) {
 		err("%s() invalid index %d!", __func__, idx);
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	memcpy(ctl->fsk_message[idx-1].text, text, len);
@@ -1243,9 +1271,8 @@ int mhc_store_fsk_message(struct mh_control *ctl, uint8_t idx, const char *text,
 	ctl->fsk_message[idx-1].delay = delay;
 
 	if(!mhc_is_online(ctl)) {
-		if(cb)
-			cb((uint8_t*)"", 0, CMD_RESULT_OK, user_data);
-		return 0;
+		defer_callback(ctl->loop, cb, CMD_RESULT_OK, user_data);
+		return;
 	}
 
 	buf_reset(&b);
@@ -1469,7 +1496,7 @@ static int push_cmds(struct mh_control *ctl) {
 	dbg1_h(ctl->serial, "cmd to k", cmd->cmd, cmd->len);
 	if(r != cmd->len) {
 		warn("could not send command! (%d/%d)", r, cmd->len);
-		cmd->cmd_completion_cb((uint8_t*)"", 0, CMD_RESULT_INVALID, cmd->user_data);
+		defer_callback(ctl->loop, cmd->cmd_completion_cb, CMD_RESULT_ERROR, cmd->user_data);
 		return -1;
 	}
 #endif
@@ -1479,34 +1506,34 @@ static int push_cmds(struct mh_control *ctl) {
 	return 0;
 }
 
-static int submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb_fn cb, void *user_data) {
+static void submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer buf;
 	buf_reset(&buf);
 	buf_append_c(&buf, cmd);
 	buf_append_c(&buf, cmd | MSB_BIT);
-	return submit_cmd(ctl, &buf, cb, user_data);
+	submit_cmd(ctl, &buf, cb, user_data);
 }
 
-static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb_fn cb, void *user_data) {
-
+// Send keyer command, only if online.
+static void submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	dbg1("%s %s() cmd 0x%02x", ctl->serial, __func__, b->data[0]);
 
-	if(!mhc_is_online(ctl)) {
+	if(!is_connected(ctl)) {
 		warn("%s() %s Can't submit command %d, keyer not online!", __func__, ctl->serial, b->data[0]);
-		if(cb) cb((uint8_t*)"", 0, CMD_RESULT_INVALID, user_data);
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_OFFLINE, user_data);
+		return;
 	}
 
 	if(b->size > MAX_CMD_LEN) {
 		err("Can't queue command, command too long (%d)!", b->size);
-		if(cb) cb((uint8_t*)"", 0, CMD_RESULT_INVALID, user_data);
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	if(PG_Count(&ctl->cmd_list) > MAX_CMD_QUEUE_SIZE) {
 		warn("Can't queue command, queue full!");
-		if(cb) cb((uint8_t*)"", 0, CMD_RESULT_INVALID, user_data);
-		return -1;
+		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
+		return;
 	}
 
 	struct command *cmd;
@@ -1523,10 +1550,7 @@ static int submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completi
 	cmd->len = b->size;
 
 	PG_AddTail(&ctl->cmd_list, &cmd->node);
-
 	push_cmds(ctl);
-
-	return 0;
 }
 
 struct sm *mhc_get_sm(struct mh_control *ctl) {
@@ -1535,7 +1559,7 @@ struct sm *mhc_get_sm(struct mh_control *ctl) {
 
 const char *mhc_cmd_err_string(int result) {
 	switch(result) {
-	case CMD_RESULT_INVALID:
+	case CMD_RESULT_ERROR:
 		return "invalid command result";
 	case CMD_RESULT_OK:
 		return "ok";
@@ -1543,6 +1567,8 @@ const char *mhc_cmd_err_string(int result) {
 		return "command timed out";
 	case CMD_RESULT_NOT_SUPPORTED:
 		return "command not supported by keyer";
+	case CMD_RESULT_OFFLINE:
+		return "keyer offline";
 	}
 	return "unkown command result";
 }

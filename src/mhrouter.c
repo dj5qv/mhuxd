@@ -1,9 +1,14 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2017  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
+ */
+
+/* This module does the routing via the microHam protocol. It is not aware
+ * of any specific device types (features), and should not have to be. 
+ * Except for has_flags_channel.
  */
 
 #include <stdint.h>
@@ -720,8 +725,10 @@ int mhr_send_in(struct mh_router *router, const uint8_t *data, unsigned int len,
 		return -1;
 	}
 
-	if(len > BUFFER_CAPACITY)
+	if(len > BUFFER_CAPACITY) {
+		err("%s() %s chan %s: too much data, likely a bug! len: %u, max: %d", __func__, router->serial, ch_channel2str(channel), len, BUFFER_CAPACITY);
 		return -1;
+	}
 	if(router->fd == -1) {
 		warn("%s() %s Attempt to send data but keyer/SM not online, fd == -1!", __func__, router->serial);
 		warn("%s() %s Can happen if we just lost the connection to keyer/SM, otherwise: bug!", __func__, router->serial);
