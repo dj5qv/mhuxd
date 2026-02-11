@@ -28,8 +28,9 @@ struct fd_node {
 	struct termios termios;
 };
 
+// Globals. If we should ever go for multi-threading, these would need to be protected.
 static int is_initialized = 0;
-struct PGList fd_list;
+static struct PGList fd_list;
 
 int tty_open(const char *name) {
 	int fd;

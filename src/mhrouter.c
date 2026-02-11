@@ -25,6 +25,7 @@
 #include "channel.h"
 #include "mux.h"
 #include "demux.h"
+#include "tty.h"
 
 #define MOD_ID "mhr"
 
@@ -501,7 +502,7 @@ void mhr_set_keyer_fd(struct mh_router *router, int fd) {
 	if(router->fd != -1) {
 		ev_io_stop(router->loop, &router->w_in);
 		ev_io_stop(router->loop, &router->w_out);
-		close(router->fd);
+		tty_close(router->fd);
 	}
 
 	router->fd = fd;
