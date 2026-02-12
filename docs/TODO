@@ -1,7 +1,7 @@
 1) Optimize REST-API endpoint /config/devices and /config/devices/<serial>. Complete JSON structure tends to be rebuild even after small config change.
    Have UI use this where appropiate. 
 
-2) restapi.c, check if we can get rig of device_name_from_type(), feels misplaced here.
+2) restapi.c, check if we can get rid of device_name_from_type(), feels misplaced here.
 
 3) AUX configuration not working as it shares the channel id with R2.
 
@@ -20,3 +20,6 @@
 8) Check renamed functions in libev 4, e.g. ev_unloop() -> ev_break(). We still seem to use old ones.
 
 9) Check signal handler in main.c.  
+
+10) rigctld control, like start/stop with mhuxd and/or keyer becoming online / offline. rigctld could then also be used my mhuxd to track 
+   the rig mode and apply it to the keyer accordingly.

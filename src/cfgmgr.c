@@ -39,6 +39,10 @@
 #define CFGFILE STATEDIR "/mhuxd-state.hdf"
 #define MAX_HDF_PATH_LEN (128)
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 255
+#endif
+
 extern const char *log_file_name;
 
 struct cfgmgr {

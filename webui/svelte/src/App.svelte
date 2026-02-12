@@ -72,8 +72,15 @@
   let portStatusTimer;
   let selectedConnectorIds = [];
 
-  let activeTab = 'home';
-  let activeMenu = 'summary';
+  const parseHash = () => {
+    const h = location.hash.replace(/^#\/?/, '');
+    const [t, m] = h.split('/');
+    return { tab: t || 'home', menu: m || '' };
+  };
+  const initHash = parseHash();
+  let activeTab = initHash.tab;
+  let activeMenu = initHash.menu || 'summary';
+  let hashRestoredMenu = !!initHash.menu;
 
   const baseTabs = [
     { id: 'home', label: 'Home' },
@@ -638,6 +645,11 @@
     updateRadioForm(serial, chan, 'icomaddress', icomAddr);
   };
 
+  const updateHash = () => {
+    const h = `#${activeTab}/${activeMenu}`;
+    if (location.hash !== h) history.replaceState(null, '', h);
+  };
+
   const setTab = (id) => {
     activeTab = id;
     if (id === 'daemon') activeMenu = 'ports';
@@ -688,6 +700,14 @@
     } finally {
       loading = false;
     }
+
+    const onHashChange = () => {
+      const h = parseHash();
+      if (h.tab !== activeTab) activeTab = h.tab;
+      if (h.menu && h.menu !== activeMenu) activeMenu = h.menu;
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
   });
 
   const applyLoglevel = async () => {
@@ -1660,8 +1680,8 @@
 
   $: activeSerial = activeTab.startsWith('keyer:') ? activeTab.split(':')[1] : '';
   $: activeKeyer = activeSerial ? keyers.find((k) => k.serial === activeSerial) : null;
-  $: activeKeyerFlags = activeSerial ? keyerFlagsForSerial(activeSerial) : [];
-  $: activeKeyerMenus = activeSerial ? visibleKeyerMenus(activeSerial) : [];
+  $: activeKeyerFlags = activeSerial && keyers && metadata ? keyerFlagsForSerial(activeSerial) : [];
+  $: activeKeyerMenus = activeSerial && keyers && metadata ? visibleKeyerMenus(activeSerial) : [];
   $: activeAnts = configDevices && activeSerial ? smAntennas(activeSerial) : [];
   $: activeAntOutCols = configDevices && activeSerial ? smAntOutputColumns(activeSerial) : [];
   $: activeVrs = configDevices && activeSerial ? smVirtualRotators(activeSerial) : [];
@@ -1721,8 +1741,14 @@
 
   $: if (activeTab.startsWith('keyer:') && activeSerial && activeSerial !== lastSerial) {
     lastSerial = activeSerial;
-    activeMenu = activeKeyerMenus[0]?.id || 'summary';
+    if (hashRestoredMenu) {
+      hashRestoredMenu = false;
+    } else {
+      activeMenu = activeKeyerMenus[0]?.id || 'summary';
+    }
   }
+
+  $: activeTab, activeMenu, updateHash();
 
   $: activeMenuMeta =
     activeTab === 'home'
