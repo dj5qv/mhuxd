@@ -33,6 +33,7 @@ struct restapi {
 	struct http_handler *config_daemon_handler;
 	struct http_handler *config_devices_handler;
 	struct http_handler *config_device_handler;
+	struct http_handler *device_actions_handler;
 	json_t *rigtypes;
 	json_t *devicetypes;
 	json_t *displayoptions;
@@ -584,6 +585,113 @@ static int cb_config_device(struct http_connection *hcon, const char *path, cons
 	return 0;
 }
 
+static int cb_device_actions(struct http_connection *hcon, const char *path, const char *query,
+		 const char *body, uint32_t body_len, void *data) {
+	(void)query;
+	(void)data;
+	int16_t method = hs_get_method(hcon);
+
+	/* path is "SERIAL/actions" - extract serial and verify suffix */
+	char serial_buf[64];
+	const char *serial = NULL;
+	if(path && *path) {
+		const char *slash = strchr(path, '/');
+		if(slash && strcmp(slash + 1, "actions") == 0) {
+			size_t len = (size_t)(slash - path);
+			if(len > 0 && len < sizeof(serial_buf)) {
+				memcpy(serial_buf, path, len);
+				serial_buf[len] = '\0';
+				serial = serial_buf;
+			}
+		}
+	}
+
+	dbg1("%s %s serial: %s", __func__, hs_method_str(method), serial ? serial : "NULL");
+
+	if(!serial) {
+		hs_send_response(hcon, 404, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(method != HS_HTTP_POST) {
+		hs_send_response(hcon, 405, "application/json",
+			"{\"error\":\"Method not allowed\"}", 30, NULL, 0);
+		return 0;
+	}
+
+	if(!body || !body_len) {
+		hs_send_response(hcon, 400, "application/json",
+			"{\"error\":\"Missing request body\"}", 32, NULL, 0);
+		return 0;
+	}
+
+	json_error_t jerr;
+	json_t *root = json_loadb(body, body_len, 0, &jerr);
+	if(!root || !json_is_object(root)) {
+		if(root)
+			json_decref(root);
+		hs_send_response(hcon, 400, "application/json",
+			"{\"error\":\"Invalid JSON\"}", 23, NULL, 0);
+		return 0;
+	}
+
+	json_t *action = json_object_get(root, "action");
+	if(!action || !json_is_string(action)) {
+		json_decref(root);
+		hs_send_response(hcon, 400, "application/json",
+			"{\"error\":\"Missing action field\"}", 32, NULL, 0);
+		return 0;
+	}
+
+	const char *action_str = json_string_value(action);
+	int rc = -1;
+	const char *ok_msg = NULL;
+	const char *err_msg = NULL;
+
+	if(strcmp(action_str, "sm_load") == 0) {
+		rc = cfgmgrj_sm_load(serial);
+		ok_msg = "Antenna switching settings loaded from device.";
+		err_msg = "Could not load antenna switching settings from device.";
+	} else if(strcmp(action_str, "sm_store") == 0) {
+		rc = cfgmgrj_sm_store(serial);
+		ok_msg = "Antenna switching settings stored to device.";
+		err_msg = "Could not store antenna switching settings to device.";
+	} else {
+		json_decref(root);
+		hs_send_response(hcon, 400, "application/json",
+			"{\"error\":\"Unknown action\"}", 25, NULL, 0);
+		return 0;
+	}
+
+	json_decref(root);
+
+	json_t *rsp = json_object();
+	if(!rsp) {
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(rc == 0) {
+		json_object_set_new(rsp, "status", json_string("ok"));
+		json_object_set_new(rsp, "message", json_string(ok_msg));
+		send_json_payload(hcon, rsp);
+	} else {
+		json_object_set_new(rsp, "status", json_string("error"));
+		json_object_set_new(rsp, "message", json_string(err_msg));
+		char *payload = json_dumps(rsp, JSON_COMPACT);
+		if(!payload) {
+			json_decref(rsp);
+			hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+			return 0;
+		}
+		hs_add_rsp_header(hcon, "Cache-Control", "no-store");
+		hs_send_response(hcon, 500, "application/json", payload, strlen(payload), NULL, 0);
+		free(payload);
+	}
+	json_decref(rsp);
+	return 0;
+}
+
 struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) {
     struct restapi *api = NULL;
     json_error_t jerr;
@@ -630,8 +738,9 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
 	api->config_daemon_handler = hs_register_handler(hs, "/api/v1/config/daemon", cb_config_daemon, api);
 	api->config_devices_handler = hs_register_handler(hs, "/api/v1/config/devices", cb_config_devices, api);
 	api->config_device_handler = hs_register_handler(hs, "/api/v1/config/devices/", cb_config_device, api);
+	api->device_actions_handler = hs_register_handler(hs, "/api/v1/devices/", cb_device_actions, api);
 	if(!api->runtime_handler || !api->metadata_handler || !api->devices_handler || !api->config_daemon_handler ||
-	   !api->config_devices_handler || !api->config_device_handler) {
+	   !api->config_devices_handler || !api->config_device_handler || !api->device_actions_handler) {
         err("%s() failed to register rest api handlers", __func__);
         goto fail;
     }
@@ -652,6 +761,8 @@ fail:
 			hs_unregister_handler(hs, api->config_devices_handler);
 		if(api->config_device_handler)
 			hs_unregister_handler(hs, api->config_device_handler);
+		if(api->device_actions_handler)
+			hs_unregister_handler(hs, api->device_actions_handler);
         if(api->rigtypes)
             json_decref(api->rigtypes);
         if(api->devicetypes)
@@ -679,6 +790,8 @@ void restapi_destroy(struct restapi *api) {
 		hs_unregister_handler(api->hs, api->config_devices_handler);
 	if(api->config_device_handler)
 		hs_unregister_handler(api->hs, api->config_device_handler);
+	if(api->device_actions_handler)
+		hs_unregister_handler(api->hs, api->device_actions_handler);
 	if(api->rigtypes)
 		json_decref(api->rigtypes);
 	if(api->devicetypes)

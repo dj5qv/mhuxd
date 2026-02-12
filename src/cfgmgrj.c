@@ -449,6 +449,41 @@ static int apply_winkey_from_json(struct cfgmgrj *cfgmgrj, struct device *dev, j
     return 0;
 }
 
+/* Recursively apply sm fixed options from a JSON object, building dotted key paths
+ * for nested objects (e.g. { "sequencer": { "lead": { "B6": 100 } } }
+ * becomes sm_antsw_set_opt(sm, "sequencer.lead.B6", 100) */
+static int apply_sm_fixed_recursive(struct sm *sm, json_t *obj, char *prefix, size_t prefix_len, size_t prefix_cap) {
+    const char *key;
+    json_t *val;
+    json_object_foreach(obj, key, val) {
+        size_t key_len = strlen(key);
+        size_t new_len = prefix_len + (prefix_len ? 1 : 0) + key_len;
+        if(new_len >= prefix_cap)
+            continue;
+
+        char *p = prefix + prefix_len;
+        if(prefix_len) {
+            *p++ = '.';
+        }
+        memcpy(p, key, key_len + 1);
+
+        if(json_is_object(val)) {
+            if(apply_sm_fixed_recursive(sm, val, prefix, new_len, prefix_cap))
+                return -1;
+        } else if(json_is_integer(val) || json_is_boolean(val) || json_is_real(val)) {
+            int ival = json_is_real(val) ? (int)json_real_value(val) : (int)json_integer_value(val);
+            if(json_is_boolean(val))
+                ival = json_is_true(val) ? 1 : 0;
+            if(sm_antsw_set_opt(sm, prefix, (uint32_t)ival))
+                return -1;
+        }
+
+        /* restore prefix */
+        prefix[prefix_len] = '\0';
+    }
+    return 0;
+}
+
 static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
     if(!json_is_object(sm_obj))
         return 0;
@@ -458,17 +493,9 @@ static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
 
     json_t *fixed = json_object_get(sm_obj, "fixed");
     if(json_is_object(fixed)) {
-        const char *key;
-        json_t *val;
-        json_object_foreach(fixed, key, val) {
-            if(!json_is_integer(val) && !json_is_boolean(val) && !json_is_real(val))
-                continue;
-            int ival = json_is_real(val) ? (int)json_real_value(val) : (int)json_integer_value(val);
-            if(json_is_boolean(val))
-                ival = json_is_true(val) ? 1 : 0;
-            if(sm_antsw_set_opt(sm, key, (uint32_t)ival))
-                return -1;
-        }
+        char prefix[256] = "";
+        if(apply_sm_fixed_recursive(sm, fixed, prefix, 0, sizeof(prefix)))
+            return -1;
     }
 
     json_t *output = json_object_get(sm_obj, "output");
@@ -486,8 +513,62 @@ static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
         }
     }
 
-    if(json_object_get(sm_obj, "obj"))
-        warn("sm.obj not supported in JSON config yet");
+    if(json_object_get(sm_obj, "obj")) {
+        json_t *obj_val = json_object_get(sm_obj, "obj");
+        if(json_is_array(obj_val)) {
+            /* Bulk load from saved config: array of objects, each added */
+            sm_antsw_clear_lists(sm);
+            size_t idx;
+            json_t *item;
+            json_array_foreach(obj_val, idx, item) {
+                if(!json_is_object(item))
+                    continue;
+                if(sm_antsw_add_obj_json(sm, item))
+                    return -1;
+            }
+        } else if(json_is_object(obj_val)) {
+            /* Single object operation: { "action": "add|mod|rem", ... } */
+            const char *act = NULL;
+            json_t *jact = json_object_get(obj_val, "action");
+            if(jact && json_is_string(jact))
+                act = json_string_value(jact);
+
+            if(!act) {
+                warn("sm.obj missing action field");
+            } else if(strcmp(act, "add") == 0) {
+                if(sm_antsw_add_obj_json(sm, obj_val))
+                    return -1;
+            } else if(strcmp(act, "mod") == 0) {
+                if(sm_antsw_mod_obj_json(sm, obj_val))
+                    return -1;
+            } else if(strcmp(act, "rem") == 0) {
+                int id = -1;
+                json_t *jid = json_object_get(obj_val, "id");
+                if(jid && json_is_integer(jid))
+                    id = (int)json_integer_value(jid);
+                if(id < 0) {
+                    warn("sm.obj rem: missing id");
+                    return -1;
+                }
+                if(sm_antsw_rem_obj(sm, id))
+                    return -1;
+            } else if(strcmp(act, "rem_ref") == 0) {
+                int obj_id = -1, ref_id = -1;
+                json_t *joid = json_object_get(obj_val, "obj_id");
+                json_t *jrid = json_object_get(obj_val, "ref_id");
+                if(joid && json_is_integer(joid)) obj_id = (int)json_integer_value(joid);
+                if(jrid && json_is_integer(jrid)) ref_id = (int)json_integer_value(jrid);
+                if(obj_id < 0 || ref_id < 0) {
+                    warn("sm.obj rem_ref: missing obj_id or ref_id");
+                    return -1;
+                }
+                if(sm_antsw_rem_obj_ref(sm, obj_id, ref_id))
+                    return -1;
+            } else {
+                warn("sm.obj unknown action '%s'", act);
+            }
+        }
+    }
 
     return 0;
 }
@@ -735,6 +816,13 @@ int cfgmgrj_apply_json(struct cfgmgrj *cfgmgrj, json_t *root) {
     return apply_config_json(cfgmgrj, root);
 }
 
+static json_t *build_sm_json(struct device *dev) {
+    struct sm *sm = mhc_get_sm(dev->ctl);
+    if(!sm)
+        return NULL;
+    return sm_antsw_to_json(sm);
+}
+
 static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
     json_t *root = json_object();
     if(!root)
@@ -855,6 +943,10 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
                 }
             }
 
+            json_t *sm_json = build_sm_json(dev);
+            if(sm_json)
+                json_object_set_new(device, "sm", sm_json);
+
             json_array_append_new(devices, device);
         }
     }
@@ -920,6 +1012,55 @@ static int winkey_builder_cb(const char *key, int val, void *user_data) {
         return -1;
     if(json_object_set_new(wb->obj, key, json_integer(val)) != 0)
         return -1;
+    return 0;
+}
+
+int cfgmgrj_sm_load(const char *serial) {
+    dbg1("%s()", __func__);
+    struct device *dev = dmgr_get_device(serial);
+    struct sm *sm;
+
+    if(!dev) {
+        err("%s keyer not found!", serial);
+        return -1;
+    }
+
+    sm = mhc_get_sm(dev->ctl);
+
+    if(!sm) {
+        err("%s no SM structure found!", serial);
+        return -1;
+    }
+
+    if(0 != sm_get_antsw(sm)) {
+        err("%s could not load antsw settings!", serial);
+        return -1;
+    }
+    return 0;
+}
+
+int cfgmgrj_sm_store(const char *serial) {
+    dbg1("%s()", __func__);
+    struct device *dev = dmgr_get_device(serial);
+    struct sm *sm;
+
+    if(!dev) {
+        err("%s keyer not found!", serial);
+        return -1;
+    }
+
+    sm = mhc_get_sm(dev->ctl);
+
+    if(!sm) {
+        err("%s no SM structure found!", serial);
+        return -1;
+    }
+
+    if(0 != sm_antsw_store(sm)) {
+        err("%s could not store antsw settings!", serial);
+        return -1;
+    }
+
     return 0;
 }
 

@@ -1,0 +1,28 @@
+
+# SM/SMD add an item to Antenna List
+curl -X PATCH http://localhost:5052/api/v1/config/devices/SM_DEMO_SM_1 \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "serial": "SM_DEMO_SM_1",
+    "sm": {
+      "obj": {
+        "action": "add",
+        "type": 0,
+        "label": "20m",
+        "display": "20m Yagi",
+        "steppir": 0,
+        "rxonly": 0,
+        "pa_ant_number": 1,
+        "rotator": 1,
+        "rotator_offset": 0,
+        "output": { "A1": 1, "A2": 0 }
+      }
+    }
+  }'
+
+
+  # Modify antenna id 3
+curl -X PATCH ... -d '{"serial":"SERIAL","sm":{"obj":{"action":"mod","type":0,"id":3,"label":"40m","display":"40m Dipole"}}}'
+
+# Remove antenna id 3
+curl -X PATCH ... -d '{"serial":"SERIAL","sm":{"obj":{"action":"rem","id":3}}}'

@@ -1,4 +1,4 @@
-1) REST-API endpoint /config/devices to support retrieval for a specific device like /config/devices/<serial>
+1) Optimize REST-API endpoint /config/devices and /config/devices/<serial>. Complete JSON structure tends to be rebuild even after small config change.
    Have UI use this where appropiate. 
 
 2) restapi.c, check if we can get rig of device_name_from_type(), feels misplaced here.

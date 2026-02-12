@@ -30,6 +30,28 @@
   let allParamForm = {};
   let allParamStatus = {};
   let allParamStatusTimer = {};
+  let smActionStatus = {};
+  let smActionStatusTimer = {};
+  let smActionBusy = {};
+  let smAntMode = {};  // 'add' | 'edit' | null per serial
+  let smAntEditForms = {}; // { [serial]: { [id]: { label, display, ... } } }  edit mode
+  let smAntAddForm = {}; // { [serial]: { label, display, steppir, rxonly, pa_ant_number, rotator, rotator_offset, output: {} } }
+  let smAntSelected = {}; // { [serial]: [id, ...] }  checkboxes for remove
+  let smVrMode = {};  // 'add' | 'edit' | null per serial
+  let smVrAddForm = {}; // { [serial]: { label, display } }
+  let smVrEditForms = {}; // { [serial]: { [vrId]: { label, display, refs: { [refId]: { min_azimuth, max_azimuth, dest_id } } } } }
+  let smVrSelected = {}; // { [serial]: [id, ...] }  checkboxes for remove (VR ids and ref compound keys)
+  let smVrAddAnt = {}; // { [serial]: { vrId, min_azimuth: 0, max_azimuth: 0, dest_id: 0 } } or null
+  let smGrpMode = {};  // 'add' | 'edit' | null per serial
+  let smGrpAddForm = {}; // { [serial]: { label, display } }
+  let smGrpEditForms = {}; // { [serial]: { [grpId]: { label, display, refs: { [refId]: { dest_id } } } } }
+  let smGrpSelected = {}; // { [serial]: [id, ...] }  checkboxes for remove (group ids and ref compound keys)
+  let smGrpAddAnt = {}; // { [serial]: { grpId, dest_id: 0 } } or null
+  let smBndMode = {};  // 'add' | 'edit' | null per serial
+  let smBndAddForm = {}; // { [serial]: { display, low_freq, high_freq, bcd_code, pa_power, keyout } }
+  let smBndEditForms = {}; // { [serial]: { [bndId]: { display, low_freq, high_freq, bcd_code, pa_power, keyout, bpf_seq:{}, refs:{} } } }
+  let smBndSelected = {}; // { [serial]: [id, ...] }  checkboxes for remove (band ids and ref compound keys)
+  let smBndAddRef = {}; // { [serial]: { bndId, dest_id: 0 } } or null
   let lastSerial = '';
 
   let portForm = {
@@ -58,11 +80,11 @@
     { id: 'daemon', label: 'Daemon' }
   ];
 
-  const homeMenus = [{ id: 'summary', label: 'Summary' }];
+  const homeMenus = [{ id: 'summary', label: 'Summary', title: 'Summary' }];
   const daemonMenus = [
-    { id: 'ports', label: 'Ports' },
-    { id: 'settings', label: 'Settings' },
-    { id: 'action', label: 'Action', disabled: true }
+    { id: 'ports', label: 'Ports', title: 'Daemon Ports Configuration and Routing' },
+    { id: 'settings', label: 'Settings', title: 'Daemon Settings' },
+    { id: 'action', label: 'Action', title: 'Daemon Actions', disabled: true }
   ];
 
   const portTypeOptions = ['VSP', 'TCP'];
@@ -180,6 +202,52 @@
     { value: 0, label: 'Band Map' },
     { value: 1, label: 'Always VOICE' },
     { value: 2, label: 'Always DIGITAL' }
+  ];
+
+  const smCivFuncOptions = [
+    { value: 0, label: 'none' },
+    { value: 1, label: 'TX frequency' },
+    { value: 2, label: 'RX frequency' },
+    { value: 3, label: 'operation frequency' },
+    { value: 4, label: 'VFO A frequency' },
+    { value: 5, label: 'VFO B frequency' },
+    { value: 6, label: 'sub RX frequency' }
+  ];
+  const smCivBaudOptions = [
+    { value: 192, label: '1200' },
+    { value: 96, label: '2400' },
+    { value: 48, label: '4800' },
+    { value: 24, label: '9600' },
+    { value: 12, label: '19200' }
+  ];
+  const smExtSerFuncOptions = [
+    { value: 0, label: 'none' },
+    { value: 1, label: 'auxiliary port' },
+    { value: 2, label: 'Acom 2000' },
+    { value: 17, label: 'CI-V TX frequency' },
+    { value: 18, label: 'CI-V RX frequency' },
+    { value: 19, label: 'CI-V operation frequency' },
+    { value: 20, label: 'CI-V VFO A frequency' },
+    { value: 21, label: 'CI-V VFO B frequency' },
+    { value: 22, label: 'CI-V sub RX frequency' },
+    { value: 33, label: 'SteppIR Dipole' },
+    { value: 34, label: 'SteppIR Dipole with 40m-30m Dipole Adder' },
+    { value: 35, label: 'SteppIR Yagi' },
+    { value: 36, label: 'SteppIR Yagi with 40m-30m Dipole Adder' },
+    { value: 37, label: 'SteppIR BigIR Vertical' },
+    { value: 38, label: 'SteppIR BigIR Vertical with 80m Coil' },
+    { value: 39, label: 'SteppIR SmallIR Vertical' },
+    { value: 40, label: 'SteppIR MonstIR Yagi' }
+  ];
+  const smOutputClassOptions = [
+    { value: 0, label: 'ANT' },
+    { value: 1, label: 'BPF' },
+    { value: 2, label: 'SEQ' },
+    { value: 3, label: 'SEQ inverted' }
+  ];
+  const smOutputNames = [
+    'A1','A2','A3','A4','A5','A6','A7','A8','A9','A10',
+    'B1','B2','B3','B4','B5','B6','B7','B8','B9','B10'
   ];
 
   const hasFlag = (serial, flag) => keyerFlagsForSerial(serial).includes(flag);
@@ -847,6 +915,740 @@
     }
   };
 
+  const setSmActionStatus = (serial, msg, kind = 'success') => {
+    smActionStatus = { ...smActionStatus, [serial]: { text: msg, kind } };
+    if (smActionStatusTimer[serial]) clearTimeout(smActionStatusTimer[serial]);
+    smActionStatusTimer[serial] = setTimeout(() => {
+      const { [serial]: _removed, ...rest } = smActionStatus;
+      smActionStatus = rest;
+    }, 5000);
+  };
+
+  const smAction = async (serial, action) => {
+    smActionBusy = { ...smActionBusy, [serial]: true };
+    try {
+      const res = await fetch(`/api/v1/devices/${serial}/actions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ action })
+      });
+      const result = await res.json();
+      if (!res.ok || result.status === 'error') {
+        setSmActionStatus(serial, result.message || 'Action failed.', 'error');
+      } else {
+        setSmActionStatus(serial, result.message || 'Action completed.', 'success');
+      }
+    } catch (err) {
+      setSmActionStatus(serial, err?.message || 'Action failed.', 'error');
+    } finally {
+      const { [serial]: _removed, ...rest } = smActionBusy;
+      smActionBusy = rest;
+    }
+  };
+
+  const smFixed = (serial, key, fallback = 0) => {
+    const cfg = keyerConfigForSerial(serial);
+    return cfg?.sm?.fixed?.[key] ?? fallback;
+  };
+
+  const smSequencerVal = (serial, phase, output, fallback = 0) => {
+    const cfg = keyerConfigForSerial(serial);
+    return cfg?.sm?.fixed?.sequencer?.[phase]?.[output] ?? fallback;
+  };
+
+  const smOutputVal = (serial, output, fallback = 0) => {
+    const cfg = keyerConfigForSerial(serial);
+    return cfg?.sm?.output?.[output] ?? fallback;
+  };
+
+  const smSequencerOutputs = (serial) => {
+    const cfg = keyerConfigForSerial(serial);
+    const outputs = cfg?.sm?.output || {};
+    return smOutputNames.filter((name) => {
+      const val = outputs[name];
+      return val === 2 || val === 3;
+    });
+  };
+
+  const applySmFixed = async (serial, key, value) => {
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, sm: { fixed: { [key]: Number(value) } } })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      setKeyerStatusMsg(serial, 'Setting updated.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to update setting.', 'error');
+    }
+  };
+
+  const applySmSequencer = async (serial, phase, output, value) => {
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, sm: { fixed: { sequencer: { [phase]: { [output]: Number(value) } } } } })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      setKeyerStatusMsg(serial, 'Sequencer setting updated.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to update sequencer setting.', 'error');
+    }
+  };
+
+  const applySmOutput = async (serial, output, value) => {
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, sm: { output: { [output]: Number(value) } } })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      setKeyerStatusMsg(serial, 'Output setting updated.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to update output setting.', 'error');
+    }
+  };
+
+  /* --- SM Antenna List helpers --- */
+
+  const smAntennas = (serial) => {
+    const cfg = keyerConfigForSerial(serial);
+    return (cfg?.sm?.obj || []).filter((o) => o.type === 0);
+  };
+
+  const smAntOutputColumns = (serial) => {
+    const cfg = keyerConfigForSerial(serial);
+    const outputs = cfg?.sm?.output || {};
+    return smOutputNames.filter((name) => outputs[name] === 0);
+  };
+
+  const smAntNewForm = () => ({
+    label: '', display: '', steppir: 0, rxonly: 0, pa_ant_number: 0,
+    rotator: 0, rotator_offset: 0, output: {}
+  });
+
+  const smAntStartAdd = (serial) => {
+    smAntMode = { ...smAntMode, [serial]: 'add' };
+    smAntAddForm = { ...smAntAddForm, [serial]: smAntNewForm() };
+  };
+
+  const smAntStartEdit = (serial) => {
+    const ants = smAntennas(serial);
+    const forms = {};
+    for (const a of ants) {
+      forms[a.id] = {
+        label: a.label || '', display: a.display || '', steppir: a.steppir || 0,
+        rxonly: a.rxonly || 0, pa_ant_number: a.pa_ant_number || 0,
+        rotator: a.rotator || 0, rotator_offset: a.rotator_offset || 0,
+        output: { ...(a.output || {}) }
+      };
+    }
+    smAntEditForms = { ...smAntEditForms, [serial]: forms };
+    smAntMode = { ...smAntMode, [serial]: 'edit' };
+  };
+
+  const smAntCancel = (serial) => {
+    smAntMode = { ...smAntMode, [serial]: null };
+  };
+
+  const smAntSaveAdd = async (serial) => {
+    const form = smAntAddForm[serial];
+    if (!form) return;
+    const payload = { action: 'add', type: 0, ...form };
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, sm: { obj: payload } })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      smAntMode = { ...smAntMode, [serial]: null };
+      setKeyerStatusMsg(serial, 'Antenna added.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to add antenna.', 'error');
+    }
+  };
+
+  const smAntSaveEdit = async (serial) => {
+    const forms = smAntEditForms[serial];
+    if (!forms) return;
+    try {
+      for (const [idStr, form] of Object.entries(forms)) {
+        const payload = { action: 'mod', type: 0, id: Number(idStr), ...form };
+        const res = await fetch(`/api/v1/config/devices/${serial}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ serial, sm: { obj: payload } })
+        });
+        if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+        const updated = await res.json();
+        configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      }
+      smAntMode = { ...smAntMode, [serial]: null };
+      setKeyerStatusMsg(serial, 'Antennas updated.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to update antennas.', 'error');
+    }
+  };
+
+  const smAntRemoveSelected = async (serial) => {
+    const sel = smAntSelected[serial];
+    if (!sel || sel.length === 0) return;
+    try {
+      for (const id of sel) {
+        const payload = { action: 'rem', id };
+        const res = await fetch(`/api/v1/config/devices/${serial}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ serial, sm: { obj: payload } })
+        });
+        if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+        const updated = await res.json();
+        configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      }
+      smAntSelected = { ...smAntSelected, [serial]: [] };
+      setKeyerStatusMsg(serial, 'Antenna(s) removed.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to remove antenna.', 'error');
+    }
+  };
+
+  const smAntToggleSelect = (serial, id) => {
+    const sel = smAntSelected[serial] || [];
+    if (sel.includes(id)) {
+      smAntSelected = { ...smAntSelected, [serial]: sel.filter((x) => x !== id) };
+    } else {
+      smAntSelected = { ...smAntSelected, [serial]: [...sel, id] };
+    }
+  };
+
+  /* --- SM Virtual Rotator helpers --- */
+
+  const smVirtualRotators = (serial) => {
+    const cfg = keyerConfigForSerial(serial);
+    return (cfg?.sm?.obj || []).filter((o) => o.type === 1 && o.virtual_rotator === 1);
+  };
+
+  const smAllObjects = (serial) => {
+    const cfg = keyerConfigForSerial(serial);
+    return cfg?.sm?.obj || [];
+  };
+
+  const smObjDisplay = (serial, destId) => {
+    const obj = smAllObjects(serial).find((o) => o.id === destId);
+    return obj?.display || obj?.label || `#${destId}`;
+  };
+
+  const smObjRxOnly = (serial, destId) => {
+    const obj = smAllObjects(serial).find((o) => o.id === destId);
+    return obj?.rxonly ? 'Yes' : 'No';
+  };
+
+  const smVrStartAdd = (serial) => {
+    smVrMode = { ...smVrMode, [serial]: 'add' };
+    smVrAddForm = { ...smVrAddForm, [serial]: { label: '', display: '' } };
+    smVrAddAnt = { ...smVrAddAnt, [serial]: null };
+  };
+
+  const smVrStartEdit = (serial) => {
+    const vrs = smVirtualRotators(serial);
+    const forms = {};
+    for (const vr of vrs) {
+      const refs = {};
+      for (const ref of (vr.refs || [])) {
+        refs[ref.id] = { min_azimuth: ref.min_azimuth || 0, max_azimuth: ref.max_azimuth || 0, dest_id: ref.dest_id || 0 };
+      }
+      forms[vr.id] = { label: vr.label || '', display: vr.display || '', refs };
+    }
+    smVrEditForms = { ...smVrEditForms, [serial]: forms };
+    smVrMode = { ...smVrMode, [serial]: 'edit' };
+    smVrAddAnt = { ...smVrAddAnt, [serial]: null };
+  };
+
+  const smVrCancel = (serial) => {
+    smVrMode = { ...smVrMode, [serial]: null };
+    smVrAddAnt = { ...smVrAddAnt, [serial]: null };
+  };
+
+  const smVrSaveAdd = async (serial) => {
+    const form = smVrAddForm[serial];
+    if (!form) return;
+    const payload = { action: 'add', type: 1, virtual_rotator: 1, ...form };
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, sm: { obj: payload } })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      smVrMode = { ...smVrMode, [serial]: null };
+      setKeyerStatusMsg(serial, 'Virtual rotator added.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to add virtual rotator.', 'error');
+    }
+  };
+
+  const smVrSaveEdit = async (serial) => {
+    const forms = smVrEditForms[serial];
+    if (!forms) return;
+    try {
+      for (const [idStr, form] of Object.entries(forms)) {
+        const refs = Object.entries(form.refs || {}).map(([rid, r]) => ({ id: Number(rid), ...r }));
+        const payload = { action: 'mod', type: 1, id: Number(idStr), label: form.label, display: form.display, refs };
+        const res = await fetch(`/api/v1/config/devices/${serial}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ serial, sm: { obj: payload } })
+        });
+        if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+        const updated = await res.json();
+        configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      }
+      smVrMode = { ...smVrMode, [serial]: null };
+      setKeyerStatusMsg(serial, 'Virtual rotators updated.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to update virtual rotators.', 'error');
+    }
+  };
+
+  const smVrRemoveSelected = async (serial) => {
+    const sel = smVrSelected[serial];
+    if (!sel || sel.length === 0) return;
+    try {
+      // Separate VR removals from ref removals
+      const refRemovals = sel.filter((s) => typeof s === 'string' && s.includes(':'));
+      const vrRemovals = sel.filter((s) => typeof s === 'number');
+      // Remove refs first
+      for (const key of refRemovals) {
+        const [objId, refId] = key.split(':').map(Number);
+        const payload = { action: 'rem_ref', obj_id: objId, ref_id: refId };
+        const res = await fetch(`/api/v1/config/devices/${serial}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ serial, sm: { obj: payload } })
+        });
+        if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+        const updated = await res.json();
+        configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      }
+      // Then remove VRs
+      for (const id of vrRemovals) {
+        const payload = { action: 'rem', id };
+        const res = await fetch(`/api/v1/config/devices/${serial}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ serial, sm: { obj: payload } })
+        });
+        if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+        const updated = await res.json();
+        configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      }
+      smVrSelected = { ...smVrSelected, [serial]: [] };
+      setKeyerStatusMsg(serial, 'Item(s) removed.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to remove item(s).', 'error');
+    }
+  };
+
+  const smVrToggleSelect = (serial, key) => {
+    const sel = smVrSelected[serial] || [];
+    const idx = sel.indexOf(key);
+    if (idx >= 0) {
+      smVrSelected = { ...smVrSelected, [serial]: sel.filter((x) => x !== key) };
+    } else {
+      smVrSelected = { ...smVrSelected, [serial]: [...sel, key] };
+    }
+  };
+
+  const smVrStartAddAnt = (serial, vrId) => {
+    smVrAddAnt = { ...smVrAddAnt, [serial]: { vrId, min_azimuth: 0, max_azimuth: 0, dest_id: 0 } };
+  };
+
+  const smVrSaveAddAnt = async (serial) => {
+    const aa = smVrAddAnt[serial];
+    if (!aa) return;
+    // mod the group, adding a new ref with id=0 to let the server assign one
+    const vr = smVirtualRotators(serial).find((v) => v.id === aa.vrId);
+    if (!vr) return;
+    const existingRefs = (vr.refs || []).map((r) => ({ id: r.id, dest_id: r.dest_id, min_azimuth: r.min_azimuth, max_azimuth: r.max_azimuth }));
+    const newRef = { id: 0, dest_id: aa.dest_id, min_azimuth: aa.min_azimuth, max_azimuth: aa.max_azimuth };
+    const payload = { action: 'mod', type: 1, id: aa.vrId, refs: [...existingRefs, newRef] };
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, sm: { obj: payload } })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      smVrAddAnt = { ...smVrAddAnt, [serial]: null };
+      setKeyerStatusMsg(serial, 'Antenna reference added.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to add antenna reference.', 'error');
+    }
+  };
+
+  const smVrCancelAddAnt = (serial) => {
+    smVrAddAnt = { ...smVrAddAnt, [serial]: null };
+  };
+
+  /* --- SM Antenna Groups helpers --- */
+
+  const smGroups = (serial) => {
+    const cfg = keyerConfigForSerial(serial);
+    return (cfg?.sm?.obj || []).filter((o) => o.type === 1 && !o.virtual_rotator);
+  };
+
+  const smGrpStartAdd = (serial) => {
+    smGrpMode = { ...smGrpMode, [serial]: 'add' };
+    smGrpAddForm = { ...smGrpAddForm, [serial]: { label: '', display: '' } };
+    smGrpAddAnt = { ...smGrpAddAnt, [serial]: null };
+  };
+
+  const smGrpStartEdit = (serial) => {
+    const grps = smGroups(serial);
+    const forms = {};
+    for (const grp of grps) {
+      const refs = {};
+      for (const ref of (grp.refs || [])) {
+        refs[ref.id] = { dest_id: ref.dest_id || 0 };
+      }
+      forms[grp.id] = { label: grp.label || '', display: grp.display || '', refs };
+    }
+    smGrpEditForms = { ...smGrpEditForms, [serial]: forms };
+    smGrpMode = { ...smGrpMode, [serial]: 'edit' };
+    smGrpAddAnt = { ...smGrpAddAnt, [serial]: null };
+  };
+
+  const smGrpCancel = (serial) => {
+    smGrpMode = { ...smGrpMode, [serial]: null };
+    smGrpAddAnt = { ...smGrpAddAnt, [serial]: null };
+  };
+
+  const smGrpSaveAdd = async (serial) => {
+    const form = smGrpAddForm[serial];
+    if (!form) return;
+    const payload = { action: 'add', type: 1, virtual_rotator: 0, ...form };
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, sm: { obj: payload } })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      smGrpMode = { ...smGrpMode, [serial]: null };
+      setKeyerStatusMsg(serial, 'Antenna group added.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to add antenna group.', 'error');
+    }
+  };
+
+  const smGrpSaveEdit = async (serial) => {
+    const forms = smGrpEditForms[serial];
+    if (!forms) return;
+    try {
+      for (const [idStr, form] of Object.entries(forms)) {
+        const refs = Object.entries(form.refs || {}).map(([rid, r]) => ({ id: Number(rid), ...r }));
+        const payload = { action: 'mod', type: 1, id: Number(idStr), label: form.label, display: form.display, refs };
+        const res = await fetch(`/api/v1/config/devices/${serial}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ serial, sm: { obj: payload } })
+        });
+        if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+        const updated = await res.json();
+        configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      }
+      smGrpMode = { ...smGrpMode, [serial]: null };
+      setKeyerStatusMsg(serial, 'Antenna groups updated.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to update antenna groups.', 'error');
+    }
+  };
+
+  const smGrpRemoveSelected = async (serial) => {
+    const sel = smGrpSelected[serial];
+    if (!sel || sel.length === 0) return;
+    try {
+      const refRemovals = sel.filter((s) => typeof s === 'string' && s.includes(':'));
+      const grpRemovals = sel.filter((s) => typeof s === 'number');
+      for (const key of refRemovals) {
+        const [objId, refId] = key.split(':').map(Number);
+        const payload = { action: 'rem_ref', obj_id: objId, ref_id: refId };
+        const res = await fetch(`/api/v1/config/devices/${serial}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ serial, sm: { obj: payload } })
+        });
+        if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+        const updated = await res.json();
+        configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      }
+      for (const id of grpRemovals) {
+        const payload = { action: 'rem', id };
+        const res = await fetch(`/api/v1/config/devices/${serial}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ serial, sm: { obj: payload } })
+        });
+        if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+        const updated = await res.json();
+        configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      }
+      smGrpSelected = { ...smGrpSelected, [serial]: [] };
+      setKeyerStatusMsg(serial, 'Item(s) removed.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to remove item(s).', 'error');
+    }
+  };
+
+  const smGrpToggleSelect = (serial, key) => {
+    const sel = smGrpSelected[serial] || [];
+    const idx = sel.indexOf(key);
+    if (idx >= 0) {
+      smGrpSelected = { ...smGrpSelected, [serial]: sel.filter((x) => x !== key) };
+    } else {
+      smGrpSelected = { ...smGrpSelected, [serial]: [...sel, key] };
+    }
+  };
+
+  const smGrpStartAddAnt = (serial, grpId) => {
+    smGrpAddAnt = { ...smGrpAddAnt, [serial]: { grpId, dest_id: 0 } };
+  };
+
+  const smGrpSaveAddAnt = async (serial) => {
+    const aa = smGrpAddAnt[serial];
+    if (!aa) return;
+    const grp = smGroups(serial).find((g) => g.id === aa.grpId);
+    if (!grp) return;
+    const existingRefs = (grp.refs || []).map((r) => ({ id: r.id, dest_id: r.dest_id }));
+    const newRef = { id: 0, dest_id: aa.dest_id };
+    const payload = { action: 'mod', type: 1, id: aa.grpId, refs: [...existingRefs, newRef] };
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, sm: { obj: payload } })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      smGrpAddAnt = { ...smGrpAddAnt, [serial]: null };
+      setKeyerStatusMsg(serial, 'Antenna reference added.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to add antenna reference.', 'error');
+    }
+  };
+
+  const smGrpCancelAddAnt = (serial) => {
+    smGrpAddAnt = { ...smGrpAddAnt, [serial]: null };
+  };
+
+  /* --- SM Bands helpers --- */
+
+  const smBands = (serial) => {
+    const cfg = keyerConfigForSerial(serial);
+    return (cfg?.sm?.obj || []).filter((o) => o.type === 2);
+  };
+
+  const smBpfOutputs = (serial) => {
+    const cfg = keyerConfigForSerial(serial);
+    const outputs = cfg?.sm?.output || {};
+    return smOutputNames.filter((name) => outputs[name] === 1);
+  };
+
+  const smAntOutputs = (serial) => {
+    const cfg = keyerConfigForSerial(serial);
+    const outputs = cfg?.sm?.output || {};
+    return smOutputNames.filter((name) => outputs[name] === 0);
+  };
+
+  const smObjTypedDisplay = (serial, destId) => {
+    const obj = smAllObjects(serial).find((o) => o.id === destId);
+    if (!obj) return `#${destId}`;
+    const name = obj.display || obj.label || `#${destId}`;
+    if (obj.type === 0) return `ANT: ${name}`;
+    if (obj.type === 1 && obj.virtual_rotator) return `VIR: ${name}`;
+    if (obj.type === 1) return `GRP: ${name}`;
+    return name;
+  };
+
+  const smAntsAndGroups = (serial) => {
+    return smAllObjects(serial).filter((o) => o.type === 0 || o.type === 1);
+  };
+
+  const smBndStartAdd = (serial) => {
+    smBndMode = { ...smBndMode, [serial]: 'add' };
+    smBndAddForm = { ...smBndAddForm, [serial]: { display: '', low_freq: 3500000, high_freq: 3800000, bcd_code: 0, pa_power: 0, keyout: 0 } };
+    smBndAddRef = { ...smBndAddRef, [serial]: null };
+  };
+
+  const smBndStartEdit = (serial) => {
+    const bnds = smBands(serial);
+    const forms = {};
+    for (const bnd of bnds) {
+      const refs = {};
+      for (const ref of (bnd.refs || [])) {
+        refs[ref.id] = { dest_id: ref.dest_id || 0, rxonly: ref.rxonly || 0 };
+      }
+      forms[bnd.id] = {
+        display: bnd.display || '', low_freq: bnd.low_freq || 0, high_freq: bnd.high_freq || 0,
+        bcd_code: bnd.bcd_code || 0, pa_power: bnd.pa_power || 0, keyout: bnd.keyout || 0,
+        bpf_seq: { ...(bnd.bpf_seq || {}) }, refs
+      };
+    }
+    smBndEditForms = { ...smBndEditForms, [serial]: forms };
+    smBndMode = { ...smBndMode, [serial]: 'edit' };
+    smBndAddRef = { ...smBndAddRef, [serial]: null };
+  };
+
+  const smBndCancel = (serial) => {
+    smBndMode = { ...smBndMode, [serial]: null };
+    smBndAddRef = { ...smBndAddRef, [serial]: null };
+  };
+
+  const smBndSaveAdd = async (serial) => {
+    const form = smBndAddForm[serial];
+    if (!form) return;
+    const payload = { action: 'add', type: 2, ...form };
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, sm: { obj: payload } })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      smBndMode = { ...smBndMode, [serial]: null };
+      setKeyerStatusMsg(serial, 'Band added.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to add band.', 'error');
+    }
+  };
+
+  const smBndSaveEdit = async (serial) => {
+    const forms = smBndEditForms[serial];
+    if (!forms) return;
+    try {
+      for (const [idStr, form] of Object.entries(forms)) {
+        const refs = Object.entries(form.refs || {}).map(([rid, r]) => ({ id: Number(rid), ...r }));
+        const payload = {
+          action: 'mod', type: 2, id: Number(idStr),
+          display: form.display, low_freq: form.low_freq, high_freq: form.high_freq,
+          bcd_code: form.bcd_code, pa_power: form.pa_power, keyout: form.keyout,
+          bpf_seq: form.bpf_seq, refs
+        };
+        const res = await fetch(`/api/v1/config/devices/${serial}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ serial, sm: { obj: payload } })
+        });
+        if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+        const updated = await res.json();
+        configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      }
+      smBndMode = { ...smBndMode, [serial]: null };
+      setKeyerStatusMsg(serial, 'Bands updated.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to update bands.', 'error');
+    }
+  };
+
+  const smBndRemoveSelected = async (serial) => {
+    const sel = smBndSelected[serial];
+    if (!sel || sel.length === 0) return;
+    try {
+      const refRemovals = sel.filter((s) => typeof s === 'string' && s.includes(':'));
+      const bndRemovals = sel.filter((s) => typeof s === 'number');
+      for (const key of refRemovals) {
+        const [objId, refId] = key.split(':').map(Number);
+        const payload = { action: 'rem_ref', obj_id: objId, ref_id: refId };
+        const res = await fetch(`/api/v1/config/devices/${serial}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ serial, sm: { obj: payload } })
+        });
+        if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+        const updated = await res.json();
+        configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      }
+      for (const id of bndRemovals) {
+        const payload = { action: 'rem', id };
+        const res = await fetch(`/api/v1/config/devices/${serial}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ serial, sm: { obj: payload } })
+        });
+        if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+        const updated = await res.json();
+        configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      }
+      smBndSelected = { ...smBndSelected, [serial]: [] };
+      setKeyerStatusMsg(serial, 'Item(s) removed.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to remove item(s).', 'error');
+    }
+  };
+
+  const smBndToggleSelect = (serial, key) => {
+    const sel = smBndSelected[serial] || [];
+    const idx = sel.indexOf(key);
+    if (idx >= 0) {
+      smBndSelected = { ...smBndSelected, [serial]: sel.filter((x) => x !== key) };
+    } else {
+      smBndSelected = { ...smBndSelected, [serial]: [...sel, key] };
+    }
+  };
+
+  const smBndStartAddRef = (serial, bndId) => {
+    smBndAddRef = { ...smBndAddRef, [serial]: { bndId, dest_id: 0 } };
+  };
+
+  const smBndSaveAddRef = async (serial) => {
+    const aa = smBndAddRef[serial];
+    if (!aa) return;
+    const bnd = smBands(serial).find((b) => b.id === aa.bndId);
+    if (!bnd) return;
+    const existingRefs = (bnd.refs || []).map((r) => ({ id: r.id, dest_id: r.dest_id, rxonly: r.rxonly }));
+    const newRef = { id: 0, dest_id: aa.dest_id };
+    const payload = { action: 'mod', type: 2, id: aa.bndId, refs: [...existingRefs, newRef] };
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, sm: { obj: payload } })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      smBndAddRef = { ...smBndAddRef, [serial]: null };
+      setKeyerStatusMsg(serial, 'Antenna/group reference added.', 'success');
+    } catch (err) {
+      setKeyerStatusMsg(serial, err?.message || 'Failed to add reference.', 'error');
+    }
+  };
+
+  const smBndCancelAddRef = (serial) => {
+    smBndAddRef = { ...smBndAddRef, [serial]: null };
+  };
+
   const visibleKeyerMenus = (serial) => {
     const flags = keyerFlagsForSerial(serial);
     return keyerMenus.filter((m) => {
@@ -860,6 +1662,16 @@
   $: activeKeyer = activeSerial ? keyers.find((k) => k.serial === activeSerial) : null;
   $: activeKeyerFlags = activeSerial ? keyerFlagsForSerial(activeSerial) : [];
   $: activeKeyerMenus = activeSerial ? visibleKeyerMenus(activeSerial) : [];
+  $: activeAnts = configDevices && activeSerial ? smAntennas(activeSerial) : [];
+  $: activeAntOutCols = configDevices && activeSerial ? smAntOutputColumns(activeSerial) : [];
+  $: activeVrs = configDevices && activeSerial ? smVirtualRotators(activeSerial) : [];
+  $: activeGrps = configDevices && activeSerial ? smGroups(activeSerial) : [];
+  $: activeAllObjs = configDevices && activeSerial ? smAllObjects(activeSerial) : [];
+  $: activeBnds = configDevices && activeSerial ? smBands(activeSerial) : [];
+  $: activeBpfOutputs = configDevices && activeSerial ? smBpfOutputs(activeSerial) : [];
+  $: activeSeqOutputs = configDevices && activeSerial ? smSequencerOutputs(activeSerial) : [];
+  $: activeAntOutputs = configDevices && activeSerial ? smAntOutputs(activeSerial) : [];
+  $: activeAntsAndGroups = configDevices && activeSerial ? smAntsAndGroups(activeSerial) : [];
   $: hasKeyerMode = activeKeyerFlags.includes('HAS_KEYER_MODE');
   $: hasR2 = activeKeyerFlags.includes('HAS_R2');
   $: hasAux = activeKeyerFlags.includes('HAS_AUX');
@@ -912,22 +1724,30 @@
     activeMenu = activeKeyerMenus[0]?.id || 'summary';
   }
 
-  const activeKeyerMenuTitle = () => {
-    const menu = activeKeyerMenus.find((m) => m.id === activeMenuId);
-    return menu?.title || 'Keyer';
-  };
+  $: activeMenuMeta =
+    activeTab === 'home'
+      ? homeMenus.find((m) => m.id === activeMenuId) || null
+      : activeTab === 'daemon'
+        ? daemonMenus.find((m) => m.id === activeMenuId) || null
+        : activeTab.startsWith('keyer:')
+          ? activeKeyerMenus.find((m) => m.id === activeMenuId) || null
+          : null;
 
-  const breadcrumb = () => {
-    if (activeTab === 'home') return 'Home » Summary';
-    if (activeTab === 'daemon' && activeMenu === 'ports') return 'Daemon » Ports';
-    if (activeTab === 'daemon' && activeMenu === 'settings') return 'Daemon » Settings';
-    if (activeTab.startsWith('keyer:')) {
-      const name = activeKeyer?.name || activeSerial;
-      const menu = activeKeyerMenus.find((m) => m.id === activeMenuId);
-      return menu ? `${name} » ${menu.label}` : name;
-    }
-    return '';
-  };
+  $: activeTabLabel =
+    activeTab === 'home'
+      ? 'Home'
+      : activeTab === 'daemon'
+        ? 'Daemon'
+        : activeTab.startsWith('keyer:')
+          ? (activeKeyer?.name || activeSerial || 'Keyer')
+          : '';
+
+  $: activePageTitle = activeMenuMeta?.title || (activeTab.startsWith('keyer:') ? 'Keyer' : '');
+  $: breadcrumb = activeTabLabel
+    ? (activeMenuMeta?.label ? `${activeTabLabel} >> ${activeMenuMeta.label}` : activeTabLabel)
+    : '';
+
+  const activeKeyerMenuTitle = () => activePageTitle || 'Keyer';
 </script>
 
 <div class="page">
@@ -993,19 +1813,9 @@
     </aside>
 
     <main class="main">
-      <div class="breadcrumbs">{breadcrumb()}</div>
+      <div class="breadcrumbs">{breadcrumb}</div>
 
-      {#if activeTab === 'home'}
-        <h1>Summary</h1>
-      {:else if activeTab === 'daemon' && activeMenu === 'ports'}
-        <h1>Daemon Ports Configuration and Routing</h1>
-      {:else if activeTab === 'daemon' && activeMenu === 'settings'}
-        <h1>Daemon Settings</h1>
-      {:else if activeTab.startsWith('keyer:')}
-        <h1>{activeKeyerMenuTitle()}</h1>
-      {:else}
-        <h1>Keyer</h1>
-      {/if}
+      <h1>{activePageTitle}</h1>
 
       {#if loading}
         <div class="loading">Loading…</div>
@@ -2604,6 +3414,803 @@
                 {#if messageStatus[`${activeSerial}:fsk`]}
                   <div class={`inline-status ${messageStatus[`${activeSerial}:fsk`].kind === 'error' ? 'error' : ''}`}>
                     {messageStatus[`${activeSerial}:fsk`].text}
+                  </div>
+                {/if}
+              </div>
+            </section>
+          {:else if activeMenuId === 'sm_antsw_load_store'}
+            <section class="section">
+              <div class="section-title">Load &amp; Store Antenna Switching Settings</div>
+              <div class="panel">
+                <div class="row">
+                  <div class="label" style="text-align: left;">
+                    <button
+                      class="btn"
+                      type="button"
+                      disabled={smActionBusy[activeSerial]}
+                      on:click={() => smAction(activeSerial, 'sm_load')}
+                    >Load</button>
+                  </div>
+                  <div class="value">Retrieve antenna switching settings from Station Master</div>
+                </div>
+                <div class="row">
+                  <div class="label" style="text-align: left;">
+                    <button
+                      class="btn"
+                      type="button"
+                      disabled={smActionBusy[activeSerial]}
+                      on:click={() => smAction(activeSerial, 'sm_store')}
+                    >Store</button>
+                  </div>
+                  <div class="value">Send antenna switching settings to Station Master</div>
+                </div>
+                {#if smActionStatus[activeSerial]}
+                  <div class={`inline-status ${smActionStatus[activeSerial].kind === 'error' ? 'error' : ''}`}>
+                    {smActionStatus[activeSerial].text}
+                  </div>
+                {/if}
+              </div>
+            </section>
+          {:else if activeMenuId === 'sm_antsw_settings'}
+            <section class="section">
+              <div class="section-title">Settings</div>
+              <div class="panel">
+                <div class="row">
+                  <div class="label">PA connector CI-V Function:</div>
+                  <div class="value">
+                    <select class="select" value={smFixed(activeSerial, 'civFunc')}
+                      on:change={(e) => applySmFixed(activeSerial, 'civFunc', e.target.value)}>
+                      {#each smCivFuncOptions as opt}
+                        <option value={opt.value}>{opt.label}</option>
+                      {/each}
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">CI-V Baud Rate:</div>
+                  <div class="value">
+                    <select class="select" value={smFixed(activeSerial, 'civBaudRate')}
+                      on:change={(e) => applySmFixed(activeSerial, 'civBaudRate', e.target.value)}>
+                      {#each smCivBaudOptions as opt}
+                        <option value={opt.value}>{opt.label}</option>
+                      {/each}
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">CI-V Address:</div>
+                  <div class="value">
+                    <input class="input" type="number" min="0" max="255"
+                      value={smFixed(activeSerial, 'civAddress')}
+                      on:change={(e) => applySmFixed(activeSerial, 'civAddress', e.target.value)} />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">D9 Serial Port Function:</div>
+                  <div class="value">
+                    <select class="select" value={smFixed(activeSerial, 'extSerFunc')}
+                      on:change={(e) => applySmFixed(activeSerial, 'extSerFunc', e.target.value)}>
+                      {#each smExtSerFuncOptions as opt}
+                        <option value={opt.value}>{opt.label}</option>
+                      {/each}
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">D9 Serial Port Baud Rate:</div>
+                  <div class="value">
+                    <select class="select" value={smFixed(activeSerial, 'extSerBaudRate')}
+                      on:change={(e) => applySmFixed(activeSerial, 'extSerBaudRate', e.target.value)}>
+                      {#each smCivBaudOptions as opt}
+                        <option value={opt.value}>{opt.label}</option>
+                      {/each}
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">Switch Delay (ms):</div>
+                  <div class="value">
+                    <input class="input" type="number" min="0"
+                      value={smFixed(activeSerial, 'antSwDelay')}
+                      on:change={(e) => applySmFixed(activeSerial, 'antSwDelay', e.target.value)} />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">Break before make delay (ms):</div>
+                  <div class="value">
+                    <input class="input" type="number" min="0"
+                      value={smFixed(activeSerial, 'bbmDelay')}
+                      on:change={(e) => applySmFixed(activeSerial, 'bbmDelay', e.target.value)} />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">Inhibit lead time (ms):</div>
+                  <div class="value">
+                    <input class="input" type="number" min="0"
+                      value={smFixed(activeSerial, 'inhibitLead')}
+                      on:change={(e) => applySmFixed(activeSerial, 'inhibitLead', e.target.value)} />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">Use Key In:</div>
+                  <div class="value">
+                    <input type="checkbox"
+                      checked={smFixed(activeSerial, 'useKeyIn') === 1}
+                      on:change={(e) => applySmFixed(activeSerial, 'useKeyIn', e.target.checked ? 1 : 0)} />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">Invert Key In:</div>
+                  <div class="value">
+                    <input type="checkbox"
+                      checked={smFixed(activeSerial, 'invertKeyIn') === 1}
+                      on:change={(e) => applySmFixed(activeSerial, 'invertKeyIn', e.target.checked ? 1 : 0)} />
+                  </div>
+                </div>
+                {#if keyerStatus[activeSerial]}
+                  <div class={`inline-status ${keyerStatus[activeSerial].kind === 'error' ? 'error' : ''}`}>
+                    {keyerStatus[activeSerial].text}
+                  </div>
+                {/if}
+              </div>
+            </section>
+
+            {#if smSequencerOutputs(activeSerial).length > 0}
+              <section class="section">
+                <div class="section-title">Sequencer</div>
+                <div class="panel">
+                  <div class="row" style="font-weight: 700;">
+                    <div class="label">&nbsp;</div>
+                    <div class="value" style="display: flex; gap: 2em;">
+                      <span style="width: 80px;">Lead</span>
+                      <span style="width: 80px;">Tail</span>
+                    </div>
+                  </div>
+                  {#each smSequencerOutputs(activeSerial) as output}
+                    <div class="row">
+                      <div class="label">{output}:</div>
+                      <div class="value" style="display: flex; gap: 2em;">
+                        <input class="input" style="width: 80px;" type="number" min="0"
+                          value={smSequencerVal(activeSerial, 'lead', output)}
+                          on:change={(e) => applySmSequencer(activeSerial, 'lead', output, e.target.value)} />
+                        <input class="input" style="width: 80px;" type="number" min="0"
+                          value={smSequencerVal(activeSerial, 'tail', output)}
+                          on:change={(e) => applySmSequencer(activeSerial, 'tail', output, e.target.value)} />
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              </section>
+            {/if}
+          {:else if activeMenuId === 'sm_antsw_outputs'}
+            <section class="section">
+              <div class="section-title">Outputs</div>
+              <div class="panel">
+                {#each smOutputNames as output}
+                  <div class="row">
+                    <div class="label">{output}:</div>
+                    <div class="value">
+                      <select class="select" value={smOutputVal(activeSerial, output)}
+                        on:change={(e) => applySmOutput(activeSerial, output, e.target.value)}>
+                        {#each smOutputClassOptions as opt}
+                          <option value={opt.value}>{opt.label}</option>
+                        {/each}
+                      </select>
+                    </div>
+                  </div>
+                {/each}
+                {#if keyerStatus[activeSerial]}
+                  <div class={`inline-status ${keyerStatus[activeSerial].kind === 'error' ? 'error' : ''}`}>
+                    {keyerStatus[activeSerial].text}
+                  </div>
+                {/if}
+              </div>
+            </section>
+          {:else if activeMenuId === 'sm_antsw_ant_list'}
+            {@const ants = activeAnts}
+            {@const antOutCols = activeAntOutCols}
+            {@const mode = smAntMode[activeSerial]}
+            <section class="section">
+              <div class="section-title">Antenna List</div>
+              <div class="panel" style="overflow-x: auto;">
+                <table class="ant-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>ID</th>
+                      <th>Label</th>
+                      <th>Name</th>
+                      <th>SteppIR</th>
+                      <th>RX-Only</th>
+                      <th>PA Ant Nr</th>
+                      <th>Rotator</th>
+                      <th>Rot. Offset</th>
+                      {#each antOutCols as oc}
+                        <th>{oc}</th>
+                      {/each}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each ants as ant (ant.id)}
+                      <tr>
+                        {#if mode === 'edit'}
+                          <td></td>
+                        {:else}
+                          <td><input type="checkbox"
+                              checked={(smAntSelected[activeSerial] || []).includes(ant.id)}
+                              on:change={() => smAntToggleSelect(activeSerial, ant.id)} /></td>
+                        {/if}
+                        <td>{ant.id}</td>
+                        {#if mode === 'edit'}
+                          {@const ef = smAntEditForms[activeSerial]?.[ant.id] || {}}
+                          <td><input class="input" type="text" size="5" value={ef.label}
+                              on:input={(e) => { smAntEditForms[activeSerial][ant.id].label = e.target.value; smAntEditForms = smAntEditForms; }} /></td>
+                          <td><input class="input" type="text" size="10" value={ef.display}
+                              on:input={(e) => { smAntEditForms[activeSerial][ant.id].display = e.target.value; smAntEditForms = smAntEditForms; }} /></td>
+                          <td><select class="select" value={ef.steppir}
+                              on:change={(e) => { smAntEditForms[activeSerial][ant.id].steppir = Number(e.target.value); smAntEditForms = smAntEditForms; }}>
+                              <option value={0}>No</option><option value={1}>Yes</option></select></td>
+                          <td><select class="select" value={ef.rxonly}
+                              on:change={(e) => { smAntEditForms[activeSerial][ant.id].rxonly = Number(e.target.value); smAntEditForms = smAntEditForms; }}>
+                              <option value={0}>No</option><option value={1}>Yes</option></select></td>
+                          <td><input class="input" type="number" style="width:60px" value={ef.pa_ant_number}
+                              on:input={(e) => { smAntEditForms[activeSerial][ant.id].pa_ant_number = Number(e.target.value); smAntEditForms = smAntEditForms; }} /></td>
+                          <td><select class="select" value={ef.rotator}
+                              on:change={(e) => { smAntEditForms[activeSerial][ant.id].rotator = Number(e.target.value); smAntEditForms = smAntEditForms; }}>
+                              <option value={0}>No</option><option value={1}>Yes</option></select></td>
+                          <td><input class="input" type="number" style="width:70px" value={ef.rotator_offset}
+                              on:input={(e) => { smAntEditForms[activeSerial][ant.id].rotator_offset = Number(e.target.value); smAntEditForms = smAntEditForms; }} /></td>
+                          {#each antOutCols as oc}
+                            <td><select class="select" value={ef.output?.[oc] ?? 0}
+                                on:change={(e) => { smAntEditForms[activeSerial][ant.id].output[oc] = Number(e.target.value); smAntEditForms = smAntEditForms; }}>
+                                <option value={0}>No</option><option value={1}>Yes</option></select></td>
+                          {/each}
+                        {:else}
+                          <td>{ant.label || ''}</td>
+                          <td>{ant.display || ''}</td>
+                          <td>{ant.steppir ? 'Yes' : 'No'}</td>
+                          <td>{ant.rxonly ? 'Yes' : 'No'}</td>
+                          <td>{ant.pa_ant_number || 0}</td>
+                          <td>{ant.rotator ? 'Yes' : 'No'}</td>
+                          <td>{ant.rotator_offset || 0}</td>
+                          {#each antOutCols as oc}
+                            <td>{ant.output?.[oc] ? 'Yes' : 'No'}</td>
+                          {/each}
+                        {/if}
+                      </tr>
+                    {/each}
+                    {#if mode === 'add'}
+                      {@const af = smAntAddForm[activeSerial] || smAntNewForm()}
+                      <tr class="add-row">
+                        <td></td>
+                        <td></td>
+                        <td><input class="input" type="text" size="5" bind:value={smAntAddForm[activeSerial].label} /></td>
+                        <td><input class="input" type="text" size="10" bind:value={smAntAddForm[activeSerial].display} /></td>
+                        <td><select class="select" bind:value={smAntAddForm[activeSerial].steppir}>
+                            <option value={0}>No</option><option value={1}>Yes</option></select></td>
+                        <td><select class="select" bind:value={smAntAddForm[activeSerial].rxonly}>
+                            <option value={0}>No</option><option value={1}>Yes</option></select></td>
+                        <td><input class="input" type="number" style="width:60px" bind:value={smAntAddForm[activeSerial].pa_ant_number} /></td>
+                        <td><select class="select" bind:value={smAntAddForm[activeSerial].rotator}>
+                            <option value={0}>No</option><option value={1}>Yes</option></select></td>
+                        <td><input class="input" type="number" style="width:70px" bind:value={smAntAddForm[activeSerial].rotator_offset} /></td>
+                        {#each antOutCols as oc}
+                          <td><select class="select" bind:value={smAntAddForm[activeSerial].output[oc]}>
+                              <option value={0}>No</option><option value={1}>Yes</option></select></td>
+                        {/each}
+                      </tr>
+                    {/if}
+                  </tbody>
+                </table>
+                <div class="button-row" style="margin-top: 8px;">
+                  {#if mode === 'add'}
+                    <button class="btn" type="button" on:click={() => smAntSaveAdd(activeSerial)}>Save</button>
+                    <button class="btn" type="button" on:click={() => smAntCancel(activeSerial)}>Cancel</button>
+                  {:else if mode === 'edit'}
+                    <button class="btn" type="button" on:click={() => smAntSaveEdit(activeSerial)}>Save</button>
+                    <button class="btn" type="button" on:click={() => smAntCancel(activeSerial)}>Cancel</button>
+                  {:else}
+                    <button class="btn" type="button" on:click={() => smAntStartAdd(activeSerial)}>Add</button>
+                    <button class="btn" type="button" on:click={() => smAntStartEdit(activeSerial)}>Edit</button>
+                    <button class="btn" type="button" on:click={() => smAntRemoveSelected(activeSerial)}>Remove</button>
+                  {/if}
+                </div>
+                {#if keyerStatus[activeSerial]}
+                  <div class={`inline-status ${keyerStatus[activeSerial].kind === 'error' ? 'error' : ''}`}>
+                    {keyerStatus[activeSerial].text}
+                  </div>
+                {/if}
+              </div>
+            </section>
+          {:else if activeMenuId === 'sm_antsw_vr_list'}
+            {@const vrs = activeVrs}
+            {@const vrMode = smVrMode[activeSerial]}
+            {@const vrAddAntState = smVrAddAnt[activeSerial]}
+            {@const allObjs = activeAllObjs}
+            <section class="section">
+              <div class="section-title">Virtual Rotator List</div>
+              <div class="panel" style="overflow-x: auto;">
+                <table class="ant-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>ID</th>
+                      <th>Label</th>
+                      <th>Name</th>
+                      <th>RX-Only</th>
+                      <th>Azimuth Min</th>
+                      <th>Azimuth Max</th>
+                      <th>Antenna</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each vrs as vr (vr.id)}
+                      <!-- VR main row -->
+                      <tr class="vr-main-row">
+                        {#if vrMode === 'edit'}
+                          <td></td>
+                        {:else}
+                          <td><input type="checkbox"
+                              checked={(smVrSelected[activeSerial] || []).includes(vr.id)}
+                              on:change={() => smVrToggleSelect(activeSerial, vr.id)} /></td>
+                        {/if}
+                        <td>{vr.id}</td>
+                        {#if vrMode === 'edit'}
+                          {@const ef = smVrEditForms[activeSerial]?.[vr.id] || {}}
+                          <td><input class="input" type="text" size="5" value={ef.label}
+                              on:input={(e) => { smVrEditForms[activeSerial][vr.id].label = e.target.value; smVrEditForms = smVrEditForms; }} /></td>
+                          <td><input class="input" type="text" size="10" value={ef.display}
+                              on:input={(e) => { smVrEditForms[activeSerial][vr.id].display = e.target.value; smVrEditForms = smVrEditForms; }} /></td>
+                        {:else}
+                          <td>{vr.label || ''}</td>
+                          <td>{vr.display || ''}</td>
+                        {/if}
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>
+                          {#if !vrMode && !vrAddAntState}
+                            <button class="btn" type="button" on:click={() => smVrStartAddAnt(activeSerial, vr.id)}>Add Antenna</button>
+                          {/if}
+                        </td>
+                      </tr>
+                      <!-- Ref rows for this VR -->
+                      {#each (vr.refs || []) as ref (ref.id)}
+                        <tr>
+                          {#if vrMode === 'edit'}
+                            <td></td>
+                          {:else}
+                            <td><input type="checkbox"
+                                checked={(smVrSelected[activeSerial] || []).includes(`${vr.id}:${ref.id}`)}
+                                on:change={() => smVrToggleSelect(activeSerial, `${vr.id}:${ref.id}`)} /></td>
+                          {/if}
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                          <td>{smObjRxOnly(activeSerial, ref.dest_id)}</td>
+                          {#if vrMode === 'edit'}
+                            {@const rf = smVrEditForms[activeSerial]?.[vr.id]?.refs?.[ref.id] || {}}
+                            <td><input class="input" type="number" style="width:70px" value={rf.min_azimuth}
+                                on:input={(e) => { smVrEditForms[activeSerial][vr.id].refs[ref.id].min_azimuth = Number(e.target.value); smVrEditForms = smVrEditForms; }} /></td>
+                            <td><input class="input" type="number" style="width:70px" value={rf.max_azimuth}
+                                on:input={(e) => { smVrEditForms[activeSerial][vr.id].refs[ref.id].max_azimuth = Number(e.target.value); smVrEditForms = smVrEditForms; }} /></td>
+                            <td>
+                              <select class="select" value={rf.dest_id}
+                                  on:change={(e) => { smVrEditForms[activeSerial][vr.id].refs[ref.id].dest_id = Number(e.target.value); smVrEditForms = smVrEditForms; }}>
+                                {#each allObjs as obj}
+                                  <option value={obj.id}>{obj.display || obj.label || `#${obj.id}`}</option>
+                                {/each}
+                              </select>
+                            </td>
+                          {:else}
+                            <td>{ref.min_azimuth || 0}</td>
+                            <td>{ref.max_azimuth || 0}</td>
+                            <td>{smObjDisplay(activeSerial, ref.dest_id)}</td>
+                          {/if}
+                        </tr>
+                      {/each}
+                      <!-- Add Antenna row for this VR -->
+                      {#if vrAddAntState && vrAddAntState.vrId === vr.id}
+                        <tr class="add-row">
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                          <td><input class="input" type="number" style="width:70px" bind:value={smVrAddAnt[activeSerial].min_azimuth} /></td>
+                          <td><input class="input" type="number" style="width:70px" bind:value={smVrAddAnt[activeSerial].max_azimuth} /></td>
+                          <td>
+                            <select class="select" bind:value={smVrAddAnt[activeSerial].dest_id}>
+                              {#each allObjs as obj}
+                                <option value={obj.id}>{obj.display || obj.label || `#${obj.id}`}</option>
+                              {/each}
+                            </select>
+                          </td>
+                        </tr>
+                      {/if}
+                    {/each}
+                    <!-- Add new VR row -->
+                    {#if vrMode === 'add'}
+                      <tr class="add-row">
+                        <td></td>
+                        <td></td>
+                        <td><input class="input" type="text" size="5" bind:value={smVrAddForm[activeSerial].label} /></td>
+                        <td><input class="input" type="text" size="10" bind:value={smVrAddForm[activeSerial].display} /></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                      </tr>
+                    {/if}
+                  </tbody>
+                </table>
+                <div class="button-row" style="margin-top: 8px;">
+                  {#if vrAddAntState}
+                    <button class="btn" type="button" on:click={() => smVrSaveAddAnt(activeSerial)}>Save</button>
+                    <button class="btn" type="button" on:click={() => smVrCancelAddAnt(activeSerial)}>Cancel</button>
+                  {:else if vrMode === 'add'}
+                    <button class="btn" type="button" on:click={() => smVrSaveAdd(activeSerial)}>Save</button>
+                    <button class="btn" type="button" on:click={() => smVrCancel(activeSerial)}>Cancel</button>
+                  {:else if vrMode === 'edit'}
+                    <button class="btn" type="button" on:click={() => smVrSaveEdit(activeSerial)}>Save</button>
+                    <button class="btn" type="button" on:click={() => smVrCancel(activeSerial)}>Cancel</button>
+                  {:else}
+                    <button class="btn" type="button" on:click={() => smVrStartAdd(activeSerial)}>Add</button>
+                    <button class="btn" type="button" on:click={() => smVrStartEdit(activeSerial)}>Edit</button>
+                    <button class="btn" type="button" on:click={() => smVrRemoveSelected(activeSerial)}>Remove</button>
+                  {/if}
+                </div>
+                {#if keyerStatus[activeSerial]}
+                  <div class={`inline-status ${keyerStatus[activeSerial].kind === 'error' ? 'error' : ''}`}>
+                    {keyerStatus[activeSerial].text}
+                  </div>
+                {/if}
+              </div>
+            </section>
+          {:else if activeMenuId === 'sm_antsw_grp_list'}
+            {@const grps = activeGrps}
+            {@const grpMode = smGrpMode[activeSerial]}
+            {@const grpAddAntState = smGrpAddAnt[activeSerial]}
+            {@const allObjs = activeAllObjs}
+            <section class="section">
+              <div class="section-title">Antenna Groups List</div>
+              <div class="panel" style="overflow-x: auto;">
+                <table class="ant-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>ID</th>
+                      <th>Label</th>
+                      <th>Name</th>
+                      <th>RX-Only</th>
+                      <th>Antenna</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each grps as grp (grp.id)}
+                      <!-- Group main row -->
+                      <tr class="vr-main-row">
+                        {#if grpMode === 'edit'}
+                          <td></td>
+                        {:else}
+                          <td><input type="checkbox"
+                              checked={(smGrpSelected[activeSerial] || []).includes(grp.id)}
+                              on:change={() => smGrpToggleSelect(activeSerial, grp.id)} /></td>
+                        {/if}
+                        <td>{grp.id}</td>
+                        {#if grpMode === 'edit'}
+                          {@const ef = smGrpEditForms[activeSerial]?.[grp.id] || {}}
+                          <td><input class="input" type="text" size="5" value={ef.label}
+                              on:input={(e) => { smGrpEditForms[activeSerial][grp.id].label = e.target.value; smGrpEditForms = smGrpEditForms; }} /></td>
+                          <td><input class="input" type="text" size="10" value={ef.display}
+                              on:input={(e) => { smGrpEditForms[activeSerial][grp.id].display = e.target.value; smGrpEditForms = smGrpEditForms; }} /></td>
+                        {:else}
+                          <td>{grp.label || ''}</td>
+                          <td>{grp.display || ''}</td>
+                        {/if}
+                        <td></td>
+                        <td>
+                          {#if !grpMode && !grpAddAntState}
+                            <button class="btn" type="button" on:click={() => smGrpStartAddAnt(activeSerial, grp.id)}>Add Antenna</button>
+                          {/if}
+                        </td>
+                      </tr>
+                      <!-- Ref rows for this group -->
+                      {#each (grp.refs || []) as ref (ref.id)}
+                        <tr>
+                          {#if grpMode === 'edit'}
+                            <td></td>
+                          {:else}
+                            <td><input type="checkbox"
+                                checked={(smGrpSelected[activeSerial] || []).includes(`${grp.id}:${ref.id}`)}
+                                on:change={() => smGrpToggleSelect(activeSerial, `${grp.id}:${ref.id}`)} /></td>
+                          {/if}
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                          <td>{smObjRxOnly(activeSerial, ref.dest_id)}</td>
+                          {#if grpMode === 'edit'}
+                            {@const rf = smGrpEditForms[activeSerial]?.[grp.id]?.refs?.[ref.id] || {}}
+                            <td>
+                              <select class="select" value={rf.dest_id}
+                                  on:change={(e) => { smGrpEditForms[activeSerial][grp.id].refs[ref.id].dest_id = Number(e.target.value); smGrpEditForms = smGrpEditForms; }}>
+                                {#each allObjs as obj}
+                                  <option value={obj.id}>{obj.display || obj.label || `#${obj.id}`}</option>
+                                {/each}
+                              </select>
+                            </td>
+                          {:else}
+                            <td>{smObjDisplay(activeSerial, ref.dest_id)}</td>
+                          {/if}
+                        </tr>
+                      {/each}
+                      <!-- Add Antenna row for this group -->
+                      {#if grpAddAntState && grpAddAntState.grpId === grp.id}
+                        <tr class="add-row">
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                          <td>
+                            <select class="select" bind:value={smGrpAddAnt[activeSerial].dest_id}>
+                              {#each allObjs as obj}
+                                <option value={obj.id}>{obj.display || obj.label || `#${obj.id}`}</option>
+                              {/each}
+                            </select>
+                          </td>
+                        </tr>
+                      {/if}
+                    {/each}
+                    <!-- Add new group row -->
+                    {#if grpMode === 'add'}
+                      <tr class="add-row">
+                        <td></td>
+                        <td></td>
+                        <td><input class="input" type="text" size="5" bind:value={smGrpAddForm[activeSerial].label} /></td>
+                        <td><input class="input" type="text" size="10" bind:value={smGrpAddForm[activeSerial].display} /></td>
+                        <td></td>
+                        <td></td>
+                      </tr>
+                    {/if}
+                  </tbody>
+                </table>
+                <div class="button-row" style="margin-top: 8px;">
+                  {#if grpAddAntState}
+                    <button class="btn" type="button" on:click={() => smGrpSaveAddAnt(activeSerial)}>Save</button>
+                    <button class="btn" type="button" on:click={() => smGrpCancelAddAnt(activeSerial)}>Cancel</button>
+                  {:else if grpMode === 'add'}
+                    <button class="btn" type="button" on:click={() => smGrpSaveAdd(activeSerial)}>Save</button>
+                    <button class="btn" type="button" on:click={() => smGrpCancel(activeSerial)}>Cancel</button>
+                  {:else if grpMode === 'edit'}
+                    <button class="btn" type="button" on:click={() => smGrpSaveEdit(activeSerial)}>Save</button>
+                    <button class="btn" type="button" on:click={() => smGrpCancel(activeSerial)}>Cancel</button>
+                  {:else}
+                    <button class="btn" type="button" on:click={() => smGrpStartAdd(activeSerial)}>Add</button>
+                    <button class="btn" type="button" on:click={() => smGrpStartEdit(activeSerial)}>Edit</button>
+                    <button class="btn" type="button" on:click={() => smGrpRemoveSelected(activeSerial)}>Remove</button>
+                  {/if}
+                </div>
+                {#if keyerStatus[activeSerial]}
+                  <div class={`inline-status ${keyerStatus[activeSerial].kind === 'error' ? 'error' : ''}`}>
+                    {keyerStatus[activeSerial].text}
+                  </div>
+                {/if}
+              </div>
+            </section>
+          {:else if activeMenuId === 'sm_antsw_band_list'}
+            {@const bnds = activeBnds}
+            {@const bndMode = smBndMode[activeSerial]}
+            {@const bndAddRefState = smBndAddRef[activeSerial]}
+            {@const bpfOuts = activeBpfOutputs}
+            {@const seqOuts = activeSeqOutputs}
+            {@const antOuts = activeAntOutputs}
+            {@const antGrpObjs = activeAntsAndGroups}
+            <section class="section">
+              <div class="section-title">Band List</div>
+              <div class="panel" style="overflow-x: auto;">
+                <table class="ant-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th colspan="2">Frequency Range</th>
+                      <th>Code</th>
+                      <th>PA</th>
+                      <th>KeyOut</th>
+                      <th>Ant</th>
+                      {#if bpfOuts.length > 0}<th>BPF</th>{/if}
+                      {#if seqOuts.length > 0}<th>SEQ</th>{/if}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each bnds as bnd (bnd.id)}
+                      <!-- Band main row -->
+                      <tr class="vr-main-row">
+                        {#if bndMode === 'edit'}
+                          <td></td>
+                        {:else}
+                          <td><input type="checkbox"
+                              checked={(smBndSelected[activeSerial] || []).includes(bnd.id)}
+                              on:change={() => smBndToggleSelect(activeSerial, bnd.id)} /></td>
+                        {/if}
+                        <td>{bnd.id}</td>
+                        {#if bndMode === 'edit'}
+                          {@const ef = smBndEditForms[activeSerial]?.[bnd.id] || {}}
+                          <td><input class="input" type="text" size="10" value={ef.display}
+                              on:input={(e) => { smBndEditForms[activeSerial][bnd.id].display = e.target.value; smBndEditForms = smBndEditForms; }} /></td>
+                          <td><input class="input" type="number" style="width:90px" value={ef.low_freq}
+                              on:input={(e) => { smBndEditForms[activeSerial][bnd.id].low_freq = Number(e.target.value); smBndEditForms = smBndEditForms; }} /></td>
+                          <td><input class="input" type="number" style="width:90px" value={ef.high_freq}
+                              on:input={(e) => { smBndEditForms[activeSerial][bnd.id].high_freq = Number(e.target.value); smBndEditForms = smBndEditForms; }} /></td>
+                          <td><input class="input" type="number" style="width:40px" value={ef.bcd_code}
+                              on:input={(e) => { smBndEditForms[activeSerial][bnd.id].bcd_code = Number(e.target.value); smBndEditForms = smBndEditForms; }} /></td>
+                          <td><input type="checkbox" checked={ef.pa_power === 1}
+                              on:change={(e) => { smBndEditForms[activeSerial][bnd.id].pa_power = e.target.checked ? 1 : 0; smBndEditForms = smBndEditForms; }} /></td>
+                          <td><input type="checkbox" checked={ef.keyout === 1}
+                              on:change={(e) => { smBndEditForms[activeSerial][bnd.id].keyout = e.target.checked ? 1 : 0; smBndEditForms = smBndEditForms; }} /></td>
+                          <td></td>
+                          {#if bpfOuts.length > 0}
+                            <td>
+                              <table class="ant-table" style="margin:0">
+                                <tr>{#each bpfOuts as bo}<td style="padding:1px 4px;font-size:0.85em">{bo}</td>{/each}</tr>
+                                <tr>{#each bpfOuts as bo}
+                                  <td style="padding:1px 4px"><input type="checkbox" checked={(ef.bpf_seq?.[bo] || 0) === 1}
+                                    on:change={(e) => { if(!smBndEditForms[activeSerial][bnd.id].bpf_seq) smBndEditForms[activeSerial][bnd.id].bpf_seq = {}; smBndEditForms[activeSerial][bnd.id].bpf_seq[bo] = e.target.checked ? 1 : 0; smBndEditForms = smBndEditForms; }} /></td>
+                                {/each}</tr>
+                              </table>
+                            </td>
+                          {/if}
+                          {#if seqOuts.length > 0}
+                            <td>
+                              <table class="ant-table" style="margin:0">
+                                <tr>{#each seqOuts as so}<td style="padding:1px 4px;font-size:0.85em">{so}</td>{/each}</tr>
+                                <tr>{#each seqOuts as so}
+                                  <td style="padding:1px 4px"><input type="checkbox" checked={(ef.bpf_seq?.[so] || 0) === 1}
+                                    on:change={(e) => { if(!smBndEditForms[activeSerial][bnd.id].bpf_seq) smBndEditForms[activeSerial][bnd.id].bpf_seq = {}; smBndEditForms[activeSerial][bnd.id].bpf_seq[so] = e.target.checked ? 1 : 0; smBndEditForms = smBndEditForms; }} /></td>
+                                {/each}</tr>
+                              </table>
+                            </td>
+                          {/if}
+                        {:else}
+                          <td>{bnd.display || ''}</td>
+                          <td>{bnd.low_freq || 0}</td>
+                          <td>{bnd.high_freq || 0}</td>
+                          <td>{bnd.bcd_code || 0}</td>
+                          <td>{bnd.pa_power ? 'Yes' : 'No'}</td>
+                          <td>{bnd.keyout ? 'Yes' : 'No'}</td>
+                          <td></td>
+                          {#if bpfOuts.length > 0}
+                            <td>
+                              <table class="ant-table" style="margin:0">
+                                <tr>{#each bpfOuts as bo}<td style="padding:1px 4px;font-size:0.85em">{bo}</td>{/each}</tr>
+                                <tr>{#each bpfOuts as bo}<td style="padding:1px 4px">{(bnd.bpf_seq?.[bo] || 0) ? 'Yes' : 'No'}</td>{/each}</tr>
+                              </table>
+                            </td>
+                          {/if}
+                          {#if seqOuts.length > 0}
+                            <td>
+                              <table class="ant-table" style="margin:0">
+                                <tr>{#each seqOuts as so}<td style="padding:1px 4px;font-size:0.85em">{so}</td>{/each}</tr>
+                                <tr>{#each seqOuts as so}<td style="padding:1px 4px">{(bnd.bpf_seq?.[so] || 0) ? 'Yes' : 'No'}</td>{/each}</tr>
+                              </table>
+                            </td>
+                          {/if}
+                        {/if}
+                      </tr>
+                      <!-- Ref rows for this band -->
+                      {#each (bnd.refs || []) as ref (ref.id)}
+                        {@const destObj = activeAllObjs.find((o) => o.id === ref.dest_id)}
+                        <tr>
+                          {#if bndMode === 'edit'}
+                            <td></td>
+                          {:else}
+                            <td><input type="checkbox"
+                                checked={(smBndSelected[activeSerial] || []).includes(`${bnd.id}:${ref.id}`)}
+                                on:change={() => smBndToggleSelect(activeSerial, `${bnd.id}:${ref.id}`)} /></td>
+                          {/if}
+                          <td></td>
+                          {#if bndMode === 'edit'}
+                            {@const rf = smBndEditForms[activeSerial]?.[bnd.id]?.refs?.[ref.id] || {}}
+                            <td colspan="3">
+                              <select class="select" value={rf.dest_id}
+                                  on:change={(e) => { smBndEditForms[activeSerial][bnd.id].refs[ref.id].dest_id = Number(e.target.value); smBndEditForms = smBndEditForms; }}>
+                                {#each antGrpObjs as obj}
+                                  <option value={obj.id}>{obj.type === 0 ? 'ANT' : obj.type === 1 && obj.virtual_rotator ? 'VIR' : 'GRP'}: {obj.display || obj.label || `#${obj.id}`}</option>
+                                {/each}
+                              </select>
+                            </td>
+                            <td>
+                              RX only <input type="checkbox" checked={(rf.rxonly || 0) === 1}
+                                on:change={(e) => { smBndEditForms[activeSerial][bnd.id].refs[ref.id].rxonly = e.target.checked ? 1 : 0; smBndEditForms = smBndEditForms; }} />
+                            </td>
+                          {:else}
+                            <td colspan="3">{smObjTypedDisplay(activeSerial, ref.dest_id)}</td>
+                            <td>RX only {ref.rxonly ? 'Yes' : 'No'}</td>
+                          {/if}
+                          <td></td>
+                          <td>
+                            {#if destObj && destObj.type === 0}
+                              <table class="ant-table" style="margin:0">
+                                <tr>{#each antOuts as ao}<td style="padding:1px 4px;font-size:0.85em">{ao}</td>{/each}</tr>
+                                <tr>{#each antOuts as ao}<td style="padding:1px 4px">{(destObj.output?.[ao] || 0) ? 'Yes' : 'No'}</td>{/each}</tr>
+                              </table>
+                            {/if}
+                          </td>
+                          {#if bpfOuts.length > 0}<td></td>{/if}
+                          {#if seqOuts.length > 0}<td></td>{/if}
+                        </tr>
+                      {/each}
+                      <!-- Add ref row -->
+                      <tr>
+                        <td></td>
+                        <td></td>
+                        {#if bndAddRefState && bndAddRefState.bndId === bnd.id}
+                          <td colspan="3">
+                            <select class="select" bind:value={smBndAddRef[activeSerial].dest_id}>
+                              {#each antGrpObjs as obj}
+                                <option value={obj.id}>{obj.type === 0 ? 'ANT' : obj.type === 1 && obj.virtual_rotator ? 'VIR' : 'GRP'}: {obj.display || obj.label || `#${obj.id}`}</option>
+                              {/each}
+                            </select>
+                          </td>
+                          <td></td>
+                          <td></td>
+                          <td>
+                            <button class="btn" type="button" on:click={() => smBndSaveAddRef(activeSerial)}>Save</button>
+                          </td>
+                          <td>
+                            <button class="btn" type="button" on:click={() => smBndCancelAddRef(activeSerial)}>Cancel</button>
+                          </td>
+                          {#if seqOuts.length > 0}<td></td>{/if}
+                        {:else}
+                          <td colspan="5"></td>
+                          {#if bpfOuts.length > 0}<td></td>{/if}
+                          {#if seqOuts.length > 0}<td></td>{/if}
+                          <td>
+                            {#if !bndMode && !bndAddRefState}
+                              <button class="btn" type="button" on:click={() => smBndStartAddRef(activeSerial, bnd.id)}>Add</button>
+                            {/if}
+                          </td>
+                        {/if}
+                      </tr>
+                    {/each}
+                    <!-- Add new band row -->
+                    {#if bndMode === 'add'}
+                      <tr class="add-row">
+                        <td></td>
+                        <td></td>
+                        <td><input class="input" type="text" size="10" bind:value={smBndAddForm[activeSerial].display} /></td>
+                        <td><input class="input" type="number" style="width:90px" bind:value={smBndAddForm[activeSerial].low_freq} /></td>
+                        <td><input class="input" type="number" style="width:90px" bind:value={smBndAddForm[activeSerial].high_freq} /></td>
+                        <td><input class="input" type="number" style="width:40px" bind:value={smBndAddForm[activeSerial].bcd_code} /></td>
+                        <td><input type="checkbox" bind:checked={smBndAddForm[activeSerial].pa_power} /></td>
+                        <td><input type="checkbox" bind:checked={smBndAddForm[activeSerial].keyout} /></td>
+                        <td></td>
+                        {#if bpfOuts.length > 0}<td></td>{/if}
+                        {#if seqOuts.length > 0}<td></td>{/if}
+                      </tr>
+                    {/if}
+                  </tbody>
+                </table>
+                <div class="button-row" style="margin-top: 8px;">
+                  {#if bndAddRefState}
+                    <!-- save/cancel handled inline -->
+                  {:else if bndMode === 'add'}
+                    <button class="btn" type="button" on:click={() => smBndSaveAdd(activeSerial)}>Save</button>
+                    <button class="btn" type="button" on:click={() => smBndCancel(activeSerial)}>Cancel</button>
+                  {:else if bndMode === 'edit'}
+                    <button class="btn" type="button" on:click={() => smBndSaveEdit(activeSerial)}>Save</button>
+                    <button class="btn" type="button" on:click={() => smBndCancel(activeSerial)}>Cancel</button>
+                  {:else}
+                    <button class="btn" type="button" on:click={() => smBndStartAdd(activeSerial)}>Add</button>
+                    <button class="btn" type="button" on:click={() => smBndStartEdit(activeSerial)}>Edit</button>
+                    <button class="btn" type="button" on:click={() => smBndRemoveSelected(activeSerial)}>Remove</button>
+                  {/if}
+                </div>
+                {#if keyerStatus[activeSerial]}
+                  <div class={`inline-status ${keyerStatus[activeSerial].kind === 'error' ? 'error' : ''}`}>
+                    {keyerStatus[activeSerial].text}
                   </div>
                 {/if}
               </div>

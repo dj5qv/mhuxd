@@ -22,4 +22,7 @@ int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj);
 int cfgmgrj_apply_json(struct cfgmgrj *cfgmgrj, json_t *root);
 json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj);
 
+int cfgmgrj_sm_load(const char *serial);
+int cfgmgrj_sm_store(const char *serial);
+
 #endif // CFGMGRJ_H

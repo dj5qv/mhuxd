@@ -316,3 +316,35 @@ h1 {
   gap: 6px;
   font-size: 13px;
 }
+
+.ant-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ant-table th,
+.ant-table td {
+  border: 1px solid #ccc;
+  padding: 3px 5px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ant-table th {
+  background: #e8e8e8;
+  font-weight: 600;
+}
+
+.ant-table tr:nth-child(even) {
+  background: #f6f6f6;
+}
+
+.ant-table .add-row {
+  background: #fffbe6;
+}
+
+.ant-table .vr-main-row {
+  background: #e8eef8;
+  font-weight: 600;
+}

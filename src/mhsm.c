@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <ev.h>
+#include <jansson.h>
 #include "mhsm.h"
 #include "pglist.h"
 #include "util.h"
@@ -1238,6 +1239,147 @@ int sm_antsw_to_cfg(struct sm *sm, struct cfg *cfg) {
 	return 0;
 }
 
+json_t *sm_antsw_to_json(struct sm *sm) {
+	struct sm_bandplan *bp;
+	struct object *o;
+	uint16_t j;
+
+	bp = sm->bp_eeprom;
+
+	if(!bp)
+		return NULL;
+
+	if(sm->get_antsw_state != STATE_GET_ANTSW_DONE && sm->get_antsw_state != STATE_GET_ANTSW_EMPTY)
+		return NULL;
+
+	json_t *root = json_object();
+	if(!root)
+		return NULL;
+
+	/* fixed items - build nested JSON from dotted citem keys */
+	json_t *fixed = json_object();
+	for(j = 0; j < ARRAY_SIZE(sm_bandplan_fixed_items); j++) {
+		int c = citem_get_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items),
+				bp->fixed_data, sizeof(bp->fixed_data), sm_bandplan_fixed_items[j].key);
+		if(c == -1)
+			continue;
+
+		const char *key = sm_bandplan_fixed_items[j].key;
+		char keybuf[256];
+		strncpy(keybuf, key, sizeof(keybuf) - 1);
+		keybuf[sizeof(keybuf) - 1] = '\0';
+
+		json_t *target = fixed;
+		char *saveptr;
+		char *part = strtok_r(keybuf, ".", &saveptr);
+		char *next_part;
+		while(part) {
+			next_part = strtok_r(NULL, ".", &saveptr);
+			if(!next_part) {
+				/* leaf */
+				json_object_set_new(target, part, json_integer(c));
+			} else {
+				/* intermediate node */
+				json_t *sub = json_object_get(target, part);
+				if(!sub) {
+					sub = json_object();
+					json_object_set_new(target, part, sub);
+				}
+				target = sub;
+			}
+			part = next_part;
+		}
+	}
+	json_object_set_new(root, "fixed", fixed);
+
+	/* output classification */
+	json_t *output = json_object();
+	int seq = citem_get_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items),
+			bp->fixed_data, sizeof(bp->fixed_data), "sequencerOutputs");
+	int bd = citem_get_value(sm_bandplan_fixed_items, ARRAY_SIZE(sm_bandplan_fixed_items),
+			bp->fixed_data, sizeof(bp->fixed_data), "bandDependent");
+	if(seq >= 0 && bd >= 0) {
+		for(j = 0; j < ARRAY_SIZE(output_map); j++) {
+			int val = ((seq >> output_map[j].bit) & 1) << 1;
+			val |= (bd >> output_map[j].bit) & 1;
+			json_object_set_new(output, output_map[j].label, json_integer(val));
+		}
+	}
+	json_object_set_new(root, "output", output);
+
+	/* objects (antennas, groups, bands) */
+	json_t *obj_array = json_array();
+	PG_SCANLIST(&bp->obj_list, o) {
+		json_t *jobj = json_object();
+		json_object_set_new(jobj, "type", json_integer(o->type));
+		json_object_set_new(jobj, "id", json_integer(o->id));
+		if(*o->label)
+			json_object_set_new(jobj, "label", json_string(o->label));
+		if(*o->name)
+			json_object_set_new(jobj, "display", json_string(o->name));
+
+		/* references */
+		struct reference *ref;
+		json_t *refs = json_array();
+		PG_SCANLIST(&o->ref_list, ref) {
+			json_t *jref = json_object();
+			json_object_set_new(jref, "id", json_integer(ref->id));
+			json_object_set_new(jref, "dest_id", json_integer(ref->dest_id));
+			json_object_set_new(jref, "type", json_integer(ref->type));
+			json_object_set_new(jref, "min_azimuth", json_integer(ref->min_azimuth));
+			json_object_set_new(jref, "max_azimuth", json_integer(ref->max_azimuth));
+			json_object_set_new(jref, "flags", json_integer(ref->flags));
+			json_object_set_new(jref, "rxonly", json_integer(ref->rxonly));
+			json_array_append_new(refs, jref);
+		}
+		json_object_set_new(jobj, "refs", refs);
+
+		if(o->type == OBJ_TYPE_ANT) {
+			struct antenna_record *arec = (void*)o;
+			json_object_set_new(jobj, "steppir", json_integer(arec->steppir));
+			json_object_set_new(jobj, "rxonly", json_integer(arec->rxonly));
+			json_object_set_new(jobj, "pa_ant_number", json_integer(arec->pa_ant_number));
+			json_object_set_new(jobj, "rotator", json_integer(arec->rotator));
+			json_object_set_new(jobj, "rotator_offset", json_integer(arec->rotator_offset));
+
+			json_t *out = json_object();
+			for(j = 0; j < ARRAY_SIZE(output_map); j++) {
+				json_object_set_new(out, output_map[j].label,
+					json_integer((arec->output_settings >> output_map[j].bit) & 1));
+			}
+			json_object_set_new(jobj, "output", out);
+		}
+
+		if(o->type == OBJ_TYPE_GRP) {
+			struct groups_record *grec = (void*)o;
+			json_object_set_new(jobj, "num_antennas", json_integer(grec->num_antennas));
+			json_object_set_new(jobj, "rxonly", json_integer(grec->rxonly));
+			json_object_set_new(jobj, "virtual_rotator", json_integer(!(grec->flags & 1)));
+		}
+
+		if(o->type == OBJ_TYPE_BAND) {
+			struct band_record *brec = (void*)o;
+			json_object_set_new(jobj, "low_freq", json_integer(brec->low_freq));
+			json_object_set_new(jobj, "high_freq", json_integer(brec->high_freq));
+			json_object_set_new(jobj, "bcd_code", json_integer(brec->outputs & 0x0f));
+			json_object_set_new(jobj, "keyout", json_integer((brec->outputs >> 6) & 1));
+			json_object_set_new(jobj, "pa_power", json_integer((brec->outputs >> 7) & 1));
+
+			json_t *bpf = json_object();
+			for(j = 0; j < ARRAY_SIZE(output_map); j++) {
+				json_object_set_new(bpf, output_map[j].label,
+					json_integer((brec->bpf_seq >> output_map[j].bit) & 1));
+			}
+			json_object_set_new(jobj, "bpf_seq", bpf);
+		}
+
+		json_array_append_new(obj_array, jobj);
+	}
+	json_object_set_new(root, "obj", obj_array);
+
+	return root;
+}
+
 void sm_antsw_clear_lists(struct sm *sm) {
 	dbg1("%s()", __func__);
 	clear_obj_list(sm->bp_eeprom);
@@ -1559,6 +1701,259 @@ int sm_antsw_rem_obj_ref(struct sm *sm, int obj_id, int ref_id) {
 	err("could not remove ref id %d from obj id %d, not found!", ref_id, obj_id);
 	return -1;
 
+}
+
+/* ----- JSON-based SM object add/mod (no cfg dependency) ----- */
+
+static int json_int_or(json_t *obj, const char *key, int def) {
+	json_t *v = json_object_get(obj, key);
+	if(!v) return def;
+	if(json_is_integer(v)) return (int)json_integer_value(v);
+	if(json_is_boolean(v)) return json_is_true(v) ? 1 : 0;
+	return def;
+}
+
+static const char *json_str_or(json_t *obj, const char *key, const char *def) {
+	json_t *v = json_object_get(obj, key);
+	if(!v || !json_is_string(v)) return def;
+	return json_string_value(v);
+}
+
+static int sm_antsw_add_ant_json(struct sm *sm, json_t *obj) {
+	struct sm_bandplan *bp = sm->bp_eeprom;
+	if(!bp) return -1;
+
+	dbg1("%s %s()", sm->serial, __func__);
+
+	int req_id = json_int_or(obj, "id", 0);
+	struct antenna_record *arec = arec_create(bp, req_id);
+	PG_AddTail(&bp->obj_list, &arec->o.node);
+	/* return assigned id in the JSON object */
+	json_object_set_new(obj, "id", json_integer(arec->o.id));
+	/* fall through to mod */
+	return sm_antsw_mod_obj_json(sm, obj);
+}
+
+static int sm_antsw_mod_ant_json(struct sm *sm, json_t *obj) {
+	struct sm_bandplan *bp = sm->bp_eeprom;
+	if(!bp) return -1;
+
+	dbg1("%s %s()", sm->serial, __func__);
+
+	int id = json_int_or(obj, "id", -1);
+	struct antenna_record *arec = ant_by_id(&bp->obj_list, id);
+	if(!arec) {
+		err("%s() failed, antenna id %d not found!", __func__, id);
+		return -1;
+	}
+
+	const char *str;
+	str = json_str_or(obj, "label", arec->o.label);
+	strncpy(arec->o.label, str, MAX_LABEL_LEN);
+
+	str = json_str_or(obj, "display", arec->o.name);
+	strncpy(arec->o.name, str, MAX_NAME_LEN);
+
+	arec->steppir = json_int_or(obj, "steppir", arec->steppir);
+	arec->rxonly = json_int_or(obj, "rxonly", arec->rxonly);
+	arec->pa_ant_number = json_int_or(obj, "pa_ant_number", arec->pa_ant_number);
+	arec->rotator = json_int_or(obj, "rotator", arec->rotator);
+	arec->rotator_offset = json_int_or(obj, "rotator_offset", arec->rotator_offset);
+	arec->rotator_offset = check_roffset_range(arec->rotator_offset);
+
+	/* output bits */
+	json_t *outj = json_object_get(obj, "output");
+	if(outj && json_is_object(outj)) {
+		arec->output_settings = 0;
+		uint16_t j;
+		for(j = 0; j < ARRAY_SIZE(output_map); j++) {
+			int val = json_int_or(outj, output_map[j].label,
+				(arec->output_settings >> output_map[j].bit) & 1);
+			val = (val == 1 ? 1 : 0);
+			arec->output_settings |= (val << output_map[j].bit);
+		}
+	}
+	return 0;
+}
+
+static int sm_antsw_add_group_json(struct sm *sm, json_t *obj) {
+	struct sm_bandplan *bp = sm->bp_eeprom;
+	if(!bp) return -1;
+
+	dbg1("%s %s()", sm->serial, __func__);
+
+	int req_id = json_int_or(obj, "id", 0);
+	struct groups_record *grec = grec_create(bp, req_id);
+	PG_AddTail(&bp->obj_list, &grec->o.node);
+	json_object_set_new(obj, "id", json_integer(grec->o.id));
+	return sm_antsw_mod_obj_json(sm, obj);
+}
+
+static int sm_antsw_mod_group_json(struct sm *sm, json_t *obj) {
+	struct sm_bandplan *bp = sm->bp_eeprom;
+	if(!bp) return -1;
+
+	dbg1("%s %s()", sm->serial, __func__);
+
+	int id = json_int_or(obj, "id", -1);
+	struct groups_record *grec = grp_by_id(&bp->obj_list, id);
+	if(!grec) {
+		err("%s() failed, group id %d not found!", __func__, id);
+		return -1;
+	}
+
+	const char *str;
+	str = json_str_or(obj, "label", grec->o.label);
+	if(str != grec->o.label)
+		strncpy(grec->o.label, str, MAX_LABEL_LEN);
+
+	str = json_str_or(obj, "display", grec->o.name);
+	if(str != grec->o.name)
+		strncpy(grec->o.name, str, MAX_NAME_LEN);
+
+	grec->num_antennas = json_int_or(obj, "num_antennas", grec->num_antennas);
+	grec->rxonly = json_int_or(obj, "rxonly", grec->rxonly);
+	int c = json_int_or(obj, "virtual_rotator", -1);
+	if(c != -1) {
+		grec->flags &= ~1;
+		grec->flags |= !c;
+	}
+
+	/* refs */
+	json_t *refs = json_object_get(obj, "refs");
+	if(refs && json_is_array(refs)) {
+		size_t ri;
+		json_t *jref;
+		json_array_foreach(refs, ri, jref) {
+			int ref_id = json_int_or(jref, "id", 0);
+			struct reference *ref = ref_by_id(&grec->o.ref_list, ref_id);
+			if(!ref) {
+				ref = ref_create(bp, REF_TYPE_ANT, ref_id);
+				PG_AddTail(&grec->o.ref_list, &ref->node);
+			}
+			ref->dest_id = json_int_or(jref, "dest_id", ref->dest_id);
+			ref->min_azimuth = json_int_or(jref, "min_azimuth", ref->min_azimuth);
+			ref->max_azimuth = json_int_or(jref, "max_azimuth", ref->max_azimuth);
+		}
+	}
+
+	return 0;
+}
+
+static int sm_antsw_add_band_json(struct sm *sm, json_t *obj) {
+	struct sm_bandplan *bp = sm->bp_eeprom;
+	if(!bp) return -1;
+
+	dbg1("%s %s()", sm->serial, __func__);
+
+	int req_id = json_int_or(obj, "id", 0);
+	struct band_record *brec = brec_create(bp, req_id);
+	PG_AddTail(&bp->obj_list, &brec->o.node);
+	json_object_set_new(obj, "id", json_integer(brec->o.id));
+	return sm_antsw_mod_obj_json(sm, obj);
+}
+
+static int sm_antsw_mod_band_json(struct sm *sm, json_t *obj) {
+	struct sm_bandplan *bp = sm->bp_eeprom;
+	if(!bp) return -1;
+
+	dbg1("%s %s()", sm->serial, __func__);
+
+	int id = json_int_or(obj, "id", -1);
+	struct band_record *brec = band_by_id(&bp->obj_list, id);
+	if(!brec) {
+		err("%s() failed, band id %d not found!", __func__, id);
+		return -1;
+	}
+
+	const char *str;
+	str = json_str_or(obj, "display", brec->o.name);
+	if(str != brec->o.name)
+		strncpy(brec->o.name, str, MAX_NAME_LEN);
+
+	brec->low_freq = json_int_or(obj, "low_freq", brec->low_freq);
+	brec->high_freq = json_int_or(obj, "high_freq", brec->high_freq);
+
+	int bc = json_int_or(obj, "bcd_code", -1);
+	if(bc != -1) {
+		brec->outputs &= 0x0f;
+		brec->outputs |= bc;
+	}
+
+	int ko = json_int_or(obj, "keyout", -1);
+	if(ko != -1) {
+		brec->outputs &= ~(1 << 6);
+		brec->outputs |= (ko << 6);
+	}
+
+	int pp = json_int_or(obj, "pa_power", -1);
+	if(pp != -1) {
+		brec->outputs &= ~(1 << 7);
+		brec->outputs |= (pp << 7);
+	}
+
+	/* bpf_seq */
+	json_t *bpfj = json_object_get(obj, "bpf_seq");
+	if(bpfj && json_is_object(bpfj)) {
+		brec->bpf_seq = 0;
+		uint16_t j;
+		for(j = 0; j < ARRAY_SIZE(output_map); j++) {
+			int val = json_int_or(bpfj, output_map[j].label,
+				(brec->bpf_seq >> output_map[j].bit) & 1);
+			val = (val == 1 ? 1 : 0);
+			brec->bpf_seq |= (val << output_map[j].bit);
+		}
+	}
+
+	/* refs */
+	json_t *refs = json_object_get(obj, "refs");
+	if(refs && json_is_array(refs)) {
+		size_t ri;
+		json_t *jref;
+		json_array_foreach(refs, ri, jref) {
+			int ref_id = json_int_or(jref, "id", 0);
+			struct reference *ref = ref_by_id(&brec->o.ref_list, ref_id);
+			if(!ref) {
+				ref = ref_create(bp, json_int_or(jref, "type", REF_TYPE_ANT), ref_id);
+				PG_AddTail(&brec->o.ref_list, &ref->node);
+			}
+			ref->dest_id = json_int_or(jref, "dest_id", ref->dest_id);
+			ref->flags = json_int_or(jref, "flags", ref->flags);
+			ref->rxonly = json_int_or(jref, "rxonly", ref->rxonly);
+			ref->flags &= ~(1L);
+			ref->flags |= ref->rxonly;
+		}
+	}
+
+	return 0;
+}
+
+int sm_antsw_add_obj_json(struct sm *sm, json_t *obj) {
+	int type = json_int_or(obj, "type", -1);
+	dbg1("%s %s() type=%d", sm->serial, __func__, type);
+
+	switch(type) {
+	case OBJ_TYPE_ANT:  return sm_antsw_add_ant_json(sm, obj);
+	case OBJ_TYPE_GRP:  return sm_antsw_add_group_json(sm, obj);
+	case OBJ_TYPE_BAND: return sm_antsw_add_band_json(sm, obj);
+	default:
+		err("%s() invalid object type %d!", __func__, type);
+		return -1;
+	}
+}
+
+int sm_antsw_mod_obj_json(struct sm *sm, json_t *obj) {
+	int type = json_int_or(obj, "type", -1);
+	dbg1("%s %s() type=%d", sm->serial, __func__, type);
+
+	switch(type) {
+	case OBJ_TYPE_ANT:  return sm_antsw_mod_ant_json(sm, obj);
+	case OBJ_TYPE_GRP:  return sm_antsw_mod_group_json(sm, obj);
+	case OBJ_TYPE_BAND: return sm_antsw_mod_band_json(sm, obj);
+	default:
+		err("%s() invalid object type %d!", __func__, type);
+		return -1;
+	}
 }
 
 int sm_antsw_rem_ant(struct sm *sm, int id) {
