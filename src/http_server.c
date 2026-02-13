@@ -128,6 +128,9 @@ struct http_connection {
 
 	uint16_t response_code;
 	unsigned int terminate :1;
+
+	hcon_close_cb close_cb;
+	void *close_data;
 };
 
 int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *sub_path) {
@@ -234,6 +237,9 @@ int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *su
 
 static void rem_connection(struct http_connection *hcon) {
 	struct http_response *hr;
+
+	if (hcon->close_cb)
+		hcon->close_cb(hcon, hcon->close_data);
 
 	ev_io_stop(hcon->hs->loop, &hcon->w_in);
 	ev_io_stop(hcon->hs->loop, &hcon->w_out);
@@ -661,6 +667,73 @@ void hs_send_error_page(struct http_connection *hcon, uint16_t code) {
 	len = snprintf(buf, sizeof(buf), error_page_templ, code, c->msg, code, c->msg);
 
 	hs_send_response(hcon, code, ct_text_html, buf, len, NULL, 0);
+}
+
+void hs_set_close_cb(struct http_connection *hcon, hcon_close_cb cb, void *user_data) {
+	hcon->close_cb = cb;
+	hcon->close_data = user_data;
+}
+
+void hs_send_headers(struct http_connection *hcon, uint16_t code, const char *content_type) {
+	struct http_response *hr;
+	struct http_code *c = http_codes;
+	char rfc1123_current_date[30];
+
+	while(c->code && c->code != code)
+		c++;
+
+	if(!c->code)
+		return;
+
+	hr = w_calloc(1, sizeof(*hr) + MAX_HEADERS_SIZE + 1);
+	hr->data = (char*)&hr[1];
+
+	rfc1123_current_date_time(rfc1123_current_date);
+
+	int headers_size = snprintf(hr->data, MAX_HEADERS_SIZE,
+				"HTTP/%d.%d %d %s\r\n"
+				"Content-Type: %s\r\n"
+				"Date: %s\r\n"
+				"Cache-Control: no-cache\r\n"
+				"Connection: keep-alive\r\n"
+				"Server: %s\r\n",
+				hcon->parser.http_major, hcon->parser.http_minor, code, c->msg,
+				content_type, rfc1123_current_date, PACKAGE_STRING);
+
+	for(int i = 0; i < hcon->rsp_header_cnt; i++) {
+		headers_size += snprintf(hr->data + headers_size, MAX_HEADERS_SIZE - headers_size, "%s: %s\r\n",
+			 hcon->rsp_header[i].name, hcon->rsp_header[i].value);
+	}
+
+	headers_size += snprintf(hr->data + headers_size, MAX_HEADERS_SIZE - headers_size, "\r\n");
+
+	hcon->rsp_header_cnt = 0;
+	hcon->rsp_header_size = 0;
+
+	if(headers_size >= MAX_HEADERS_SIZE) {
+		err("response headers too large!");
+		free(hr);
+		hs_send_error_page(hcon, 500);
+		return;
+	}
+
+	hr->len = headers_size;
+	PG_AddTail(&hcon->response_list, &hr->node);
+	ev_io_start(hcon->hs->loop, &hcon->w_out);
+}
+
+void hs_send_chunk(struct http_connection *hcon, const char *data, size_t len) {
+	struct http_response *hr;
+
+	if(!len)
+		return;
+
+	hr = w_calloc(1, sizeof(*hr) + len + 1);
+	hr->data = (char*)&hr[1];
+	memcpy(hr->data, data ,len);
+	hr->len = len;
+	PG_AddTail(&hcon->response_list, &hr->node);
+	ev_io_start(hcon->hs->loop, &hcon->w_out);
 }
 
 struct http_server *hs_start(struct ev_loop *loop, const char *host_port) {

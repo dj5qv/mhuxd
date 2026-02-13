@@ -1,15 +1,11 @@
 <script>
   export let status = 'UNKNOWN';
 
-  const statusClass = () => {
-    const s = String(status || '').toUpperCase();
-    if (s.includes('ONLINE')) return 'ok';
-    if (s.includes('OFFLINE')) return 'warn';
-    return 'bad';
-  };
+  $: s = String(status || '').toUpperCase();
+  $: statusClass = s.includes('ONLINE') ? 'ok' : (s.includes('OFFLINE') ? 'warn' : 'bad');
 </script>
 
-<span class={`status-dot ${statusClass()}`} title={status} aria-label={status}></span>
+<span class="status-dot {statusClass}" title={status} aria-label={status}></span>
 
 <style>
   .status-dot {

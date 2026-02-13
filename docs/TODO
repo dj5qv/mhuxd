@@ -23,3 +23,8 @@
 
 10) rigctld control, like start/stop with mhuxd and/or keyer becoming online / offline. rigctld could then also be used my mhuxd to track 
    the rig mode and apply it to the keyer accordingly.
+
+11) If with new json implementation, if VSP can't be created, it gets removed from config. That is, it wouldn't be saved when mhuxd terminates, 
+    since it wasn't created. We don't hold a config shadow copy anymore.
+
+12) dmgr_set_device_added_cb(), quick hack, should manage a callback list as everyone else.

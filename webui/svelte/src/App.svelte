@@ -697,6 +697,7 @@
   };
 
   onMount(async () => {
+    let eventSource;
     try {
       const [runtimeRsp, daemonRsp, devicesRsp, configDevicesRsp, metadataRsp] = await Promise.all([
         safeFetch('/api/v1/runtime'),
@@ -719,6 +720,28 @@
         portForm = { ...portForm, serial, channel: opts[0] || '' };
       }
 
+      // Start EventSource for live updates
+      eventSource = new EventSource('/api/v1/events');
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'status') {
+            devices = devices.map(d => 
+              d.serial === data.serial ? { ...d, status: data.status } : d
+            );
+          } else if (data.type === 'usb_connection') {
+             // If a new device is connected, we might want to refresh the device list
+             // For now, let's just log it or we could trigger a full refresh
+             console.log('USB Event:', data);
+          }
+        } catch (e) {
+          console.error('Failed to parse event data', e);
+        }
+      };
+      eventSource.onerror = (err) => {
+        console.error('EventSource failed:', err);
+      };
+
     } catch (err) {
       error = err?.message || 'Failed to load data';
     } finally {
@@ -731,7 +754,10 @@
       if (h.menu && h.menu !== activeMenu) activeMenu = h.menu;
     };
     window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    return () => {
+      window.removeEventListener('hashchange', onHashChange);
+      if (eventSource) eventSource.close();
+    };
   });
 
   const applyLoglevel = async () => {

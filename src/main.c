@@ -104,6 +104,9 @@ int main(int argc, char **argv)
 	ev_set_allocator((void*)w_realloc);
 	loop = ev_default_loop(EVFLAG_AUTO);
 
+	// Device manager, alloc/init only.
+	dmgr_create(loop);
+
 	// Connector manager
 	conmgr = conmgr_create();
 
@@ -155,7 +158,6 @@ int main(int argc, char **argv)
 	ev_signal_start (loop, &w_sigpipe);
 	ev_signal_start (loop, &w_sighup);
 
-	dmgr_create(loop);
 /*
 	if(cfgmgr_init(cfgmgr))
 		err("(main) error initializing config manager!");
@@ -191,6 +193,7 @@ int main(int argc, char **argv)
 	cfgmgrj_destroy(cfgmgrj);
 	conmgr_destroy(conmgr);
 
+	// This also cleans up sub modules, mhcontrol, wkm etc.
 	dmgr_destroy();
 	
 	webui_destroy(webui);

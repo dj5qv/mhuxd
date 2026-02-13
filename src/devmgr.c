@@ -26,6 +26,8 @@ struct device_manager {
 	struct PGList device_list;
 	struct ev_loop *loop;
 	struct devmon *devmon;
+	dmgr_device_cb device_added_cb;
+	void *device_added_user_data;
 };
 
 struct device_manager *dman = NULL;
@@ -58,6 +60,10 @@ static struct device *create_dev(const char *serial, uint16_t type) {
 	dev->router = mhr_create(dman->loop, serial, (mhi.flags & MHF_HAS_FLAGS_CHANNEL) ? 1 : 0);
 	dev->ctl = mhc_create(dman->loop, dev->router, &mhi);
 	PG_AddTail(&dman->device_list, &dev->node);
+
+	if(dman->device_added_cb)
+		dman->device_added_cb(dev, dman->device_added_user_data);
+
 	return dev;
 }
 
@@ -165,5 +171,11 @@ struct device *dmgr_get_device(const char *serial) {
 			return d;
 	}
 	return NULL;
+}
+
+void dmgr_set_device_added_cb(dmgr_device_cb cb, void *user_data) {
+	if(!dman) return;
+	dman->device_added_cb = cb;
+	dman->device_added_user_data = user_data;
 }
 

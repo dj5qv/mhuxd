@@ -30,4 +30,7 @@ void dmgr_destroy();
 struct device *dmgr_get_device(const char *serial);
 struct PGList *dmgr_get_device_list();
 
+typedef void (*dmgr_device_cb)(struct device *dev, void *user_data);
+void dmgr_set_device_added_cb(dmgr_device_cb cb, void *user_data);
+
 #endif // DEVMGR_H

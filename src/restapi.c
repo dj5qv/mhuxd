@@ -34,10 +34,17 @@ struct restapi {
 	struct http_handler *config_devices_handler;
 	struct http_handler *config_device_handler;
 	struct http_handler *device_actions_handler;
+	struct http_handler *events_handler;
+	struct PGList subscribers;
 	json_t *rigtypes;
 	json_t *devicetypes;
 	json_t *displayoptions;
 	time_t start_time;
+};
+
+struct event_subscriber {
+	struct PGNode node;
+	struct http_connection *hcon;
 };
 
 extern const char *log_file_name;
@@ -192,6 +199,56 @@ static int cb_metadata(struct http_connection *hcon, const char *path, const cha
 	hs_send_response(hcon, 200, "application/json", payload, strlen(payload), NULL, 0);
 	free(payload);
 	json_decref(root);
+	return 0;
+}
+
+static void broadcast_event(struct restapi *api, const json_t *event) {
+	char *dump = json_dumps(event, JSON_COMPACT);
+	if(!dump) return;
+
+	char *buf = w_malloc(strlen(dump) + 16);
+	int len = sprintf(buf, "data: %s\n\n", dump);
+
+	struct event_subscriber *sub;
+	PG_SCANLIST(&api->subscribers, sub) {
+		hs_send_chunk(sub->hcon, buf, len);
+	}
+
+	free(buf);
+	free(dump);
+}
+
+static void on_keyer_state_changed(const char *serial, int state, void *user_data) {
+	struct restapi *api = user_data;
+	json_t *event = json_object();
+	json_object_set_new(event, "type", json_string("status"));
+	json_object_set_new(event, "serial", json_string(serial));
+	json_object_set_new(event, "status", json_string(mhc_state_str(state)));
+	broadcast_event(api, event);
+	json_decref(event);
+}
+
+static void on_sub_closed(struct http_connection *hcon, void *data) {
+	struct event_subscriber *sub = data;
+	PG_Remove(&sub->node);
+	free(sub);
+}
+
+static int cb_events(struct http_connection *hcon, const char *path, const char *query,
+		 const char *body, uint32_t body_len, void *data) {
+	(void)path; (void)query; (void)body; (void)body_len;
+	struct restapi *api = data;
+
+	hs_send_headers(hcon, 200, "text/event-stream");
+	
+	struct event_subscriber *sub = w_calloc(1, sizeof(*sub));
+	sub->hcon = hcon;
+	PG_AddTail(&api->subscribers, &sub->node);
+	hs_set_close_cb(hcon, on_sub_closed, sub);
+
+	// Send initial comment to keep connection alive or as handshake
+	hs_send_chunk(hcon, ": handshake\n\n", 13);
+
 	return 0;
 }
 
@@ -692,6 +749,18 @@ static int cb_device_actions(struct http_connection *hcon, const char *path, con
 	return 0;
 }
 
+static void on_device_added(struct device *dev, void *user_data) {
+	struct restapi *api = user_data;
+	mhc_add_keyer_state_changed_cb(dev->ctl, on_keyer_state_changed, api);
+
+	json_t *event = json_object();
+	json_object_set_new(event, "type", json_string("usb_connection"));
+	json_object_set_new(event, "serial", json_string(dev->serial));
+	json_object_set_new(event, "connected", json_true());
+	broadcast_event(api, event);
+	json_decref(event);
+}
+
 struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) {
     struct restapi *api = NULL;
     json_error_t jerr;
@@ -732,6 +801,8 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
     api->hs = hs;
 	api->cfgmgrj = cfgmgrj;
     api->start_time = time(NULL);
+	PG_NewList(&api->subscribers);
+
 	api->runtime_handler = hs_register_handler(hs, "/api/v1/runtime", cb_runtime, api);
 	api->metadata_handler = hs_register_handler(hs, "/api/v1/metadata", cb_metadata, api);
 	api->devices_handler = hs_register_handler(hs, "/api/v1/devices", cb_devices, api);
@@ -739,11 +810,20 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
 	api->config_devices_handler = hs_register_handler(hs, "/api/v1/config/devices", cb_config_devices, api);
 	api->config_device_handler = hs_register_handler(hs, "/api/v1/config/devices/", cb_config_device, api);
 	api->device_actions_handler = hs_register_handler(hs, "/api/v1/devices/", cb_device_actions, api);
+	api->events_handler = hs_register_handler(hs, "/api/v1/events", cb_events, api);
+
 	if(!api->runtime_handler || !api->metadata_handler || !api->devices_handler || !api->config_daemon_handler ||
-	   !api->config_devices_handler || !api->config_device_handler || !api->device_actions_handler) {
+	   !api->config_devices_handler || !api->config_device_handler || !api->device_actions_handler || !api->events_handler) {
         err("%s() failed to register rest api handlers", __func__);
         goto fail;
     }
+
+	struct device *dev;
+	PG_SCANLIST(dmgr_get_device_list(), dev) {
+		mhc_add_keyer_state_changed_cb(dev->ctl, on_keyer_state_changed, api);
+	}
+
+	dmgr_set_device_added_cb(on_device_added, api);
 
     return api;
 
@@ -763,6 +843,8 @@ fail:
 			hs_unregister_handler(hs, api->config_device_handler);
 		if(api->device_actions_handler)
 			hs_unregister_handler(hs, api->device_actions_handler);
+		if(api->events_handler)
+			hs_unregister_handler(hs, api->events_handler);
         if(api->rigtypes)
             json_decref(api->rigtypes);
         if(api->devicetypes)
@@ -778,6 +860,16 @@ fail:
 void restapi_destroy(struct restapi *api) {
 	if(!api)
 		return;
+
+	dmgr_set_device_added_cb(NULL, NULL);
+
+	struct event_subscriber *sub;
+	while((sub = (void*)PG_FIRSTENTRY(&api->subscribers))) {
+		hs_set_close_cb(sub->hcon, NULL, NULL);
+		PG_Remove(&sub->node);
+		free(sub);
+	}
+
 	if(api->runtime_handler)
 		hs_unregister_handler(api->hs, api->runtime_handler);
 	if(api->metadata_handler)
@@ -792,6 +884,8 @@ void restapi_destroy(struct restapi *api) {
 		hs_unregister_handler(api->hs, api->config_device_handler);
 	if(api->device_actions_handler)
 		hs_unregister_handler(api->hs, api->device_actions_handler);
+	if(api->events_handler)
+		hs_unregister_handler(api->hs, api->events_handler);
 	if(api->rigtypes)
 		json_decref(api->rigtypes);
 	if(api->devicetypes)

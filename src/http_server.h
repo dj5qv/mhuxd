@@ -44,6 +44,12 @@ const char *hs_method_str(int16_t method);
 void hs_send_response(struct http_connection *hcon, uint16_t code, const char *content_type, const char *body, size_t len, time_t *, int max_age);
 void hs_send_error_page(struct http_connection *hcon, uint16_t code);
 
+typedef void (*hcon_close_cb)(struct http_connection *hcon, void *user_data);
+void hs_set_close_cb(struct http_connection *hcon, hcon_close_cb cb, void *user_data);
+
+void hs_send_headers(struct http_connection *hcon, uint16_t code, const char *content_type);
+void hs_send_chunk(struct http_connection *hcon, const char *data, size_t len);
+
 int hs_add_rsp_header(struct http_connection *hcon, const char *name, const char *value);
 
 #endif /* HTTP_SERVER_H */
