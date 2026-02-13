@@ -19,6 +19,8 @@
     border-radius: 50%;
     margin-right: 6px;
     vertical-align: middle;
+    position: relative;
+    top: -1px;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
   }
   .status-dot.ok { background: #2da44e; }

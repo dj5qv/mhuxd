@@ -52,18 +52,18 @@ body {
 .tabs {
   display: flex;
   gap: 6px;
-  padding: 6px 10px 8px;
+  padding: 10px 10px 0;
   background: #000050;
-  border-bottom: 2px solid #111;
+  border-bottom: 5px solid #d0d0f0;
 }
 
 .tab {
-  padding: 4px 10px;
+  padding: 6px 12px;
   background: #7070a0;
   color: #fff;
   font-size: 13px;
   font-weight: 700;
-  border-radius: 3px 3px 0 0;
+  border-radius: 4px 4px 0 0;
   border: none;
   cursor: pointer;
 }

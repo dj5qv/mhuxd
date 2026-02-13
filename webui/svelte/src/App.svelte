@@ -881,7 +881,7 @@
   };
 
   $: keyers = buildKeyers(configDevices, devices);
-  $: tabs = [...baseTabs, ...keyers.map((k) => ({ id: `keyer:${k.serial}`, label: k.name, serial: k.serial }))];
+  $: tabs = [...baseTabs, ...keyers.map((k) => ({ id: `keyer:${k.serial}`, label: k.name, serial: k.serial, status: k.status }))];
 
   // When configDevices changes (initial load or after API updates), clear cached
   // forms so they get re-populated from the fresh config data.
@@ -1826,6 +1826,9 @@
         disabled={tab.disabled}
         type="button"
       >
+        {#if tab.status !== undefined}
+          <StatusDot status={tab.status} />
+        {/if}
         {tab.label}
       </button>
     {/each}
