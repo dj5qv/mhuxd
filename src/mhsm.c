@@ -1749,10 +1749,12 @@ static int sm_antsw_mod_ant_json(struct sm *sm, json_t *obj) {
 
 	const char *str;
 	str = json_str_or(obj, "label", arec->o.label);
-	strncpy(arec->o.label, str, MAX_LABEL_LEN);
+	// strncpy(arec->o.label, str, MAX_LABEL_LEN);
+	memcpy(arec->o.label, str, MAX_LABEL_LEN);
 
 	str = json_str_or(obj, "display", arec->o.name);
-	strncpy(arec->o.name, str, MAX_NAME_LEN);
+	// strncpy(arec->o.name, str, MAX_NAME_LEN);
+	memcpy(arec->o.name, str, MAX_NAME_LEN);
 
 	arec->steppir = json_int_or(obj, "steppir", arec->steppir);
 	arec->rxonly = json_int_or(obj, "rxonly", arec->rxonly);
