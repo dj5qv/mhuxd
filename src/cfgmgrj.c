@@ -712,8 +712,48 @@ static int apply_connector_from_json(struct cfgmgrj *cfgmgrj, json_t *conn_obj) 
     }
 
     int id = json_get_int(conn_obj, "id", 0);
-    if(!conmgr_create_con_cfg(cfgmgrj->conmgr, cfgmgrj->loop, &ccfg, id))
-        return -1;
+    int run_id = conmgr_create_con_cfg(cfgmgrj->conmgr, cfgmgrj->loop, &ccfg, id);
+
+    // Registry of Intent: update our internal list regardless of creation success
+    if(cfgmgrj->connectors) {
+        // If we don't have an ID yet but conmgr produced one (even if it failed, 
+        // conmgr_create_con_cfg should ideally give us the ID it tried to use).
+        // Since it returns 0 on failure, we'll use a fallback if id was 0.
+        if (id <= 0 && run_id > 0) id = run_id;
+        
+        // If it still is 0 (failed and no ID provided), we need to find a unique one
+        // to keep it in the intent list.
+        if (id <= 0) {
+            // This is a bit of a corner case for a new port that fails immediately.
+            // Let's just find the max ID in our list and increment.
+            int max_id = 0;
+            size_t j;
+            json_t *tmp;
+            json_array_foreach(cfgmgrj->connectors, j, tmp) {
+                int tid = json_get_int(tmp, "id", 0);
+                if (tid > max_id) max_id = tid;
+            }
+            id = max_id + 1;
+        }
+
+        json_t *match = NULL;
+        size_t idx;
+        json_t *c;
+        json_array_foreach(cfgmgrj->connectors, idx, c) {
+            if(json_get_int(c, "id", 0) == id) {
+                match = c;
+                break;
+            }
+        }
+        if(match) {
+            json_array_set(cfgmgrj->connectors, idx, conn_obj);
+            json_object_set_new(conn_obj, "id", json_integer(id));
+        } else {
+            json_t *new_obj = json_deep_copy(conn_obj);
+            json_object_set_new(new_obj, "id", json_integer(id));
+            json_array_append_new(cfgmgrj->connectors, new_obj);
+        }
+    }
 
     return 0;
 }
@@ -804,8 +844,19 @@ static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
             if(!json_is_integer(id_val))
                 return -1;
             int id = (int)json_integer_value(id_val);
-            if(conmgr_destroy_con(cfgmgrj->conmgr, id) != 0)
-                return -1;
+            conmgr_destroy_con(cfgmgrj->conmgr, id);
+
+            // Registry of Intent: remove from our list
+            if(cfgmgrj->connectors) {
+                size_t j;
+                json_t *c;
+                json_array_foreach(cfgmgrj->connectors, j, c) {
+                    if(json_get_int(c, "id", 0) == id) {
+                        json_array_remove(cfgmgrj->connectors, j);
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -952,17 +1003,7 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
     }
 
     json_object_set_new(root, "devices", devices);
-    if(cfgmgrj && cfgmgrj->conmgr) {
-        json_t *connectors = json_array();
-        if(connectors) {
-            struct json_connectors_builder b = { .arr = connectors };
-            conmgr_foreach(cfgmgrj->conmgr, connectors_builder_cb, &b);
-            if(json_array_size(connectors) > 0)
-                json_object_set_new(root, "connectors", connectors);
-            else
-                json_decref(connectors);
-        }
-    } else if(cfgmgrj && cfgmgrj->connectors && json_is_array(cfgmgrj->connectors)) {
+    if(cfgmgrj && cfgmgrj->connectors && json_is_array(cfgmgrj->connectors)) {
         json_object_set_new(root, "connectors", json_incref(cfgmgrj->connectors));
     }
     return root;
@@ -970,7 +1011,27 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
 
 // Build the complete JSON config.
 json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj) {
-    return build_config_json(cfgmgrj);
+    json_t *root = build_config_json(cfgmgrj);
+    if(!root) return NULL;
+
+    // Decorate connectors with runtime status for the UI.
+    // We deep copy the connectors list so we don't save runtime status to the config file.
+    json_t *connectors = json_object_get(root, "connectors");
+    if(connectors && json_is_array(connectors) && cfgmgrj->conmgr) {
+        json_t *copy = json_deep_copy(connectors);
+        json_object_set_new(root, "connectors", copy);
+        connectors = copy;
+
+        size_t idx;
+        json_t *c;
+        json_array_foreach(connectors, idx, c) {
+            int id = json_get_int(c, "id", 0);
+            int running = conmgr_exists(cfgmgrj->conmgr, id);
+            json_object_set_new(c, "status", json_string(running ? "ok" : "failed"));
+        }
+    }
+
+    return root;
 }
 
 static json_t *build_speed_obj(const struct mhc_speed_cfg *cfg) {
@@ -1071,6 +1132,7 @@ struct cfgmgrj *cfgmgrj_create(struct ev_loop *loop, struct conmgr *conmgr) {
 
     cfgmgrj->loop = loop;
     cfgmgrj->conmgr = conmgr;
+    cfgmgrj->connectors = json_array();
     return cfgmgrj;
 }
 

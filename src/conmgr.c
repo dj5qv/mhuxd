@@ -345,3 +345,14 @@ void conmgr_foreach(struct conmgr *conmgr, conmgr_iter_cb cb, void *user_data) {
 	}
 }
 
+int conmgr_exists(struct conmgr *conmgr, int id) {
+	if(!conmgr)
+		return 0;
+	struct connector *ctr;
+	PG_SCANLIST(&conmgr->connector_list, ctr) {
+		if(ctr->id == id)
+			return 1;
+	}
+	return 0;
+}
+

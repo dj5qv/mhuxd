@@ -18,6 +18,8 @@
   let loglevelTimer;
   let keyerStatus = {};
   let keyerStatusTimer = {};
+  let connectedToDaemon = true;
+  let retrySeconds = 5;
   let radioForm = {};
   let radioFormGen = 0;
   let radioStatus = {};
@@ -698,30 +700,52 @@
 
   onMount(async () => {
     let eventSource;
-    try {
-      const [runtimeRsp, daemonRsp, devicesRsp, configDevicesRsp, metadataRsp] = await Promise.all([
-        safeFetch('/api/v1/runtime'),
-        safeFetch('/api/v1/config/daemon'),
-        safeFetch('/api/v1/devices'),
-        safeFetch('/api/v1/config/devices'),
-        safeFetch('/api/v1/metadata')
-      ]);
-      runtime = runtimeRsp;
-      daemonCfg = daemonRsp;
-      loglevel = daemonRsp?.loglevel || '';
-      devices = devicesRsp.devices || [];
-      configDevices = configDevicesRsp.devices || [];
-      connectors = configDevicesRsp.connectors || [];
-      metadata = metadataRsp;
+    let reconnectTimer;
 
-      if (!portForm.serial && devices.length) {
-        const serial = devices[0].serial || '';
-        const opts = channelOptionsForSerial(serial);
-        portForm = { ...portForm, serial, channel: opts[0] || '' };
+    const reloadData = async () => {
+      try {
+        const [runtimeRsp, daemonRsp, devicesRsp, configDevicesRsp, metadataRsp] = await Promise.all([
+          safeFetch('/api/v1/runtime'),
+          safeFetch('/api/v1/config/daemon'),
+          safeFetch('/api/v1/devices'),
+          safeFetch('/api/v1/config/devices'),
+          safeFetch('/api/v1/metadata')
+        ]);
+        runtime = runtimeRsp;
+        daemonCfg = daemonRsp;
+        loglevel = daemonRsp?.loglevel || '';
+        devices = devicesRsp.devices || [];
+        configDevices = configDevicesRsp.devices || [];
+        connectors = configDevicesRsp.connectors || [];
+        metadata = metadataRsp;
+
+        if (!portForm.serial && devices.length) {
+          const serial = devices[0].serial || '';
+          const opts = channelOptionsForSerial(serial);
+          portForm = { ...portForm, serial, channel: opts[0] || '' };
+        }
+      } catch (err) {
+        console.error('Failed to reload data:', err);
+        throw err;
       }
+    };
 
-      // Start EventSource for live updates
+    const initEventSource = () => {
+      if (eventSource) eventSource.close();
       eventSource = new EventSource('/api/v1/events');
+      
+      eventSource.onopen = async () => {
+        connectedToDaemon = true;
+        retrySeconds = 5;
+        if (reconnectTimer) clearInterval(reconnectTimer);
+        try {
+          await reloadData();
+        } catch (err) {
+          // If reload fails, maybe the daemon is not quite ready yet, 
+          // eventSource might close again or we just wait for next event.
+        }
+      };
+
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
@@ -730,20 +754,46 @@
               d.serial === data.serial ? { ...d, status: data.status } : d
             );
           } else if (data.type === 'usb_connection') {
-             // If a new device is connected, we might want to refresh the device list
-             // For now, let's just log it or we could trigger a full refresh
              console.log('USB Event:', data);
           }
         } catch (e) {
           console.error('Failed to parse event data', e);
         }
       };
+
       eventSource.onerror = (err) => {
         console.error('EventSource failed:', err);
+        connectedToDaemon = false;
+        eventSource.close();
+        // Try to reconnect in 5 seconds
+        retrySeconds = 5;
+        if (reconnectTimer) clearInterval(reconnectTimer);
+        reconnectTimer = setInterval(() => {
+          retrySeconds -= 1;
+          if (retrySeconds <= 0) {
+            clearInterval(reconnectTimer);
+            initEventSource();
+          }
+        }, 1000);
       };
+    };
 
+    try {
+      await reloadData();
+      initEventSource();
     } catch (err) {
       error = err?.message || 'Failed to load data';
+      connectedToDaemon = false;
+      // Start trying to reconnect even if initial load failed
+      retrySeconds = 5;
+      if (reconnectTimer) clearInterval(reconnectTimer);
+      reconnectTimer = setInterval(() => {
+        retrySeconds -= 1;
+        if (retrySeconds <= 0) {
+          clearInterval(reconnectTimer);
+          initEventSource();
+        }
+      }, 1000);
     } finally {
       loading = false;
     }
@@ -757,6 +807,7 @@
     return () => {
       window.removeEventListener('hashchange', onHashChange);
       if (eventSource) eventSource.close();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
     };
   });
 
@@ -1836,6 +1887,11 @@
 </script>
 
 <div class="page">
+  {#if !connectedToDaemon}
+    <div class="connection-overlay">
+      <div class="connection-message">Can't connect to mhuxd. Retry in {retrySeconds} {retrySeconds === 1 ? 'second' : 'seconds'}</div>
+    </div>
+  {/if}
   <header class="topbar">
     <div class="title"><span class="title-italic">m</span>huxd Device Router</div>
     <div class="top-right">
@@ -1993,7 +2049,7 @@
                     <div>{c.id ?? '—'}</div>
                     <div>{c.type || '—'}</div>
                     <div>{c.devname || '—'}</div>
-                    <div>—</div>
+                    <div class={c.status === 'failed' ? 'text-error' : ''}>{c.status || '—'}</div>
                     <div>{c.type === 'TCP' ? checkMark(c.remote_access) : '—'}</div>
                     <div>{c.type === 'VSP' ? checkMark(c.ptt_rts) : '—'}</div>
                     <div>{c.type === 'VSP' ? checkMark(c.ptt_dtr) : '—'}</div>

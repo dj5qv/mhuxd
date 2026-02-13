@@ -76,5 +76,6 @@ int conmgr_create_con_cfg(struct conmgr *conmgr, struct ev_loop *loop, const str
 int conmgr_destroy_con(struct conmgr *, int id);
 void conmgr_destroy_all(struct conmgr *);
 void conmgr_foreach(struct conmgr *conmgr, conmgr_iter_cb cb, void *user_data);
+int conmgr_exists(struct conmgr *conmgr, int id);
 
 #endif // CONMGR_H
