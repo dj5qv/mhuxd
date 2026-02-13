@@ -19,15 +19,19 @@
   let keyerStatus = {};
   let keyerStatusTimer = {};
   let radioForm = {};
+  let radioFormGen = 0;
   let radioStatus = {};
   let radioStatusTimer = {};
   let pttForm = {};
+  let pttFormGen = 0;
   let pttStatus = {};
   let pttStatusTimer = {};
   let messageForm = {};
+  let messageFormGen = 0;
   let messageStatus = {};
   let messageStatusTimer = {};
   let allParamForm = {};
+  let allParamFormGen = 0;
   let allParamStatus = {};
   let allParamStatusTimer = {};
   let smActionStatus = {};
@@ -326,6 +330,11 @@
     }
   };
 
+  const resetRadioForms = () => {
+    radioForm = {};
+    radioFormGen++;
+  };
+
   const updateRadioForm = (serial, chan, key, value) => {
     const perSerial = radioForm[serial] || {};
     const perChan = perSerial[chan] || defaultRadioForm(serial, chan);
@@ -362,6 +371,11 @@
         [serial]: { ...perSerial, [kind]: defaultMessageForm(serial, kind) }
       };
     }
+  };
+
+  const resetMessageForms = () => {
+    messageForm = {};
+    messageFormGen++;
   };
 
   const updateMessageForm = (serial, kind, index, value) => {
@@ -403,6 +417,11 @@
     if (!allParamForm[serial]) {
       allParamForm = { ...allParamForm, [serial]: defaultAllParamForm(serial) };
     }
+  };
+
+  const resetAllParamForms = () => {
+    allParamForm = {};
+    allParamFormGen++;
   };
 
   const updateAllParamForm = (serial, key, value) => {
@@ -533,6 +552,11 @@
         [serial]: { ...perSerial, [chan]: defaultPttForm(serial, chan) }
       };
     }
+  };
+
+  const resetPttForms = () => {
+    pttForm = {};
+    pttFormGen++;
   };
 
   const updatePttForm = (serial, chan, key, value) => {
@@ -859,6 +883,14 @@
   $: keyers = buildKeyers(configDevices, devices);
   $: tabs = [...baseTabs, ...keyers.map((k) => ({ id: `keyer:${k.serial}`, label: k.name, serial: k.serial }))];
 
+  // When configDevices changes (initial load or after API updates), clear cached
+  // forms so they get re-populated from the fresh config data.
+  $: if (configDevices) {
+    resetRadioForms();
+    resetPttForms();
+    resetMessageForms();
+    resetAllParamForms();
+  }
   const keyerFlagsForSerial = (serial) => {
     const cfg = keyers.find((k) => k.serial === serial);
     if (!cfg || cfg.type == null || !metadata?.devicetypes) return [];
@@ -1713,7 +1745,8 @@
   $: activeFsk2 = activeSerial ? (radioForm[activeSerial]?.fsk2 || defaultRadioForm(activeSerial, 'fsk2')) : null;
   $: activePttR1 = activeSerial ? (pttForm[activeSerial]?.r1 || defaultPttForm(activeSerial, 'r1')) : null;
   $: activePttR2 = activeSerial ? (pttForm[activeSerial]?.r2 || defaultPttForm(activeSerial, 'r2')) : null;
-  $: if (activeSerial) {
+  $: if (activeSerial && configDevices) {
+    void radioFormGen; void pttFormGen; void messageFormGen; void allParamFormGen;
     ensureRadioForm(activeSerial, 'r1');
     if (hasR2) ensureRadioForm(activeSerial, 'r2');
     if (hasAux) ensureRadioForm(activeSerial, 'aux');
