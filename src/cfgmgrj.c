@@ -835,31 +835,6 @@ static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
         }
     }
 
-    dbg1("%s connectorsRemove", __func__);
-    json_t *connectors_remove = json_object_get(root, "connectorsRemove");
-    if(connectors_remove && json_is_array(connectors_remove)) {
-        size_t idx;
-        json_t *id_val;
-        json_array_foreach(connectors_remove, idx, id_val) {
-            if(!json_is_integer(id_val))
-                return -1;
-            int id = (int)json_integer_value(id_val);
-            conmgr_destroy_con(cfgmgrj->conmgr, id);
-
-            // Registry of Intent: remove from our list
-            if(cfgmgrj->connectors) {
-                size_t j;
-                json_t *c;
-                json_array_foreach(cfgmgrj->connectors, j, c) {
-                    if(json_get_int(c, "id", 0) == id) {
-                        json_array_remove(cfgmgrj->connectors, j);
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -880,12 +855,10 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
         return NULL;
 
     json_t *daemon = json_object();
-    if(!daemon) {
-        json_decref(root);
-        return NULL;
+    if(daemon) {
+        json_object_set_new(daemon, "loglevel", json_string(log_get_level_str()));
+        json_object_set_new(root, "daemon", daemon);
     }
-    json_object_set_new(daemon, "loglevel", json_string(log_get_level_str()));
-    json_object_set_new(root, "daemon", daemon);
 
     json_t *devices = json_array();
     if(!devices) {
@@ -1174,5 +1147,31 @@ int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj) {
         return -1;
     }
     json_decref(root);
+    return 0;
+}
+
+int cfgmgrj_add_conn(struct cfgmgrj *cfgmgrj, json_t *conn_obj) {
+    if(!cfgmgrj || !conn_obj)
+        return -1;
+    return apply_connector_from_json(cfgmgrj, conn_obj);
+}
+
+int cfgmgrj_remove_conn(struct cfgmgrj *cfgmgrj, int id) {
+    if(!cfgmgrj)
+        return -1;
+    
+    conmgr_destroy_con(cfgmgrj->conmgr, id);
+
+    // Registry of Intent: remove from our list
+    if(cfgmgrj->connectors) {
+        size_t j;
+        json_t *c;
+        json_array_foreach(cfgmgrj->connectors, j, c) {
+            if(json_get_int(c, "id", 0) == id) {
+                json_array_remove(cfgmgrj->connectors, j);
+                break;
+            }
+        }
+    }
     return 0;
 }

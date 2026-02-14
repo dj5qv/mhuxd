@@ -391,7 +391,8 @@ static int on_message_complete_cb (http_parser *p) {
 	hcon->url[hcon->url_len] = 0x00;
 
 	if(hcon->parser.method != HTTP_GET && hcon->parser.method != HTTP_POST &&
-	   hcon->parser.method != HTTP_PUT && hcon->parser.method != HTTP_PATCH) {
+	   hcon->parser.method != HTTP_PUT && hcon->parser.method != HTTP_PATCH &&
+	   hcon->parser.method != HTTP_DELETE) {
 		warn("Method not implemented: %s", http_method_str(hcon->parser.method));
 		hs_send_error_page(hcon, 501);
 		return 0;

@@ -698,37 +698,37 @@
     return `${major}.${minor}${beta}`;
   };
 
+  const reloadData = async () => {
+    try {
+      const [runtimeRsp, daemonRsp, devicesRsp, configDevicesRsp, metadataRsp] = await Promise.all([
+        safeFetch('/api/v1/runtime'),
+        safeFetch('/api/v1/config/daemon'),
+        safeFetch('/api/v1/devices'),
+        safeFetch('/api/v1/config/devices'),
+        safeFetch('/api/v1/metadata')
+      ]);
+      runtime = runtimeRsp;
+      daemonCfg = daemonRsp;
+      loglevel = daemonRsp?.loglevel || '';
+      devices = devicesRsp.devices || [];
+      configDevices = configDevicesRsp.devices || [];
+      connectors = configDevicesRsp.connectors || [];
+      metadata = metadataRsp;
+
+      if (!portForm.serial && devices.length) {
+        const serial = devices[0].serial || '';
+        const opts = channelOptionsForSerial(serial);
+        portForm = { ...portForm, serial, channel: opts[0] || '' };
+      }
+    } catch (err) {
+      console.error('Failed to reload data:', err);
+      throw err;
+    }
+  };
+
   onMount(async () => {
     let eventSource;
     let reconnectTimer;
-
-    const reloadData = async () => {
-      try {
-        const [runtimeRsp, daemonRsp, devicesRsp, configDevicesRsp, metadataRsp] = await Promise.all([
-          safeFetch('/api/v1/runtime'),
-          safeFetch('/api/v1/config/daemon'),
-          safeFetch('/api/v1/devices'),
-          safeFetch('/api/v1/config/devices'),
-          safeFetch('/api/v1/metadata')
-        ]);
-        runtime = runtimeRsp;
-        daemonCfg = daemonRsp;
-        loglevel = daemonRsp?.loglevel || '';
-        devices = devicesRsp.devices || [];
-        configDevices = configDevicesRsp.devices || [];
-        connectors = configDevicesRsp.connectors || [];
-        metadata = metadataRsp;
-
-        if (!portForm.serial && devices.length) {
-          const serial = devices[0].serial || '';
-          const opts = channelOptionsForSerial(serial);
-          portForm = { ...portForm, serial, channel: opts[0] || '' };
-        }
-      } catch (err) {
-        console.error('Failed to reload data:', err);
-        throw err;
-      }
-    };
 
     const initEventSource = () => {
       if (eventSource) eventSource.close();
@@ -879,15 +879,13 @@
     portStatus = '';
     portStatusKind = 'success';
     try {
-      const res = await fetch('/api/v1/config/devices', {
+      const res = await fetch('/api/v1/config/connectors', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ connectors: [connector] })
+        body: JSON.stringify(connector)
       });
-      if (!res.ok) throw new Error(`config/devices ${res.status}`);
-      const data = await res.json();
-      if (Array.isArray(data?.devices)) configDevices = data.devices;
-      if (Array.isArray(data?.connectors)) connectors = data.connectors;
+      if (!res.ok) throw new Error(`config/connectors ${res.status}`);
+      await reloadData();
       portStatus = 'Port saved.';
       portStatusKind = 'success';
     } catch (err) {
@@ -912,15 +910,16 @@
     portRemoveStatus = '';
     portRemoveStatusKind = 'success';
     try {
-      const res = await fetch('/api/v1/config/devices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ connectorsRemove: selectedConnectorIds })
-      });
-      if (!res.ok) throw new Error(`config/devices ${res.status}`);
-      const data = await res.json();
-      if (Array.isArray(data?.devices)) configDevices = data.devices;
-      if (Array.isArray(data?.connectors)) connectors = data.connectors;
+      await Promise.all(
+        selectedConnectorIds.map(async (id) => {
+          const res = await fetch(`/api/v1/config/connectors/${id}`, {
+            method: 'DELETE',
+            headers: { Accept: 'application/json' }
+          });
+          if (!res.ok) throw new Error(`config/connectors/${id} ${res.status}`);
+        })
+      );
+      await reloadData();
       selectedConnectorIds = [];
       portRemoveStatus = 'Port(s) removed.';
       portRemoveStatusKind = 'success';

@@ -73,14 +73,7 @@
           "type": "array",
           "items": {"$ref": "#/$defs/DeviceConfig"}
         },
-        "connectors": {
-          "type": "array",
-          "items": {"$ref": "#/$defs/ConnectorConfig"}
-        },
-        "connectorsRemove": {
-          "type": "array",
-          "items": {"type": "integer", "minimum": 1}
-        }
+        "connectors": {"$ref": "#/definitions/ConfigConnectors"}
       },
       "additionalProperties": false
     },
@@ -89,6 +82,18 @@
       "type": "object",
       "allOf": [
         {"$ref": "#/$defs/DeviceConfig"}
+      ]
+    },
+    "ConfigConnectors": {
+      "$id": "https://mhuxd.local/api/v1/schemas/config/connectors",
+      "type": "array",
+      "items": {"$ref": "#/$defs/ConnectorConfig"}
+    },
+    "ConfigConnector": {
+      "$id": "https://mhuxd.local/api/v1/schemas/config/connector",
+      "type": "object",
+      "allOf": [
+        {"$ref": "#/$defs/ConnectorConfig"}
       ]
     }
   },
@@ -211,6 +216,10 @@
         "channel": {"type": "string"},
         "type": {"type": "string"},
         "devname": {"type": "string"},
+        "status": {
+          "type": "string",
+          "enum": ["ok", "failed"]
+        },
         "maxcon": {"type": "integer", "minimum": 1},
         "ptt_rts": {
           "oneOf": [

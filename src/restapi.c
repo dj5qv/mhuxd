@@ -33,6 +33,8 @@ struct restapi {
 	struct http_handler *config_daemon_handler;
 	struct http_handler *config_devices_handler;
 	struct http_handler *config_device_handler;
+	struct http_handler *config_connectors_handler;
+	struct http_handler *config_connector_handler;
 	struct http_handler *device_actions_handler;
 	struct http_handler *events_handler;
 	struct PGList subscribers;
@@ -446,6 +448,78 @@ static int send_json_payload(struct http_connection *hcon, json_t *root) {
 	return 0;
 }
 
+static int cb_config_connectors(struct http_connection *hcon, const char *path, const char *query,
+		 const char *body, uint32_t body_len, void *data) {
+	(void)path; (void)query;
+	struct restapi *api = data;
+	int16_t method = hs_get_method(hcon);
+
+	dbg1("%s %s", __func__, hs_method_str(method));
+
+	if(!api || !api->cfgmgrj) {
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(method != HS_HTTP_POST) {
+		hs_send_response(hcon, 405, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(!body || !body_len) {
+		hs_send_response(hcon, 400, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	json_error_t jerr;
+	json_t *root = json_loadb(body, body_len, 0, &jerr);
+	if(!root || !json_is_object(root)) {
+		if(root)
+			json_decref(root);
+		hs_send_response(hcon, 400, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(cfgmgrj_add_conn(api->cfgmgrj, root) != 0 || cfgmgrj_save_cfg(api->cfgmgrj) != 0) {
+		json_decref(root);
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+	json_decref(root);
+
+	hs_send_response(hcon, 201, "application/json", "{}", 2, NULL, 0);
+	return 0;
+}
+
+static int cb_config_connector(struct http_connection *hcon, const char *path, const char *query,
+		 const char *body, uint32_t body_len, void *data) {
+	(void)query; (void)body; (void)body_len;
+	struct restapi *api = data;
+	int16_t method = hs_get_method(hcon);
+	const char *id_str = (path && *path) ? path : NULL;
+
+	dbg1("%s %s id: %s", __func__, hs_method_str(method), id_str ? id_str : "NULL");
+
+	if(!api || !api->cfgmgrj || !id_str) {
+		hs_send_response(hcon, 404, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(method != HS_HTTP_DELETE) {
+		hs_send_response(hcon, 405, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	int id = atoi(id_str);
+	if(cfgmgrj_remove_conn(api->cfgmgrj, id) != 0 || cfgmgrj_save_cfg(api->cfgmgrj) != 0) {
+		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	hs_send_response(hcon, 200, "application/json", "{}", 2, NULL, 0);
+	return 0;
+}
+
 static int cb_config_devices(struct http_connection *hcon, const char *path, const char *query,
 		 const char *body, uint32_t body_len, void *data) {
 	(void)path; (void)query;
@@ -809,11 +883,14 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
 	api->config_daemon_handler = hs_register_handler(hs, "/api/v1/config/daemon", cb_config_daemon, api);
 	api->config_devices_handler = hs_register_handler(hs, "/api/v1/config/devices", cb_config_devices, api);
 	api->config_device_handler = hs_register_handler(hs, "/api/v1/config/devices/", cb_config_device, api);
+	api->config_connectors_handler = hs_register_handler(hs, "/api/v1/config/connectors", cb_config_connectors, api);
+	api->config_connector_handler = hs_register_handler(hs, "/api/v1/config/connectors/", cb_config_connector, api);
 	api->device_actions_handler = hs_register_handler(hs, "/api/v1/devices/", cb_device_actions, api);
 	api->events_handler = hs_register_handler(hs, "/api/v1/events", cb_events, api);
 
 	if(!api->runtime_handler || !api->metadata_handler || !api->devices_handler || !api->config_daemon_handler ||
-	   !api->config_devices_handler || !api->config_device_handler || !api->device_actions_handler || !api->events_handler) {
+	   !api->config_devices_handler || !api->config_device_handler || !api->config_connectors_handler ||
+	   !api->config_connector_handler || !api->device_actions_handler || !api->events_handler) {
         err("%s() failed to register rest api handlers", __func__);
         goto fail;
     }

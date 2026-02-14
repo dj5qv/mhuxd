@@ -19,6 +19,8 @@ struct cfgmgrj *cfgmgrj_create(struct ev_loop *loop, struct conmgr *conmgr);
 void cfgmgrj_destroy(struct cfgmgrj *cfgmgrj);
 int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj);
 int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj);
+int cfgmgrj_add_conn(struct cfgmgrj *cfgmgrj, json_t *conn_obj);
+int cfgmgrj_remove_conn(struct cfgmgrj *cfgmgrj, int id);
 int cfgmgrj_apply_json(struct cfgmgrj *cfgmgrj, json_t *root);
 json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj);
 
