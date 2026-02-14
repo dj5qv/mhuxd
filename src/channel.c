@@ -49,6 +49,8 @@ int ch_ptt_channel(int channel) {
 }
 
 
+// Usage discouraged, it always returns R2 for shared R2/AUX channel. 
+// Use ch_channel2str_new() when type is known.
 const char *ch_channel2str(int channel) {
 	unsigned i;
 	for(i = 0; i < ARRAY_SIZE(channel_map); i++)

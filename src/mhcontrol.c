@@ -826,7 +826,7 @@ static void submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_comple
 
 	struct cfg *cfg = ctl->speed_args[channel];
 	if(!cfg) {
-		err("%s() no speed args defined for channel %s!", __func__, ch_channel2str(channel));
+		err("%s() no speed args defined for channel %s!", __func__, ch_channel2str_new(channel, &ctl->mhi));
 		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
 		return;
 	}
@@ -837,7 +837,7 @@ static void submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_comple
 	fbaud = cfg_get_float_val(cfg, "baud", -1);
 	if(!fbaud) {
 		// Avoid devision by zero
-		err("%s() channel %s baud value must not be zero!", __func__, ch_channel2str(channel));
+		err("%s() channel %s baud value must not be zero!", __func__, ch_channel2str_new(channel, &ctl->mhi));
 		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
 		return;
 	}
@@ -875,7 +875,7 @@ static void submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_comple
 
 	if(!databits) {
 		// Avoid devision by zero
-		err("%s() channel %s data bits must not be zero!", __func__, ch_channel2str(channel));
+		err("%s() channel %s data bits must not be zero!", __func__, ch_channel2str_new(channel, &ctl->mhi));
 		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
 		return;
 	}
@@ -929,7 +929,7 @@ static void submit_speed_cmd_params(struct mh_control *ctl, int channel, const s
 
 	fbaud = (float)cfg->baud;
 	if(fbaud == 0) {
-		err("%s() channel %s baud value must not be zero!", __func__, ch_channel2str(channel));
+		err("%s() channel %s baud value must not be zero!", __func__, ch_channel2str_new(channel, &ctl->mhi));
 		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
 		return;
 	}
@@ -965,7 +965,7 @@ static void submit_speed_cmd_params(struct mh_control *ctl, int channel, const s
 	databits = (uint8_t)cfg->databits;
 
 	if(!databits) {
-		err("%s() channel %s data bits must not be zero!", __func__, ch_channel2str(channel));
+		err("%s() channel %s data bits must not be zero!", __func__, ch_channel2str_new(channel, &ctl->mhi));
 		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
 		return;
 	}
@@ -1020,7 +1020,7 @@ static void speed_params_from_cfg(struct mhc_speed_cfg *dst, struct cfg *cfg) {
 
 void mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data) {
 
-	dbg1("%s %s() channel %d / %s",ctl->serial, __func__, channel, ch_channel2str(channel));
+	dbg1("%s %s() channel %d / %s",ctl->serial, __func__, channel, ch_channel2str_new(channel, &ctl->mhi));
 
 	if(channel < 0 || channel >= MH_NUM_CHANNELS) {
 		err("can't set speed, invalid channel (%d) specified!", channel);
@@ -1072,7 +1072,7 @@ void mhc_set_speed_params(struct mh_control *ctl, int channel, const struct mhc_
 }
 
 int mhc_get_speed_params(struct mh_control *ctl, int channel, struct mhc_speed_cfg *out) {
-	dbg1("%s %s() channel %d / %s",ctl->serial, __func__, channel, ch_channel2str(channel));
+	dbg1("%s %s() channel %d / %s",ctl->serial, __func__, channel, ch_channel2str_new(channel, &ctl->mhi));
 
 	if(!ctl || !out)
 		return -1;

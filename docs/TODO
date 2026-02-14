@@ -1,17 +1,17 @@
 1) Optimize REST-API endpoint /config/devices and /config/devices/<serial>. Complete JSON structure tends to be rebuild even after small config change.
    Have UI use this where appropiate. 
 
-2) restapi.c, check if we can get rid of device_name_from_type(), feels misplaced here.
+2) DONE: restapi.c, check if we can get rid of device_name_from_type(), feels misplaced here.
 
-3) AUX configuration not working as it shares the channel id with R2.
+3) DONE: AUX configuration not working as it shares the channel id with R2.
 
 4) Performance friendly debug output of JSON objects. That is do json_dump() only if the loglevel matches.
 
-5) memory leak, should call tty_clode() instead of close(router->fd)
+5) DONE: memory leak, should call tty_clode() instead of close(router->fd)
 
 6) Check struct mh_control, set_mode, used for what? Can be removed?
 
-7) Make submit_cmd() and derived functions as void return. Currently it returns -1 on failure, but the caller does not always check this. 
+7) DONE: Make submit_cmd() and derived functions as void return. Currently it returns -1 on failure, but the caller does not always check this. 
    Instead submit_cmd() should call the callbacks even when it fails, so that the caller can react to this. This way error handling has 
    to happen in one place, the callbacks.
    After some reading, even if sumit_cmd() immediately fails, the callback should be called async, that is from the main event loop. See
@@ -24,7 +24,10 @@
 10) rigctld control, like start/stop with mhuxd and/or keyer becoming online / offline. rigctld could then also be used my mhuxd to track 
    the rig mode and apply it to the keyer accordingly.
 
-11) If with new json implementation, if VSP can't be created, it gets removed from config. That is, it wouldn't be saved when mhuxd terminates, 
-    since it wasn't created. We don't hold a config shadow copy anymore.
+11) DONE: If with new json implementation, if VSP can't be created, it gets removed from config. That is, it wouldn't be 
+   saved when mhuxd terminates, since it wasn't created. We don't hold a config shadow copy anymore.
 
 12) dmgr_set_device_added_cb(), quick hack, should manage a callback list as everyone else.
+
+13) MK2R(+) Small UI issue, when we change baud radio on both radios, click apply for radio 1, baud rate for radio 2 
+   resets to original value.

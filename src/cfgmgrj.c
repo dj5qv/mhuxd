@@ -758,47 +758,6 @@ static int apply_connector_from_json(struct cfgmgrj *cfgmgrj, json_t *conn_obj) 
     return 0;
 }
 
-static void connectors_builder_cb(const struct con_info *info, void *user_data) {
-    struct json_connectors_builder *b = user_data;
-    if(!b || !b->arr || !info)
-        return;
-
-    if(!info->serial || !info->devname)
-        return;
-
-    const char *type_str = NULL;
-    if(info->type == CON_VSP)
-        type_str = "VSP";
-    else if(info->type == CON_TCP)
-        type_str = "TCP";
-
-    if(!type_str)
-        return;
-
-    json_t *obj = json_object();
-    if(!obj)
-        return;
-
-    json_object_set_new(obj, "serial", json_string(info->serial));
-    json_object_set_new(obj, "channel", json_string(ch_channel2str(info->channel)));
-    json_object_set_new(obj, "type", json_string(type_str));
-    json_object_set_new(obj, "devname", json_string(info->devname));
-
-    if(info->id > 0)
-        json_object_set_new(obj, "id", json_integer(info->id));
-    if(info->maxcon > 0)
-        json_object_set_new(obj, "maxcon", json_integer(info->maxcon));
-
-    if(info->type == CON_VSP) {
-        json_object_set_new(obj, "ptt_rts", json_boolean(info->ptt_rts ? 1 : 0));
-        json_object_set_new(obj, "ptt_dtr", json_boolean(info->ptt_dtr ? 1 : 0));
-    } else if(info->type == CON_TCP) {
-        json_object_set_new(obj, "remote_access", json_boolean(info->remote_access ? 1 : 0));
-    }
-
-    json_array_append_new(b->arr, obj);
-}
-
 static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
     if(!json_is_object(root))
         return -1;
@@ -885,7 +844,7 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
                 for(int ch = 0; ch < MH_NUM_CHANNELS; ch++) {
                     struct mhc_speed_cfg cfg;
                     if(mhc_get_speed_params(dev->ctl, ch, &cfg) == 0) {
-                        const char *ch_name = ch_channel2str(ch);
+                        const char *ch_name = ch_channel2str_new(ch, mhc_get_mhinfo(dev->ctl));
                         char lower[32];
                         size_t i;
                         for(i = 0; i < sizeof(lower) - 1 && ch_name[i]; i++)
