@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <strings.h>
+#include <unistd.h>
 #include <ev.h>
 #include <jansson.h>
 #include "config.h"
@@ -1079,15 +1080,18 @@ struct cfgmgrj *cfgmgrj_create(struct ev_loop *loop, struct conmgr *conmgr) {
 }
 
 int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
+    if(access(CFGFILE, F_OK) == -1) {
+        dbg1("%s: %s not found", __func__, CFGFILE);
+        return -2; // File not found, triggers migration in main()
+    }
+
     json_error_t jerr;
     json_t *root = json_load_file(CFGFILE, 0, &jerr);
 
     dbg1("%s", __func__);
 
     if(!root) {
-        if(jerr.line == 0)
-            return 0;
-        err("cfgmgrj: failed to read %s: %s", CFGFILE, jerr.text);
+        err("cfgmgrj: failed to read %s: %s (line %d)", CFGFILE, jerr.text, jerr.line);
         return -1;
     }
 
@@ -1132,5 +1136,53 @@ int cfgmgrj_remove_conn(struct cfgmgrj *cfgmgrj, int id) {
             }
         }
     }
+    return 0;
+}
+
+static void sync_con_cb(const struct con_info *info, void *user_data) {
+    struct cfgmgrj *cfgmgrj = user_data;
+    json_t *conn = json_object();
+    json_object_set_new(conn, "id", json_integer(info->id));
+    json_object_set_new(conn, "serial", json_string(info->serial ? info->serial : ""));
+    json_object_set_new(conn, "channel", json_string(ch_channel2str(info->channel)));
+    
+    if(info->type == CON_VSP) {
+        json_object_set_new(conn, "type", json_string("VSP"));
+        json_object_set_new(conn, "devname", json_string(info->devname ? info->devname : ""));
+        json_object_set_new(conn, "maxcon", json_integer(info->maxcon));
+        json_object_set_new(conn, "ptt_rts", json_integer(info->ptt_rts));
+        json_object_set_new(conn, "ptt_dtr", json_integer(info->ptt_dtr));
+    } else if(info->type == CON_TCP) {
+        json_object_set_new(conn, "type", json_string("TCP"));
+        json_object_set_new(conn, "devname", json_string(info->devname ? info->devname : ""));
+        json_object_set_new(conn, "maxcon", json_integer(info->maxcon));
+        json_object_set_new(conn, "remote_access", json_integer(info->remote_access));
+    }
+    
+    if(cfgmgrj->connectors) {
+        size_t j;
+        json_t *c;
+        int found = 0;
+        json_array_foreach(cfgmgrj->connectors, j, c) {
+            if(json_get_int(c, "id", 0) == info->id) {
+                found = 1;
+                break;
+            }
+        }
+        if(!found) {
+            json_array_append_new(cfgmgrj->connectors, conn);
+        } else {
+            json_decref(conn);
+        }
+    } else {
+        json_decref(conn);
+    }
+}
+
+int cfgmgrj_sync_from_conmgr(struct cfgmgrj *cfgmgrj) {
+    if(!cfgmgrj || !cfgmgrj->conmgr)
+        return -1;
+    
+    conmgr_foreach(cfgmgrj->conmgr, sync_con_cb, cfgmgrj);
     return 0;
 }

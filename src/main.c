@@ -159,13 +159,25 @@ int main(int argc, char **argv)
 	ev_signal_start (loop, &w_sighup);
 
 /*
-	if(cfgmgr_init(cfgmgr))
-		err("(main) error initializing config manager!");
+    if(cfgmgr_init(cfgmgr))
+        err("(main) error initializing config manager!");
 */
-	if(cfgmgrj_load_cfg(cfgmgrj))
-		err("(main) error initializing json config manager!");
+    int rc_j = cfgmgrj_load_cfg(cfgmgrj);
+	info("(main) json config load result: %d", rc_j);
+    if(rc_j == -2) {
+        info("(main) json config not found, attempting migration from legacy HDF...");
+        if(cfgmgr_init(cfgmgr) == 0) {
+            cfgmgrj_sync_from_conmgr(cfgmgrj);
+            cfgmgrj_save_cfg(cfgmgrj);
+            info("(main) hdf to json migration complete.");
+        } else {
+            err("(main) legacy config migration failed.");
+        }
+    } else if(rc_j < 0) {
+        err("(main) error initializing json config manager!");
+    }
 
-	dmgr_enable_monitor();
+    dmgr_enable_monitor();
 
 	if(demo_mode) {
 		dmgr_add_device("CK_DEMO_CK_1", 0);

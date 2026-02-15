@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2014  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -31,6 +31,8 @@ int cfg_name_to_int(struct cfg *cfg, int def);
 
 int cfg_set_value(struct cfg *, const char *key, const char *val);
 int cfg_set_int_value(struct cfg *, const char *key, int val);
+int cfg_set_int_val(struct cfg *, const char *key, int val);
+int cfg_set_float_val(struct cfg *, const char *key, float val);
 struct cfg *cfg_create_child(struct cfg *parent, const char *key);
 struct cfg *cfg_get_child(struct cfg *parent, const char *key);
 struct cfg *cfg_get_child_by_int(struct cfg *parent, int ikey);

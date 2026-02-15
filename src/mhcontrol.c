@@ -1003,6 +1003,26 @@ static void submit_speed_cmd_params(struct mh_control *ctl, int channel, const s
 	submit_cmd(ctl, &buf, cb, user_data);
 }
 
+// migration helper HDF / struct mhc_speed_cfg
+static struct cfg *speed_cfg_from_params(const struct mhc_speed_cfg *src) {
+	if(!src)
+		return NULL;
+
+	struct cfg *cfg = cfg_create();
+	cfg_set_float_val(cfg, "baud", src->baud);
+	cfg_set_float_val(cfg, "stopbits", src->stopbits);
+	cfg_set_int_val(cfg, "databits", src->databits);
+	cfg_set_int_val(cfg, "rtscts", src->rtscts);
+	cfg_set_int_val(cfg, "rigtype", src->rigtype);
+	cfg_set_int_val(cfg, "icomaddress", src->icomaddress);
+	cfg_set_int_val(cfg, "icomsimulateautoinfo", src->icomsimulateautoinfo);
+	cfg_set_int_val(cfg, "digitalovervoicerule", src->digitalovervoicerule);
+	cfg_set_int_val(cfg, "usedecoderifconnected", src->usedecoderifconnected);
+	cfg_set_int_val(cfg, "dontinterfereusbcontrol", src->dontinterfereusbcontrol);
+	return cfg;
+}
+
+// migration helper HDF / struct mhc_speed_cfg
 static void speed_params_from_cfg(struct mhc_speed_cfg *dst, struct cfg *cfg) {
 	if(!dst || !cfg)
 		return;
@@ -1020,7 +1040,7 @@ static void speed_params_from_cfg(struct mhc_speed_cfg *dst, struct cfg *cfg) {
 
 void mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data) {
 
-	dbg1("%s %s() channel %d / %s",ctl->serial, __func__, channel, ch_channel2str_new(channel, &ctl->mhi));
+	dbg0("%s %s() channel %d / %s",ctl->serial, __func__, channel, ch_channel2str_new(channel, &ctl->mhi));
 
 	if(channel < 0 || channel >= MH_NUM_CHANNELS) {
 		err("can't set speed, invalid channel (%d) specified!", channel);
@@ -1052,7 +1072,7 @@ void mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd
 void mhc_set_speed_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
 		mhc_cmd_completion_cb_fn cb, void *user_data) {
 
-	dbg1("%s %s()",ctl->serial, __func__);
+	dbg0("%s %s() channel %d / %s",ctl->serial, __func__, channel, ch_channel2str_new(channel, &ctl->mhi));
 
 	if(!ctl || !cfg || channel < 0 || channel >= MH_NUM_CHANNELS) {
 		defer_callback(ctl->loop, cb, CMD_RESULT_ERROR, user_data);
@@ -1411,6 +1431,12 @@ uint16_t mhc_get_type(struct mh_control *ctl) {
 const struct cfg *mhc_get_speed_cfg(struct mh_control *ctl, int channel) {
 	if(channel < 0 || channel >= MH_NUM_CHANNELS)
 		return NULL;
+
+	// FIXME: temporary migration helper HDF/JSON.
+	if(ctl->speed_args[channel] == NULL && ctl->speed_params_valid[channel]) {
+		ctl->speed_args[channel] = speed_cfg_from_params(&ctl->speed_params[channel]);
+	}
+
 	return ctl->speed_args[channel];
 }
 

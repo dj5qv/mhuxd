@@ -31,3 +31,5 @@
 
 13) MK2R(+) Small UI issue, when we change baud radio on both radios, click apply for radio 1, baud rate for radio 2 
    resets to original value.
+
+14) When staring mhuxd with no config, keyer off, then turn on keyer, it doesn't get reactively added to the keyer list.
