@@ -64,13 +64,16 @@ static void data_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	uint8_t buf[1024];
 
 	r = read(w->fd, buf, sizeof(buf));
-	if(r <= 0) {
+	if(r < 0) {
+		if(errno == EAGAIN || errno == EWOULDBLOCK)
+			return;
 		err_e(errno, "error reading from data socket!");
 		ev_io_stop(loop, &ctcp->w_data_in);
 		// FIXME: better error handling needed.
 	}
 
 	if(r == 0) {
+		ev_io_stop(loop, &ctcp->w_data_in);
 		return;
 	}
 
@@ -94,10 +97,18 @@ static void data_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 		if(b->rpos == b->size)
 			continue;
 		size = write(ctcp->fd_data, b->data + b->rpos, b->size - b->rpos);
-		if(size < 0 || (size == 0 && errno != EAGAIN)) {
-			err_e(errno, "error reading from data socket!");
+		if(size < 0) {
+			if(errno == EAGAIN || errno == EWOULDBLOCK) {
+				need_to_write = 1;
+				continue;
+			}
+			err_e(errno, "error writing to data socket!");
 			ev_io_stop(loop, &ctcp->w_data_out);
-			// FIXME: better error handling needed.
+			return;
+		}
+		if(size == 0) {
+			ev_io_stop(loop, &ctcp->w_data_out);
+			return;
 		}
 
 		buf_consume(b, size);
@@ -119,7 +130,14 @@ static void client_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	avail = buf_size_avail(&cs->buf_in);
 	r = read(cs->fd, cs->buf_in.data + cs->buf_in.size, avail);
-	if(r <= 0) {
+	if(r < 0) {
+		if(errno == EAGAIN || errno == EWOULDBLOCK)
+			return;
+		info("connection on %s closed", ctcp->devname);
+		rem_session(cs);
+		return;
+	}
+	if(r == 0) {
 		info("connection on %s closed", ctcp->devname);
 		rem_session(cs);
 		return;
@@ -136,7 +154,14 @@ static void client_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	int r;
 
 	r = write(cs->fd, cs->buf_out.data + cs->buf_out.rpos, cs->buf_out.size - cs->buf_out.rpos);
-	if(r < 0 || (r == 0 && errno != EAGAIN)) {
+	if(r < 0) {
+		if(errno == EAGAIN || errno == EWOULDBLOCK)
+			return;
+		info("connection on %s closed", ctcp->devname);
+		rem_session(cs);
+		return;
+	}
+	if(r == 0) {
 		info("connection on %s closed", ctcp->devname);
 		rem_session(cs);
 		return;

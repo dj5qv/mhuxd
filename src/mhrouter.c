@@ -102,6 +102,24 @@ struct mh_router {
 	uint8_t has_flags_channel;
 };
 
+static int has_consumer_fd(struct mh_router *router, int fd, int channel) {
+	struct Consumer *cns;
+	PG_SCANLIST(&router->consumer_list[channel], cns) {
+		if(cns->fd == fd)
+			return 1;
+	}
+	return 0;
+}
+
+static int has_producer_fd(struct mh_router *router, int fd, int channel) {
+	struct Producer *prd;
+	PG_SCANLIST(&router->producer_list[channel], prd) {
+		if(prd->fd == fd)
+			return 1;
+	}
+	return 0;
+}
+
 static void lb_cb(struct ev_loop *loop,  struct ev_timer *w, int revents) {
 	(void)loop; (void)revents;
 	struct LeakyBucket *lb = w->data;
@@ -282,12 +300,15 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	}
 
 	if(r == 0) {
-		dbg1("%s connection %d closed by remote", router->serial, w->fd);
+		info("%s connection %d closed by remote", router->serial, w->fd);
+		mhr_rem_consumer(router, prd->fd, prd->channel);
 		mhr_rem_producer(router, prd->fd, prd->channel);
+		return;
 	}
 
 	if(r < 0 && errno != EAGAIN) {
 		err_e(errno, "(mhr) Error reading from producer %d, channel %d!", prd->fd, prd->channel);
+		mhr_rem_consumer(router, prd->fd, prd->channel);
 		mhr_rem_producer(router, prd->fd, prd->channel);
 		return;
 	}
@@ -311,6 +332,7 @@ static void consumer_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	if(r < 0 && errno != EAGAIN) {
 		err_e(errno, "(mhr) Error writing to fd %d, channel %d!", cns->fd, cns->channel);
+		mhr_rem_producer(router, cns->fd, cns->channel);
 		mhr_rem_consumer(router, cns->fd, cns->channel);
 		return;
 	}
@@ -635,7 +657,8 @@ void mhr_rem_consumer(struct mh_router *router, int fd, int channel) {
 		if(cns->fd == fd) {
 			PG_Remove(&cns->node);
 			ev_io_stop(router->loop, &cns->w);
-			close(cns->fd);
+			if(!has_producer_fd(router, cns->fd, channel))
+				close(cns->fd);
 			free(cns);
 			return;
 		}
@@ -656,7 +679,8 @@ void mhr_rem_producer(struct mh_router *router, int fd, int channel) {
 		if(prd->fd == fd) {
 			PG_Remove(&prd->node);
 			ev_io_stop(router->loop, &prd->w);
-			close(prd->fd);
+			if(!has_consumer_fd(router, prd->fd, channel))
+				close(prd->fd);
 			free(prd);
 			return;
 		}

@@ -163,8 +163,10 @@ int main(int argc, char **argv)
         err("(main) error initializing config manager!");
 */
     int rc_j = cfgmgrj_load_cfg(cfgmgrj);
-	info("(main) json config load result: %d", rc_j);
-    if(rc_j == -2) {
+	if(rc_j == 0)
+		info("(main) json config loaded successfully.");
+
+	if(rc_j == -2) {
         info("(main) json config not found, attempting migration from legacy HDF...");
         if(cfgmgr_init(cfgmgr) == 0) {
             cfgmgrj_sync_from_conmgr(cfgmgrj);

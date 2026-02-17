@@ -42,6 +42,7 @@ struct vsp {
 	struct PGList session_list;
 
 	struct termios termios;
+	struct termios2 termios2;
 	int mbits;
 
 	struct ev_loop *loop;
@@ -169,10 +170,22 @@ static void chan_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		fuse_session_process(se, vsp->chan_buf, res, tmpch);
 
 	if (res <= 0 && res != -EINTR) {
+		// Now this should normally never happen.
+		// We can provoke it for testing by setting the chan_buf_size to a small value and access
+		// the VSP.
 		err_e(errno, "cuse read error!");
-		// FIXME: handle read error here
-		//fuse_session_reset(se);
-		;
+		ev_io_stop(vsp->loop, &vsp->w_chan_in);
+		ev_io_stop(vsp->loop, &vsp->w_data_in);
+		ev_io_stop(vsp->loop, &vsp->w_data_out);
+
+
+		close(vsp->fd_data);
+		vsp->fd_data = -1;
+		if(vsp->fd_ptt != -1) {
+			close(vsp->fd_ptt);
+			vsp->fd_ptt = -1;
+		}
+		fuse_session_exit(se);
 	}
 }
 
@@ -456,11 +469,15 @@ static void dv_write(fuse_req_t req, const char *buf, size_t size,
 		     off_t off, struct fuse_file_info *fi)
 {
 	(void)off;
-	struct vsp *vsp = fuse_req_userdata(req);
+	struct vsp *vsp;
 	int err = 0;
-	dbg1("%s() %s, request size: %zd", __func__, vsp->devname, size);
+	struct vsp_session *vs;
 
-	struct vsp_session *vs = find_vs(vsp, fi->fh);
+dbg1("%s() 0 ", __func__);
+
+	vsp = fuse_req_userdata(req);
+	vs = find_vs(vsp, fi->fh);
+
 	if(vs == NULL) {
 		err = EBADF;
 		err("attempt to write to a non-existent connection!");
@@ -480,6 +497,7 @@ static void dv_write(fuse_req_t req, const char *buf, size_t size,
 		vs->pending_in_size = size;
 		vs->pending_in_buf = buf;
 		vs->pending_in_processed = buf_append(b, (uint8_t*)buf, buf_size_avail(b));
+dbg1("%s() 1 %s, buffered size: %zd, pending size: %zd", __func__, vsp->devname, vs->pending_in_processed, vs->pending_in_size);		
 		ev_io_start(vsp->loop, &vsp->w_data_out);
 		fuse_req_interrupt_func(req, interrupt_func, vs);
 		return;
@@ -489,7 +507,7 @@ static void dv_write(fuse_req_t req, const char *buf, size_t size,
 		size = buf_size_avail(b);
 
 	buf_append(b, (uint8_t*)buf, size);
-
+dbg1("%s() 2 %s, buffered size: %zd, pending size: %zd", __func__, vsp->devname, vs->pending_in_processed, vs->pending_in_size);		
 	ev_io_start(vsp->loop, &vsp->w_data_out);
 
 out:
@@ -560,6 +578,46 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 		}
 		break;
 
+	case TCGETS2:
+		if(!out_bufsz) {
+			struct iovec iov = { arg, sizeof(vsp->termios2) };
+			fuse_reply_ioctl_retry(req, NULL, 0, &iov, 1);
+		} else {
+			fuse_reply_ioctl(req, 0, &vsp->termios2, sizeof(vsp->termios2));
+		}
+		break;
+
+	case TCSETSF2:
+		buf_reset(&vs->buf_out);
+	case TCSETSW2:
+	case TCSETS2:
+		if(!in_bufsz) {
+			struct iovec iov = { arg, sizeof(vsp->termios2) };
+			fuse_reply_ioctl_retry(req, &iov, 1, NULL, 0);
+		} else {
+			int baud;
+			int err = 0;
+			if(in_bufsz > sizeof(vsp->termios2))
+				in_bufsz = sizeof(vsp->termios2);
+			memcpy(&vsp->termios2, in_buf, in_bufsz);
+			memcpy(&vsp->termios, in_buf, sizeof(vsp->termios));
+			if(vsp->termios2.c_cflag & BOTHER)
+				baud = vsp->termios2.c_ospeed;
+			else
+				baud = termios_baud_rate(&vsp->termios);
+			if(baud > 0) {
+				vsp->termios2.c_ispeed = baud;
+				vsp->termios2.c_ospeed = baud;
+				info("%s TCSETS2 Baud rate set to %d", vsp->devname, baud);
+			} else {
+				warn("%s TCSETS2 unsupported baud rate!", vsp->devname);
+				err = -1;
+			}
+
+			fuse_reply_ioctl(req, err, NULL, 0);
+		}
+		break;
+
 	case TCSETSF:
 		buf_reset(&vs->buf_out);
 	case TCSETSW:
@@ -573,11 +631,14 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 			if(in_bufsz > sizeof(vsp->termios))
 				in_bufsz = sizeof(vsp->termios);
 			memcpy(&vsp->termios, in_buf, in_bufsz);
+			memcpy(&vsp->termios2, in_buf, in_bufsz);
 			baud = termios_baud_rate(&vsp->termios);
 			if(baud > 0) {
-				info("%s Baud rate set to %d", vsp->devname, baud);
+				vsp->termios2.c_ispeed = baud;
+				vsp->termios2.c_ospeed = baud;
+				info("%s TCSETS Baud rate set to %d", vsp->devname, baud);
 			} else {
-				warn("%s unsupported baud rate!", vsp->devname);
+				warn("%s TCSETS unsupported baud rate!", vsp->devname);
 				err = -1;
 			}
 
@@ -704,6 +765,62 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 		}
 		break;
 
+    case TIOCGSERIAL:
+        if(!out_bufsz) {
+            struct iovec iov = { arg, sizeof(struct serial_struct) };
+            fuse_reply_ioctl_retry(req, NULL, 0, &iov, 1);
+        } else {
+            struct serial_struct ss;
+            memset(&ss, 0, sizeof(ss));
+            ss.type = PORT_16550A;
+            ss.baud_base = 115200;
+            fuse_reply_ioctl(req, 0, &ss, sizeof(ss));
+        }
+        break;
+
+    case TIOCSSERIAL:
+        if(!in_bufsz) {
+            struct iovec iov = { arg, sizeof(struct serial_struct) };
+            fuse_reply_ioctl_retry(req, &iov, 1, NULL, 0);
+        } else {
+            fuse_reply_ioctl(req, 0, NULL, 0);
+        }
+        break;
+
+    case TIOCSBRK:
+    case TIOCCBRK:
+        fuse_reply_ioctl(req, 0, NULL, 0);
+        break;
+
+    case TIOCGSOFTCAR:
+        if(!out_bufsz) {
+            struct iovec iov = { arg, sizeof(int) };
+            fuse_reply_ioctl_retry(req, NULL, 0, &iov, 1);
+        } else {
+            int softcar = 0;
+            fuse_reply_ioctl(req, 0, &softcar, sizeof(int));
+        }
+        break;
+
+    case TIOCSSOFTCAR:
+        if(!in_bufsz) {
+            struct iovec iov = { arg, sizeof(int) };
+            fuse_reply_ioctl_retry(req, &iov, 1, NULL, 0);
+        } else {
+            fuse_reply_ioctl(req, 0, NULL, 0);
+        }
+        break;
+
+    case TCSBRK:
+		fuse_reply_ioctl(req, 0, NULL, 0);
+		break;
+
+        // FIXME: dummy implementation, maybe should do it correctly.
+	case TIOCEXCL:
+	case TIOCNXCL:
+		fuse_reply_ioctl(req, 0, NULL, 0);
+		break;
+
 
 	default:
 		warn("%s ioctl 0x%x not implemented!", vsp->devname, cmd);
@@ -747,6 +864,9 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 	vsp->devname = w_strdup(p);
 	PG_NewList(&vsp->session_list);
 	vsp->termios.c_cflag = B19200 | CS8 | CLOCAL | CREAD | CRTSCTS;
+	memcpy(&vsp->termios2, &vsp->termios, sizeof(vsp->termios));
+	vsp->termios2.c_ispeed = 19200;
+	vsp->termios2.c_ospeed = 19200;
 	vsp->loop = cspec->loop;
 	//	vsp->ptt_on_msg = w_strdup(cspec->ptt_on_msg);
 	//	vsp->ptt_off_msg = w_strdup(cspec->ptt_off_msg);
@@ -777,6 +897,7 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 		goto failed;
 	}
 
+	// vsp->chan_buf_size = 5;
 	vsp->chan_buf_size = fuse_chan_bufsize(ch);
 	vsp->chan_buf = (char *) w_malloc(vsp->chan_buf_size);
 

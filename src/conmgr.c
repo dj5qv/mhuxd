@@ -252,9 +252,7 @@ int conmgr_create_con_cfg(struct conmgr *conmgr, struct ev_loop *loop, const str
 			mhr_rem_producer(ctr->dev->router, soptt[0], ctr->ptt_channel);
 		}
 
-		if(sodat[0] != -1) close(sodat[0]);
 		if(sodat[1] != -1) close(sodat[1]);
-		if(soptt[0] != -1) close(soptt[0]);
 		if(soptt[1] != -1) close(soptt[1]);
 	}
 
@@ -277,7 +275,6 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 			if(ctr->ptt_channel != -1 && ctr->ptt_channel != ctr->channel) {
 				mhr_rem_producer(ctr->dev->router, ctr->s_fd_ptt, ctr->ptt_channel);
 				mhr_rem_consumer(ctr->dev->router, ctr->s_fd_ptt, ctr->ptt_channel);
-				close(ctr->s_fd_ptt);
 			}
 
 			if(ctr->mcp) {
@@ -294,9 +291,6 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 			
 			mhr_rem_producer(ctr->dev->router, ctr->s_fd_data, ctr->channel);
 			mhr_rem_consumer(ctr->dev->router, ctr->s_fd_data, ctr->channel);
-
-			if(ctr->s_fd_data != -1)
-				close(ctr->s_fd_data);
 
 			switch(ctr->type) {
 			case CON_VSP:

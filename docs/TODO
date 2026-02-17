@@ -33,3 +33,56 @@
    resets to original value.
 
 14) When staring mhuxd with no config, keyer off, then turn on keyer, it doesn't get reactively added to the keyer list.
+
+15) Check this, when not setting high baud rate, we may get EPERM
+
+The tcsetattr function with the TCSANOW action translates to the TCSETS ioctl call on Linux. Your con_vsp.c implementation already handles TCSETS (as well as TCSETSW for TCSADRAIN and TCSETSF for TCSAFLUSH), so the plumbing for TCSANOW is present.
+
+The issue is that TCSETS fails with EPERM (Operation not permitted) because the requested baud rate (115200) is being rejected by termios_baud_rate().
+
+The file linux_termios.c currently excludes baud rates of 115200 and higher unless NO_MICRO_HAM is defined. Since this macro is not defined in your build configuration, these standard high baud rates are treated as unsupported, causing the EPERM error in con_vsp.c.
+
+I will patch linux_termios.c to enable support for these baud rates.
+
+### core-refactor
+
+CR-01) Define fd ownership contract in code comments and docs:
+       - each fd has exactly one closer
+       - non-owners can request teardown but never close directly
+
+CR-02) Add shared endpoint state enum + helpers (`OPEN`, `DRAINING`, `FAILED`, `CLOSED`).
+
+CR-03) Add small nonblocking I/O helpers (read/write result normalization):
+       - `>0` progress
+       - `==0` EOF/no-progress policy
+       - `EAGAIN`/`EWOULDBLOCK` retry
+       - other `<0` hard error
+
+CR-04) Add watcher lifecycle wrappers:
+       - guarded `start` (valid fd + allowed state)
+       - idempotent `stop`
+
+CR-05) Convert `con_tcp.c` to shared helpers first (no behavior change intended).
+
+CR-06) Unify `con_tcp` teardown into one idempotent close path.
+
+CR-07) Convert `con_vsp.c` to state-gated watcher re-arm logic and shared teardown helpers.
+
+CR-08) Align `mhrouter.c` endpoint teardown to ownership wrappers only.
+
+CR-09) Restrict `conmgr.c` to orchestration only (no closing router-owned fds).
+
+CR-10) Add debug/invariant checks (gated by loglevel/debug build):
+       - watcher on invalid fd
+       - invalid state transition
+       - close by non-owner
+       - callback after terminal state
+
+CR-11) Fault-injection validation pass:
+       - forced connector read/write errors
+       - repeated teardown calls
+       - verify no libev invalid-fd assert
+
+CR-12) Final cleanup:
+       - remove obsolete duplicate error handling paths
+       - document final architecture in `docs/core-refactor.md`
