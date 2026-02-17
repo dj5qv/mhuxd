@@ -35,7 +35,10 @@
 struct Producer {
 	struct PGNode node;
 	struct mh_router *router;
+	/* Router-owned endpoint fd. */
 	int fd;
+	const char *owner_tag;
+	int owner_router;
 	ev_io w;
 	int channel;
 };
@@ -43,7 +46,10 @@ struct Producer {
 struct Consumer {
 	struct PGNode node;
 	struct mh_router *router;
+	/* Router-owned endpoint fd. */
 	int fd;
+	const char *owner_tag;
+	int owner_router;
 	ev_io w;
 	struct buffer buf;
 	int channel;
@@ -544,7 +550,7 @@ void mhr_set_keyer_fd(struct mh_router *router, int fd) {
 	}
 }
 
-void mhr_add_consumer(struct mh_router *router, int fd, int channel) {
+void mhr_add_consumer(struct mh_router *router, int fd, int channel, const char *owner_tag) {
 	struct Consumer *cns;
 
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
@@ -560,6 +566,8 @@ void mhr_add_consumer(struct mh_router *router, int fd, int channel) {
 
 	cns = w_calloc(1, sizeof(*cns));
 	cns->fd = fd;
+	cns->owner_tag = owner_tag;
+	cns->owner_router = 1;
 	ev_io_init(&cns->w, consumer_cb, cns->fd, EV_WRITE);
 	cns->w.data = cns;
 	cns->router = router;
@@ -567,7 +575,7 @@ void mhr_add_consumer(struct mh_router *router, int fd, int channel) {
 	PG_AddTail(&router->consumer_list[channel], &cns->node);
 }
 
-void mhr_add_producer(struct mh_router *router, int fd, int channel) {
+void mhr_add_producer(struct mh_router *router, int fd, int channel, const char *owner_tag) {
 	struct Producer *prd;
 
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
@@ -583,6 +591,8 @@ void mhr_add_producer(struct mh_router *router, int fd, int channel) {
 
 	prd = w_calloc(1, sizeof(*prd));
 	prd->fd = fd;
+	prd->owner_tag = owner_tag;
+	prd->owner_router = 1;
 	ev_io_init(&prd->w, producer_cb, prd->fd, EV_READ);
 	prd->w.data = prd;
 	prd->router = router;
@@ -657,14 +667,21 @@ void mhr_rem_consumer(struct mh_router *router, int fd, int channel) {
 		if(cns->fd == fd) {
 			PG_Remove(&cns->node);
 			ev_io_stop(router->loop, &cns->w);
-			if(!has_producer_fd(router, cns->fd, channel))
-				close(cns->fd);
+			if(!has_producer_fd(router, cns->fd, channel)) {
+				if(!cns->owner_router) {
+					dbg0("(mhr) ownership violation: close denied for consumer fd %d tag %s", cns->fd,
+					     cns->owner_tag ? cns->owner_tag : "<unknown>");
+				} else {
+				fd_close(&cns->fd);
+				}
+			}
 			free(cns);
 			return;
 		}
 	}
 
-	warn("(mhr) %s() fd not found", __func__);
+	dbg0("(mhr) %s() fd not found (fd=%d channel=%s)",
+	     __func__, fd, ch_channel2str(channel));
 }
 
 void mhr_rem_producer(struct mh_router *router, int fd, int channel) {
@@ -679,14 +696,21 @@ void mhr_rem_producer(struct mh_router *router, int fd, int channel) {
 		if(prd->fd == fd) {
 			PG_Remove(&prd->node);
 			ev_io_stop(router->loop, &prd->w);
-			if(!has_consumer_fd(router, prd->fd, channel))
-				close(prd->fd);
+			if(!has_consumer_fd(router, prd->fd, channel)) {
+				if(!prd->owner_router) {
+					dbg0("(mhr) ownership violation: close denied for producer fd %d tag %s", prd->fd,
+					     prd->owner_tag ? prd->owner_tag : "<unknown>");
+				} else {
+				fd_close(&prd->fd);
+				}
+			}
 			free(prd);
 			return;
 		}
 	}
 
-	warn("(mhr) %s() fd not found", __func__);
+	dbg0("(mhr) %s() fd not found (fd=%d channel=%s)",
+	     __func__, fd, ch_channel2str(channel));
 }
 
 void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback callback, int channel) {

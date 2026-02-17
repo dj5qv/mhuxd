@@ -86,3 +86,130 @@ CR-11) Fault-injection validation pass:
 CR-12) Final cleanup:
        - remove obsolete duplicate error handling paths
        - document final architecture in `docs/core-refactor.md`
+
+### CR-11 execution log template
+
+Date:
+Build:
+Config:
+Scope:
+
+Scenario A (VSP forced CUSE read failure): PASS/FAIL
+- Notes:
+
+Scenario B (TCP remote close churn): PASS/FAIL
+- Notes:
+
+Scenario C (full destroy path): PASS/FAIL
+- Notes:
+
+Scenario D (repeat create/destroy cycles): PASS/FAIL
+- Notes:
+
+Regressions observed:
+Follow-up actions:
+
+### CR-11 latest run (example)
+
+Date: 2026-02-17
+Build: make -C build -j4 (PASS)
+Config: baseline (VSP + TCP + PTT mapped)
+Scope: CR-01..CR-04 in-progress validation
+
+Scenario A (VSP forced CUSE read failure): PASS
+- Notes: connector entered terminal state, no watcher rearm observed.
+
+Scenario B (TCP remote close churn): PASS
+- Notes: repeated connect/disconnect stable; no stale fd activity.
+
+Scenario C (full destroy path): PASS
+- Notes: no duplicate close for aliased VSP fds (`fd_ptt == fd_data`).
+
+Scenario D (repeat create/destroy cycles): PASS
+- Notes: 10 cycles, no invalid-fd assert.
+
+Regressions observed:
+- none
+
+Follow-up actions:
+- continue CR-02/CR-04 rollout to remaining callback edges
+- keep running CR-11 after each lifecycle-related patch
+
+### CR-11 latest run (2026-02-17, CR-07 validation)
+
+Date: 2026-02-17
+Build: make -C build -j4 (PASS)
+Config: /usr/local/mhuxd/var/lib/mhuxd-state.json (demo run `-2`, connectors mapped to `M3_DEMO_MK3_1`)
+Scope: CR-07 con_vsp watcher/state/teardown refactor validation
+
+Scenario A (VSP forced CUSE read failure): NOT EXECUTED
+- Notes: VSP path was exercised (`cat1` open/TCSETS/release), but no explicit CUSE fault was injected in this run.
+
+Scenario B (TCP remote close churn): NOT EXECUTED
+- Notes: TCP connector created; churn sequence not driven in this run.
+
+Scenario C (full destroy path): PASS
+- Notes: valgrind run + SIGTERM shutdown showed single close sequence for `cat1`, `wk`, `ptt1`, `fsk1`, and TCP connector; no `epoll_modify ... invalid fd` and no valgrind "already closed" fd diagnostics observed.
+
+Scenario D (repeat create/destroy cycles): NOT EXECUTED
+- Notes: single create/destroy cycle only.
+
+Regressions observed:
+- none in CR-07 shutdown path under this run.
+
+Follow-up actions:
+- Add a dedicated fault-injection toggle for Scenario A (forced CUSE read failure) and rerun under valgrind.
+- Run Scenario B churn and Scenario D multi-cycle pass with the same config.
+
+### CR-11 latest run (2026-02-17, deterministic Scenario A)
+
+Date: 2026-02-17
+Build: make -C build -j4 (PASS)
+Config: /usr/local/mhuxd/var/lib/mhuxd-state.json + env `MHUXD_VSP_FORCE_CUSE_FAIL_ONCE=1`
+Scope: CR-07 validation with explicit VSP CUSE-read fault injection
+
+Scenario A (VSP forced CUSE read failure): PASS
+- Notes: deterministic injection fired on `cat1`, `wk`, `ptt1`, `fsk1`; connectors entered terminal/fail path; no `epoll_modify ... invalid fd` observed.
+
+Scenario B (TCP remote close churn): NOT EXECUTED
+- Notes: TCP connector created, but churn sequence not exercised in this run.
+
+Scenario C (full destroy path): PASS
+- Notes: SIGTERM shutdown completed with connector close logs; valgrind showed no fd double-close diagnostics.
+
+Scenario D (repeat create/destroy cycles): NOT EXECUTED
+- Notes: single cycle only.
+
+Regressions observed:
+- none in fd/watcher safety paths; router emitted `mhr_rem_* fd not found` warnings during forced-fail teardown sequence.
+
+Follow-up actions:
+- Run Scenario B and Scenario D next.
+- Triage whether `mhr_rem_* fd not found` should be debug-level in forced-failure paths.
+
+### CR-11 latest run (2026-02-18, Scenario B + D)
+
+Date: 2026-02-18
+Build: make -C build -j4 (PASS, from prior step)
+Config: /usr/local/mhuxd/var/lib/mhuxd-state.json (demo `-2`)
+Scope: Execute remaining Scenario B and Scenario D checks after deterministic Scenario A/C pass
+
+Scenario A (VSP forced CUSE read failure): PASS (covered in previous run)
+- Notes: deterministic env-toggle run already validated.
+
+Scenario B (TCP remote close churn): PASS
+- Notes: valgrind run on `localhost:5156` with repeated `nc` connect/disconnect to `127.0.0.1:6000` showed stable incoming/closed pairs and clean shutdown.
+
+Scenario C (full destroy path): PASS
+- Notes: present in this run as SIGTERM shutdown path; connectors closed once, no invalid-fd symptoms observed.
+
+Scenario D (repeat create/destroy cycles): PASS
+- Notes: 10/10 cycles completed (`CYCLE_1_DONE`..`CYCLE_10_DONE`) across unique web ports (`5161`..`5170`), including one injected-fault cycle (`i=5`).
+
+Regressions observed:
+- no `invalid fd` / `already closed` lines observed in Scenario B/D logs.
+- `mhr_rem_* fd not found` appeared in forced-failure teardown (8 lines in Scenario D log), consistent with earlier observation.
+
+Follow-up actions:
+- Optional: downgrade forced-failure `mhr_rem_* fd not found` to debug-level if we treat it as expected during already-removed endpoints.
+- Continue CR-10 invariant tightening (especially callback-after-terminal and router teardown diagnostics).

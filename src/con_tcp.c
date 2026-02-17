@@ -21,7 +21,9 @@
 #define MOD_ID "tcp"
 
 struct ctcp {
+	/* Connector-owned endpoint from socketpair (connector side). */
 	int fd_data;
+	enum mhuxd_io_state state;
 	struct netlsnr *lsnr;
 	ev_io w_lsnr;;
 	ev_io w_data_in;
@@ -38,6 +40,7 @@ struct ctcp {
 struct ctcp_session {
 	struct PGNode node;
 	struct ctcp *ctcp;
+	/* Connector-owned accepted client socket. */
 	int fd;
 	ev_io w_in;
 	ev_io w_out;
@@ -45,13 +48,45 @@ struct ctcp_session {
 	struct buffer buf_in;
 };
 
+static int ctcp_set_state(struct ctcp *ctcp, enum mhuxd_io_state to) {
+	enum mhuxd_io_state from = ctcp->state;
+	if(io_state_transition(&ctcp->state, to))
+		return 1;
+	dbg0("%s illegal state transition %s -> %s", ctcp->devname,
+	     io_state_to_str(from), io_state_to_str(to));
+	return 0;
+}
+
+static int ctcp_is_terminal(const struct ctcp *ctcp) {
+	return (ctcp->state == MHUXD_IO_FAILED || ctcp->state == MHUXD_IO_CLOSED);
+}
+
+static void ctcp_watch_stop(struct ctcp *ctcp, ev_io *w) {
+	ev_io_stop(ctcp->loop, w);
+}
+
+static void ctcp_watch_start(struct ctcp *ctcp, ev_io *w) {
+	if(ctcp->state != MHUXD_IO_OPEN)
+		return;
+	if(w->fd < 0)
+		return;
+	ev_io_start(ctcp->loop, w);
+}
+
+static void ctcp_fail(struct ctcp *ctcp) {
+	ctcp_set_state(ctcp, MHUXD_IO_FAILED);
+	ctcp_watch_stop(ctcp, &ctcp->w_data_in);
+	ctcp_watch_stop(ctcp, &ctcp->w_data_out);
+	ctcp_watch_stop(ctcp, &ctcp->w_lsnr);
+}
+
 static void rem_session(struct ctcp_session *cs) {
 	struct ctcp *ctcp = cs->ctcp;
 
-	ev_io_stop(ctcp->loop, &cs->w_in);
-	ev_io_stop(ctcp->loop, &cs->w_out);
+	ctcp_watch_stop(ctcp, &cs->w_in);
+	ctcp_watch_stop(ctcp, &cs->w_out);
 
-	close(cs->fd);
+	fd_close(&cs->fd);
 	ctcp->open_cnt--;
 	PG_Remove(&cs->node);
 	free(cs);
@@ -60,20 +95,27 @@ static void rem_session(struct ctcp_session *cs) {
 static void data_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)revents;
 	struct ctcp *ctcp = w->data;
-	int r;
+	ssize_t r;
+	int errsv = 0;
+	enum mhuxd_io_rw_result io_res;
 	uint8_t buf[1024];
+	(void)loop;
 
-	r = read(w->fd, buf, sizeof(buf));
-	if(r < 0) {
-		if(errno == EAGAIN || errno == EWOULDBLOCK)
-			return;
-		err_e(errno, "error reading from data socket!");
-		ev_io_stop(loop, &ctcp->w_data_in);
-		// FIXME: better error handling needed.
+	if(ctcp_is_terminal(ctcp))
+		return;
+
+	io_res = io_read_nonblock(w->fd, buf, sizeof(buf), &r, &errsv);
+	if(io_res == MHUXD_IO_RW_WOULD_BLOCK)
+		return;
+
+	if(io_res == MHUXD_IO_RW_ERROR) {
+		err_e(errsv, "error reading from data socket!");
+		ctcp_fail(ctcp);
+		return;
 	}
 
-	if(r == 0) {
-		ev_io_stop(loop, &ctcp->w_data_in);
+	if(io_res == MHUXD_IO_RW_EOF) {
+		ctcp_fail(ctcp);
 		return;
 	}
 
@@ -81,7 +123,7 @@ static void data_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	PG_SCANLIST(&ctcp->session_list, cs) {
 		if(r != buf_append(&cs->buf_out, buf, r))
 				warn("buffer overflow writing to client!");
-		ev_io_start(loop, &cs->w_out);
+		ctcp_watch_start(ctcp, &cs->w_out);
 	}
 }
 
@@ -89,25 +131,31 @@ static void data_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)revents;
 	struct ctcp *ctcp = w->data;
 	struct ctcp_session *cs;
-	int size;
+	ssize_t size;
+	int errsv = 0;
+	enum mhuxd_io_rw_result io_res;
 	int need_to_write = 0;
+	(void)loop;
+
+	if(ctcp_is_terminal(ctcp))
+		return;
 
 	PG_SCANLIST(&ctcp->session_list, cs) {
 		struct buffer *b = &cs->buf_in;
 		if(b->rpos == b->size)
 			continue;
-		size = write(ctcp->fd_data, b->data + b->rpos, b->size - b->rpos);
-		if(size < 0) {
-			if(errno == EAGAIN || errno == EWOULDBLOCK) {
-				need_to_write = 1;
-				continue;
-			}
-			err_e(errno, "error writing to data socket!");
-			ev_io_stop(loop, &ctcp->w_data_out);
+		io_res = io_write_nonblock(ctcp->fd_data, b->data + b->rpos, b->size - b->rpos, &size, &errsv);
+		if(io_res == MHUXD_IO_RW_WOULD_BLOCK) {
+			need_to_write = 1;
+			continue;
+		}
+		if(io_res == MHUXD_IO_RW_ERROR) {
+			err_e(errsv, "error writing to data socket!");
+			ctcp_fail(ctcp);
 			return;
 		}
-		if(size == 0) {
-			ev_io_stop(loop, &ctcp->w_data_out);
+		if(io_res == MHUXD_IO_RW_EOF) {
+			ctcp_fail(ctcp);
 			return;
 		}
 
@@ -118,7 +166,7 @@ static void data_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	}
 
 	if(!need_to_write)
-		ev_io_stop(loop, &ctcp->w_data_out);
+		ctcp_watch_stop(ctcp, &ctcp->w_data_out);
 }
 
 static void client_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
@@ -126,42 +174,46 @@ static void client_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct ctcp_session *cs = w->data;
 	struct ctcp *ctcp = cs->ctcp;
 	int avail;
-	int r;
+	ssize_t r;
+	int errsv = 0;
+	enum mhuxd_io_rw_result io_res;
+	(void)loop;
+
+	if(ctcp_is_terminal(ctcp))
+		return;
 
 	avail = buf_size_avail(&cs->buf_in);
-	r = read(cs->fd, cs->buf_in.data + cs->buf_in.size, avail);
-	if(r < 0) {
-		if(errno == EAGAIN || errno == EWOULDBLOCK)
-			return;
-		info("connection on %s closed", ctcp->devname);
-		rem_session(cs);
+	io_res = io_read_nonblock(cs->fd, cs->buf_in.data + cs->buf_in.size, avail, &r, &errsv);
+	if(io_res == MHUXD_IO_RW_WOULD_BLOCK)
 		return;
-	}
-	if(r == 0) {
+
+	if(io_res == MHUXD_IO_RW_ERROR || io_res == MHUXD_IO_RW_EOF) {
 		info("connection on %s closed", ctcp->devname);
 		rem_session(cs);
 		return;
 	}
 
 	buf_add_size(&cs->buf_in, r);
-	ev_io_start(loop, &ctcp->w_data_out);
+	ctcp_watch_start(ctcp, &ctcp->w_data_out);
 }
 
 static void client_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)revents;
 	struct ctcp_session *cs = w->data;
 	struct ctcp *ctcp = cs->ctcp;
-	int r;
+	ssize_t r;
+	int errsv = 0;
+	enum mhuxd_io_rw_result io_res;
+	(void)loop;
 
-	r = write(cs->fd, cs->buf_out.data + cs->buf_out.rpos, cs->buf_out.size - cs->buf_out.rpos);
-	if(r < 0) {
-		if(errno == EAGAIN || errno == EWOULDBLOCK)
-			return;
-		info("connection on %s closed", ctcp->devname);
-		rem_session(cs);
+	if(ctcp_is_terminal(ctcp))
 		return;
-	}
-	if(r == 0) {
+
+	io_res = io_write_nonblock(cs->fd, cs->buf_out.data + cs->buf_out.rpos, cs->buf_out.size - cs->buf_out.rpos, &r, &errsv);
+	if(io_res == MHUXD_IO_RW_WOULD_BLOCK)
+		return;
+
+	if(io_res == MHUXD_IO_RW_ERROR || io_res == MHUXD_IO_RW_EOF) {
 		info("connection on %s closed", ctcp->devname);
 		rem_session(cs);
 		return;
@@ -170,13 +222,16 @@ static void client_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	buf_consume(&cs->buf_out, r);
 
 	if(!cs->buf_out.size)
-		ev_io_stop(loop, &cs->w_out);
+		ctcp_watch_stop(ctcp, &cs->w_out);
 }
 
 static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)loop; (void)revents;
 	struct ctcp *ctcp = w->data;
 	int fd;
+
+	if(ctcp_is_terminal(ctcp))
+		return;
 
 	fd = net_accept(w->fd);
 	if(fd == -1) {
@@ -186,7 +241,7 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	if(ctcp->open_cnt >= ctcp->max_con) {
 		info("rejecting connect, maximum connections reached for %s", ctcp->devname);
-		close(fd);
+		fd_close(&fd);
 		return;
 	}
 
@@ -195,7 +250,7 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	cs->fd = fd;
 	ev_io_init(&cs->w_in, client_in_cb, fd, EV_READ);
 	ev_io_init(&cs->w_out, client_out_cb, fd, EV_WRITE);
-	ev_io_start(ctcp->loop, &cs->w_in);
+	ctcp_watch_start(ctcp, &cs->w_in);
 	cs->w_in.data = cs;
 	cs->w_out.data = cs;
 
@@ -238,6 +293,7 @@ struct ctcp *ctcp_create(const struct connector_spec *cpsec) {
 	ctcp->devname = w_strdup(devname);
 	ctcp->lsnr = lsnr;
 	ctcp->fd_data = cpsec->fd_data;
+	ctcp->state = MHUXD_IO_OPEN;
 	ctcp->max_con = (cpsec->tcp.maxcon > 0) ? cpsec->tcp.maxcon : 1;
 
 	ev_io_init(&ctcp->w_data_in, data_in_cb, ctcp->fd_data, EV_READ);
@@ -247,8 +303,8 @@ struct ctcp *ctcp_create(const struct connector_spec *cpsec) {
 	ctcp->w_data_out.data = ctcp;
 	ctcp->w_lsnr.data = ctcp;
 
-	ev_io_start(ctcp->loop, &ctcp->w_lsnr);
-	ev_io_start(ctcp->loop, &ctcp->w_data_in);
+	ctcp_watch_start(ctcp, &ctcp->w_lsnr);
+	ctcp_watch_start(ctcp, &ctcp->w_data_in);
 	info("tcp connector %s created", ctcp->devname);
 
 	return ctcp;
@@ -257,14 +313,16 @@ struct ctcp *ctcp_create(const struct connector_spec *cpsec) {
 void ctcp_destroy(struct ctcp *ctcp) {
 	struct ctcp_session *cs;
 
-	ev_io_stop(ctcp->loop, &ctcp->w_data_in);
-	ev_io_stop(ctcp->loop, &ctcp->w_data_out);
-	ev_io_stop(ctcp->loop, &ctcp->w_lsnr);
+	ctcp_set_state(ctcp, MHUXD_IO_CLOSED);
+
+	ctcp_watch_stop(ctcp, &ctcp->w_data_in);
+	ctcp_watch_stop(ctcp, &ctcp->w_data_out);
+	ctcp_watch_stop(ctcp, &ctcp->w_lsnr);
 
 	while((cs = (void*)PG_FIRSTENTRY(&ctcp->session_list)))
 			rem_session(cs);
 
-	close(ctcp->fd_data);
+	fd_close(&ctcp->fd_data);
 	net_destroy_lsnr(ctcp->lsnr);
 
 	info("tcp connector %s closed", ctcp->devname);

@@ -50,6 +50,45 @@ Suggested convention:
 - Router side fds registered in router tables: owned by router endpoint lifecycle.
 - Shared-pair teardown must go through one authoritative function.
 
+#### CR-01 execution plan (fd ownership definition)
+
+Ownership rule:
+
+- fd creator is owner by default.
+- ownership can be transferred exactly once per handoff edge.
+- only current owner may call `close()`.
+- non-owners may request teardown, never close directly.
+
+Minimum ownership matrix for current code:
+
+- `con_tcp` listener fd: owned by `con_tcp` connector object.
+- `con_tcp` accepted client fd: owned by `ctcp_session`.
+- connector side of `socketpair` (`fd_data` in connector): owned by connector instance (`con_tcp` / `con_vsp`).
+- router side of `socketpair`: ownership transfers to `mhrouter` after `mhr_add_*` succeeds.
+- vsp local device fds (`fd_data`, `fd_ptt`): owned by `con_vsp` instance/session.
+
+Teardown ordering contract (must be uniform):
+
+1. mark state as terminal (`FAILED` or `CLOSED`)
+2. stop all watchers bound to that endpoint
+3. deregister endpoint from router/lists
+4. close only owned fds and set fd to `-1`
+5. free memory
+
+Implementation notes:
+
+- add tiny ownership metadata per fd handle (owner enum + tag string for debug logs)
+- make close helper idempotent (`fd < 0` is no-op)
+- log and ignore close attempts by non-owner in debug mode
+- enforce "watcher stop before close" in common teardown helper
+
+Immediate CR-01 rollout steps:
+
+1. annotate ownership in structs and constructor paths (`conmgr`, `mhrouter`, `con_tcp`, `con_vsp`)
+2. replace raw `close()` in these paths with ownership helper
+3. add one debug assertion/log site per close path to catch violations early
+4. verify with forced-error scenario and normal startup/shutdown
+
 ### 3) Shared nonblocking I/O helpers
 
 Create reusable helpers for read/write result handling:
@@ -150,3 +189,96 @@ Start with `con_tcp` as the template:
 - good proving ground for helper signatures before `con_vsp`
 
 Once stable, apply same pattern to `con_vsp`, then router + conmgr boundaries.
+
+## CR-11 Fault-Injection Validation Checklist
+
+Use this checklist after each refactor increment that touches fd/watcher lifecycle.
+
+### Preconditions
+
+- Build clean: `make -C build -j4`
+- Run with debug logs enabled (at least `dbg0`)
+- Keep one baseline config with:
+  - at least one VSP connector
+  - at least one TCP connector
+  - optional PTT-mapped VSP (`fd_ptt` path)
+
+### Scenario A: VSP forced CUSE read failure
+
+Goal: verify terminal-state transition + no watcher rearm + no invalid-fd asserts.
+
+Steps:
+
+1. Start `mhuxd` under valgrind (fd tracking enabled).
+2. Trigger the known CUSE error path (small buffer/fault injection as used in prior repro).
+  - Deterministic option: run with `MHUXD_VSP_FORCE_CUSE_FAIL_ONCE=1` to force one CUSE read failure per VSP connector.
+3. Continue runtime for ~30s after error.
+
+Expected:
+
+- single transition to `FAILED` (debug log if repeated attempts)
+- connector shutdown logs once per connector
+- no `epoll_modify ... invalid fd`
+- no "fd already closed" from valgrind
+
+### Scenario B: TCP remote close + error churn
+
+Goal: verify nonblocking helper behavior and teardown idempotency under repeated close events.
+
+Steps:
+
+1. Connect one or more TCP clients.
+2. Force abrupt remote disconnects (multiple times).
+3. Repeat while traffic is active.
+
+Expected:
+
+- clean client session teardown
+- no double-close warnings
+- no stale watcher activity on closed fds
+
+### Scenario C: Full destroy path
+
+Goal: verify orderly shutdown with mixed connector states.
+
+Steps:
+
+1. Start with VSP + TCP active.
+2. Force one connector into error state.
+3. Trigger process shutdown (`conmgr_destroy_all`).
+
+Expected:
+
+- no duplicate close on aliased fds (`fd_ptt == fd_data` case)
+- all connectors report closed once
+- no valgrind fd double-close diagnostics
+
+### Scenario D: Repeated create/destroy cycle
+
+Goal: catch latent ownership transfer regressions.
+
+Steps:
+
+1. Start/stop `mhuxd` in loop with same config (10+ cycles).
+2. Include one cycle with induced VSP or TCP fault.
+
+Expected:
+
+- stable startup and shutdown each cycle
+- no accumulation of warnings/asserts
+- no new fd lifecycle regressions
+
+### Quick pass/fail criteria
+
+Pass if all are true:
+
+- no libev invalid-fd assert
+- no valgrind "already closed" fd errors
+- no ownership-violation logs except intentional injected cases
+- terminal-state callbacks do not restart I/O watchers
+
+Fail if any are true:
+
+- repeated close of same underlying fd
+- illegal state transitions without guarded handling
+- callback activity continues after `FAILED`/`CLOSED`
