@@ -81,6 +81,7 @@ void mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd
 void mhc_set_speed_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb, void *user_data);
+void mhc_set_mode_on_radio(struct mh_control *ctl, int mode, uint8_t radio, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_record_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_stop_recording(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_play_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data);

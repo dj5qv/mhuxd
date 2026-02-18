@@ -26,8 +26,10 @@ struct ctcp {
 	enum mhuxd_io_state state;
 	unsigned int dbg_cb_after_terminal;
 	unsigned int dbg_watch_invalid_fd;
-	struct netlsnr *lsnr;
-	ev_io w_lsnr;;
+	struct netlsnr *lsnr_v4;
+	struct netlsnr *lsnr_v6;
+	ev_io w_lsnr_v4;
+	ev_io w_lsnr_v6;
 	ev_io w_data_in;
 	ev_io w_data_out;
 
@@ -89,7 +91,10 @@ static void ctcp_fail(struct ctcp *ctcp) {
 	ctcp_set_state(ctcp, MHUXD_IO_FAILED);
 	ctcp_watch_stop(ctcp, &ctcp->w_data_in);
 	ctcp_watch_stop(ctcp, &ctcp->w_data_out);
-	ctcp_watch_stop(ctcp, &ctcp->w_lsnr);
+	if(ctcp->lsnr_v4)
+		ctcp_watch_stop(ctcp, &ctcp->w_lsnr_v4);
+	if(ctcp->lsnr_v6)
+		ctcp_watch_stop(ctcp, &ctcp->w_lsnr_v6);
 }
 
 static void rem_session(struct ctcp_session *cs) {
@@ -290,42 +295,91 @@ struct ctcp *ctcp_create(const struct connector_spec *cpsec) {
 	dbg1("%s()", __func__);
 
 	const char *port = cpsec->tcp.port;
-	if(port == NULL || !isdigit(*port)) {
+	if(port == NULL || !isdigit((unsigned char)*port)) {
 		err("could not create tcp connector: no or invalid port specified!");
 		return NULL;
+	}
+
+	const char *p;
+	for(p = port; *p; ++p) {
+		if(!isdigit((unsigned char)*p)) {
+			err("could not create tcp connector: no or invalid port specified!");
+			return NULL;
+		}
 	}
 
 	int8_t remote_access = (int8_t)(cpsec->tcp.remote_access ? 1 : 0);
 
 	char devname[128];
-	if(128 <= snprintf(devname, 128, "%s:%s", remote_access ? "0.0.0.0" : "127.0.0.1", port)) {
+	char v4_name[128];
+	char v6_name[128];
+	const char *host_v6 = remote_access ? "[::]" : "[::1]";
+	const char *host_v4 = remote_access ? "0.0.0.0" : "127.0.0.1";
+	struct netlsnr *lsnr_v6 = NULL;
+	struct netlsnr *lsnr_v4 = NULL;
+	int err_v6 = 0;
+	int err_v4 = 0;
+
+	if(128 <= snprintf(v6_name, sizeof(v6_name), "%s:%s", host_v6, port)) {
 		err("could not create tcp connector: no or invalid parameter!");
 		return NULL;
 	}
 
-	struct netlsnr *lsnr = net_create_listener(devname);
-	if(lsnr == NULL) {
-		err_e(errno, "could not create listener %s!", devname);
+	if(128 <= snprintf(v4_name, sizeof(v4_name), "%s:%s", host_v4, port)) {
+		err("could not create tcp connector: no or invalid parameter!");
 		return NULL;
 	}
+
+	lsnr_v6 = net_create_listener(v6_name);
+	if(lsnr_v6 == NULL)
+		err_v6 = errno;
+
+	lsnr_v4 = net_create_listener(v4_name);
+	if(lsnr_v4 == NULL)
+		err_v4 = errno;
+
+	if(lsnr_v6 == NULL && lsnr_v4 == NULL) {
+		errno = err_v6 ? err_v6 : err_v4;
+		err_e(errno, "could not create listeners %s and %s!", v6_name, v4_name);
+		return NULL;
+	}
+
+	if(lsnr_v6 && lsnr_v4)
+		snprintf(devname, sizeof(devname), "%s:%s", remote_access ? "dual-stack" : "localhost-dual", port);
+	else if(lsnr_v6)
+		snprintf(devname, sizeof(devname), "%s", v6_name);
+	else
+		snprintf(devname, sizeof(devname), "%s", v4_name);
 
 	ctcp = w_calloc(1, sizeof(*ctcp));
 	PG_NewList(&ctcp->session_list);
 	ctcp->loop = cpsec->loop;
 	ctcp->devname = w_strdup(devname);
-	ctcp->lsnr = lsnr;
+	ctcp->lsnr_v6 = lsnr_v6;
+	ctcp->lsnr_v4 = lsnr_v4;
 	ctcp->fd_data = cpsec->fd_data;
 	ctcp->state = MHUXD_IO_OPEN;
 	ctcp->max_con = (cpsec->tcp.maxcon > 0) ? cpsec->tcp.maxcon : 1;
 
 	ev_io_init(&ctcp->w_data_in, data_in_cb, ctcp->fd_data, EV_READ);
 	ev_io_init(&ctcp->w_data_out, data_out_cb, ctcp->fd_data, EV_WRITE);
-	ev_io_init(&ctcp->w_lsnr, lsnr_cb, net_listener_get_fd(lsnr), EV_READ);
 	ctcp->w_data_in.data = ctcp;
 	ctcp->w_data_out.data = ctcp;
-	ctcp->w_lsnr.data = ctcp;
 
-	ctcp_watch_start(ctcp, &ctcp->w_lsnr);
+	if(ctcp->lsnr_v6) {
+		ev_io_init(&ctcp->w_lsnr_v6, lsnr_cb, net_listener_get_fd(ctcp->lsnr_v6), EV_READ);
+		ctcp->w_lsnr_v6.data = ctcp;
+	}
+
+	if(ctcp->lsnr_v4) {
+		ev_io_init(&ctcp->w_lsnr_v4, lsnr_cb, net_listener_get_fd(ctcp->lsnr_v4), EV_READ);
+		ctcp->w_lsnr_v4.data = ctcp;
+	}
+
+	if(ctcp->lsnr_v6)
+		ctcp_watch_start(ctcp, &ctcp->w_lsnr_v6);
+	if(ctcp->lsnr_v4)
+		ctcp_watch_start(ctcp, &ctcp->w_lsnr_v4);
 	ctcp_watch_start(ctcp, &ctcp->w_data_in);
 	info("tcp connector %s created", ctcp->devname);
 
@@ -339,13 +393,17 @@ void ctcp_destroy(struct ctcp *ctcp) {
 
 	ctcp_watch_stop(ctcp, &ctcp->w_data_in);
 	ctcp_watch_stop(ctcp, &ctcp->w_data_out);
-	ctcp_watch_stop(ctcp, &ctcp->w_lsnr);
+	if(ctcp->lsnr_v4)
+		ctcp_watch_stop(ctcp, &ctcp->w_lsnr_v4);
+	if(ctcp->lsnr_v6)
+		ctcp_watch_stop(ctcp, &ctcp->w_lsnr_v6);
 
 	while((cs = (void*)PG_FIRSTENTRY(&ctcp->session_list)))
 			rem_session(cs);
 
 	fd_close(&ctcp->fd_data);
-	net_destroy_lsnr(ctcp->lsnr);
+	net_destroy_lsnr(ctcp->lsnr_v4);
+	net_destroy_lsnr(ctcp->lsnr_v6);
 
 	info("tcp connector %s closed", ctcp->devname);
 

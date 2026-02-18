@@ -90,6 +90,13 @@ enum {
 	MHCMD_HOST_ACC_OUTPUTS_CONTROL = 0x35, /* MK2R, U2R only */
 	MHCMD_CAT_R2_FR_MODE_INFO = 0x36, /* MK2R only */
 	MHCMD_CAT_R2_FREQUENCY_INFO = 0x37, /* MK2R only */
+	// Additions 2026-02-18
+	MHCMD_SET_PTT_REPORT_MODE   = 0x38, /* Except SM */
+	MHCMD_SET_SOFWARE_LOCK    = 0x39, /* Except MK family */
+	MHCMD_SET_SOFTWARE_PTT    = 0x3a, /* MK2, MK3, DK2, U2R, MK2R family only */
+	MHCMD_SET_KEYER_MODE_ON_RADIO	= 0x3b, /* U2R, MK2R only */
+
+
 
 	// SM
 	MHCMD_SET_ANTSW_VALIDITY  = 0x41,
@@ -456,6 +463,7 @@ static void control_channel_cb(struct mh_router *router, unsigned const char *da
 	}
 
 	if(cmd && cmd->state == CMD_STATE_SENT && data[0] == MHCMD_NOT_SUPPORTED) {
+		dbg0("%s: 0x%02x cmd not supported!", ctl->serial, cmd->cmd[0]);
 		ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
 		PG_Remove(&cmd->node);
 		if(cmd->cmd_completion_cb)
@@ -1107,7 +1115,6 @@ int mhc_get_speed_params(struct mh_control *ctl, int channel, struct mhc_speed_c
 void mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	dbg1("%s %s()",ctl->serial, __func__);
 
-
 	struct buffer b;
 	buf_reset(&b);
 	buf_append_c(&b, MHCMD_SET_KEYER_MODE);
@@ -1115,6 +1122,19 @@ void mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb,
 	buf_append_c(&b, MHCMD_SET_KEYER_MODE | MSB_BIT);
 	submit_cmd(ctl, &b, cb, user_data);
 }
+
+void mhc_set_mode_on_radio(struct mh_control *ctl, int mode, uint8_t radio, mhc_cmd_completion_cb_fn cb, void *user_data) {
+	dbg1("%s %s()",ctl->serial, __func__);
+
+	struct buffer b;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_SET_KEYER_MODE_ON_RADIO);
+	buf_append_c(&b, radio);
+	buf_append_c(&b, mode);
+	buf_append_c(&b, MHCMD_SET_KEYER_MODE_ON_RADIO | MSB_BIT);
+	submit_cmd(ctl, &b, cb, user_data);
+}
+
 
 void mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	const struct buffer *kb = kcfg_get_buffer(ctl->kcfg);
