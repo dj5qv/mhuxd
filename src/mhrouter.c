@@ -603,6 +603,11 @@ void mhr_add_producer(struct mh_router *router, int fd, int channel, const char 
 	}
 }
 
+void mhr_add_endpoint_fd(struct mh_router *router, int fd, int channel, const char *owner_tag) {
+	mhr_add_consumer(router, fd, channel, owner_tag);
+	mhr_add_producer(router, fd, channel, owner_tag);
+}
+
 void mhr_add_consumer_cb(struct mh_router *router, MHRConsumerCallback callback, int channel,
 			 void *user_data) {
 	struct ConsumerCb *cnc;
@@ -711,6 +716,11 @@ void mhr_rem_producer(struct mh_router *router, int fd, int channel) {
 
 	dbg0("(mhr) %s() fd not found (fd=%d channel=%s)",
 	     __func__, fd, ch_channel2str(channel));
+}
+
+void mhr_rem_endpoint_fd(struct mh_router *router, int fd, int channel) {
+	mhr_rem_producer(router, fd, channel);
+	mhr_rem_consumer(router, fd, channel);
 }
 
 void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback callback, int channel) {

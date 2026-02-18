@@ -24,6 +24,8 @@ struct ctcp {
 	/* Connector-owned endpoint from socketpair (connector side). */
 	int fd_data;
 	enum mhuxd_io_state state;
+	unsigned int dbg_cb_after_terminal;
+	unsigned int dbg_watch_invalid_fd;
 	struct netlsnr *lsnr;
 	ev_io w_lsnr;;
 	ev_io w_data_in;
@@ -61,6 +63,12 @@ static int ctcp_is_terminal(const struct ctcp *ctcp) {
 	return (ctcp->state == MHUXD_IO_FAILED || ctcp->state == MHUXD_IO_CLOSED);
 }
 
+static void ctcp_dbg_terminal_cb(struct ctcp *ctcp, const char *cb_name) {
+	ctcp->dbg_cb_after_terminal++;
+	dbg0("%s callback %s after terminal state %s (count=%u)",
+	     ctcp->devname, cb_name, io_state_to_str(ctcp->state), ctcp->dbg_cb_after_terminal);
+}
+
 static void ctcp_watch_stop(struct ctcp *ctcp, ev_io *w) {
 	ev_io_stop(ctcp->loop, w);
 }
@@ -68,8 +76,12 @@ static void ctcp_watch_stop(struct ctcp *ctcp, ev_io *w) {
 static void ctcp_watch_start(struct ctcp *ctcp, ev_io *w) {
 	if(ctcp->state != MHUXD_IO_OPEN)
 		return;
-	if(w->fd < 0)
+	if(w->fd < 0) {
+		ctcp->dbg_watch_invalid_fd++;
+		dbg0("%s refusing watcher start with invalid fd=%d (count=%u)",
+		     ctcp->devname, w->fd, ctcp->dbg_watch_invalid_fd);
 		return;
+	}
 	ev_io_start(ctcp->loop, w);
 }
 
@@ -101,8 +113,10 @@ static void data_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	uint8_t buf[1024];
 	(void)loop;
 
-	if(ctcp_is_terminal(ctcp))
+	if(ctcp_is_terminal(ctcp)) {
+		ctcp_dbg_terminal_cb(ctcp, __func__);
 		return;
+	}
 
 	io_res = io_read_nonblock(w->fd, buf, sizeof(buf), &r, &errsv);
 	if(io_res == MHUXD_IO_RW_WOULD_BLOCK)
@@ -137,8 +151,10 @@ static void data_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	int need_to_write = 0;
 	(void)loop;
 
-	if(ctcp_is_terminal(ctcp))
+	if(ctcp_is_terminal(ctcp)) {
+		ctcp_dbg_terminal_cb(ctcp, __func__);
 		return;
+	}
 
 	PG_SCANLIST(&ctcp->session_list, cs) {
 		struct buffer *b = &cs->buf_in;
@@ -179,8 +195,10 @@ static void client_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	enum mhuxd_io_rw_result io_res;
 	(void)loop;
 
-	if(ctcp_is_terminal(ctcp))
+	if(ctcp_is_terminal(ctcp)) {
+		ctcp_dbg_terminal_cb(ctcp, __func__);
 		return;
+	}
 
 	avail = buf_size_avail(&cs->buf_in);
 	io_res = io_read_nonblock(cs->fd, cs->buf_in.data + cs->buf_in.size, avail, &r, &errsv);
@@ -206,8 +224,10 @@ static void client_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	enum mhuxd_io_rw_result io_res;
 	(void)loop;
 
-	if(ctcp_is_terminal(ctcp))
+	if(ctcp_is_terminal(ctcp)) {
+		ctcp_dbg_terminal_cb(ctcp, __func__);
 		return;
+	}
 
 	io_res = io_write_nonblock(cs->fd, cs->buf_out.data + cs->buf_out.rpos, cs->buf_out.size - cs->buf_out.rpos, &r, &errsv);
 	if(io_res == MHUXD_IO_RW_WOULD_BLOCK)
@@ -230,8 +250,10 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct ctcp *ctcp = w->data;
 	int fd;
 
-	if(ctcp_is_terminal(ctcp))
+	if(ctcp_is_terminal(ctcp)) {
+		ctcp_dbg_terminal_cb(ctcp, __func__);
 		return;
+	}
 
 	fd = net_accept(w->fd);
 	if(fd == -1) {

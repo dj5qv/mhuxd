@@ -172,8 +172,7 @@ int conmgr_create_con_cfg(struct conmgr *conmgr, struct ev_loop *loop, const str
 	}
 	ctr->s_fd_data = sodat[0];
 	cspec.fd_data = sodat[1];
-	mhr_add_consumer(ctr->dev->router, sodat[0], ctr->channel, serial);
-	mhr_add_producer(ctr->dev->router, sodat[0], ctr->channel, serial);
+	mhr_add_endpoint_fd(ctr->dev->router, sodat[0], ctr->channel, serial);
 	ctr->router_owns_data = 1;
 
 	cspec.vsp = cfg->vsp;
@@ -202,8 +201,7 @@ int conmgr_create_con_cfg(struct conmgr *conmgr, struct ev_loop *loop, const str
 				}
 				ctr->s_fd_ptt = soptt[0];
 				cspec.fd_ptt = soptt[1];
-				mhr_add_consumer(ctr->dev->router, soptt[0], ctr->ptt_channel, serial);
-				mhr_add_producer(ctr->dev->router, soptt[0], ctr->ptt_channel, serial);
+				mhr_add_endpoint_fd(ctr->dev->router, soptt[0], ctr->ptt_channel, serial);
 				ctr->router_owns_ptt = 1;
 			}
 		}
@@ -252,12 +250,10 @@ int conmgr_create_con_cfg(struct conmgr *conmgr, struct ev_loop *loop, const str
  fail:
 	if(ctr->dev) {
 		if(ctr->router_owns_data) {
-			mhr_rem_consumer(ctr->dev->router, sodat[0], ctr->channel);
-			mhr_rem_producer(ctr->dev->router, sodat[0], ctr->channel);
+			mhr_rem_endpoint_fd(ctr->dev->router, sodat[0], ctr->channel);
 		}
 		if(ctr->ptt_channel != -1 && ctr->router_owns_ptt) {
-			mhr_rem_consumer(ctr->dev->router, soptt[0], ctr->ptt_channel);
-			mhr_rem_producer(ctr->dev->router, soptt[0], ctr->ptt_channel);
+			mhr_rem_endpoint_fd(ctr->dev->router, soptt[0], ctr->ptt_channel);
 		}
 
 		fd_close(&sodat[1]);
@@ -283,8 +279,7 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 			if(ctr->ptt_channel != -1 && ctr->ptt_channel != ctr->channel) {
 				if(!ctr->router_owns_ptt)
 					dbg0("connector %d ptt fd ownership mismatch, expected router owner", ctr->id);
-				mhr_rem_producer(ctr->dev->router, ctr->s_fd_ptt, ctr->ptt_channel);
-				mhr_rem_consumer(ctr->dev->router, ctr->s_fd_ptt, ctr->ptt_channel);
+				mhr_rem_endpoint_fd(ctr->dev->router, ctr->s_fd_ptt, ctr->ptt_channel);
 			}
 
 			if(ctr->mcp) {
@@ -301,8 +296,7 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 			
 			if(!ctr->router_owns_data)
 							dbg0("connector %d data fd ownership mismatch, expected router owner", ctr->id);
-			mhr_rem_producer(ctr->dev->router, ctr->s_fd_data, ctr->channel);
-			mhr_rem_consumer(ctr->dev->router, ctr->s_fd_data, ctr->channel);
+			mhr_rem_endpoint_fd(ctr->dev->router, ctr->s_fd_data, ctr->channel);
 
 			switch(ctr->type) {
 			case CON_VSP:

@@ -35,9 +35,11 @@ void mhr_set_bps_limit(struct mh_router *router, int channel, float bps);
 // consumer / producer interface
 void mhr_add_consumer(struct mh_router *router, int fd, int channel, const char *owner_tag);
 void mhr_add_producer(struct mh_router *router, int fd, int channel, const char *owner_tag);
+void mhr_add_endpoint_fd(struct mh_router *router, int fd, int channel, const char *owner_tag);
 void mhr_add_consumer_cb(struct mh_router *router, MHRConsumerCallback, int channel, void *user_data);
 void mhr_rem_consumer(struct mh_router *router, int fd, int channel);
 void mhr_rem_producer(struct mh_router *router, int fd, int channel);
+void mhr_rem_endpoint_fd(struct mh_router *router, int fd, int channel);
 void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback, int channel);
 
 // processor interface (deprecated)

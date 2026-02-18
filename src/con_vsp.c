@@ -55,6 +55,8 @@ struct vsp {
 	char *chan_buf;
 	size_t chan_buf_size;
 	int force_cuse_fail_once;
+	unsigned int dbg_cb_after_terminal;
+	unsigned int dbg_watch_invalid_fd;
 };
 
 struct vsp_session {
@@ -99,6 +101,12 @@ static int vsp_is_terminal(const struct vsp *vsp) {
 	return vsp->state == MHUXD_IO_FAILED || vsp->state == MHUXD_IO_CLOSED;
 }
 
+static void vsp_dbg_terminal_cb(struct vsp *vsp, const char *cb_name) {
+	vsp->dbg_cb_after_terminal++;
+	dbg0("%s callback %s after terminal state %s (count=%u)",
+	     vsp->devname, cb_name, io_state_to_str(vsp->state), vsp->dbg_cb_after_terminal);
+}
+
 static void vsp_set_state(struct vsp *vsp, enum mhuxd_io_state state) {
 	if(vsp->state == state)
 		return;
@@ -112,6 +120,12 @@ static void vsp_watch_start(struct vsp *vsp, ev_io *watcher) {
 	if(vsp_is_terminal(vsp)) {
 		dbg1("%s refusing watcher start in terminal state %s",
 		     vsp->devname, io_state_to_str(vsp->state));
+		return;
+	}
+	if(watcher->fd < 0) {
+		vsp->dbg_watch_invalid_fd++;
+		dbg0("%s refusing watcher start with invalid fd=%d (count=%u)",
+		     vsp->devname, watcher->fd, vsp->dbg_watch_invalid_fd);
 		return;
 	}
 	ev_io_start(vsp->loop, watcher);
@@ -242,8 +256,10 @@ static void chan_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct vsp *vsp = w->data;
 	struct fuse_session *se = vsp->se;
 
-	if(vsp_is_terminal(vsp))
+	if(vsp_is_terminal(vsp)) {
+		vsp_dbg_terminal_cb(vsp, __func__);
 		return;
+	}
 
 	if(vsp->force_cuse_fail_once) {
 		vsp->force_cuse_fail_once = 0;
@@ -280,8 +296,10 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	int errsv = 0;
 	enum mhuxd_io_rw_result io_res;
 
-	if(vsp_is_terminal(vsp))
+	if(vsp_is_terminal(vsp)) {
+		vsp_dbg_terminal_cb(vsp, __func__);
 		return;
+	}
 
 	dbg1("%s()", __func__);
 	
@@ -351,8 +369,10 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	int errsv = 0;
 	enum mhuxd_io_rw_result io_res;
 
-	if(vsp_is_terminal(vsp))
+	if(vsp_is_terminal(vsp)) {
+		vsp_dbg_terminal_cb(vsp, __func__);
 		return;
+	}
 
 	dbg1("%s()", __func__);
 
