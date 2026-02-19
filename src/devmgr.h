@@ -12,12 +12,14 @@
 
 #include <stdint.h>
 #include "pglist.h"
+#include "rigctld_client.h"
 
 struct device {
 	struct PGNode node;
 	struct mh_router *router;
 	struct mh_control *ctl;
 	struct wkman *wkman;
+	struct rigctld_client *rgc[2]; /* [0]=R1, [1]=R2 */
 	char *serial;
 };
 

@@ -95,4 +95,7 @@ int mhc_sm_store_antsw_block(struct mh_control *ctl, uint16_t offset, const char
 
 struct mh_router *mhc_get_router(struct mh_control *ctl);
 
+int mhc_cat_set_r1_freq_mode(struct mh_control *ctl, uint32_t freq_hz, uint8_t mode);
+int mhc_cat_set_r2_freq_mode(struct mh_control *ctl, uint32_t freq_hz, uint8_t mode);
+
 #endif // MHCONTROL_H

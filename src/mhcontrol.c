@@ -945,6 +945,36 @@ int mhc_mk2r_set_scenario(struct mh_control *ctl, uint8_t idx, mhc_cmd_completio
 	return submit_cmd(ctl, &b, cb, user_data);
 }
 
+int mhc_cat_set_r1_freq_mode(struct mh_control *ctl, uint32_t freq_hz, uint8_t mode) {
+	struct buffer b;
+	if(!mhc_is_online(ctl))
+		return -1;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_CAT_R1_FR_MODE_INFO);
+	buf_append_c(&b, freq_hz & 0xff);
+	buf_append_c(&b, (freq_hz >> 8) & 0xff);
+	buf_append_c(&b, (freq_hz >> 16) & 0xff);
+	buf_append_c(&b, (freq_hz >> 24) & 0xff);
+	buf_append_c(&b, mode);
+	buf_append_c(&b, MHCMD_CAT_R1_FR_MODE_INFO | MSB_BIT);
+	return submit_cmd(ctl, &b, NULL, NULL);
+}
+
+int mhc_cat_set_r2_freq_mode(struct mh_control *ctl, uint32_t freq_hz, uint8_t mode) {
+	struct buffer b;
+	if(!mhc_is_online(ctl))
+		return -1;
+	buf_reset(&b);
+	buf_append_c(&b, MHCMD_CAT_R2_FR_MODE_INFO);
+	buf_append_c(&b, freq_hz & 0xff);
+	buf_append_c(&b, (freq_hz >> 8) & 0xff);
+	buf_append_c(&b, (freq_hz >> 16) & 0xff);
+	buf_append_c(&b, (freq_hz >> 24) & 0xff);
+	buf_append_c(&b, mode);
+	buf_append_c(&b, MHCMD_CAT_R2_FR_MODE_INFO | MSB_BIT);
+	return submit_cmd(ctl, &b, NULL, NULL);
+}
+
 int mhc_sm_turn_to_azimuth(struct mh_control *ctl, uint16_t bearing, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	struct buffer b;
 	buf_reset(&b);

@@ -24,6 +24,7 @@
 #include "channel.h"
 #include "wkman.h"
 #include "mhsm.h"
+#include "rigctld_client.h"
 
 #define MOD_ID "cfgmgr"
 
@@ -729,6 +730,25 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 				if(WKM_RESULT_OK != werr) {
 					err("could not write config to winkey (%s)!", wkm_err_string(werr));
 					rval++;
+				}
+			}
+		}
+
+		// rigctld clients (R1 and R2)
+		{
+			static const char * const chan_names[] = { "r1", "r2" };
+			int ri;
+			for(ri = 0; ri < 2; ri++) {
+				HDF *chan_hdf2 = hdf_get_obj(hdf_get_obj(hdf, "channel"), chan_names[ri]);
+				if(!chan_hdf2)
+					continue;
+				const char *rgc_host = hdf_get_value(chan_hdf2, "rigctldhostname", NULL);
+				if(!rgc_host || !*rgc_host)
+					continue;
+				int rgc_port = hdf_get_int_value(chan_hdf2, "rigctldport", 4532);
+				if(!dev->rgc[ri]) {
+					dev->rgc[ri] = rgc_create(cfgmgr->loop, dev->ctl,
+								   rgc_host, rgc_port, ri);
 				}
 			}
 		}

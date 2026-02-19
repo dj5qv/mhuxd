@@ -20,6 +20,7 @@
 #include "mhinfo.h"
 #include "cfgmgr.h"
 #include "wkman.h"
+#include "rigctld_client.h"
 
 #define MOD_ID "dmr"
 
@@ -144,6 +145,8 @@ void dmgr_destroy() {
 
 	while((dev = (void*)PG_FIRSTENTRY(&dman->device_list))) {
 		wkm_destroy(dev->wkman);
+		rgc_destroy(dev->rgc[0]);
+		rgc_destroy(dev->rgc[1]);
 		mhc_destroy(dev->ctl);
 		mhr_destroy(dev->router);
 		PG_Remove(&dev->node);
