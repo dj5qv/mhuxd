@@ -131,6 +131,7 @@
         "channel": {"type": "object"},
         "param": {"type": "object"},
         "ptt": {"$ref": "#/$defs/PttConfig"},
+        "rig_mode_sync": {"$ref": "#/$defs/RigModeSyncConfig"},
         "winkey": {"type": "object"},
         "cwMessages": {
           "type": "array",
@@ -143,6 +144,47 @@
         "sm": {"type": "object"}
       },
       "additionalProperties": true
+    },
+    "RigModeSyncRadioConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        },
+        "host": {"type": "string", "minLength": 1},
+        "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+        "connect_timeout_ms": {"type": "integer", "minimum": 100},
+        "io_timeout_ms": {"type": "integer", "minimum": 100},
+        "poll_ms": {"type": "integer", "minimum": 100}
+      },
+      "additionalProperties": false
+    },
+    "RigModeSyncConfig": {
+      "type": "object",
+      "properties": {
+        "backend": {
+          "type": "string",
+          "enum": ["rigctld", "flrig", "flrig_xmlrpc"]
+        },
+        "enabled": {
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        },
+        "radios": {
+          "type": "object",
+          "properties": {
+            "r1": {"$ref": "#/$defs/RigModeSyncRadioConfig"},
+            "r2": {"$ref": "#/$defs/RigModeSyncRadioConfig"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     },
     "Message": {
       "type": "object",

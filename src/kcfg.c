@@ -725,7 +725,7 @@ int kcfg_set_val(struct kcfg *kcfg, const char *key, int val) {
 
 	cp = find_citem(kcfg, key);
 	if(!cp) {
-		warn("unknown keyer option: %s", key);
+		warn("%s unknown keyer option: %s", __func__, key);
 		return -1;
 	}
 
@@ -749,6 +749,33 @@ int kcfg_set_val(struct kcfg *kcfg, const char *key, int val) {
 
 	set_byte(kcfg, idx, c);
 	return 0;
+}
+
+int kcfg_get_val(struct kcfg *kcfg, const char *key, int def) {
+	const struct citem *cp;
+	int c;
+	int idx, bit, mask;
+
+	cp = find_citem(kcfg, key);
+	if(!cp) {
+		warn("%s unknown keyer option: %s", __func__, key);
+		return def;
+	}
+
+	idx = cp->off + cp->base_bit / 8;
+	bit = cp->base_bit % 8;
+	mask = width2mask(cp->width);
+
+	c = get_byte(kcfg, idx) ;
+	if(c < 0) {
+		err("%s() index %d out of range!", __func__, idx);
+		return def;
+	}
+
+	c >>= (bit + 1 - cp->width);
+	c &= mask;
+
+	return c;
 }
 
 struct kcfg *kcfg_create(const struct mh_info *mhi) {

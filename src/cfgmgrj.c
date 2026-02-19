@@ -23,6 +23,7 @@
 #include "mhsm.h"
 #include "channel.h"
 #include "conmgr.h"
+#include "rigctld_client.h"
 
 #ifndef STATEDIR
 #define STATEDIR "."
@@ -35,7 +36,16 @@ struct cfgmgrj {
     struct ev_loop *loop;
     struct conmgr *conmgr;
     json_t *connectors;
+    json_t *rig_mode_sync;
+    struct PGList rig_clients;
  };
+
+struct rig_client_binding {
+    struct PGNode node;
+    char *serial;
+    uint8_t radio;
+    struct rigctld_client *client;
+};
 
 static json_t *build_speed_obj(const struct mhc_speed_cfg *cfg);
 static int param_builder_cb(const char *key, int val, void *user_data);
@@ -76,6 +86,244 @@ static int json_has_key(json_t *obj, const char *key) {
     if(!obj || !json_is_object(obj))
         return 0;
     return json_object_get(obj, key) != NULL;
+}
+
+static int is_supported_rig_mode_backend(const char *backend) {
+    if(!backend || !*backend)
+        return 0;
+    if(!strcmp(backend, "rigctld"))
+        return 1;
+    if(!strcmp(backend, "flrig_xmlrpc"))
+        return 1;
+    if(!strcmp(backend, "flrig"))
+        return 1;
+    return 0;
+}
+
+static int keyer_supports_radio2(int type) {
+    return (type == MHT_MK2R || type == MHT_MK2Rp);
+}
+
+static void remove_rig_client_bindings(struct cfgmgrj *cfgmgrj, const char *serial, int radio) {
+    struct rig_client_binding *b;
+
+    if(!cfgmgrj || !serial || !*serial)
+        return;
+
+    while((b = (void *)PG_FIRSTENTRY(&cfgmgrj->rig_clients))) {
+        struct rig_client_binding *match = NULL;
+        struct rig_client_binding *it;
+        PG_SCANLIST(&cfgmgrj->rig_clients, it) {
+            if(strcmp(it->serial, serial))
+                continue;
+            if(radio > 0 && it->radio != (uint8_t)radio)
+                continue;
+            match = it;
+            break;
+        }
+
+        if(!match)
+            break;
+
+        PG_Remove(&match->node);
+        rigctld_client_destroy(match->client);
+        if(match->serial)
+            free(match->serial);
+        free(match);
+    }
+}
+
+static int json_get_boolish(json_t *obj, const char *key, int defval) {
+    return json_get_int(obj, key, defval) ? 1 : 0;
+}
+
+static const char *json_get_str_or(json_t *obj, const char *key, const char *defval) {
+    json_t *v = json_object_get(obj, key);
+    if(!v || !json_is_string(v))
+        return defval;
+    const char *s = json_string_value(v);
+    if(!s || !*s)
+        return defval;
+    return s;
+}
+
+static int start_rig_mode_sync_clients(struct cfgmgrj *cfgmgrj, struct mh_control *ctl,
+                                       const char *serial, int type, json_t *rig_mode_sync_obj) {
+    if(!cfgmgrj || !ctl || !serial || !*serial || !json_is_object(rig_mode_sync_obj))
+        return -1;
+
+    remove_rig_client_bindings(cfgmgrj, serial, 0);
+
+    if(!json_get_boolish(rig_mode_sync_obj, "enabled", 0))
+        return 0;
+
+    const char *backend = json_get_str_or(rig_mode_sync_obj, "backend", "rigctld");
+    json_t *radios = json_object_get(rig_mode_sync_obj, "radios");
+    json_t *r1 = (radios && json_is_object(radios)) ? json_object_get(radios, "r1") : NULL;
+    json_t *r2 = (radios && json_is_object(radios)) ? json_object_get(radios, "r2") : NULL;
+
+    struct {
+        uint8_t radio;
+        json_t *obj;
+        int def_port;
+    } defs[2] = {
+        { 1, r1, 4532 },
+        { 2, r2, 4533 },
+    };
+
+    int i;
+    for(i = 0; i < 2; i++) {
+        if(defs[i].radio == 2 && !keyer_supports_radio2(type))
+            continue;
+
+        if(!defs[i].obj || !json_is_object(defs[i].obj))
+            continue;
+
+        if(!json_get_boolish(defs[i].obj, "enabled", 0))
+            continue;
+
+        struct rigctld_client_cfg cfg = { 0 };
+        cfg.serial = serial;
+        cfg.radio = defs[i].radio;
+        cfg.backend = backend;
+        cfg.host = json_get_str_or(defs[i].obj, "host", "127.0.0.1");
+        cfg.port = json_get_int(defs[i].obj, "port", defs[i].def_port);
+        cfg.connect_timeout_ms = json_get_int(defs[i].obj, "connect_timeout_ms", 1500);
+        cfg.io_timeout_ms = json_get_int(defs[i].obj, "io_timeout_ms", 1500);
+        cfg.poll_ms = json_get_int(defs[i].obj, "poll_ms", 500);
+        cfg.enabled = 1;
+
+        struct rigctld_client *client = rigctld_client_create(cfgmgrj->loop, ctl, &cfg);
+        if(!client) {
+            warn("cfgmgrj: unable to create rigctld client for %s %s", serial,
+                 defs[i].radio == 2 ? "r2" : "r1");
+            continue;
+        }
+
+        struct rig_client_binding *b = w_calloc(1, sizeof(*b));
+        b->serial = w_strdup(serial);
+        b->radio = defs[i].radio;
+        b->client = client;
+        PG_AddTail(&cfgmgrj->rig_clients, &b->node);
+    }
+
+    return 0;
+}
+
+static int validate_rig_mode_sync_radio(const char *radio_name, json_t *radio_obj) {
+    if(!radio_obj)
+        return 0;
+    if(!json_is_object(radio_obj)) {
+        warn("cfgmgrj: rig_mode_sync.%s must be object", radio_name);
+        return -1;
+    }
+
+    json_t *enabled = json_object_get(radio_obj, "enabled");
+    if(enabled && !json_is_boolean(enabled) && !json_is_integer(enabled)) {
+        warn("cfgmgrj: rig_mode_sync.%s.enabled must be bool/int", radio_name);
+        return -1;
+    }
+
+    json_t *host = json_object_get(radio_obj, "host");
+    if(host) {
+        if(!json_is_string(host) || !*json_string_value(host)) {
+            warn("cfgmgrj: rig_mode_sync.%s.host must be non-empty string", radio_name);
+            return -1;
+        }
+    }
+
+    json_t *port = json_object_get(radio_obj, "port");
+    if(port) {
+        if(!json_is_integer(port)) {
+            warn("cfgmgrj: rig_mode_sync.%s.port must be integer", radio_name);
+            return -1;
+        }
+        int v = (int)json_integer_value(port);
+        if(v < 1 || v > 65535) {
+            warn("cfgmgrj: rig_mode_sync.%s.port out of range", radio_name);
+            return -1;
+        }
+    }
+
+    json_t *connect_timeout_ms = json_object_get(radio_obj, "connect_timeout_ms");
+    if(connect_timeout_ms) {
+        if(!json_is_integer(connect_timeout_ms) || json_integer_value(connect_timeout_ms) < 100) {
+            warn("cfgmgrj: rig_mode_sync.%s.connect_timeout_ms must be integer >= 100", radio_name);
+            return -1;
+        }
+    }
+
+    json_t *poll_ms = json_object_get(radio_obj, "poll_ms");
+    if(poll_ms) {
+        if(!json_is_integer(poll_ms) || json_integer_value(poll_ms) < 100) {
+            warn("cfgmgrj: rig_mode_sync.%s.poll_ms must be integer >= 100", radio_name);
+            return -1;
+        }
+    }
+
+    json_t *io_timeout_ms = json_object_get(radio_obj, "io_timeout_ms");
+    if(io_timeout_ms) {
+        if(!json_is_integer(io_timeout_ms) || json_integer_value(io_timeout_ms) < 100) {
+            warn("cfgmgrj: rig_mode_sync.%s.io_timeout_ms must be integer >= 100", radio_name);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static int apply_rig_mode_sync_from_json(struct cfgmgrj *cfgmgrj, const char *serial, int type, json_t *rig_mode_sync_obj) {
+    if(!cfgmgrj || !cfgmgrj->rig_mode_sync || !serial || !*serial)
+        return -1;
+
+    if(!json_is_object(rig_mode_sync_obj)) {
+        warn("cfgmgrj: rig_mode_sync must be object");
+        return -1;
+    }
+
+    json_t *backend = json_object_get(rig_mode_sync_obj, "backend");
+    if(backend) {
+        if(!json_is_string(backend) || !is_supported_rig_mode_backend(json_string_value(backend))) {
+            warn("cfgmgrj: rig_mode_sync.backend invalid");
+            return -1;
+        }
+    }
+
+    json_t *enabled = json_object_get(rig_mode_sync_obj, "enabled");
+    if(enabled && !json_is_boolean(enabled) && !json_is_integer(enabled)) {
+        warn("cfgmgrj: rig_mode_sync.enabled must be bool/int");
+        return -1;
+    }
+
+    json_t *radios = json_object_get(rig_mode_sync_obj, "radios");
+    if(radios) {
+        if(!json_is_object(radios)) {
+            warn("cfgmgrj: rig_mode_sync.radios must be object");
+            return -1;
+        }
+
+        json_t *r1 = json_object_get(radios, "r1");
+        if(validate_rig_mode_sync_radio("r1", r1))
+            return -1;
+
+        json_t *r2 = json_object_get(radios, "r2");
+        if(r2 && !keyer_supports_radio2(type)) {
+            warn("cfgmgrj: rig_mode_sync.radios.r2 provided for non dual-radio keyer type %d", type);
+            return -1;
+        }
+        if(validate_rig_mode_sync_radio("r2", r2))
+            return -1;
+    }
+
+    json_t *copy = json_deep_copy(rig_mode_sync_obj);
+    if(!copy)
+        return -1;
+    if(json_object_set_new(cfgmgrj->rig_mode_sync, serial, copy) != 0) {
+        json_decref(copy);
+        return -1;
+    }
+
+    return 0;
 }
 
 struct ptt_map_entry {
@@ -599,6 +847,18 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
     if(type == 0)
         type = mhc_get_type(ctl);
 
+    if(json_has_key(device_obj, "rig_mode_sync")) {
+        json_t *rig_mode_sync_obj = json_object_get(device_obj, "rig_mode_sync");
+        if(!rig_mode_sync_obj || json_is_null(rig_mode_sync_obj)) {
+            json_object_del(cfgmgrj->rig_mode_sync, serial);
+            remove_rig_client_bindings(cfgmgrj, serial, 0);
+        } else {
+            if(apply_rig_mode_sync_from_json(cfgmgrj, serial, type, rig_mode_sync_obj))
+                return -1;
+            start_rig_mode_sync_clients(cfgmgrj, ctl, serial, type, rig_mode_sync_obj);
+        }
+    }
+
     int ptt_changed = 0;
     json_t *ptt = json_object_get(device_obj, "ptt");
     if(ptt) {
@@ -840,6 +1100,15 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
             json_object_set_new(device, "serial", json_string(dev->serial ? dev->serial : ""));
             json_object_set_new(device, "type", json_integer(mhc_get_type(dev->ctl)));
 
+            if(cfgmgrj && cfgmgrj->rig_mode_sync && dev->serial) {
+                json_t *rig_mode_sync_obj = json_object_get(cfgmgrj->rig_mode_sync, dev->serial);
+                if(rig_mode_sync_obj && json_is_object(rig_mode_sync_obj)) {
+                    json_t *copy = json_deep_copy(rig_mode_sync_obj);
+                    if(copy)
+                        json_object_set_new(device, "rig_mode_sync", copy);
+                }
+            }
+
             json_t *channel = json_object();
             if(channel) {
                 for(int ch = 0; ch < MH_NUM_CHANNELS; ch++) {
@@ -1066,14 +1335,29 @@ struct cfgmgrj *cfgmgrj_create(struct ev_loop *loop, struct conmgr *conmgr) {
     cfgmgrj->loop = loop;
     cfgmgrj->conmgr = conmgr;
     cfgmgrj->connectors = json_array();
+    cfgmgrj->rig_mode_sync = json_object();
+    PG_NewList(&cfgmgrj->rig_clients);
     return cfgmgrj;
 }
 
  void cfgmgrj_destroy(struct cfgmgrj *cfgmgrj) {
+    struct rig_client_binding *b;
+
     if(!cfgmgrj)
         return;
+
+    while((b = (void *)PG_FIRSTENTRY(&cfgmgrj->rig_clients))) {
+        PG_Remove(&b->node);
+        rigctld_client_destroy(b->client);
+        if(b->serial)
+            free(b->serial);
+        free(b);
+    }
+
     if(cfgmgrj->connectors)
         json_decref(cfgmgrj->connectors);
+    if(cfgmgrj->rig_mode_sync)
+        json_decref(cfgmgrj->rig_mode_sync);
 
     free(cfgmgrj);
     return;

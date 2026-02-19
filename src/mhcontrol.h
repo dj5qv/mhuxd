@@ -76,12 +76,17 @@ struct mhc_speed_cfg {
 	int dontinterfereusbcontrol;
 };
 
+struct mhc_radio_info {
+	uint8_t radio;
+	int mode;
+};
+
 // async functions, will always call the callback even if the async operation could be started.
 void mhc_set_speed(struct mh_control *ctl, int channel, struct cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_set_speed_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data);
-void mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb, void *user_data);
-void mhc_set_mode_on_radio(struct mh_control *ctl, int mode, uint8_t radio, mhc_cmd_completion_cb_fn cb, void *user_data);
+//void mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb, void *user_data);
+//void mhc_set_mode_on_radio(struct mh_control *ctl, int mode, uint8_t radio, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_record_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_stop_recording(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_play_message(struct mh_control *ctl, uint8_t idx, mhc_cmd_completion_cb_fn cb, void *user_data);
@@ -125,7 +130,7 @@ void mhc_rem_mode_changed_cb(struct mh_control *ctl, struct mhc_mode_callback *)
 const char *mhc_state_str(int state);
 const char *mhc_cmd_err_string(int result);
 
-
+void mhc_update_radio_info(struct mh_control *ctl, const char *source, const struct mhc_radio_info *info);
 
 
 

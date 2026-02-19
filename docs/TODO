@@ -44,3 +44,28 @@ The file linux_termios.c currently excludes baud rates of 115200 and higher unle
 
 I will patch linux_termios.c to enable support for these baud rates.
 
+
+16) Consider using acl, eg. by ExecStartPre in systemd integration so we wouldn't need to run as root anymore. Example:
+
+[Unit]
+Description=Mein Virtueller Serieller Port Daemon
+After=network.target
+
+[Service]
+# Der Daemon läuft als unprivilegierter User
+User=mein-daemon-user
+Group=mein-daemon-user
+
+# Vor dem Start: Dem User explizit Lese-/Schreibrechte für /dev/cuse geben
+# Das '-' am Anfang ignoriert Fehler (optional), falls man sicherstellen will, 
+# dass der Dienst trotzdem versucht zu starten.
+ExecStartPre=/usr/bin/setfacl -m u:mein-daemon-user:rw /dev/cuse
+
+# Der eigentliche Startbefehl
+ExecStart=/usr/bin/mein-daemon --optionen
+
+# Nach dem Beenden: Rechte wieder entziehen (optional für maximale Sauberkeit)
+ExecStopPost=/usr/bin/setfacl -x u:mein-daemon-user /dev/cuse
+
+# Sicherheit: Nur die nötige Capability für CUSE hinzufügen
+AmbientCapabilities=CAP_SYS_ADMIN

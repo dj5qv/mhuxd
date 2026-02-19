@@ -24,6 +24,10 @@
   let radioFormGen = 0;
   let radioStatus = {};
   let radioStatusTimer = {};
+  let rigModeSyncForm = {};
+  let rigModeSyncFormGen = 0;
+  let rigModeSyncStatus = {};
+  let rigModeSyncStatusTimer = {};
   let pttForm = {};
   let pttFormGen = 0;
   let pttStatus = {};
@@ -344,6 +348,113 @@
       ...radioForm,
       [serial]: { ...perSerial, [chan]: { ...perChan, [key]: value } }
     };
+  };
+
+  const boolish = (v) => !!Number(v || 0) || v === true;
+
+  const defaultRigModeSyncForm = (serial) => {
+    const cfg = keyerConfigForSerial(serial);
+    const src = cfg?.rig_mode_sync || {};
+    const radios = src.radios || {};
+    return {
+      backend: src.backend ?? 'rigctld',
+      enabled: boolish(src.enabled),
+      r1: {
+        enabled: boolish(radios?.r1?.enabled),
+        host: radios?.r1?.host ?? '127.0.0.1',
+        port: Number(radios?.r1?.port ?? 4532),
+        connect_timeout_ms: Number(radios?.r1?.connect_timeout_ms ?? 1500),
+        io_timeout_ms: Number(radios?.r1?.io_timeout_ms ?? 1500),
+        poll_ms: Number(radios?.r1?.poll_ms ?? 500)
+      },
+      r2: {
+        enabled: boolish(radios?.r2?.enabled),
+        host: radios?.r2?.host ?? '127.0.0.1',
+        port: Number(radios?.r2?.port ?? 4533),
+        connect_timeout_ms: Number(radios?.r2?.connect_timeout_ms ?? 1500),
+        io_timeout_ms: Number(radios?.r2?.io_timeout_ms ?? 1500),
+        poll_ms: Number(radios?.r2?.poll_ms ?? 500)
+      }
+    };
+  };
+
+  const ensureRigModeSyncForm = (serial) => {
+    if (!serial) return;
+    if (!rigModeSyncForm[serial]) {
+      rigModeSyncForm = { ...rigModeSyncForm, [serial]: defaultRigModeSyncForm(serial) };
+    }
+  };
+
+  const resetRigModeSyncForms = () => {
+    rigModeSyncForm = {};
+    rigModeSyncFormGen++;
+  };
+
+  const updateRigModeSyncTop = (serial, key, value) => {
+    const form = rigModeSyncForm[serial] || defaultRigModeSyncForm(serial);
+    rigModeSyncForm = { ...rigModeSyncForm, [serial]: { ...form, [key]: value } };
+  };
+
+  const updateRigModeSyncRadio = (serial, radio, key, value) => {
+    const form = rigModeSyncForm[serial] || defaultRigModeSyncForm(serial);
+    const cur = form[radio] || {};
+    rigModeSyncForm = {
+      ...rigModeSyncForm,
+      [serial]: { ...form, [radio]: { ...cur, [key]: value } }
+    };
+  };
+
+  const setRigModeSyncStatusMsg = (serial, msg, kind = 'success') => {
+    rigModeSyncStatus = { ...rigModeSyncStatus, [serial]: { text: msg, kind } };
+    if (rigModeSyncStatusTimer[serial]) clearTimeout(rigModeSyncStatusTimer[serial]);
+    rigModeSyncStatusTimer[serial] = setTimeout(() => {
+      const { [serial]: _removed, ...rest } = rigModeSyncStatus;
+      rigModeSyncStatus = rest;
+    }, 3000);
+  };
+
+  const applyRigModeSync = async (serial) => {
+    const form = rigModeSyncForm[serial] || defaultRigModeSyncForm(serial);
+    const payload = {
+      backend: form.backend || 'rigctld',
+      enabled: form.enabled ? 1 : 0,
+      radios: {
+        r1: {
+          enabled: form.r1?.enabled ? 1 : 0,
+          host: String(form.r1?.host || '127.0.0.1').trim() || '127.0.0.1',
+          port: Number(form.r1?.port || 4532),
+          connect_timeout_ms: Number(form.r1?.connect_timeout_ms || 1500),
+          io_timeout_ms: Number(form.r1?.io_timeout_ms || 1500),
+          poll_ms: Number(form.r1?.poll_ms || 500)
+        }
+      }
+    };
+
+    if (hasR2) {
+      payload.radios.r2 = {
+        enabled: form.r2?.enabled ? 1 : 0,
+        host: String(form.r2?.host || '127.0.0.1').trim() || '127.0.0.1',
+        port: Number(form.r2?.port || 4533),
+        connect_timeout_ms: Number(form.r2?.connect_timeout_ms || 1500),
+        io_timeout_ms: Number(form.r2?.io_timeout_ms || 1500),
+        poll_ms: Number(form.r2?.poll_ms || 500)
+      };
+    }
+
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, rig_mode_sync: payload })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      rigModeSyncForm = { ...rigModeSyncForm, [serial]: defaultRigModeSyncForm(serial) };
+      setRigModeSyncStatusMsg(serial, 'Rig mode sync settings applied.', 'success');
+    } catch (err) {
+      setRigModeSyncStatusMsg(serial, err?.message || 'Failed to apply rig mode sync settings.', 'error');
+    }
   };
 
   const messageConfig = (serial, kind) => {
@@ -963,6 +1074,7 @@
   // forms so they get re-populated from the fresh config data.
   $: if (configDevices) {
     resetRadioForms();
+    resetRigModeSyncForms();
     resetPttForms();
     resetMessageForms();
     resetAllParamForms();
@@ -1819,6 +1931,7 @@
   $: activeAux = activeSerial ? (radioForm[activeSerial]?.aux || defaultRadioForm(activeSerial, 'aux')) : null;
   $: activeFsk1 = activeSerial ? (radioForm[activeSerial]?.fsk1 || defaultRadioForm(activeSerial, 'fsk1')) : null;
   $: activeFsk2 = activeSerial ? (radioForm[activeSerial]?.fsk2 || defaultRadioForm(activeSerial, 'fsk2')) : null;
+  $: activeRigModeSync = activeSerial ? (rigModeSyncForm[activeSerial] || defaultRigModeSyncForm(activeSerial)) : null;
   $: activePttR1 = activeSerial ? (pttForm[activeSerial]?.r1 || defaultPttForm(activeSerial, 'r1')) : null;
   $: activePttR2 = activeSerial ? (pttForm[activeSerial]?.r2 || defaultPttForm(activeSerial, 'r2')) : null;
   $: if (activeSerial && configDevices) {
@@ -1828,6 +1941,7 @@
     if (hasAux) ensureRadioForm(activeSerial, 'aux');
     if (hasFsk1) ensureRadioForm(activeSerial, 'fsk1');
     if (hasFsk2) ensureRadioForm(activeSerial, 'fsk2');
+    ensureRigModeSyncForm(activeSerial);
     ensurePttForm(activeSerial, 'r1');
     if (hasR2) ensurePttForm(activeSerial, 'r2');
     ensureMessageForm(activeSerial, 'cw');
@@ -2480,6 +2594,193 @@
                 {/if}
               </section>
             {/if}
+
+            <section class="section">
+              <div class="section-title">RIG Mode Sync (rigctld/flrig)</div>
+              <div class="panel">
+                <div class="row">
+                  <div class="label">Enabled:</div>
+                  <div class="value">
+                    <input
+                      type="checkbox"
+                      checked={!!activeRigModeSync?.enabled}
+                      on:change={(e) => updateRigModeSyncTop(activeSerial, 'enabled', e.target.checked)}
+                    />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">Backend:</div>
+                  <div class="value">
+                    <select
+                      class="select"
+                      value={activeRigModeSync?.backend || 'rigctld'}
+                      on:change={(e) => updateRigModeSyncTop(activeSerial, 'backend', e.target.value)}
+                    >
+                      <option value="rigctld">rigctld</option>
+                      <option value="flrig">flrig</option>
+                      <option value="flrig_xmlrpc">flrig_xmlrpc</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel" style="margin-top: 12px;">
+                <div class="section-subtitle">Radio 1 Endpoint</div>
+                <div class="row">
+                  <div class="label">Enabled:</div>
+                  <div class="value">
+                    <input
+                      type="checkbox"
+                      checked={!!activeRigModeSync?.r1?.enabled}
+                      on:change={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'enabled', e.target.checked)}
+                    />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">Host:</div>
+                  <div class="value">
+                    <input
+                      class="input"
+                      type="text"
+                      value={activeRigModeSync?.r1?.host ?? '127.0.0.1'}
+                      on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'host', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">Port:</div>
+                  <div class="value">
+                    <input
+                      class="input"
+                      type="number"
+                      min="1"
+                      value={activeRigModeSync?.r1?.port ?? 4532}
+                      on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'port', Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">Connect Timeout (ms):</div>
+                  <div class="value">
+                    <input
+                      class="input"
+                      type="number"
+                      min="100"
+                      value={activeRigModeSync?.r1?.connect_timeout_ms ?? 1500}
+                      on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'connect_timeout_ms', Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">I/O Timeout (ms):</div>
+                  <div class="value">
+                    <input
+                      class="input"
+                      type="number"
+                      min="100"
+                      value={activeRigModeSync?.r1?.io_timeout_ms ?? 1500}
+                      on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'io_timeout_ms', Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="label">Poll Interval (ms):</div>
+                  <div class="value">
+                    <input
+                      class="input"
+                      type="number"
+                      min="100"
+                      value={activeRigModeSync?.r1?.poll_ms ?? 500}
+                      on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'poll_ms', Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {#if hasR2}
+                <div class="panel" style="margin-top: 12px;">
+                  <div class="section-subtitle">Radio 2 Endpoint</div>
+                  <div class="row">
+                    <div class="label">Enabled:</div>
+                    <div class="value">
+                      <input
+                        type="checkbox"
+                        checked={!!activeRigModeSync?.r2?.enabled}
+                        on:change={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'enabled', e.target.checked)}
+                      />
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="label">Host:</div>
+                    <div class="value">
+                      <input
+                        class="input"
+                        type="text"
+                        value={activeRigModeSync?.r2?.host ?? '127.0.0.1'}
+                        on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'host', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="label">Port:</div>
+                    <div class="value">
+                      <input
+                        class="input"
+                        type="number"
+                        min="1"
+                        value={activeRigModeSync?.r2?.port ?? 4533}
+                        on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'port', Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="label">Connect Timeout (ms):</div>
+                    <div class="value">
+                      <input
+                        class="input"
+                        type="number"
+                        min="100"
+                        value={activeRigModeSync?.r2?.connect_timeout_ms ?? 1500}
+                        on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'connect_timeout_ms', Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="label">I/O Timeout (ms):</div>
+                    <div class="value">
+                      <input
+                        class="input"
+                        type="number"
+                        min="100"
+                        value={activeRigModeSync?.r2?.io_timeout_ms ?? 1500}
+                        on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'io_timeout_ms', Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="label">Poll Interval (ms):</div>
+                    <div class="value">
+                      <input
+                        class="input"
+                        type="number"
+                        min="100"
+                        value={activeRigModeSync?.r2?.poll_ms ?? 500}
+                        on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'poll_ms', Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              {/if}
+
+              <div class="button-row">
+                <button class="btn" type="button" on:click={() => applyRigModeSync(activeSerial)}>Apply</button>
+              </div>
+              {#if rigModeSyncStatus[activeSerial]}
+                <div class={`inline-status ${rigModeSyncStatus[activeSerial].kind === 'error' ? 'error' : ''}`}>
+                  {rigModeSyncStatus[activeSerial].text}
+                </div>
+              {/if}
+            </section>
           {:else if activeMenuId === 'aux'}
             {#if hasAux}
               <section class="section">

@@ -24,6 +24,7 @@ struct kcfg *kcfg_create(const struct mh_info *mhi);
 void kcfg_destroy(struct kcfg *kcfg);
 struct buffer *kcfg_get_buffer(struct kcfg *kcfg);
 int kcfg_set_val(struct kcfg *kcfg, const char *key, int val);
+int kcfg_get_val(struct kcfg *kcfg, const char *key, int def);
 
 void kcfg_iter_begin(struct kcfg *kcfg, struct kcfg_iterator *iter);
 int kcfg_iter_next(struct kcfg_iterator *iter);

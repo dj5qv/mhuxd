@@ -150,12 +150,12 @@ int main(int argc, char **argv)
 
 	ev_signal_init (&w_sigint, sigint_cb, SIGINT);
 	ev_signal_init (&w_sigterm, sigint_cb, SIGTERM);
-	ev_signal_init (&w_sigpipe, sigint_cb, SIGPIPE);
+//	ev_signal_init (&w_sigpipe, sigint_cb, SIGPIPE);
 	ev_signal_init (&w_sighup, sighup_cb, SIGHUP);
 
 	ev_signal_start (loop, &w_sigint);
 	ev_signal_start (loop, &w_sigterm);
-	ev_signal_start (loop, &w_sigpipe);
+//	ev_signal_start (loop, &w_sigpipe);
 	ev_signal_start (loop, &w_sighup);
 
 /*

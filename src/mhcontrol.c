@@ -31,6 +31,7 @@
 
 #define IVAL_HEARTBEAT 3.0
 #define CMD_TIMEOUT 2.0
+#define RADIO_INFO_TIMEOUT 10.0
 
 #define MAX_CW_FSK_MESSAGE_LEN 50
 
@@ -178,12 +179,19 @@ struct mh_control {
 	struct mh_info mhi;
 	struct cfg *speed_args[MH_NUM_CHANNELS];
 	struct mhc_speed_cfg speed_params[MH_NUM_CHANNELS];
+
+	// radio info per radio, data, validity, stale timer
+	struct mhc_radio_info radio_info[2];
+	uint8_t  radio_info_valid[2];
+	ev_timer radio_info_timer[2];
+
+
 	uint8_t speed_params_valid[MH_NUM_CHANNELS];
 	uint8_t speed_idx;
 	uint8_t state; 			// internal state machine state
 	uint8_t keyer_state;	// state of the keyer as reported to the outside, derived from internal state.
-	uint8_t keyer_mode;     // as received from keyer
-	uint8_t keyer_mode_r1, keyer_mode_r2; // as received from keyer, for MK2R.
+	uint8_t tracked_keyer_mode;     // as received from keyer, after each mode change
+	uint8_t tracked_keyer_mode_r1r2[2]; // as received from keyer for each radio, for MK2R.
 	uint8_t in_flag_r1, in_flag_r2;
 	uint8_t out_flag;
 	uint8_t set_mode;
@@ -210,6 +218,7 @@ static void submit_speed_cmd_params(struct mh_control *ctl, int channel, const s
 		mhc_cmd_completion_cb_fn cb, void *user_data);
 static void initializer_cb(unsigned const char *reply, int len, int result, void *user_data);
 static int push_cmds(struct mh_control *ctl);
+static uint8_t set_force_keyer_mode(struct mh_control *ctl, uint8_t radio, uint8_t enable);
 
 static const char *state_strings[] = {
 	[MHC_KEYER_STATE_UNKNOWN] = "UNKNOWN",
@@ -315,7 +324,6 @@ static void set_state(struct mh_control *ctl, uint8_t state) {
 }
 
 static void generic_cb(unsigned const char *reply, int len, int result, void *user_data) {
-	(void)len;(void)user_data;(void)reply,(void)result;
 }
 
 static void heartbeat_completed_cb(unsigned const char *reply, int len, int result, void *user_data) {
@@ -485,30 +493,31 @@ static void control_channel_cb(struct mh_router *router, unsigned const char *da
 
 	case MHCMD_KEYER_MODE:
 		f = data[1];
-		int old_keyer_mode = ctl->keyer_mode;
+		int old_keyer_mode = ctl->tracked_keyer_mode;
 
-		ctl->keyer_mode = f & 3;
-		ctl->keyer_mode_r1 = (f >> 2) & 3;
-		ctl->keyer_mode_r2 = (f >> 4) & 3;
+		ctl->tracked_keyer_mode = f & 3;
+		ctl->tracked_keyer_mode_r1r2[0] = (f >> 2) & 3;;
+		ctl->tracked_keyer_mode_r1r2[1] = (f >> 4) & 3;;
 
 		dbg0("%s mode  cur: %s, r1: %s, r2: %s", ctl->serial,
-			keyer_modes[ctl->keyer_mode], keyer_modes[ctl->keyer_mode_r1],
-			keyer_modes[ctl->keyer_mode_r2]);
+			keyer_modes[ctl->tracked_keyer_mode], keyer_modes[ctl->tracked_keyer_mode_r1r2[0]],
+			keyer_modes[ctl->tracked_keyer_mode_r1r2[1]]);
 
 
 	 	if(ctl->kcfg)
-			kcfg_update_keyer_mode(ctl->kcfg, ctl->keyer_mode, ctl->keyer_mode_r1, ctl->keyer_mode_r2);
+			kcfg_update_keyer_mode(ctl->kcfg, ctl->tracked_keyer_mode, ctl->tracked_keyer_mode_r1r2[0], ctl->tracked_keyer_mode_r1r2[1]);
 
-		if(ctl->mhi.type == MHT_MK && old_keyer_mode != ctl->keyer_mode) {
+		if(ctl->mhi.type == MHT_MK && old_keyer_mode != ctl->tracked_keyer_mode) {
 			// Special handling of MK1 model. No mode specific r1FrBase.
-			kcfg_update_mk1_frbase(ctl->kcfg, ctl->keyer_mode);
+			kcfg_update_mk1_frbase(ctl->kcfg, ctl->tracked_keyer_mode);
 			mhc_load_kopts(ctl, NULL, NULL);
 		}
 
 		struct mhc_mode_callback *mcb;
 		PG_SCANLIST(&ctl->mode_changed_cb_list, mcb) {
 			if(mcb->func)
-				mcb->func(ctl->serial, ctl->keyer_mode, ctl->keyer_mode_r1, ctl->keyer_mode_r2, mcb->user_data);
+				mcb->func(ctl->serial, ctl->tracked_keyer_mode, 
+					ctl->tracked_keyer_mode_r1r2[0], ctl->tracked_keyer_mode_r1r2[1], mcb->user_data);
 		}
 
 		break;
@@ -698,6 +707,22 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 	}
 }
 
+static void radio_info_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, int revents) {
+	struct mh_control *ctl = w->data;
+	uint8_t radio = 255;
+
+	dbg0("%s %s", __func__, ctl->serial);
+	if(w == &ctl->radio_info_timer[0])
+		radio = 1;
+	if(w == &ctl->radio_info_timer[1])
+		radio = 2;
+	if(radio >  2 || radio < 1)
+		return;
+
+	ctl->radio_info_valid[radio-1] = 0;
+	set_force_keyer_mode(ctl, radio, 1);
+}
+
 
 struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, struct mh_info *mhi) {
 	struct mh_control *ctl;
@@ -708,7 +733,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	ctl->loop = loop;
 	ctl->router = router;
 	ctl->serial = mhr_get_serial(router);
-	ctl->keyer_mode = -1;
+	ctl->tracked_keyer_mode = -1;
 
 	PG_NewList(&ctl->cmd_list);
 	PG_NewList(&ctl->free_list);
@@ -728,6 +753,13 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 
 	ev_timer_init(&ctl->cmd_timeout_timer, cmd_timeout_cb, CMD_TIMEOUT, 0.);
 	ctl->cmd_timeout_timer.data = ctl;
+
+	ev_init(&ctl->radio_info_timer[0], radio_info_timeout_cb);
+	ev_init(&ctl->radio_info_timer[1], radio_info_timeout_cb);
+	ctl->radio_info_timer[0].repeat = RADIO_INFO_TIMEOUT;
+	ctl->radio_info_timer[1].repeat = RADIO_INFO_TIMEOUT;
+	ctl->radio_info_timer[0].data = ctl;
+	ctl->radio_info_timer[1].data = ctl;
 
 	mhr_add_status_cb(router, router_status_cb, ctl);
 
@@ -773,6 +805,8 @@ void mhc_destroy(struct mh_control *ctl) {
 
 	ev_timer_stop(ctl->loop, &ctl->heartbeat_timer);
 	ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
+	ev_timer_stop(ctl->loop, &ctl->radio_info_timer[0]);
+	ev_timer_stop(ctl->loop, &ctl->radio_info_timer[1]);
 
 	if(ctl->sm)
 		sm_destroy(ctl->sm);
@@ -816,7 +850,7 @@ const struct mh_info *mhc_get_mhinfo(struct mh_control *ctl)  {
 }
 
 const int mhc_get_keyer_mode(struct mh_control *ctl) {
-	return ctl->keyer_mode;
+	return ctl->tracked_keyer_mode;
 }
 
 static void submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb_fn cb, void *user_data) {
@@ -1113,7 +1147,7 @@ int mhc_get_speed_params(struct mh_control *ctl, int channel, struct mhc_speed_c
 }
 
 void mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb, void *user_data) {
-	dbg1("%s %s()",ctl->serial, __func__);
+	dbg0("%s %s()",ctl->serial, __func__);
 
 	struct buffer b;
 	buf_reset(&b);
@@ -1124,7 +1158,7 @@ void mhc_set_mode(struct mh_control *ctl, int mode, mhc_cmd_completion_cb_fn cb,
 }
 
 void mhc_set_mode_on_radio(struct mh_control *ctl, int mode, uint8_t radio, mhc_cmd_completion_cb_fn cb, void *user_data) {
-	dbg1("%s %s()",ctl->serial, __func__);
+	dbg0("%s %s()",ctl->serial, __func__);
 
 	struct buffer b;
 	buf_reset(&b);
@@ -1626,3 +1660,63 @@ const char *mhc_get_serial(struct mh_control *ctl) {
 struct mh_router *mhc_get_router(struct mh_control *ctl) {
 	return ctl->router;
 }
+
+static const char *force_key[] = {
+	"r1ForceKeyerMode",
+	"r2ForceKeyerMode"
+};
+
+static uint8_t set_force_keyer_mode(struct mh_control *ctl, uint8_t radio, uint8_t enable) {
+	if(radio < 1 || radio > 2)
+		return 0;
+
+	enable &= 1;
+
+	if(kcfg_get_val(ctl->kcfg, force_key[radio-1], 1) == enable) {
+		dbg1("%s %s() r%d forceKeyerMode already %d", __func__, ctl->serial, radio, enable);
+		return 0; // Indicate that no change was made.
+	}
+
+	dbg0("%s %s() r%d forceKeyerMode %d", __func__, ctl->serial, radio, enable);
+	kcfg_set_val(ctl->kcfg, force_key[radio-1], enable);
+	mhc_load_kopts(ctl, NULL, NULL);
+	return 1; // Indicate that a change was made.
+}
+
+void mhc_update_radio_info(struct mh_control *ctl, const char *source, const struct mhc_radio_info *info) {
+	if(!info)
+		return;
+	uint8_t force_mode_changed;
+	uint8_t radio = info->radio;
+
+	dbg1("%s %s() source %s r%d mode %d", ctl->serial, __func__, source, radio, info->mode);
+
+	if(radio < 1 || radio > 2 || !info)
+		return;
+
+	ev_timer_again(ctl->loop, &ctl->radio_info_timer[radio-1]);
+
+	force_mode_changed = set_force_keyer_mode(ctl, radio, 0);
+
+	if(ctl->radio_info_valid[radio-1] == 0) {
+		ctl->radio_info_valid[radio-1] = 1;
+		dbg0("%s %s() r%d info now valid", ctl->serial, __func__, radio);
+	} else {
+		dbg1("%s %s() r%d info updated", ctl->serial, __func__, radio);
+	}
+
+	if(info->mode != ctl->radio_info[radio-1].mode || force_mode_changed) {
+		dbg0("%s %s() r%d mode changed from %d to %d", ctl->serial, __func__, radio, ctl->radio_info[radio-1].mode, info->mode);
+		if(ctl->mhi.flags & MHF_HAS_R2) {
+			mhc_set_mode_on_radio(ctl, info->mode, radio, NULL, NULL);
+		} else {
+			mhc_set_mode(ctl, info->mode, NULL, NULL);
+		}
+
+	} else {
+		dbg1("%s %s() r%d mode unchanged (%d)", ctl->serial, __func__, radio, info->mode);
+	}
+
+	memcpy(&ctl->radio_info[radio-1], info, sizeof(*info));
+}
+
