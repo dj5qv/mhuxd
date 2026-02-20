@@ -1360,6 +1360,10 @@ void mhc_store_fsk_message(struct mh_control *ctl, uint8_t idx, const char *text
 void send_cat_freq_info(struct mh_control *ctl, const struct mhc_radio_info *info, uint8_t radio, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	if(radio < 1 || radio > 2)
 		return;
+
+	if( ! (ctl->mhi.flags & MHF_HAS_CAT_CMD) )
+		return;
+
 	uint8_t cmd = radio == 1 ? MHCMD_CAT_R1_FREQUENCY_INFO : MHCMD_CAT_R2_FREQUENCY_INFO;
 
 	dbg0("%s %s() radio %d",ctl->serial, __func__, radio);

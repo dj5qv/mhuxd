@@ -1,6 +1,6 @@
 SUBDIRS = src webui
 dist_man_MANS = man/mhuxd.8
-dist_doc_DATA = README COPYING AUTHORS
+dist_doc_DATA = README.md COPYING AUTHORS
 jsondir = $(JSONDIR)
 dist_json_DATA = json/mh_rigtypes.json json/mh_displayoptions.json
 
