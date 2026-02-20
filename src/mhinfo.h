@@ -52,6 +52,7 @@ enum {
 
 	MHF_HAS_PFSK = (1<<25),
 	MHF_HAS_PCW = (1<<26),
+	MHF_HAS_CAT_CMD = (1<<27),  	// Support for CAT R1/R2 control command
 
 	MHF_MHUXD_SUPPORTED = (1<<31)
 

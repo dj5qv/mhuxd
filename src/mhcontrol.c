@@ -1169,7 +1169,6 @@ void mhc_set_mode_on_radio(struct mh_control *ctl, int mode, uint8_t radio, mhc_
 	submit_cmd(ctl, &b, cb, user_data);
 }
 
-
 void mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	const struct buffer *kb = kcfg_get_buffer(ctl->kcfg);
 	struct buffer buf;
@@ -1355,8 +1354,64 @@ void mhc_store_fsk_message(struct mh_control *ctl, uint8_t idx, const char *text
 	buf_append_c(&b, delay);
 	buf_append(&b, (uint8_t*)text, len);
 	buf_append_c(&b, (MHCMD_STORE_FSK_MSG_1 + (idx - 1)) | MSB_BIT);
-	return submit_cmd(ctl, &b, cb, user_data);
+	submit_cmd(ctl, &b, cb, user_data);
 }
+
+void send_cat_freq_info(struct mh_control *ctl, const struct mhc_radio_info *info, uint8_t radio, mhc_cmd_completion_cb_fn cb, void *user_data) {
+	if(radio < 1 || radio > 2)
+		return;
+	uint8_t cmd = radio == 1 ? MHCMD_CAT_R1_FREQUENCY_INFO : MHCMD_CAT_R2_FREQUENCY_INFO;
+
+	dbg0("%s %s() radio %d",ctl->serial, __func__, radio);
+
+    struct {
+        uint32_t freq;
+        uint16_t mask;
+    } entries[] = {
+        { info->rxFreq,   (1 << 0) },  /* bit0: rxFreq */
+        { info->txFreq,   (1 << 1) },  /* bit1: txFreq */
+        { info->operFreq, (1 << 2) },  /* bit2: operFreq */
+        { info->vfoAFreq, (1 << 3) },  /* bit3: vfoAFreq */
+        { info->vfoBFreq, (1 << 4) },  /* bit4: vfoBFreq */
+    };
+    int n = sizeof(entries) / sizeof(entries[0]);
+
+   /* Merge entries with equal frequency: OR their masks together */
+    for(int i = 0; i < n; i++) {
+        if(!entries[i].mask)
+            continue;
+        for(int j = i + 1; j < n; j++) {
+            if(entries[j].mask && entries[j].freq == entries[i].freq) {
+                entries[i].mask |= entries[j].mask;
+                entries[j].mask = 0; /* mark as merged */
+            }
+        }
+    }
+
+   /* Send one command per distinct frequency */
+    for(int i = 0; i < n; i++) {
+        if(!entries[i].mask || !entries[i].freq)
+            continue;
+        uint16_t mask = entries[i].mask | (1 << 5); /* bit5: validity */
+		struct buffer b;
+		buf_reset(&b);
+
+		buf_append_c(&b, cmd);
+        buf_append_c(&b, entries[i].freq & 0xFF);
+        buf_append_c(&b, (entries[i].freq >> 8) & 0xFF);
+        buf_append_c(&b, (entries[i].freq >> 16) & 0xFF);
+        buf_append_c(&b, (entries[i].freq >> 24) & 0xFF);
+        buf_append_c(&b,0); /* band - TODO */
+        buf_append_c(&b, mask & 0xFF);
+        buf_append_c(&b, (mask >> 8) & 0xFF);
+        buf_append_c(&b, cmd | MSB_BIT);
+
+        dbg0("%s cat_freq_info: freq=%u mask=0x%04x", __func__, entries[i].freq, mask);
+
+		submit_cmd(ctl, &b, cb, user_data);
+	}
+}
+
 
 const char *mhc_get_cw_message(struct mh_control *ctl, uint8_t idx, uint8_t *next_idx_out, uint8_t *delay_out) {
 	if(idx < 1 || idx > 9)
@@ -1683,13 +1738,28 @@ static uint8_t set_force_keyer_mode(struct mh_control *ctl, uint8_t radio, uint8
 	return 1; // Indicate that a change was made.
 }
 
+static uint8_t freq_changed(struct mhc_radio_info *old_info, const struct mhc_radio_info *new_info) {
+	if(old_info->rxFreq != new_info->rxFreq)
+		return 1;
+	if(old_info->txFreq != new_info->txFreq)
+		return 1;
+	if(old_info->operFreq != new_info->operFreq)
+		return 1;
+	if(old_info->vfoAFreq != new_info->vfoAFreq)
+		return 1;
+	if(old_info->vfoBFreq != new_info->vfoBFreq)
+		return 1;
+	return 0;
+}
+
 void mhc_update_radio_info(struct mh_control *ctl, const char *source, const struct mhc_radio_info *info) {
 	if(!info)
 		return;
 	uint8_t force_mode_changed;
 	uint8_t radio = info->radio;
 
-	dbg1("%s %s() source %s r%d mode %d", ctl->serial, __func__, source, radio, info->mode);
+	dbg1("%s %s() source %s r%d mode %d rx=%u tx=%u", ctl->serial, __func__, source, radio,
+	     info->mode, info->rxFreq, info->txFreq);
 
 	if(radio < 1 || radio > 2 || !info)
 		return;
@@ -1705,16 +1775,25 @@ void mhc_update_radio_info(struct mh_control *ctl, const char *source, const str
 		dbg1("%s %s() r%d info updated", ctl->serial, __func__, radio);
 	}
 
-	if(info->mode != ctl->radio_info[radio-1].mode || force_mode_changed) {
+	// Update mode in keyer if changed.
+	if(info->mode >= 0 && (info->mode != ctl->radio_info[radio-1].mode || force_mode_changed)) {
 		dbg0("%s %s() r%d mode changed from %d to %d", ctl->serial, __func__, radio, ctl->radio_info[radio-1].mode, info->mode);
 		if(ctl->mhi.flags & MHF_HAS_R2) {
 			mhc_set_mode_on_radio(ctl, info->mode, radio, NULL, NULL);
 		} else {
 			mhc_set_mode(ctl, info->mode, NULL, NULL);
 		}
-
 	} else {
 		dbg1("%s %s() r%d mode unchanged (%d)", ctl->serial, __func__, radio, info->mode);
+	}
+
+	if(freq_changed(&ctl->radio_info[radio-1], info)) {
+		dbg0("%s %s() r%d freq changed rx=%u tx=%u vfoA=%u vfoB=%u",
+		     ctl->serial, __func__, radio, info->rxFreq, info->txFreq,
+		     info->vfoAFreq, info->vfoBFreq);
+		if((ctl->mhi.flags & MHF_HAS_CAT_CMD) && mhc_is_online(ctl)) {
+			send_cat_freq_info(ctl, info, radio, NULL, NULL);
+		}
 	}
 
 	memcpy(&ctl->radio_info[radio-1], info, sizeof(*info));

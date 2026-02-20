@@ -133,4 +133,73 @@ Validation:
 - For unsupported/unknown rigctld modes, keep previous keyer mode and log once per change.
 - Backend remains enum to keep room for future endpoints (e.g. flrig/XML-RPC).
 
-   
+
+### Extension: Support QRG query.
+## Details
+
+# microHam Protocol supports
+  - rxFreq
+  - txFreq
+  - operFreq
+  - vfoAFreq
+  - vfoBFreq
+  - subRxFreq (we leave this out in this phase)
+  - subTxFreq (we leave this out in this phase)
+
+# rigctld commands with planned mapping
+
+We use only `\get_vfo_info` (extended protocol) for all three queries:
+
+| long command              |   extended response        | map to          |
+|---------------------------|----------------------------|-----------------|
+| +\get_vfo_info VFOA       | get_vfo_info: VFOA         | vfoAFreq        |
+|                           | Freq: 14074000             |                 |
+|                           | Mode: USB                  | (ignored)       |
+|                           | Width: 2400                | (ignored)       |
+|                           | Split: 0                   | (ignored)       |
+|                           | SatMode: 0                 | (ignored)       |
+|                           | RPRT 0                     |                 |
+|                           |                            |                 |
+| +\get_vfo_info VFOB       | get_vfo_info: VFOB         | vfoBFreq        |
+|                           | Freq: 10125350             |                 |
+|                           | Mode: PKTUSB               | (ignored)       |
+|                           | Width: 2400                | (ignored)       |
+|                           | Split: 1                   | (ignored)       |
+|                           | SatMode: 0                 | (ignored)       |
+|                           | RPRT 0                     |                 |
+|                           |                            |                 |
+| +\get_vfo_info currVFO    | get_vfo_info: currVFO      | rxFreq/operFreq |
+|                           | Freq: 10125350             | rxFreq/operFreq |
+|                           | Mode: PKTUSB               | mode            |
+|                           | Width: 3000                | (ignored)       |
+|                           | Split: 1                   | split           |
+|                           | SatMode: 0                 | (ignored)       |
+|                           | RPRT 0                     |                 |
+
+
+# Determining VFO Roles and Transmit Frequency
+
+Because some radio backends (notably Icom CI-V models like the IC-7300) do not support the get_vfo_tx (v) command, mhuxd derives the operational state by correlating the current VFO frequency with the known frequencies of VFO A and VFO B.
+1. Data Collection
+The application polls three specific data points from rigctld:
+Target A: +\get_vfo_info VFOA
+Target B: +\get_vfo_info VFOB
+Active State: +\get_vfo_info currVFO
+2. Logic Flow
+The values are mapped to the microHAM protocol fields using the following logic:
+rxFreq (Operating Frequency): Always mapped from the Freq: field of the currVFO query.
+Split Status: Mapped from the Split: field (0 or 1) of the currVFO query.
+txFreq (Transmit Frequency):
+If Split == 0: The txFreq is identical to the rxFreq.
+If Split == 1: The application identifies the "inactive" VFO to determine the transmit frequency:
+If rxFreq == vfoAFreq, then txFreq = vfoBFreq.
+If rxFreq == vfoBFreq, then txFreq = vfoAFreq.
+3. Edge Cases
+Identical VFOs: If VFO A and VFO B are set to the exact same frequency and mode, the software assumes the standard VFO A → RX, VFO B → TX relationship during Split operations.
+
+
+
+
+
+
+

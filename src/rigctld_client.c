@@ -31,16 +31,14 @@
 #define RIGCL_DEF_IO_TIMEOUT_MS (1500)
 #define RIGCL_DEF_POLL_MS (500)
 
+#define RIGCL_NUM_COMMANDS 3
+#define RIGCL_CMD_STRING "+\\get_vfo_info VFOA\n+\\get_vfo_info VFOB\n+\\get_vfo_info currVFO\n"
+
 enum rigcl_io_phase {
 	RIGCL_PHASE_IDLE = 0,
 	RIGCL_PHASE_CONNECTING,
 	RIGCL_PHASE_WRITING,
 	RIGCL_PHASE_READING,
-};
-
-struct mode_set_ctx {
-	struct rigctld_client *client;
-	int mode;
 };
 
 struct rigctld_client {
@@ -58,11 +56,13 @@ struct rigctld_client {
 	int running;
 	int fd;
 	enum rigcl_io_phase phase;
-	char tx_buf[8];
+	char tx_buf[80];
 	size_t tx_len;
 	size_t tx_off;
-	char rx_buf[128];
+	char rx_buf[512];
 	size_t rx_len;
+	struct mhc_radio_info last_info;
+	ev_tstamp req_start_ts;
 
 	ev_timer poll_timer;
 	ev_timer op_timeout_timer;
@@ -141,25 +141,116 @@ static int parse_mode_token(const char *line, char *token, size_t token_sz) {
 	return i > 0 ? 0 : -1;
 }
 
-static void rigcl_handle_line(struct rigctld_client *client, char *line) {
-	char token[32];
+static int count_rprt_lines(const char *buf, size_t len) {
+	int count = 0;
+	const char *p = buf;
+	const char *end = buf + len;
 
-    dbg1("%s received line <%s> (%s)", client->serial, line, radio_str(client->radio));
+	if(len >= 5 && strncmp(p, "RPRT ", 5) == 0)
+		count++;
 
-	if(parse_mode_token(line, token, sizeof(token))) {
-		dbg0("%s could not parse rigctld response line (%s)", client->serial, radio_str(client->radio));
-		return;
+	while(p < end) {
+		p = memchr(p, '\n', end - p);
+		if(!p) break;
+		p++;
+		if(p + 5 <= end && strncmp(p, "RPRT ", 5) == 0)
+			count++;
 	}
+	return count;
+}
 
-	int mode = mode_from_rigctld_token(token);
-	if(mode < 0) {
-		dbg0("%s unsupported rigctld mode token '%s' (%s)", client->serial, token, radio_str(client->radio));
-		return;
-	}
+enum rigcl_section {
+	RIGCL_SECT_NONE = 0,
+	RIGCL_SECT_VFOA,
+	RIGCL_SECT_VFOB,
+	RIGCL_SECT_CURRVFO,
+};
 
-	struct mhc_radio_info info;
+static enum rigcl_section rigcl_detect_section(const char *line) {
+	if(strncmp(line, "get_vfo_info: ", 14) != 0)
+		return RIGCL_SECT_NONE;
+	const char *vfo = line + 14;
+	if(strncmp(vfo, "VFOA", 4) == 0) return RIGCL_SECT_VFOA;
+	if(strncmp(vfo, "VFOB", 4) == 0) return RIGCL_SECT_VFOB;
+	return RIGCL_SECT_CURRVFO;
+}
+
+static void rigcl_parse_response(struct rigctld_client *client) {
+	struct mhc_radio_info info = client->last_info;
 	info.radio = client->radio;
-	info.mode = mode;
+	int split = -1;
+	int errors = 0;
+	enum rigcl_section sect = RIGCL_SECT_NONE;
+	char *saveptr = NULL;
+	char *line;
+
+	for(line = strtok_r(client->rx_buf, "\n", &saveptr); line;
+	    line = strtok_r(NULL, "\n", &saveptr)) {
+		size_t len = strlen(line);
+		if(len > 0 && line[len - 1] == '\r')
+			line[--len] = '\0';
+
+		dbg1("%s parse: <%s> (%s)", client->serial, line, radio_str(client->radio));
+
+		enum rigcl_section new_sect = rigcl_detect_section(line);
+		if(new_sect != RIGCL_SECT_NONE) {
+			sect = new_sect;
+			continue;
+		}
+
+		if(strncmp(line, "Freq: ", 6) == 0) {
+			uint32_t freq = (uint32_t)strtoul(line + 6, NULL, 10);
+			if(sect == RIGCL_SECT_VFOA)
+				info.vfoAFreq = freq;
+			else if(sect == RIGCL_SECT_VFOB)
+				info.vfoBFreq = freq;
+			else if(sect == RIGCL_SECT_CURRVFO) {
+				info.rxFreq = freq;
+				info.operFreq = freq;
+			}
+		} else if(strncmp(line, "Mode: ", 6) == 0 && sect == RIGCL_SECT_CURRVFO) {
+			char token[32];
+			if(parse_mode_token(line + 6, token, sizeof(token)) == 0) {
+				int m = mode_from_rigctld_token(token);
+				if(m >= 0)
+					info.mode = m;
+				else
+					dbg0("%s unsupported rigctld mode '%s' (%s)",
+					     client->serial, token, radio_str(client->radio));
+			}
+		} else if(strncmp(line, "Split: ", 7) == 0 && sect == RIGCL_SECT_CURRVFO) {
+			split = atoi(line + 7);
+		} else if(strncmp(line, "RPRT ", 5) == 0) {
+			if(atoi(line + 5) != 0)
+				errors++;
+			sect = RIGCL_SECT_NONE;
+		}
+	}
+
+	/* Derive txFreq from split status */
+	if(split >= 0) {
+		if(split == 0) {
+			info.txFreq = info.rxFreq;
+		} else {
+			if(info.rxFreq == info.vfoAFreq)
+				info.txFreq = info.vfoBFreq;
+			else if(info.rxFreq == info.vfoBFreq)
+				info.txFreq = info.vfoAFreq;
+			else
+				info.txFreq = info.vfoBFreq; /* default: assume VFOB is TX */
+		}
+	}
+
+	if(errors > 0)
+		dbg0("%s rigctld %d/%d commands returned errors (%s)",
+		     client->serial, errors, RIGCL_NUM_COMMANDS, radio_str(client->radio));
+
+	int elapsed_ms = (int)((ev_now(client->loop) - client->req_start_ts) * 1000.0);
+	dbg0("%s poll result: mode=%d rx=%u tx=%u vfoA=%u vfoB=%u split=%d %dms (%s)",
+	     client->serial, info.mode, info.rxFreq, info.txFreq,
+	     info.vfoAFreq, info.vfoBFreq, split, elapsed_ms, radio_str(client->radio));
+
+	client->last_info = info;
 	mhc_update_radio_info(client->ctl, MOD_ID, &info);
 }
 
@@ -234,12 +325,13 @@ static void rigcl_io_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 		client->rx_len += (size_t)size;
 		client->rx_buf[client->rx_len] = '\0';
 
-        dbg1("%s %s r%d read <%s>", __func__, client->serial, client->radio, client->rx_buf);
+        dbg1("%s %s r%d read %zu/%zu bytes", __func__, client->serial, client->radio,
+             client->rx_len, sizeof(client->rx_buf) - 1);
 
-		if(!strchr(client->rx_buf, '\n'))
+		if(count_rprt_lines(client->rx_buf, client->rx_len) < RIGCL_NUM_COMMANDS)
 			return;
 
-		rigcl_handle_line(client, client->rx_buf);
+		rigcl_parse_response(client);
 		rigcl_finish_request(client);
 	}
 }
@@ -327,7 +419,8 @@ static void rigcl_start_request(struct rigctld_client *client) {
 		client->phase = RIGCL_PHASE_WRITING;
 	}
 
-	strcpy(client->tx_buf, "m\n");
+	client->req_start_ts = ev_now(client->loop);
+	strcpy(client->tx_buf, RIGCL_CMD_STRING);
 	client->tx_len = strlen(client->tx_buf);
 	client->tx_off = 0;
 	client->rx_len = 0;
@@ -412,9 +505,11 @@ struct rigctld_client *rigctld_client_create(struct ev_loop *loop, struct mh_con
 	client->port = cfg->port > 0 ? cfg->port : (client->radio == 2 ? 4533 : 4532);
 	client->connect_timeout_ms = cfg->connect_timeout_ms > 0 ? cfg->connect_timeout_ms : RIGCL_DEF_CONNECT_TIMEOUT_MS;
 	client->io_timeout_ms = cfg->io_timeout_ms > 0 ? cfg->io_timeout_ms : RIGCL_DEF_IO_TIMEOUT_MS;
-	client->poll_ms = cfg->poll_ms >= 100 ? cfg->poll_ms : RIGCL_DEF_POLL_MS;
+	client->poll_ms = cfg->poll_ms >= 10 ? cfg->poll_ms : RIGCL_DEF_POLL_MS;
 	client->enabled = cfg->enabled ? 1 : 0;
 	client->fd = -1;
+	client->last_info.radio = client->radio;
+	client->last_info.mode = -1;
 
 	ev_timer_init(&client->poll_timer, rigcl_poll_cb, 0., (double)client->poll_ms / 1000.0);
 	client->poll_timer.data = client;

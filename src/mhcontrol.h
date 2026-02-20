@@ -79,6 +79,13 @@ struct mhc_speed_cfg {
 struct mhc_radio_info {
 	uint8_t radio;
 	int mode;
+	uint32_t rxFreq;
+	uint32_t txFreq;
+	uint32_t operFreq;
+	uint32_t vfoAFreq;
+	uint32_t vfoBFreq;
+	uint32_t subRxFreq;
+	uint32_t subTxFreq;
 };
 
 // async functions, will always call the callback even if the async operation could be started.
