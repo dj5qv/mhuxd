@@ -164,8 +164,8 @@ int main(int argc, char **argv)
 	hs_add_directory_map(hs, "/static/", static_path);
 	hs_add_directory_map(hs, "/svelte/", svelte_path);
 	handler_redir[0] = hs_register_handler(hs, "/", cb_redirect_home, webui);
-	handler_redir[1] = hs_register_handler(hs, "/svelte", cb_redirect_home, webui);
-	handler_redir[2] = hs_register_handler(hs, "/svelte/", cb_redirect_home, webui);
+//	handler_redir[1] = hs_register_handler(hs, "/svelte", cb_redirect_home, webui);
+//	handler_redir[2] = hs_register_handler(hs, "/svelte/", cb_redirect_home, webui);
 
 	ev_signal_init (&w_sigint, sigint_cb, SIGINT);
 	ev_signal_init (&w_sigterm, sigint_cb, SIGTERM);
