@@ -25,10 +25,6 @@
 #include "conmgr.h"
 #include "rigctld_client.h"
 
-#ifndef STATEDIR
-#define STATEDIR "."
-#endif
-
 #define CFGFILE STATEDIR "/mhuxd-state.json"
 #define MOD_ID "cfgmgrj"
 
@@ -100,10 +96,6 @@ static int is_supported_rig_mode_backend(const char *backend) {
     return 0;
 }
 
-static int keyer_supports_radio2(int type) {
-    return (type == MHT_MK2R || type == MHT_MK2Rp);
-}
-
 static void remove_rig_client_bindings(struct cfgmgrj *cfgmgrj, const char *serial, int radio) {
     struct rig_client_binding *b;
 
@@ -147,10 +139,11 @@ static const char *json_get_str_or(json_t *obj, const char *key, const char *def
     return s;
 }
 
-static int start_rig_mode_sync_clients(struct cfgmgrj *cfgmgrj, struct mh_control *ctl,
-                                       const char *serial, int type, json_t *rig_mode_sync_obj) {
-    if(!cfgmgrj || !ctl || !serial || !*serial || !json_is_object(rig_mode_sync_obj))
+static int start_rig_mode_sync_clients(struct cfgmgrj *cfgmgrj, struct mh_control *ctl, json_t *rig_mode_sync_obj) {
+    if(!cfgmgrj || !ctl || !json_is_object(rig_mode_sync_obj))
         return -1;
+
+    const char *serial = mhc_get_serial(ctl);
 
     remove_rig_client_bindings(cfgmgrj, serial, 0);
 
@@ -173,7 +166,7 @@ static int start_rig_mode_sync_clients(struct cfgmgrj *cfgmgrj, struct mh_contro
 
     int i;
     for(i = 0; i < 2; i++) {
-        if(defs[i].radio == 2 && !keyer_supports_radio2(type))
+        if(defs[i].radio == 2 && !(mhc_get_mhinfo(ctl)->flags & MHF_HAS_R2))
             continue;
 
         if(!defs[i].obj || !json_is_object(defs[i].obj))
@@ -272,7 +265,7 @@ static int validate_rig_mode_sync_radio(const char *radio_name, json_t *radio_ob
     return 0;
 }
 
-static int apply_rig_mode_sync_from_json(struct cfgmgrj *cfgmgrj, const char *serial, int type, json_t *rig_mode_sync_obj) {
+static int apply_rig_mode_sync_from_json(struct cfgmgrj *cfgmgrj, const char *serial, struct mh_control *ctl, json_t *rig_mode_sync_obj) {
     if(!cfgmgrj || !cfgmgrj->rig_mode_sync || !serial || !*serial)
         return -1;
 
@@ -307,9 +300,9 @@ static int apply_rig_mode_sync_from_json(struct cfgmgrj *cfgmgrj, const char *se
             return -1;
 
         json_t *r2 = json_object_get(radios, "r2");
-        if(r2 && !keyer_supports_radio2(type)) {
-            warn("cfgmgrj: rig_mode_sync.radios.r2 provided for non dual-radio keyer type %d", type);
-            return -1;
+        if(r2 && !(mhc_get_mhinfo(ctl)->flags & MHF_HAS_R2)) {
+            warn("cfgmgrj: rig_mode_sync.radios.r2 provided for non dual-radio keyer type %s", mhc_get_mhinfo(ctl)->type_str);
+             return -1;
         }
         if(validate_rig_mode_sync_radio("r2", r2))
             return -1;
@@ -631,7 +624,7 @@ static int apply_speed_from_json(struct cfgmgrj *cfgmgrj, struct mh_control *ctl
         int result = -1;
         mhc_set_speed_params(ctl, channel, &cfg, completion_cb, &result);
         while(result == -1)
-            ev_loop(cfgmgrj->loop, EVRUN_ONCE);
+            ev_run(cfgmgrj->loop, EVRUN_ONCE);
         if(result != CMD_RESULT_OK)
             return -1;
     }
@@ -661,7 +654,7 @@ static int apply_messages_from_json(struct cfgmgrj *cfgmgrj, struct mh_control *
             mhc_store_fsk_message(ctl, (uint8_t)index, text, (uint8_t)next_idx, (uint8_t)delay, completion_cb, &result);
         }
         while(result == -1)
-            ev_loop(cfgmgrj->loop, EVRUN_ONCE);
+            ev_run(cfgmgrj->loop, EVRUN_ONCE);
         if(result != CMD_RESULT_OK)
             return -1;
     }
@@ -853,9 +846,9 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
             json_object_del(cfgmgrj->rig_mode_sync, serial);
             remove_rig_client_bindings(cfgmgrj, serial, 0);
         } else {
-            if(apply_rig_mode_sync_from_json(cfgmgrj, serial, type, rig_mode_sync_obj))
+            if(apply_rig_mode_sync_from_json(cfgmgrj, serial, ctl, rig_mode_sync_obj))
                 return -1;
-            start_rig_mode_sync_clients(cfgmgrj, ctl, serial, type, rig_mode_sync_obj);
+            start_rig_mode_sync_clients(cfgmgrj, ctl, rig_mode_sync_obj);
         }
     }
 
@@ -874,7 +867,7 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
             int result = -1;
             mhc_load_kopts(ctl, completion_cb, &result);
             while(result == -1)
-                ev_loop(cfgmgrj->loop, EVRUN_ONCE);
+                ev_run(cfgmgrj->loop, EVRUN_ONCE);
             if(result != CMD_RESULT_OK)
                 return -1;
         }
@@ -885,7 +878,7 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
             int result = -1;
             mhc_load_kopts(ctl, completion_cb, &result);
             while(result == -1)
-                ev_loop(cfgmgrj->loop, EVRUN_ONCE);
+                ev_run(cfgmgrj->loop, EVRUN_ONCE);
             if(result != CMD_RESULT_OK)
                 return -1;
         }

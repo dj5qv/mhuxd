@@ -22,12 +22,17 @@
 
 #define MOD_ID "dmr"
 
+typedef struct on_device_connect_cb {
+	struct PGNode node;
+	dmgr_device_cb cb;
+	void *user_data;
+} t_on_device_connect_cb_handle;
+
 struct device_manager {
 	struct PGList device_list;
+	struct PGList on_device_connect_cbs;
 	struct ev_loop *loop;
 	struct devmon *devmon;
-	dmgr_device_cb device_added_cb;
-	void *device_added_user_data;
 };
 
 struct device_manager *dman = NULL;
@@ -61,8 +66,11 @@ static struct device *create_dev(const char *serial, uint16_t type) {
 	dev->ctl = mhc_create(dman->loop, dev->router, &mhi);
 	PG_AddTail(&dman->device_list, &dev->node);
 
-	if(dman->device_added_cb)
-		dman->device_added_cb(dev, dman->device_added_user_data);
+	t_on_device_connect_cb_handle *odccb;
+	PG_SCANLIST(&dman->on_device_connect_cbs, odccb) {
+		if(odccb->cb)			
+			odccb->cb(dev, odccb->user_data);
+	}
 
 	return dev;
 }
@@ -125,6 +133,7 @@ void *dmgr_create(struct ev_loop *loop) {
 
 	dman = w_calloc(1, sizeof(*dman));
 	PG_NewList(&dman->device_list);
+	PG_NewList(&dman->on_device_connect_cbs);
 	dman->loop = loop;
 	return dman;
 }
@@ -142,6 +151,13 @@ void dmgr_destroy() {
 
 	if(dman == NULL)
 		return;
+
+	t_on_device_connect_cb_handle *odccb;
+
+	while((odccb = (void*)PG_FIRSTENTRY(&dman->on_device_connect_cbs))) {
+		PG_Remove(&odccb->node);
+		free(odccb);
+	}
 
 	while((dev = (void*)PG_FIRSTENTRY(&dman->device_list))) {
 		wkm_destroy(dev->wkman);
@@ -173,9 +189,23 @@ struct device *dmgr_get_device(const char *serial) {
 	return NULL;
 }
 
-void dmgr_set_device_added_cb(dmgr_device_cb cb, void *user_data) {
-	if(!dman) return;
-	dman->device_added_cb = cb;
-	dman->device_added_user_data = user_data;
+t_on_device_connect_cb_handle *dmgr_add_on_device_connect_cb(dmgr_device_cb cb, void *user_data) {
+	struct on_device_connect_cb *odccb = w_calloc(1, sizeof(*odccb));
+	odccb->cb = cb;
+	odccb->user_data = user_data;
+	PG_AddTail(&dman->on_device_connect_cbs, &odccb->node);
+	return odccb;
 }
 
+void dmgr_rem_on_device_connect_cb(t_on_device_connect_cb_handle *handle) {
+	if(!handle) return;
+	t_on_device_connect_cb_handle *odccb;
+	PG_SCANLIST(&dman->on_device_connect_cbs, odccb) {
+		if(odccb == handle) {
+			PG_Remove(&odccb->node);
+			free(odccb);
+			return;
+		}
+	}
+	return;
+}

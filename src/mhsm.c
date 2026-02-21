@@ -1035,7 +1035,7 @@ int sm_get_antsw(struct sm *sm) {
 #endif
 
 	while(sm->get_antsw_state != STATE_GET_ANTSW_EMPTY && sm->get_antsw_state != STATE_GET_ANTSW_DONE) {
-		ev_loop(sm->loop, EVRUN_ONCE);
+		ev_run(sm->loop, EVRUN_ONCE);
 	}
 
 	return sm->get_antsw_state == STATE_GET_ANTSW_DONE ? 0 : -1;

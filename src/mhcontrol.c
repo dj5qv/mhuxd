@@ -194,7 +194,6 @@ struct mh_control {
 	uint8_t tracked_keyer_mode_r1r2[2]; // as received from keyer for each radio, for MK2R.
 	uint8_t in_flag_r1, in_flag_r2;
 	uint8_t out_flag;
-	uint8_t set_mode;
 	uint8_t state_buf[13];
 	uint8_t acc_state[8];
 	uint8_t hfocus[8];

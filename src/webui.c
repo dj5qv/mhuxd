@@ -33,9 +33,8 @@ struct webui {
 };
 
 static const char cs_path[] = WEBUIDIR "/cs";
-static const char static_path[] = WEBUIDIR "/static";
-static const char svelte_path[] = WEBUIDIR "/svelte";
 static const char mhuxd_hdf[] = HDFDIR "/mhuxd.hdf";
+static const char static_path[] = WEBUIDIR "/static";
 
 static NEOERR* out_func(void *user_data, char *data) {
 	struct obuf *obuf = user_data;
@@ -394,7 +393,7 @@ static int cb_redirect_home(struct http_connection *hcon, const char *path, cons
 		 const char *body, uint32_t body_len, void *data) {
 	(void)path; (void)query; (void)body; (void)body_len;(void)data;
 
-	dbg1("redirect / to /cs/home.cs");
+	dbg1("redirect /classic to /cs/home.cs");
 	hs_add_rsp_header(hcon, "Location", "/cs/home.cs");
 	hs_send_response(hcon, 301, "text/html", NULL, 0, NULL, 0);
 	return 0;
@@ -686,10 +685,9 @@ struct webui * webui_create(struct http_server *hs, struct cfgmgr *cfgmgr) {
 	}
 
 	webui->handler_cs = hs_register_handler(hs, "/cs/", cb_cs, webui);
-	webui->handler_redir = hs_register_handler(hs, "/", cb_redirect_home, webui);
+	webui->handler_redir = hs_register_handler(hs, "/classic", cb_redirect_home, webui);
 
 	hs_add_directory_map(hs, "/static/", static_path);
-	hs_add_directory_map(hs, "/svelte/", svelte_path);
 
 	dbg0("WebUI started");
 

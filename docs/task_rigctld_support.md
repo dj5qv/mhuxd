@@ -179,27 +179,15 @@ We use only `\get_vfo_info` (extended protocol) for all three queries:
 
 # Determining VFO Roles and Transmit Frequency
 
-Because some radio backends (notably Icom CI-V models like the IC-7300) do not support the get_vfo_tx (v) command, mhuxd derives the operational state by correlating the current VFO frequency with the known frequencies of VFO A and VFO B.
-1. Data Collection
-The application polls three specific data points from rigctld:
-Target A: +\get_vfo_info VFOA
-Target B: +\get_vfo_info VFOB
-Active State: +\get_vfo_info currVFO
-2. Logic Flow
-The values are mapped to the microHAM protocol fields using the following logic:
-rxFreq (Operating Frequency): Always mapped from the Freq: field of the currVFO query.
-Split Status: Mapped from the Split: field (0 or 1) of the currVFO query.
-txFreq (Transmit Frequency):
-If Split == 0: The txFreq is identical to the rxFreq.
-If Split == 1: The application identifies the "inactive" VFO to determine the transmit frequency:
-If rxFreq == vfoAFreq, then txFreq = vfoBFreq.
-If rxFreq == vfoBFreq, then txFreq = vfoAFreq.
-3. Edge Cases
-Identical VFOs: If VFO A and VFO B are set to the exact same frequency and mode, the software assumes the standard VFO A → RX, VFO B → TX relationship during Split operations.
+Below is true at least for Icom and probably Yaesu:
 
+When polling for VFO A Hamlib reports details of the active
+VFO, can be A or B on the rig. Vice versa for VFO B.
 
+So we map this 1:1 to keyer frequencies:
 
-
-
-
+vfoAFreq: Represents the active VFO (can also be rig VFO B)
+vfoBFreq: Represents the inactive VFO (can also be rig VFO A)
+txFreq: if split enabled, map to vfoBFreq, otherwise vfoAFreq
+rxFreq: to be set from currVFO
 

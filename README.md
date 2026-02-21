@@ -62,7 +62,7 @@ Mhuxd doesn't need to run as root. However it needs read/write access to `/dev/c
 
 ### Ubuntu and related distributions (Debian, Mint)
 
-Binary packages are available. Refer to [http://mhuxd.dj5qv.de/install/](http://mhuxd.dj5qv.de/install/) for details.
+Binary packages are available. Refer to [mhuxd.dj5qv.de](https://mhuxd.dj5qv.de/) for details.
 
 ### Compile from source code
 

@@ -13,6 +13,8 @@
 #include <stdint.h>
 #include "pglist.h"
 
+typedef struct on_device_connect_cb t_on_device_connect_cb_handle;
+
 struct device {
 	struct PGNode node;
 	struct mh_router *router;
@@ -31,6 +33,7 @@ struct device *dmgr_get_device(const char *serial);
 struct PGList *dmgr_get_device_list();
 
 typedef void (*dmgr_device_cb)(struct device *dev, void *user_data);
-void dmgr_set_device_added_cb(dmgr_device_cb cb, void *user_data);
+t_on_device_connect_cb_handle *dmgr_add_on_device_connect_cb(dmgr_device_cb cb, void *user_data);
+void dmgr_rem_on_device_connect_cb(t_on_device_connect_cb_handle *handle);
 
 #endif // DEVMGR_H

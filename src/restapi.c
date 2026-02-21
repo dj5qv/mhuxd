@@ -43,6 +43,7 @@ struct restapi {
 	json_t *devicetypes;
 	json_t *displayoptions;
 	time_t start_time;
+	t_on_device_connect_cb_handle *device_connect_cb_handle;
 };
 
 struct event_subscriber {
@@ -893,7 +894,8 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
 		mhc_add_keyer_state_changed_cb(dev->ctl, on_keyer_state_changed, api);
 	}
 
-	dmgr_set_device_added_cb(on_device_added, api);
+//	dmgr_set_device_added_cb(on_device_added, api);
+	api->device_connect_cb_handle = dmgr_add_on_device_connect_cb(on_device_added, api);
 
     return api;
 
@@ -931,7 +933,8 @@ void restapi_destroy(struct restapi *api) {
 	if(!api)
 		return;
 
-	dmgr_set_device_added_cb(NULL, NULL);
+	if(api->device_connect_cb_handle)
+		dmgr_rem_on_device_connect_cb(api->device_connect_cb_handle);
 
 	struct event_subscriber *sub;
 	while((sub = (void*)PG_FIRSTENTRY(&api->subscribers))) {

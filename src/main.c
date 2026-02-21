@@ -44,7 +44,7 @@ static void sigint_cb(struct ev_loop *loop, struct ev_signal *w, int revents)
 {
 	(void)w; (void)revents;
 	signum = w->signum;
-	ev_unloop (loop, EVUNLOOP_ALL);
+	ev_break(loop, EVBREAK_ALL);
 }
 static void sighup_cb(struct ev_loop *loop, struct ev_signal *w, int revents) {
 	(void)w; (void)revents; (void)loop;
@@ -57,9 +57,20 @@ static void sighup_cb(struct ev_loop *loop, struct ev_signal *w, int revents) {
 	}
 }
 
+static int cb_redirect_home(struct http_connection *hcon, const char *path, const char *query,
+		 const char *body, uint32_t body_len, void *data) {
+	(void)path; (void)query; (void)body; (void)body_len;(void)data;
+
+	dbg1("redirect / to /svelte/index.html");
+	hs_add_rsp_header(hcon, "Location", "/svelte/index.html");
+	hs_send_response(hcon, 301, "text/html", NULL, 0, NULL, 0);
+	return 0;
+}
+
+
 int main(int argc, char **argv)
 {
-    struct ev_signal w_sigint, w_sigterm, w_sigpipe, w_sighup;
+    struct ev_signal w_sigint, w_sigterm, w_sighup;
     struct ev_loop *loop;
 	struct cfgmgr *cfgmgr;
 	struct cfgmgrj *cfgmgrj; 
@@ -147,15 +158,21 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
+	static const char static_path[] = WEBUIDIR "/static";
+	static const char svelte_path[] = WEBUIDIR "/svelte";
+	struct http_handler *handler_redir[3];
+	hs_add_directory_map(hs, "/static/", static_path);
+	hs_add_directory_map(hs, "/svelte/", svelte_path);
+	handler_redir[0] = hs_register_handler(hs, "/", cb_redirect_home, webui);
+	handler_redir[1] = hs_register_handler(hs, "/svelte", cb_redirect_home, webui);
+	handler_redir[2] = hs_register_handler(hs, "/svelte/", cb_redirect_home, webui);
 
 	ev_signal_init (&w_sigint, sigint_cb, SIGINT);
 	ev_signal_init (&w_sigterm, sigint_cb, SIGTERM);
-//	ev_signal_init (&w_sigpipe, sigint_cb, SIGPIPE);
 	ev_signal_init (&w_sighup, sighup_cb, SIGHUP);
 
 	ev_signal_start (loop, &w_sigint);
 	ev_signal_start (loop, &w_sigterm);
-//	ev_signal_start (loop, &w_sigpipe);
 	ev_signal_start (loop, &w_sighup);
 
 /*
@@ -195,7 +212,7 @@ int main(int argc, char **argv)
 		dmgr_add_device("SD_DEMO_SMD_1", 0);
 	}
 
-	ev_loop(loop, 0);
+	ev_run(loop, 0);
 
 	if(signum) 
 		info("*** %s received!", strsignal(signum));
@@ -208,11 +225,20 @@ int main(int argc, char **argv)
 	conmgr_destroy(conmgr);
 
 	// This also cleans up sub modules, mhcontrol, wkm etc.
-	dmgr_destroy();
+//	dmgr_destroy();
 	
 	webui_destroy(webui);
 	restapi_destroy(restapi);
+
+	hs_unregister_handler(hs, handler_redir[0]);
+	hs_unregister_handler(hs, handler_redir[1]);
+	hs_unregister_handler(hs, handler_redir[2]);
 	hs_stop(hs);
+
+	// This also cleans up sub modules, mhcontrol, wkm etc.
+	dmgr_destroy();
+
+
 
 	ev_default_destroy();
 
