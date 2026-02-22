@@ -231,8 +231,8 @@ int main(int argc, char **argv)
 	restapi_destroy(restapi);
 
 	hs_unregister_handler(hs, handler_redir[0]);
-	hs_unregister_handler(hs, handler_redir[1]);
-	hs_unregister_handler(hs, handler_redir[2]);
+	//hs_unregister_handler(hs, handler_redir[1]);
+	//hs_unregister_handler(hs, handler_redir[2]);
 	hs_stop(hs);
 
 	// This also cleans up sub modules, mhcontrol, wkm etc.

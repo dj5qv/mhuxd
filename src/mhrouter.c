@@ -232,13 +232,13 @@ static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 	while(-1 != (c = buf_get_c(b))) {
 
 		if( c == '1' ) {
-			dbg1("%s %s() ptt on", router->serial, __func__);
+			dbg0("%s %s() r%d ptt on", router->serial, __func__, (prd->channel == CH_PTT1) ? 1 : 2);
 			newflag |= (prd->channel == CH_PTT1) ? MHC2DFL_PTT_R1 : MHC2DFL_PTT_R2;
 			push = 1;
 		}
 
 		if( c == '0' ) {
-			dbg1("%s %s() ptt off", router->serial, __func__);
+			dbg0("%s %s() r%d ptt off", router->serial, __func__, (prd->channel == CH_PTT1) ? 1 : 2);
 			newflag &= (prd->channel == CH_PTT1) ? ~MHC2DFL_PTT_R1 : ~MHC2DFL_PTT_R2;
 			push = 1;
 		}

@@ -122,14 +122,14 @@ enum {
 
 enum {
 	CTL_STATE_DEVICE_DISABLED,
-	CTL_STATE_DEVICE_OFF,
-	CTL_STATE_DEVICE_DISC,
-	CTL_STATE_INIT,
-	CTL_STATE_GET_VERSION,
-	CTL_STATE_SET_CHANNELS,
-	CTL_STATE_LOAD_CFG,
-	CTL_STATE_ON_CONNECT,
-	CTL_STATE_OK,
+	CTL_STATE_DEVICE_OFF,   // device is USB connected but not responsive.
+	CTL_STATE_DEVICE_DISC,  // device is not USB connected or switched off.
+	CTL_STATE_INIT,			// init state #1
+	CTL_STATE_GET_VERSION,  // init state #2
+	CTL_STATE_SET_CHANNELS, // init state #3
+	CTL_STATE_LOAD_CFG,     // init state #4 
+	CTL_STATE_ON_CONNECT,   // init state #5
+	CTL_STATE_OK,			// online and initialized
 };
 
 enum {
@@ -1656,7 +1656,9 @@ static void submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completio
 static void submit_cmd(struct mh_control *ctl, struct buffer *b, mhc_cmd_completion_cb_fn cb, void *user_data) {
 	dbg1("%s %s() cmd 0x%02x", ctl->serial, __func__, b->data[0]);
 
-	if(!is_connected(ctl)) {
+	// Let ping always through. Needed to detect when a connected keyer becomes responsive again.
+	// If keyer is really disconnected, set_state() will disable the ping timer.
+	if(b->size && b->data[0] != MHCMD_ARE_YOU_THERE && !is_connected(ctl)) {
 		warn("%s() %s Can't submit command %d, keyer not online!", __func__, ctl->serial, b->data[0]);
 		defer_callback(ctl->loop, cb, CMD_RESULT_OFFLINE, user_data);
 		return;

@@ -68,3 +68,40 @@ ExecStopPost=/usr/bin/setfacl -x u:mein-daemon-user /dev/cuse
 
 # Sicherheit: Nur die nötige Capability für CUSE hinzufügen
 AmbientCapabilities=CAP_SYS_ADMIN
+
+17) DONE: Race?
+
+2026-02-22 00:01:28.971 DBG1 (citem) mpk sysPwrVoltage: 132
+2026-02-22 00:01:28.971 DBG1 (citem) mpk steppirVer: 0
+2026-02-22 00:01:28.971 DBG1 (citem) mpk steppirVerHi: 0
+2026-02-22 00:01:28.978 DBG1 (mhc) M32VFFGJ command timed out: 7e fe
+2026-02-22 00:01:28.978 DBG0 (mhc) M32VFFGJ initializer timed out
+2026-02-22 00:01:28.979 INFO (mhc) M32VFFGJ OFFLINE
+2026-02-22 00:01:29.320 DBG0 (mhc) M32VFFGJ heartbeat ping
+2026-02-22 00:01:29.321 DBG1 (mhc) M32VFFGJ submit_cmd() cmd 0x7e
+2026-02-22 00:01:29.322 WARN (mhc) submit_cmd() M32VFFGJ Can't submit command 126, keyer not online!
+2026-02-22 00:01:29.324 ERR  (mhc) heartbeat invalid result!
+2026-02-22 00:01:30.850 DBG1 (mhr) M32VFFGJ fm k: 00 80 80 80 40 80 80 80 49 80 80 8a
+2026-02-22 00:01:30.851 DBG1 (wkm) M32VFFGJ read_cb() 1
+2026-02-22 00:01:30.851 DBG1 (wkm) M32VFFGJ fm k: 8a
+2026-02-22 00:01:30.851 DBG1 (vsp) data_in_cb()
+2026-02-22 00:01:30.852 DBG1 (vsp) wk k => vsp: 8a
+2026-02-22 00:01:32.320 DBG0 (mhc) M32VFFGJ heartbeat ping
+2026-02-22 00:01:32.320 DBG1 (mhc) M32VFFGJ submit_cmd() cmd 0x7e
+2026-02-22 00:01:32.321 WARN (mhc) submit_cmd() M32VFFGJ Can't submit command 126, keyer not online!
+2026-02-22 00:01:32.321 ERR  (mhc) heartbeat invalid result!
+2026-02-22 00:01:32.908 DBG1 (vsp) chan_in_cb()
+2026-02-22 00:01:32.908 INFO (vsp) cat1 req open
+2026-02-22 00:01:32.908 DBG1 (vsp) chan_in_cb()
+2026-02-22 00:01:32.908 DBG1 (vsp) dv_ioctl() cat1, cmd: 0x5401, arg: 0x7ffd2c475780, in_buf: 0x0, in_buf size: 0, out_bufsz: 0
+2026-02-22 00:01:32.908 DBG1 (vsp) chan_in_cb()
+2026-02-22 00:01:32.909 DBG1 (vsp) dv_ioctl() cat1, cmd: 0x5401, arg: 0x7ffd2c475780, in_buf: 0x0, in_buf size: 0, out_bufsz: 36
+2026-02-22 00:01:32.909 DBG1 (vsp) chan_in_cb()
+2026-02-22 00:01:32.909 DBG1 (vsp) dv_ioctl() cat1, cmd: 0x540b, arg: 0x0, in_buf: 0x0, in_buf size: 0, out_bufsz: 0
+2026-02-22 00:01:32.909 DBG1 (vsp) chan_in_cb()
+2026-02-22 00:01:32.909 DBG1 (vsp) dv_ioctl() cat1, cmd: 0x5401, arg: 0x7ffd2c475770, in_buf: 0x0, in_buf size: 0, out_bufsz: 0
+2026-02-22 00:01:32.910 DBG1 (vsp) chan_in_cb()
+2026-02-22 00:01:32.910 DBG1 (vsp) dv_ioctl() cat1, cmd: 0x5401, arg: 0x7ffd2c475770, in_buf: 0x0, in_buf size: 0, out_bufsz: 36
+2026-02-22 00:01:32.910 DBG1 (vsp) chan_in_cb()
+2026-02-22 00:01:32.910 DBG1 (vsp) dv_ioctl() cat1, cmd: 0x5402, arg: 0x7ffd2c475740, in_buf: 0x0, in_buf size: 0, out_bufsz: 0
+2026-02-22 00:01:32.910 DBG1 (vsp) chan_in_cb()
