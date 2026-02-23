@@ -161,6 +161,12 @@ struct cw_fsk_message {
 	uint8_t delay;
 };
 
+struct freq_info_req {
+	struct PGNode node;
+	struct mh_control *ctl;
+	uint8_t radio;
+};
+
 struct mh_control {
 	const char *serial;
 	struct mh_router *router;
@@ -183,8 +189,9 @@ struct mh_control {
 	// radio info per radio, data, validity, stale timer
 	struct mhc_radio_info radio_info[2];
 	uint8_t  radio_info_valid[2];
-	ev_timer radio_info_timer[2];
-
+	ev_timer radio_info_timer[2];       // timer to mark radio info as stale after some time without update.
+	uint8_t radio_info_freq_sent_success[2]; // radio qrg info successfully sent.
+	struct PGList radio_info_freq_free_list;
 
 	uint8_t speed_params_valid[MH_NUM_CHANNELS];
 	uint8_t speed_idx;
@@ -495,8 +502,8 @@ static void control_channel_cb(struct mh_router *router, unsigned const char *da
 		int old_keyer_mode = ctl->tracked_keyer_mode;
 
 		ctl->tracked_keyer_mode = f & 3;
-		ctl->tracked_keyer_mode_r1r2[0] = (f >> 2) & 3;;
-		ctl->tracked_keyer_mode_r1r2[1] = (f >> 4) & 3;;
+		ctl->tracked_keyer_mode_r1r2[0] = (f >> 2) & 3;
+		ctl->tracked_keyer_mode_r1r2[1] = (f >> 4) & 3;
 
 		dbg0("%s mode  cur: %s, r1: %s, r2: %s", ctl->serial,
 			keyer_modes[ctl->tracked_keyer_mode], keyer_modes[ctl->tracked_keyer_mode_r1r2[0]],
@@ -566,6 +573,10 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 
 	switch(ctl->state) {
 	case CTL_STATE_DEVICE_OFF:
+		// reset freq sent state.
+		ctl->radio_info_freq_sent_success[0] = 0;
+		ctl->radio_info_freq_sent_success[1] = 0;
+
 		// kick off the state machine
 		info("%s INITIALIZING", ctl->serial);
 		dbg0("%s initializer ping", ctl->serial);
@@ -740,6 +751,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	PG_NewList(&ctl->mok_state_changed_cb_list);
 	PG_NewList(&ctl->acc_state_changed_cb_list);
 	PG_NewList(&ctl->mode_changed_cb_list);
+	PG_NewList(&ctl->radio_info_freq_free_list);
 
 	set_state(ctl, CTL_STATE_DEVICE_DISC);
 
@@ -759,6 +771,12 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	ctl->radio_info_timer[1].repeat = RADIO_INFO_TIMEOUT;
 	ctl->radio_info_timer[0].data = ctl;
 	ctl->radio_info_timer[1].data = ctl;
+
+	// keyer mode tracking, initialize to an invalid mode to force update to keyer
+	// from radio_info, if available later.
+	ctl->tracked_keyer_mode = -1;
+	ctl->tracked_keyer_mode_r1r2[0] = -1;
+	ctl->tracked_keyer_mode_r1r2[1] = -1;
 
 	mhr_add_status_cb(router, router_status_cb, ctl);
 
@@ -798,6 +816,7 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 void mhc_destroy(struct mh_control *ctl) {
 	struct command *cmd;
 	struct mhc_keyer_state_callback *kscb;
+	struct freq_info_req *freq;
 	int i;
 
 	dbg1("%s()", __func__);
@@ -823,6 +842,11 @@ void mhc_destroy(struct mh_control *ctl) {
 	while((cmd = (void*)PG_FIRSTENTRY(&ctl->free_list))) {
 		PG_Remove(&cmd->node);
 		free(cmd);
+	}
+
+	while((freq = (void*)PG_FIRSTENTRY(&ctl->radio_info_freq_free_list))) {
+		PG_Remove(&freq->node);
+		free(freq);
 	}
 
 	if(ctl->kcfg)
@@ -1757,10 +1781,27 @@ static uint8_t freq_changed(struct mhc_radio_info *old_info, const struct mhc_ra
 	return 0;
 }
 
+static void send_cat_freq_info_cb(unsigned const char *reply, int len, int result, void *user_data) {
+	struct freq_info_req *req = (void*)user_data;
+	struct mh_control *ctl = req->ctl;
+	uint8_t radio = req->radio;
+
+	dbg0("%s() radio %d result %s", __func__, radio, mhc_cmd_err_string(result));
+
+	if(result != CMD_RESULT_OK) {
+		dbg0("%s() failed to send CAT frequency info: %s", __func__, mhc_cmd_err_string(result));
+		ctl->radio_info_freq_sent_success[radio-1] = 0;
+	} 
+	else
+		ctl->radio_info_freq_sent_success[radio-1] = 1;
+
+	PG_AddTail(&ctl->radio_info_freq_free_list, &req->node);
+}
+
 void mhc_update_radio_info(struct mh_control *ctl, const char *source, const struct mhc_radio_info *info) {
 	if(!info)
 		return;
-	uint8_t force_mode_changed;
+	// uint8_t force_mode_changed;
 	uint8_t radio = info->radio;
 
 	dbg1("%s %s() source %s r%d mode %d rx=%u tx=%u", ctl->serial, __func__, source, radio,
@@ -1771,7 +1812,7 @@ void mhc_update_radio_info(struct mh_control *ctl, const char *source, const str
 
 	ev_timer_again(ctl->loop, &ctl->radio_info_timer[radio-1]);
 
-	force_mode_changed = set_force_keyer_mode(ctl, radio, 0);
+	/* force_mode_changed = */ set_force_keyer_mode(ctl, radio, 0);
 
 	if(ctl->radio_info_valid[radio-1] == 0) {
 		ctl->radio_info_valid[radio-1] = 1;
@@ -1781,9 +1822,16 @@ void mhc_update_radio_info(struct mh_control *ctl, const char *source, const str
 	}
 
 	// Update mode in keyer if changed.
-	if(info->mode >= 0 && (info->mode != ctl->radio_info[radio-1].mode || force_mode_changed)) {
+	if(info->mode >= 0 && info->mode <= 3 &&
+		(
+			info->mode != ctl->tracked_keyer_mode || 
+			( (ctl->mhi.flags & MHF_HAS_R2) && (info->mode != ctl->tracked_keyer_mode_r1r2[radio-1]) )
+		) )
+	{
 		dbg0("%s %s() r%d mode changed from %d to %d", ctl->serial, __func__, radio, ctl->radio_info[radio-1].mode, info->mode);
 		if(ctl->mhi.flags & MHF_HAS_R2) {
+			// We don't need to track success by callback, as we compare against keyer
+			// reported mode. If it doesn't change, we send again.
 			mhc_set_mode_on_radio(ctl, info->mode, radio, NULL, NULL);
 		} else {
 			mhc_set_mode(ctl, info->mode, NULL, NULL);
@@ -1792,12 +1840,23 @@ void mhc_update_radio_info(struct mh_control *ctl, const char *source, const str
 		dbg1("%s %s() r%d mode unchanged (%d)", ctl->serial, __func__, radio, info->mode);
 	}
 
-	if(freq_changed(&ctl->radio_info[radio-1], info)) {
+	if( ! ctl->radio_info_freq_sent_success[radio-1] || freq_changed(&ctl->radio_info[radio-1], info)) {
 		dbg0("%s %s() r%d freq changed rx=%u tx=%u vfoA=%u vfoB=%u",
 		     ctl->serial, __func__, radio, info->rxFreq, info->txFreq,
 		     info->vfoAFreq, info->vfoBFreq);
 		if((ctl->mhi.flags & MHF_HAS_CAT_CMD) && mhc_is_online(ctl)) {
-			send_cat_freq_info(ctl, info, radio, NULL, NULL);
+			struct freq_info_req *req = (void*)PG_FIRSTENTRY(&ctl->radio_info_freq_free_list);
+			if(req) {
+				PG_Remove(&req->node);
+			} else {
+				req = w_malloc(sizeof(*req));
+			}
+			req->ctl = ctl;
+			req->radio = radio;
+			send_cat_freq_info(ctl, info, radio, send_cat_freq_info_cb, req);
+		} else {
+			// Keyer may not be online, flag that it is out of sync.
+			ctl->radio_info_freq_sent_success[radio-1] = 0;
 		}
 	}
 
