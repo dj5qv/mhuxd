@@ -5,8 +5,8 @@
 ## NOTES: On this is the V0.90beta branch
 
 - work in progress
-- Web UI migrated to a JS/Svelte based version. It can already be accessed on http://localhost:5052/svelte/index.html#home/summary. 
-  Old UI is still available and default, but not maintained anymore.
+- Web UI migrated to a JS/Svelte based version. New UI is default under http://localhost:5052. Old UI can still be accessed via 
+  http://localhost:5052/classic. However, old UI is not maintained anymore.
 
 - Internal Clearsilver/HDF based configuration management migrated to JSON. Clearsilver still included for backward compatibility with
   the old config file. If mhuxd doesn't find a json format config file, it will attempt to load the hdf config and migrate it to json.
