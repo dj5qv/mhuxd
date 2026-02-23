@@ -1,3 +1,4 @@
+
 :root {
   font-family: 'Monda', Arial, Helvetica, sans-serif;
   color: #111;
@@ -203,6 +204,14 @@ h1 {
   max-width: 220px;
 }
 
+
+.audio-grid-3 .table-header,
+.audio-grid-3 .table-row {
+  grid-template-columns: 140px minmax(220px, 1fr) minmax(240px, 1fr); 
+  grid-template-columns: 140px minmax(220px, 1fr) minmax(240px, 1fr);  column-gap: 16px;
+}
+
+
 .audio-grid-4 .table-header,
 .audio-grid-4 .table-row {
   grid-template-columns: 140px minmax(220px, 1fr) minmax(220px, 1fr) minmax(240px, 1fr);
@@ -375,4 +384,23 @@ h1 {
   font-size: 24px;
   font-weight: 700;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.all-params-panel {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.all-params-panel .row {
+  display: contents; /* makes children participate in the parent grid */
+}
+
+.all-params-panel .label {
+  white-space: nowrap;
+}
+
+.all-params-panel .input {
+  width: 100%;
 }

@@ -1445,7 +1445,7 @@ int mhc_set_kopt(struct mh_control *ctl, const char *key, int val) {
 		return -1;
 	}
 
-	if(kcfg_set_val(ctl->kcfg, key, val)) {
+	if(-1 == kcfg_set_val(ctl->kcfg, key, val)) {
 		err("could not set keyer parameter %s=%d!", key, val);
 		return -1;
 	}

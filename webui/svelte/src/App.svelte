@@ -454,6 +454,7 @@
       setRigModeSyncStatusMsg(serial, 'Rig mode sync settings applied.', 'success');
     } catch (err) {
       setRigModeSyncStatusMsg(serial, err?.message || 'Failed to apply rig mode sync settings.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -570,6 +571,7 @@
       setAllParamStatusMsg(serial, 'All parameters applied.', 'success');
     } catch (err) {
       setAllParamStatusMsg(serial, err?.message || 'Failed to apply parameters.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -605,6 +607,7 @@
       setMessageStatusMsg(serial, kind, `${kind.toUpperCase()} messages applied.`, 'success');
     } catch (err) {
       setMessageStatusMsg(serial, kind, err?.message || `Failed to apply ${kind.toUpperCase()} messages.`, 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -718,6 +721,7 @@
       setPttStatusMsg(serial, chan, 'PTT settings applied.', 'success');
     } catch (err) {
       setPttStatusMsg(serial, chan, err?.message || 'Failed to apply PTT settings.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -770,6 +774,7 @@
       setRadioStatusMsg(serial, chan, 'Radio settings applied.', 'success');
     } catch (err) {
       setRadioStatusMsg(serial, chan, err?.message || 'Failed to apply radio settings.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -799,6 +804,19 @@
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!res.ok) throw new Error(`${url} ${res.status}`);
     return res.json();
+  };
+
+  const refreshDeviceConfig = async (serial) => {
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        headers: { Accept: 'application/json' }
+      });
+      if (!res.ok) return;
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+    } catch {
+      // silently ignore — we're already in an error handler
+    }
   };
 
   const fwString = (d) => {
@@ -1114,6 +1132,7 @@
       setKeyerStatusMsg(serial, 'Keyer mode updated.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to update keyer mode.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1130,6 +1149,7 @@
       setKeyerStatusMsg(serial, 'Winkey settings updated.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to update winkey settings.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1152,6 +1172,7 @@
       setKeyerStatusMsg(serial, msg, 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to update settings.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1223,6 +1244,7 @@
       setKeyerStatusMsg(serial, 'Setting updated.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to update setting.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1239,6 +1261,7 @@
       setKeyerStatusMsg(serial, 'Sequencer setting updated.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to update sequencer setting.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1255,6 +1278,7 @@
       setKeyerStatusMsg(serial, 'Output setting updated.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to update output setting.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1317,6 +1341,7 @@
       setKeyerStatusMsg(serial, 'Antenna added.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to add antenna.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1339,6 +1364,7 @@
       setKeyerStatusMsg(serial, 'Antennas updated.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to update antennas.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1361,6 +1387,7 @@
       setKeyerStatusMsg(serial, 'Antenna(s) removed.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to remove antenna.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1438,6 +1465,7 @@
       setKeyerStatusMsg(serial, 'Virtual rotator added.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to add virtual rotator.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1461,6 +1489,7 @@
       setKeyerStatusMsg(serial, 'Virtual rotators updated.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to update virtual rotators.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1500,6 +1529,7 @@
       setKeyerStatusMsg(serial, 'Item(s) removed.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to remove item(s).', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1539,6 +1569,7 @@
       setKeyerStatusMsg(serial, 'Antenna reference added.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to add antenna reference.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1596,6 +1627,7 @@
       setKeyerStatusMsg(serial, 'Antenna group added.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to add antenna group.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1619,6 +1651,7 @@
       setKeyerStatusMsg(serial, 'Antenna groups updated.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to update antenna groups.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1655,6 +1688,7 @@
       setKeyerStatusMsg(serial, 'Item(s) removed.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to remove item(s).', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1693,6 +1727,7 @@
       setKeyerStatusMsg(serial, 'Antenna reference added.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to add antenna reference.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1780,6 +1815,7 @@
       setKeyerStatusMsg(serial, 'Band added.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to add band.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1808,6 +1844,7 @@
       setKeyerStatusMsg(serial, 'Bands updated.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to update bands.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1844,6 +1881,7 @@
       setKeyerStatusMsg(serial, 'Item(s) removed.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to remove item(s).', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -1882,6 +1920,7 @@
       setKeyerStatusMsg(serial, 'Antenna/group reference added.', 'success');
     } catch (err) {
       setKeyerStatusMsg(serial, err?.message || 'Failed to add reference.', 'error');
+      await refreshDeviceConfig(serial);
     }
   };
 
@@ -3256,7 +3295,7 @@
                     <div>Transmit</div>
                     <div>Transmit with Footswitch</div>
                   </div>
-                  {#each ['cw', 'voice', 'digital'] as mode}
+                  {#each ['voice', 'digital'] as mode}
                     <div class="table-row">
                       <div>{mode.toUpperCase()}</div>
                       <div>
@@ -3299,28 +3338,24 @@
 
               <section class="section">
                 <div class="section-title">Audio Options</div>
-                <div class="panel table audio-grid-4">
+                <div class="panel table audio-grid-3">
                   <div class="table-header">
                     <div></div>
-                    <div>CW</div>
                     <div>Voice</div>
                     <div>Digital</div>
                   </div>
                   <div class="table-row">
                     <div>Enable On Air Recording</div>
-                    <div><input type="checkbox" checked={!!keyerParam(activeSerial, 'r1FrMpkExtra_Cw.onAirRecActive')} on:change={(e) => updateKeyerParam(activeSerial, 'r1FrMpkExtra_Cw.onAirRecActive', e.target.checked ? 1 : 0)} /></div>
                     <div><input type="checkbox" checked={!!keyerParam(activeSerial, 'r1FrMpkExtra_Voice.onAirRecActive')} on:change={(e) => updateKeyerParam(activeSerial, 'r1FrMpkExtra_Voice.onAirRecActive', e.target.checked ? 1 : 0)} /></div>
                     <div><input type="checkbox" checked={!!keyerParam(activeSerial, 'r1FrMpkExtra_Digital.onAirRecActive')} on:change={(e) => updateKeyerParam(activeSerial, 'r1FrMpkExtra_Digital.onAirRecActive', e.target.checked ? 1 : 0)} /></div>
                   </div>
                   <div class="table-row alt">
                     <div>Recording enabled by Software (Logger)</div>
-                    <div><input type="checkbox" checked={!!keyerParam(activeSerial, 'r1FrMpkExtra_Cw.onAirRecControlByRouter')} on:change={(e) => updateKeyerParam(activeSerial, 'r1FrMpkExtra_Cw.onAirRecControlByRouter', e.target.checked ? 1 : 0)} /></div>
                     <div><input type="checkbox" checked={!!keyerParam(activeSerial, 'r1FrMpkExtra_Voice.onAirRecControlByRouter')} on:change={(e) => updateKeyerParam(activeSerial, 'r1FrMpkExtra_Voice.onAirRecControlByRouter', e.target.checked ? 1 : 0)} /></div>
                     <div><input type="checkbox" checked={!!keyerParam(activeSerial, 'r1FrMpkExtra_Digital.onAirRecControlByRouter')} on:change={(e) => updateKeyerParam(activeSerial, 'r1FrMpkExtra_Digital.onAirRecControlByRouter', e.target.checked ? 1 : 0)} /></div>
                   </div>
                   <div class="table-row">
                     <div>Audio Monitor Level (0-25)</div>
-                    <div><input class="input" type="number" value={keyerParam(activeSerial, 'r1FrMpkExtra_Cw.pwmMonctr')} on:input={(e) => updateKeyerParam(activeSerial, 'r1FrMpkExtra_Cw.pwmMonctr', Number(e.target.value))} /></div>
                     <div><input class="input" type="number" value={keyerParam(activeSerial, 'r1FrMpkExtra_Voice.pwmMonctr')} on:input={(e) => updateKeyerParam(activeSerial, 'r1FrMpkExtra_Voice.pwmMonctr', Number(e.target.value))} /></div>
                     <div><input class="input" type="number" value={keyerParam(activeSerial, 'r1FrMpkExtra_Digital.pwmMonctr')} on:input={(e) => updateKeyerParam(activeSerial, 'r1FrMpkExtra_Digital.pwmMonctr', Number(e.target.value))} /></div>
                   </div>
@@ -3370,7 +3405,7 @@
                     <div>Transmit</div>
                     <div>Transmit with Footswitch</div>
                   </div>
-                  {#each ['cw', 'voice', 'digital'] as mode}
+                  {#each ['voice', 'digital'] as mode}
                     <div class="table-row">
                       <div>{mode.toUpperCase()}</div>
                       <div>
@@ -3444,7 +3479,7 @@
                     <div>Mic</div>
                     <div>Codec</div>
                   </div>
-                  {#each ['cw', 'voice', 'digital'] as mode}
+                  {#each ['voice', 'digital'] as mode}
                     <div class="table-row">
                       <div>{mode.toUpperCase()}</div>
                       <div>
@@ -3518,7 +3553,7 @@
                     <div>Mic</div>
                     <div>Codec</div>
                   </div>
-                  {#each ['cw', 'voice', 'digital'] as mode}
+                  {#each ['voice', 'digital'] as mode}
                     <div class="table-row">
                       <div>{mode.toUpperCase()}</div>
                       <div>
@@ -4662,7 +4697,7 @@
           {:else if activeMenuId === 'all_params'}
             <section class="section">
               <div class="section-title">All Keyer Parameters</div>
-              <div class="panel">
+              <div class="panel all-params-panel">
                 {#each Object.entries(allParamForm[activeSerial] || {}) as entry}
                   <div class="row">
                     <div class="label">{entry[0]}:</div>

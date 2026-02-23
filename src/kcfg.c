@@ -40,9 +40,9 @@ struct citem {
 };
 
 static const struct citem c_base[] = {
-	{ "r1FrBase_Digital.audioRx",	0,  1, 2, 1 }, /* MK2, DK2, MK2R */ /* B */
-	{ "r1FrBase_Digital.audioTx",	0,  3, 2, 1 }, /* MK2, DK2, MK2R */ /* B */
-	{ "r1FrBase_Digital.audioTxFootSw",	0,  5, 2, 1 }, /* MK2, DK2, MK2R */ /* B */
+	{ "r1FrBase_Digital.audioRx",	0,  1, 2, AUDIO_SW_B }, /* MK2, DK2, MK2R */ /* B */
+	{ "r1FrBase_Digital.audioTx",	0,  3, 2, AUDIO_SW_B }, /* MK2, DK2, MK2R */ /* B */
+	{ "r1FrBase_Digital.audioTxFootSw",	0,  5, 2, AUDIO_SW_D }, /* MK2, DK2, MK2R */ /* B */
 	{ "r1FrBase_Digital.ptt1",	0,  6, 1, 1 }, /* MK2, DK2, MK2R */
 	{ "r1FrBase_Digital.ptt2",	0,  7, 1, 1 }, /* MK2, DK2, MK2R */
 
@@ -91,17 +91,17 @@ static const struct citem c_base[] = {
 #if 0
 	{ "r1FrBase_Cw",	10, 7, 8,  0xEA }, /* AAA, PTT1|PTT2 */
 #endif
-	{ "r1FrBase_Cw.audioRx",	10,  1, 2, 2 }, /* MK2, DK2, MK2R */ /* A */
-	{ "r1FrBase_Cw.audioTx",	10,  3, 2, 2 }, /* MK2, DK2, MK2R */ /* A */
-	{ "r1FrBase_Cw.audioTxFootSw",	10,  5, 2, 2 }, /* MK2, DK2, MK2R */ /* A */
+	{ "r1FrBase_Cw.audioRx",	10,  1, 2, AUDIO_SW_D }, /* MK2, DK2, MK2R */ /* D */
+	{ "r1FrBase_Cw.audioTx",	10,  3, 2, AUDIO_SW_D }, /* MK2, DK2, MK2R */ /* D */
+	{ "r1FrBase_Cw.audioTxFootSw",	10,  5, 2, AUDIO_SW_D }, /* MK2, DK2, MK2R */ /* D */
 	{ "r1FrBase_Cw.ptt1",	10,  6, 1, 1 }, /* MK2, DK2, MK2R */
 	{ "r1FrBase_Cw.ptt2",	10,  7, 1, 0 }, /* MK2, DK2, MK2R */
 #if 0
 	{ "r1FrBase_Voice",	11, 7, 8,  0xEA }, /* AAA, PTT1|PTT2 */
 #endif
-	{ "r1FrBase_Voice.audioRx",	11,  1, 2, 2 }, /* MK2, DK2, MK2R */ /* A */
-	{ "r1FrBase_Voice.audioTx",	11,  3, 2, 3 }, /* MK2, DK2, MK2R */ /* C */
-	{ "r1FrBase_Voice.audioTxFootSw",	11,  5, 2, 2 }, /* MK2, DK2, MK2R */ /* A */
+	{ "r1FrBase_Voice.audioRx",	11,  1, 2, AUDIO_SW_A }, /* MK2, DK2, MK2R */ /* A */
+	{ "r1FrBase_Voice.audioTx",	11,  3, 2, AUDIO_SW_C }, /* MK2, DK2, MK2R */ /* C */
+	{ "r1FrBase_Voice.audioTxFootSw",	11,  5, 2, AUDIO_SW_A }, /* MK2, DK2, MK2R */ /* A */
 	{ "r1FrBase_Voice.ptt1",	11,  6, 1, 1 }, /* MK2, MK2R */
 	{ "r1FrBase_Voice.ptt2",	11,  7, 1, 0 }, /* MK2, DK2, MK2R */
 };
@@ -212,8 +212,8 @@ struct citem c_mk2[] = {
 #endif
 	{ "r1FrMpkExtra_Voice.pwmMonctr",27, 4, 5,  0 },
 	{ "r1FrMpkExtra_Voice.reserve",27, 5, 1,  0 },
-	{ "r1FrMpkExtra_Voice.onAirRecActive",27, 6, 1,  1 },
-	{ "r1FrMpkExtra_Voice.onAirRecControlByRouter",27, 7, 1,  1 },
+	{ "r1FrMpkExtra_Voice.onAirRecActive",27, 6, 1, 0 },
+	{ "r1FrMpkExtra_Voice.onAirRecControlByRouter",27, 7, 1, 0 },
 
 
 	{ "micSelAuto",		28, 0, 1,  1 },
@@ -314,8 +314,8 @@ struct citem c_mk3[] = {
 #endif
 	{ "r1FrMpkExtra_Voice.pwmMonctr",27, 4, 5,  0 },
 	{ "r1FrMpkExtra_Voice.reserve",27, 5, 1,  0 },
-	{ "r1FrMpkExtra_Voice.onAirRecActive",27, 6, 1,  1 },
-	{ "r1FrMpkExtra_Voice.onAirRecControlByRouter",27, 7, 1,  1 },
+	{ "r1FrMpkExtra_Voice.onAirRecActive",27, 6, 1,  0 },
+	{ "r1FrMpkExtra_Voice.onAirRecControlByRouter",27, 7, 1, 0 },
 
 
 	{ "micSelAuto",		28, 0, 1,  1 },
@@ -718,6 +718,7 @@ static uint8_t width2mask(int w) {
 	return (0xff >> (8-w));
 }
 
+// 0 for success, -1 for error, -2 warning, valid request but not supported anymore.
 int kcfg_set_val(struct kcfg *kcfg, const char *key, int val) {
 	const struct citem *cp;
 	int c;
@@ -727,6 +728,23 @@ int kcfg_set_val(struct kcfg *kcfg, const char *key, int val) {
 	if(!cp) {
 		warn("%s unknown keyer option: %s", __func__, key);
 		return -1;
+	}
+
+	// enforce switching / DVK recording in CW
+	if( cp->def != val && (
+		!strcmp(key, "r1FrBase_Cw.audioTx") || 
+		!strcmp(key, "r1FrBase_Cw.audioRx") || 
+		!strcmp(key, "r1FrBase_Cw.audioTxFootSw") ||
+	 	!strcmp(key, "r2FrBase_Cw.audioTx") || 
+		!strcmp(key, "r2FrBase_Cw.audioRx") || 
+		!strcmp(key, "r2FrBase_Cw.audioTxFootSw") ||
+		!strcmp(key, "r1FrMpkExtra_Cw.onAirRecActive") ||
+		!strcmp(key, "r1FrMpkExtra_Cw.onAirRecControlByRouter") ||
+		!strcmp(key, "r2FrMpkExtra_Cw.onAirRecActive") ||
+		!strcmp(key, "r2FrMpkExtra_Cw.onAirRecControlByRouter") ) )
+	{
+		warn("%s val %d for key %s not allowed anymore.", __func__, val, key);
+		return -2;
 	}
 
 	idx = cp->off + cp->base_bit / 8;
@@ -867,9 +885,9 @@ struct kcfg *kcfg_create(const struct mh_info *mhi) {
 
 	// Overwrite some defaults for MK2/MK3
 	if(mhi->type == MHT_MK2 || mhi->type == MHT_MK3) {
-		kcfg_set_val(kcfg, "r1FrBase_Cw.audioRx", AUDIO_SW_A);
-		kcfg_set_val(kcfg, "r1FrBase_Cw.audioTx", AUDIO_SW_A);
-		kcfg_set_val(kcfg, "r1FrBase_Cw.audioTxFootSw", AUDIO_SW_A);
+		kcfg_set_val(kcfg, "r1FrBase_Cw.audioRx", AUDIO_SW_D);
+		kcfg_set_val(kcfg, "r1FrBase_Cw.audioTx", AUDIO_SW_D);
+		kcfg_set_val(kcfg, "r1FrBase_Cw.audioTxFootSw", AUDIO_SW_D);
 
 		kcfg_set_val(kcfg, "r1FrBase_Voice.audioRx", AUDIO_SW_A);
 		kcfg_set_val(kcfg, "r1FrBase_Voice.audioTx", AUDIO_SW_C);

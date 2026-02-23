@@ -1357,6 +1357,8 @@ struct cfgmgrj *cfgmgrj_create(struct ev_loop *loop, struct conmgr *conmgr) {
 }
 
 int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
+    dbg0("%s Loading config from %s", __func__, CFGFILE);
+
     if(access(CFGFILE, F_OK) == -1) {
         dbg1("%s: %s not found", __func__, CFGFILE);
         return -2; // File not found, triggers migration in main()
@@ -1378,12 +1380,15 @@ int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
 }
 
 int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj) {
+    dbg0("%s Saving config to %s", __func__, CFGFILE);
     json_t *root = build_config_json(cfgmgrj);
-    if(!root)
+    if(!root) {
+        err("cfgmgrj: failed to build config JSON, can't save to %s", CFGFILE);
         return -1;
-
+    }
     if(json_dump_file(root, CFGFILE, JSON_INDENT(2) | JSON_PRESERVE_ORDER) != 0) {
         json_decref(root);
+        err("cfgmgrj: failed to save config to %s", CFGFILE);
         return -1;
     }
     json_decref(root);
