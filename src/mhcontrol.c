@@ -730,6 +730,7 @@ static void radio_info_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, in
 		return;
 
 	ctl->radio_info_valid[radio-1] = 0;
+	ev_timer_stop(ctl->loop, &ctl->radio_info_timer[radio-1]);
 	set_force_keyer_mode(ctl, radio, 1);
 }
 
@@ -1380,7 +1381,24 @@ void mhc_store_fsk_message(struct mh_control *ctl, uint8_t idx, const char *text
 	submit_cmd(ctl, &b, cb, user_data);
 }
 
-void send_cat_freq_info(struct mh_control *ctl, const struct mhc_radio_info *info, uint8_t radio, mhc_cmd_completion_cb_fn cb, void *user_data) {
+static void send_cat_freq_info_cb(unsigned const char *reply, int len, int result, void *user_data) {
+	struct freq_info_req *req = (void*)user_data;
+	struct mh_control *ctl = req->ctl;
+	uint8_t radio = req->radio;
+
+	dbg0("%s() radio %d result %s", __func__, radio, mhc_cmd_err_string(result));
+
+	if(result != CMD_RESULT_OK) {
+		dbg0("%s() failed to send CAT frequency info: %s", __func__, mhc_cmd_err_string(result));
+		ctl->radio_info_freq_sent_success[radio-1] = 0;
+	} 
+	else
+		ctl->radio_info_freq_sent_success[radio-1] = 1;
+
+	PG_AddTail(&ctl->radio_info_freq_free_list, &req->node);
+}
+
+void send_cat_freq_info(struct mh_control *ctl, const struct mhc_radio_info *info, uint8_t radio) {
 	if(radio < 1 || radio > 2)
 		return;
 
@@ -1435,7 +1453,16 @@ void send_cat_freq_info(struct mh_control *ctl, const struct mhc_radio_info *inf
 
         dbg0("%s cat_freq_info: freq=%u mask=0x%04x", __func__, entries[i].freq, mask);
 
-		submit_cmd(ctl, &b, cb, user_data);
+		struct freq_info_req *req = (void*)PG_FIRSTENTRY(&ctl->radio_info_freq_free_list);
+		if(req) {
+			PG_Remove(&req->node);
+		} else {
+			req = w_malloc(sizeof(*req));
+		}
+		req->ctl = ctl;
+		req->radio = radio;
+
+		submit_cmd(ctl, &b, send_cat_freq_info_cb, req);
 	}
 }
 
@@ -1781,22 +1808,7 @@ static uint8_t freq_changed(struct mhc_radio_info *old_info, const struct mhc_ra
 	return 0;
 }
 
-static void send_cat_freq_info_cb(unsigned const char *reply, int len, int result, void *user_data) {
-	struct freq_info_req *req = (void*)user_data;
-	struct mh_control *ctl = req->ctl;
-	uint8_t radio = req->radio;
 
-	dbg0("%s() radio %d result %s", __func__, radio, mhc_cmd_err_string(result));
-
-	if(result != CMD_RESULT_OK) {
-		dbg0("%s() failed to send CAT frequency info: %s", __func__, mhc_cmd_err_string(result));
-		ctl->radio_info_freq_sent_success[radio-1] = 0;
-	} 
-	else
-		ctl->radio_info_freq_sent_success[radio-1] = 1;
-
-	PG_AddTail(&ctl->radio_info_freq_free_list, &req->node);
-}
 
 void mhc_update_radio_info(struct mh_control *ctl, const char *source, const struct mhc_radio_info *info) {
 	if(!info)
@@ -1845,15 +1857,7 @@ void mhc_update_radio_info(struct mh_control *ctl, const char *source, const str
 		     ctl->serial, __func__, radio, info->rxFreq, info->txFreq,
 		     info->vfoAFreq, info->vfoBFreq);
 		if((ctl->mhi.flags & MHF_HAS_CAT_CMD) && mhc_is_online(ctl)) {
-			struct freq_info_req *req = (void*)PG_FIRSTENTRY(&ctl->radio_info_freq_free_list);
-			if(req) {
-				PG_Remove(&req->node);
-			} else {
-				req = w_malloc(sizeof(*req));
-			}
-			req->ctl = ctl;
-			req->radio = radio;
-			send_cat_freq_info(ctl, info, radio, send_cat_freq_info_cb, req);
+			send_cat_freq_info(ctl, info, radio);
 		} else {
 			// Keyer may not be online, flag that it is out of sync.
 			ctl->radio_info_freq_sent_success[radio-1] = 0;
