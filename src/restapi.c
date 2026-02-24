@@ -430,6 +430,18 @@ static json_t *find_device_in_devices(json_t *devices, const char *serial) {
 	return NULL;
 }
 
+static json_t *find_connector_in_connectors(json_t *connectors, int id) {
+	if(!connectors || !json_is_array(connectors))
+		return NULL;
+	for(size_t i = 0; i < json_array_size(connectors); i++) {
+		json_t *connector = json_array_get(connectors, i);
+		json_t *s = json_object_get(connector, "id");
+		if(s && json_is_integer(s) && json_integer_value(s) == id)
+			return connector;
+	}
+	return NULL;
+}
+
 static int send_json_payload(struct http_connection *hcon, json_t *root) {
 	char *payload = json_dumps(root, JSON_COMPACT);
 	if(!payload) {
@@ -452,6 +464,18 @@ static int cb_config_connectors(struct http_connection *hcon, const char *path, 
 
 	if(!api || !api->cfgmgrj) {
 		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(method == HS_HTTP_GET) {
+		json_t *root = cfgmgrj_build_json(api->cfgmgrj);
+		if(!root) {
+			hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+			return 0;
+		}
+		json_t *connectors = json_object_get(root, "connectors");
+		send_json_payload(hcon, connectors ? connectors : json_array());
+		json_decref(root);
 		return 0;
 	}
 
@@ -496,6 +520,30 @@ static int cb_config_connector(struct http_connection *hcon, const char *path, c
 
 	if(!api || !api->cfgmgrj || !id_str) {
 		hs_send_response(hcon, 404, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+
+	if(method == HS_HTTP_GET) {
+		json_t *root = cfgmgrj_build_json(api->cfgmgrj);
+		if(!root) {
+			hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+			return 0;
+		}
+		json_t *connectors = json_object_get(root, "connectors");
+		json_t *connector = find_connector_in_connectors(connectors, atoi(id_str));
+		if(!connector) {
+			json_decref(root);
+			hs_send_response(hcon, 404, "application/json", "{}", 2, NULL, 0);
+			return 0;
+		}
+		json_t *rsp = json_deep_copy(connector);
+		json_decref(root);
+		if(!rsp) {
+			hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
+			return 0;
+		}
+		send_json_payload(hcon, rsp);
+		json_decref(rsp);
 		return 0;
 	}
 
