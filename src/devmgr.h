@@ -27,6 +27,7 @@ struct ev_loop;
 
 void *dmgr_create(struct ev_loop *loop);
 void dmgr_enable_monitor();
+void dmgr_disable_monitor();
 struct device *dmgr_add_device(const char *serial, uint16_t type);
 void dmgr_destroy();
 struct device *dmgr_get_device(const char *serial);

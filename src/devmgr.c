@@ -146,6 +146,15 @@ void dmgr_enable_monitor() {
 	dman->devmon = devmon_create(dman->loop, devmon_callback, dman);
 }
 
+void dmgr_disable_monitor() {
+	if(!dman->devmon) {
+		dbg0("%s() monitor not enabled!", __func__);
+		return;
+	}
+	devmon_destroy(dman->devmon);
+	dman->devmon = NULL;
+}
+
 void dmgr_destroy() {
 	struct device *dev;
 
@@ -169,7 +178,9 @@ void dmgr_destroy() {
 		free(dev);
 	}
 
-	devmon_destroy(dman->devmon);
+	if (dman->devmon)
+		devmon_destroy(dman->devmon);
+
 	free(dman);
 	dman = NULL;
 }
@@ -207,5 +218,5 @@ void dmgr_rem_on_device_connect_cb(t_on_device_connect_cb_handle *handle) {
 			return;
 		}
 	}
-	return;
+	warn("%s() callback handle not found!", __func__);
 }

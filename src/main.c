@@ -160,12 +160,10 @@ int main(int argc, char **argv)
 
 	static const char static_path[] = WEBUIDIR "/static";
 	static const char svelte_path[] = WEBUIDIR "/svelte";
-	struct http_handler *handler_redir[3];
+	struct http_handler *handler_redir[1];
 	hs_add_directory_map(hs, "/static/", static_path);
 	hs_add_directory_map(hs, "/svelte/", svelte_path);
 	handler_redir[0] = hs_register_handler(hs, "/", cb_redirect_home, webui);
-//	handler_redir[1] = hs_register_handler(hs, "/svelte", cb_redirect_home, webui);
-//	handler_redir[2] = hs_register_handler(hs, "/svelte/", cb_redirect_home, webui);
 
 	ev_signal_init (&w_sigint, sigint_cb, SIGINT);
 	ev_signal_init (&w_sigterm, sigint_cb, SIGTERM);
@@ -217,6 +215,15 @@ int main(int argc, char **argv)
 	if(signum) 
 		info("*** %s received!", strsignal(signum));
 
+	dmgr_disable_monitor();
+
+	// shutdown restapi and have it unregister all callbacks.
+	// Don't want it to mess around with lower level modules now.
+	restapi_shutdown(restapi);
+	hs_unregister_handler(hs, handler_redir[0]);
+	webui_destroy(webui);
+	hs_stop(hs);
+
 	cfgmgr_save_cfg(cfgmgr);
 	cfgmgrj_save_cfg(cfgmgrj);
 
@@ -224,21 +231,10 @@ int main(int argc, char **argv)
 	cfgmgrj_destroy(cfgmgrj);
 	conmgr_destroy(conmgr);
 
-	// This also cleans up sub modules, mhcontrol, wkm etc.
-//	dmgr_destroy();
-	
-	webui_destroy(webui);
 	restapi_destroy(restapi);
 
-	hs_unregister_handler(hs, handler_redir[0]);
-	//hs_unregister_handler(hs, handler_redir[1]);
-	//hs_unregister_handler(hs, handler_redir[2]);
-	hs_stop(hs);
-
-	// This also cleans up sub modules, mhcontrol, wkm etc.
+	// This also kills sub modules, mhcontrol, mhrouter, wkm etc.
 	dmgr_destroy();
-
-
 
 	ev_default_destroy();
 

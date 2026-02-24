@@ -1398,6 +1398,7 @@ int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj) {
 int cfgmgrj_add_conn(struct cfgmgrj *cfgmgrj, json_t *conn_obj) {
     if(!cfgmgrj || !conn_obj)
         return -1;
+    dbg1("%s", __func__);
     return apply_connector_from_json(cfgmgrj, conn_obj);
 }
 

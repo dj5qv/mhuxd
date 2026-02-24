@@ -16,5 +16,6 @@ struct restapi;
 
 struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj);
 void restapi_destroy(struct restapi *api);
+void restapi_shutdown(struct restapi *api);
 
 #endif /* RESTAPI_H */

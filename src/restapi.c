@@ -170,7 +170,6 @@ static json_t *build_devicetypes_array(json_t *displayoptions) {
 
 static int cb_metadata(struct http_connection *hcon, const char *path, const char *query,
 		 const char *body, uint32_t body_len, void *data) {
-	(void)path; (void)query; (void)body; (void)body_len;
 	struct restapi *api = data;
 
 	json_t *root = json_object();
@@ -889,10 +888,6 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
     }
 
     api = w_calloc(1, sizeof(*api));
-    if(!api) {
-        err("%s() out of memory", __func__);
-        goto fail;
-    }
 
     api->rigtypes = json_load_file(rigtypes_path, 0, &jerr);
     if(!api->rigtypes || !json_is_array(api->rigtypes)) {
@@ -942,7 +937,6 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
 		mhc_add_keyer_state_changed_cb(dev->ctl, on_keyer_state_changed, api);
 	}
 
-//	dmgr_set_device_added_cb(on_device_added, api);
 	api->device_connect_cb_handle = dmgr_add_on_device_connect_cb(on_device_added, api);
 
     return api;
@@ -976,8 +970,7 @@ fail:
     return NULL;
 }
 
-
-void restapi_destroy(struct restapi *api) {
+void restapi_shutdown(struct restapi *api) {
 	if(!api)
 		return;
 
@@ -991,27 +984,49 @@ void restapi_destroy(struct restapi *api) {
 		free(sub);
 	}
 
-	if(api->runtime_handler)
+	if(api->runtime_handler) {
 		hs_unregister_handler(api->hs, api->runtime_handler);
-	if(api->metadata_handler)
+		api->runtime_handler = NULL;
+	}
+	if(api->metadata_handler) {
 		hs_unregister_handler(api->hs, api->metadata_handler);
-	if(api->devices_handler)
+		api->metadata_handler = NULL;
+	}
+	if(api->devices_handler) {
 		hs_unregister_handler(api->hs, api->devices_handler);
-	if(api->config_daemon_handler)
+		api->devices_handler = NULL;
+	}
+	if(api->config_daemon_handler) {
 		hs_unregister_handler(api->hs, api->config_daemon_handler);
-	if(api->config_devices_handler)
+		api->config_daemon_handler = NULL;
+	}
+	if(api->config_devices_handler) {
 		hs_unregister_handler(api->hs, api->config_devices_handler);
-	if(api->config_device_handler)
+		api->config_devices_handler = NULL;
+	}
+	if(api->config_device_handler) {
 		hs_unregister_handler(api->hs, api->config_device_handler);
-	if(api->device_actions_handler)
+		api->config_device_handler = NULL;
+	}
+	if(api->device_actions_handler) {
 		hs_unregister_handler(api->hs, api->device_actions_handler);
-	if(api->events_handler)
+		api->device_actions_handler = NULL;
+	}
+	if(api->events_handler) {
 		hs_unregister_handler(api->hs, api->events_handler);
-	if(api->rigtypes)
+		api->events_handler = NULL;
+	}
+}
+
+void restapi_destroy(struct restapi *api) {
+	if(!api)
+		return;
+	restapi_shutdown(api);
+	if(api->rigtypes) 
 		json_decref(api->rigtypes);
-	if(api->devicetypes)
+	if(api->devicetypes) 
 		json_decref(api->devicetypes);
-	if(api->displayoptions)
+	if(api->displayoptions) 
 		json_decref(api->displayoptions);
 	free(api);
 }
