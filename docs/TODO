@@ -33,7 +33,7 @@
 
 14) When staring mhuxd with no config, keyer off, then turn on keyer, it doesn't get reactively added to the keyer list.
 
-15) Check this, when not setting high baud rate, we may get EPERM
+15) DONE: Check this, when not setting high baud rate, we may get EPERM
 
 The tcsetattr function with the TCSANOW action translates to the TCSETS ioctl call on Linux. Your con_vsp.c implementation already handles TCSETS (as well as TCSETSW for TCSADRAIN and TCSETSF for TCSAFLUSH), so the plumbing for TCSANOW is present.
 
@@ -42,6 +42,8 @@ The issue is that TCSETS fails with EPERM (Operation not permitted) because the 
 The file linux_termios.c currently excludes baud rates of 115200 and higher unless NO_MICRO_HAM is defined. Since this macro is not defined in your build configuration, these standard high baud rates are treated as unsupported, causing the EPERM error in con_vsp.c.
 
 I will patch linux_termios.c to enable support for these baud rates.
+
+COMMENT: Idea was that keyer don't support baud rate > 57600 to the rig anyway. But since rigctl(d) defaults to 115200 baud, this baud rate is allowed now.
 
 
 16) Consider using acl, eg. by ExecStartPre in systemd integration so we wouldn't need to run as root anymore. Example:
