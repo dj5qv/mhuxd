@@ -1,3 +1,11 @@
+mhuxd (0.90~beta) unstable; urgency=low
+  * Clearsilver/HDF based web UI and config management deprecated now.
+  * Configuration now JSON based, with auto-migration HDF->JSON
+  * Implemented RestAPI.
+  * UI now JS/Svelte based, talking via RestAPI/JSON with mhuxd.
+  * Optionally interfacing with rigctld to track the rig mode and frequency.
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Thu, 26 Feb 2026 18:00:00 +0100
+
 mhuxd (0.56) unstable; urgency=low
   * Minor fixes
  -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sat, 27 Aug 2024 01:06:00 +0100

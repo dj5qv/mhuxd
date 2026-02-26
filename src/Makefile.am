@@ -21,5 +21,5 @@ mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 	    proc_rotator.h mhmk2r.h mhmk2.h mhsm.h citem.h mhsm_sim.h dbuf.h result.h cfgmgrj.h rigctld_client.h
 
 install-data-local:
-	$(MKDIR_P) $(DESTDIR)$(STATEDIR) $(DESTDIR)$(RUNDIR) $(DESTDIR)$(LOGDIR)
+	$(MKDIR_P) $(DESTDIR)$(STATEDIR) $(DESTDIR)$(LOGDIR)
 

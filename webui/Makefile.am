@@ -3,7 +3,7 @@ webuistaticdir = $(WEBUIDIR)/static
 webuicsdir = $(WEBUIDIR)/cs
 webuisveltedir = $(WEBUIDIR)/svelte
 
-SVELTE_DIR = $(srcdir)/svelte
+SVELTE_DIR = $(abs_srcdir)/svelte
 SVELTE_BUILD_DIR = $(SVELTE_DIR)/dist
 SVELTE_NPM ?= npm
 
@@ -90,13 +90,17 @@ install-data-local:
 	if test -d "$(SVELTE_DIR)"; then \
 		if command -v "$(SVELTE_NPM)" >/dev/null 2>&1; then \
 			cd "$(SVELTE_DIR)" && "$(SVELTE_NPM)" install && "$(SVELTE_NPM)" run build; \
+			test -d "$(SVELTE_BUILD_DIR)"; \
 			$(MKDIR_P) "$(DESTDIR)$(webuisveltedir)"; \
-			cp -R "$(SVELTE_BUILD_DIR)"/* "$(DESTDIR)$(webuisveltedir)"/; \
+			cp -R "$(SVELTE_BUILD_DIR)"/. "$(DESTDIR)$(webuisveltedir)"/; \
 		else \
 			echo "Error: npm is required to build the Svelte UI"; \
 			exit 1; \
 		fi; \
 	fi
+
+all-local:
+	cd "$(SVELTE_DIR)" && "$(SVELTE_NPM)" install && "$(SVELTE_NPM)" run build
 
 uninstall-local:
 	@rm -rf "$(DESTDIR)$(webuisveltedir)"

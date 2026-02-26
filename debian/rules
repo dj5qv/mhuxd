@@ -14,3 +14,7 @@
 
 override_dh_installudev:
 	dh_installudev --priority 59 -n
+	# Build the Svelte Web UI
+	cd webui/svelte && npm install && npm run build
+	# Continue with standard build
+	dh_auto_build

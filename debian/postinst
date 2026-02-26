@@ -6,12 +6,8 @@ fi
 
 MHUXD=mhuxd
 
-[ -d /var/run/mhuxd ] || mkdir -p /var/run/mhuxd
-
-adduser --system --quiet --home /var/run/$MHUXD --no-create-home  \
+adduser --system --quiet --home /nonexistent --no-create-home  \
         --group $MHUXD 
-
-chown $MHUXD:$MHUXD /var/run/mhuxd
 
 # udev may have ignored our new rule as group mhuxd may not have 
 # existed yet.
