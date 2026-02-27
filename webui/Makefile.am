@@ -3,13 +3,12 @@ webuistaticdir = $(WEBUIDIR)/static
 webuicsdir = $(WEBUIDIR)/cs
 webuisveltedir = $(WEBUIDIR)/svelte
 
-SVELTE_DIR = $(abs_srcdir)/svelte
+SVELTE_SRC_DIR = $(abs_srcdir)/svelte
+SVELTE_DIR = $(abs_builddir)/svelte
 SVELTE_BUILD_DIR = $(SVELTE_DIR)/dist
 SVELTE_NPM ?= npm
 
-hdf_DATA = hdf/mhuxd.hdf
-
-webuistatic_DATA = \
+dist_webuistatic_DATA = \
 	static/monda400.woff \
 	static/monda700.woff \
 	static/mhuxd.css \
@@ -43,7 +42,7 @@ webuistatic_DATA = \
 	static/Yellow.png \
 	static/scrollfix.js
 
-webuics_DATA = \
+dist_webuics_DATA = \
 	cs/messages.cs \
 	cs/messages_box.cs \
 	cs/audio_mk1.cs \
@@ -85,8 +84,22 @@ webuics_DATA = \
 	cs/sm_antsw_band_list.cs \
 	cs/sm_antsw_load_store.cs
 
+EXTRA_DIST = \
+	svelte/package.json \
+	svelte/package-lock.json \
+	svelte/vite.config.js \
+	svelte/svelte.config.js \
+	svelte/index.html \
+	svelte/src \
+	svelte/public
+
 svelte-ui-build:
 	@echo "Starte Svelte Build Prozess..."
+	@if test "$(abs_srcdir)" != "$(abs_builddir)"; then \
+		$(MKDIR_P) "$(SVELTE_DIR)"; \
+		cp -R "$(SVELTE_SRC_DIR)"/package*.json "$(SVELTE_SRC_DIR)"/*config.js "$(SVELTE_SRC_DIR)"/index.html "$(SVELTE_SRC_DIR)"/src "$(SVELTE_SRC_DIR)"/public "$(SVELTE_DIR)"/; \
+		chmod -R u+w "$(SVELTE_DIR)"; \
+	fi
 	cd "$(SVELTE_DIR)" && "$(SVELTE_NPM)" install && "$(SVELTE_NPM)" run build
 
 install-data-local:
@@ -103,7 +116,11 @@ clean-local:
 	rm -rf "$(SVELTE_BUILD_DIR)"
 
 distclean-local:
-	@rm -rf "$(SVELTE_BUILD_DIR)" "$(SVELTE_DIR)/node_modules"
+	@if test "$(abs_srcdir)" != "$(abs_builddir)"; then \
+		rm -rf "$(SVELTE_DIR)"; \
+	else \
+		rm -rf "$(SVELTE_BUILD_DIR)" "$(SVELTE_DIR)/node_modules"; \
+	fi
 
 # For automake
 .PHONY: svelte-ui-build
