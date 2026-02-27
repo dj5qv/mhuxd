@@ -26,7 +26,10 @@ jobs:
     - name: make distcheck
       run: make distcheck
     - name: Build Debian Package
-      run: dpkg-buildpackage -us -uc -b
+      run: |
+        dpkg-buildpackage -us -uc -b
+        mkdir -p output
+        mv ../mhuxd*.deb output/
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
