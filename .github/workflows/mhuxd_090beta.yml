@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install deps
-      run: sudo apt install libev-dev libudev-dev libfuse-dev libjansson-dev nodejs npm 
+      run: sudo apt install build-essential debhelper-compat pkg-config devscripts libev-dev libudev-dev libfuse-dev libjansson-dev nodejs npm 
     - name: autogen
       run: ./autogen.sh
     - name: configure
