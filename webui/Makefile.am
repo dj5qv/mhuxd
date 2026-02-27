@@ -90,14 +90,13 @@ EXTRA_DIST = \
 	svelte/vite.config.js \
 	svelte/svelte.config.js \
 	svelte/index.html \
-	svelte/src \
-	svelte/public
+	svelte/src
 
 svelte-ui-build:
 	@echo "Starte Svelte Build Prozess..."
 	@if test "$(abs_srcdir)" != "$(abs_builddir)"; then \
 		$(MKDIR_P) "$(SVELTE_DIR)"; \
-		cp -R "$(SVELTE_SRC_DIR)"/package*.json "$(SVELTE_SRC_DIR)"/*config.js "$(SVELTE_SRC_DIR)"/index.html "$(SVELTE_SRC_DIR)"/src "$(SVELTE_SRC_DIR)"/public "$(SVELTE_DIR)"/; \
+		cp -R "$(SVELTE_SRC_DIR)"/package*.json "$(SVELTE_SRC_DIR)"/*config.js "$(SVELTE_SRC_DIR)"/index.html "$(SVELTE_SRC_DIR)"/src "$(SVELTE_DIR)"/; \
 		chmod -R u+w "$(SVELTE_DIR)"; \
 	fi
 	cd "$(SVELTE_DIR)" && "$(SVELTE_NPM)" install && "$(SVELTE_NPM)" run build
