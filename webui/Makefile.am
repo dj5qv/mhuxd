@@ -44,7 +44,7 @@ webuistatic_DATA = \
 	static/scrollfix.js
 
 webuics_DATA = \
-        cs/messages.cs \
+	cs/messages.cs \
 	cs/messages_box.cs \
 	cs/audio_mk1.cs \
 	cs/audio_mk2.cs \
