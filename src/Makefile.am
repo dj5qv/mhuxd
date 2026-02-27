@@ -13,7 +13,7 @@ mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 		daemon.c http_parser.c http_server.c webui.c restapi.c cfgnod.c version.c \
 		http_parse_query.c radiotypes.c wkman.c proc_mcp.c proc_rotator.c mhmk2r.c \
 		mhmk2.c mhsm.c citem.c dbuf.c result.c cfgmgrj.c rigctld_client.c\
-		buffer.h demux.h devmgr.h kcfg.h linux_udev.h logger.h main.h \
+		buffer.h demux.h devmgr.h kcfg.h linux_udev.h logger.h \
 		mhcontrol.h mhinfo.h mhrouter.h mux.h net.h opts.h pglist.h tty.h util.h \
 		conmgr.h con_vsp.h con_tcp.h linux_termios.h channel.h cfgmgr.h \
 		daemon.h http_parser.h http_server.h http_codes.h webui.h restapi.h obuf.h cfgnod.h \
