@@ -1,7 +1,7 @@
 noinst_LIBRARIES = libclearsilver.a
 noinst_HEADERS = ClearSilver.h cs_config.h
 
-AM_CPPFLAGS = -I. -I$(srcdir) -I$(srcdir)/util -I$(srcdir)/cs -I$(srcdir)/streamhtmlparser
+AM_CPPFLAGS = -I$(srcdir) -I$(srcdir)/cs -I$(srcdir)/util -I$(srcdir)/streamhtmlparser
 libclearsilver_a_CFLAGS = -g -Wall -Wextra -Wno-strict-aliasing -Wno-unused-parameter
 libclearsilver_a_SOURCES = \
 		cs/csparse.c \
