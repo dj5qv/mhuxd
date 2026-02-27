@@ -31,4 +31,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: mhuxd-debian-package
-        path: ../mhuxd*.deb
+        path: output/mhuxd*.deb
