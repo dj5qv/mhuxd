@@ -7,3 +7,4 @@ dist_json_DATA = json/mh_rigtypes.json json/mh_displayoptions.json
 distclean-local:
 	-rm -rf debian/mhuxd.debhelper.log debian/mhuxd debian/mhuxd.substvars debian/files \
 	debian/mhuxd.postinst.debhelper debian/mhuxd.postrm.debhelper debian/mhuxd.prerm.debhelper
+

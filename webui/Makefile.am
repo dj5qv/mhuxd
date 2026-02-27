@@ -85,29 +85,25 @@ webuics_DATA = \
 	cs/sm_antsw_band_list.cs \
 	cs/sm_antsw_load_store.cs
 
-install-data-local:
-	@set -e; \
-	if test -d "$(SVELTE_DIR)"; then \
-		if command -v "$(SVELTE_NPM)" >/dev/null 2>&1; then \
-			cd "$(SVELTE_DIR)" && "$(SVELTE_NPM)" install && "$(SVELTE_NPM)" run build; \
-			test -d "$(SVELTE_BUILD_DIR)"; \
-			$(MKDIR_P) "$(DESTDIR)$(webuisveltedir)"; \
-			cp -R "$(SVELTE_BUILD_DIR)"/. "$(DESTDIR)$(webuisveltedir)"/; \
-		else \
-			echo "Error: npm is required to build the Svelte UI"; \
-			exit 1; \
-		fi; \
-	fi
-
-all-local:
+svelte-ui-build:
+	@echo "Starte Svelte Build Prozess..."
 	cd "$(SVELTE_DIR)" && "$(SVELTE_NPM)" install && "$(SVELTE_NPM)" run build
+
+install-data-local:
+	$(MKDIR_P) "$(DESTDIR)$(webuisveltedir)"
+	cp -R "$(SVELTE_BUILD_DIR)"/. "$(DESTDIR)$(webuisveltedir)"/
+
+all-local: svelte-ui-build
 
 uninstall-local:
 	@rm -rf "$(DESTDIR)$(webuisveltedir)"
 
 clean-local:
-	@rm -rf "$(SVELTE_BUILD_DIR)"
+	rm -f svelte-ui-build
+	rm -rf "$(SVELTE_BUILD_DIR)"
 
 distclean-local:
 	@rm -rf "$(SVELTE_BUILD_DIR)" "$(SVELTE_DIR)/node_modules"
 
+# For automake
+.PHONY: svelte-ui-build
