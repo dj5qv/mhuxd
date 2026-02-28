@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
+#include <strings.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -33,6 +35,18 @@
 #define MAX_HEADER_VALUE_SIZE (1024)
 #define MAX_HEADERS (30)
 #define MAX_HEADERS_SIZE (MAX_HEADERS * (MAX_HEADER_NAME_SIZE + 2 + MAX_HEADER_VALUE_SIZE + 2))
+#define WS_MAX_PAYLOAD_SIZE (1024 * 1024)
+#define WS_IDLE_PING_INTERVAL 30.0
+#define WS_PONG_TIMEOUT 15.0
+
+enum {
+	WS_OP_CONT = 0x0,
+	WS_OP_TEXT = 0x1,
+	WS_OP_BINARY = 0x2,
+	WS_OP_CLOSE = 0x8,
+	WS_OP_PING = 0x9,
+	WS_OP_PONG = 0xa
+};
 
 enum {
 	HEADER_STATE_VALUE,
@@ -41,6 +55,10 @@ enum {
 
 static char *rfc1123_date_time(char buf[30], time_t *t);
 static char *rfc1123_current_date_time(char buf[30]);
+static int ws_raw_data_cb(struct http_connection *hcon, const char *data, size_t len, void *user_data);
+static void ws_timer_cb(struct ev_loop *loop, struct ev_timer *w, int revents);
+static void rem_connection(struct http_connection *hcon);
+static int ws_validate_utf8(const uint8_t *data, size_t len);
 
 static const char ct_text_html[] = "text/html";
 static const char ct_text_css[] = "text/css";
@@ -128,10 +146,325 @@ struct http_connection {
 
 	uint16_t response_code;
 	unsigned int terminate :1;
+	unsigned int upgraded :1;
+	unsigned int ws_enabled :1;
+	unsigned int ws_waiting_pong :1;
+	unsigned int ws_frag_active :1;
 
 	hcon_close_cb close_cb;
 	void *close_data;
+	hcon_data_cb upgraded_data_cb;
+	void *upgraded_data;
+	hcon_ws_msg_cb ws_msg_cb;
+	void *ws_user_data;
+	char *ws_inbuf;
+	size_t ws_inbuf_len;
+	size_t ws_inbuf_cap;
+	char *ws_frag_buf;
+	size_t ws_frag_len;
+	size_t ws_frag_cap;
+	uint8_t ws_frag_opcode;
+	ev_timer ws_timer;
+	ev_tstamp ws_last_rx;
+	ev_tstamp ws_ping_sent_at;
 };
+
+struct sha1_ctx {
+	uint32_t h[5];
+	uint64_t length;
+	uint8_t block[64];
+	size_t block_len;
+};
+
+static int queue_response_data(struct http_connection *hcon, const char *data, size_t len) {
+	struct http_response *hr;
+
+	if(!len)
+		return 0;
+
+	hr = w_calloc(1, sizeof(*hr) + len + 1);
+	hr->data = (char*)&hr[1];
+	memcpy(hr->data, data, len);
+	hr->len = len;
+	PG_AddTail(&hcon->response_list, &hr->node);
+	ev_io_start(hcon->hs->loop, &hcon->w_out);
+	return 0;
+}
+
+static uint32_t rol32(uint32_t v, uint8_t shift) {
+	return (v << shift) | (v >> (32 - shift));
+}
+
+static void sha1_init(struct sha1_ctx *ctx) {
+	ctx->h[0] = 0x67452301;
+	ctx->h[1] = 0xEFCDAB89;
+	ctx->h[2] = 0x98BADCFE;
+	ctx->h[3] = 0x10325476;
+	ctx->h[4] = 0xC3D2E1F0;
+	ctx->length = 0;
+	ctx->block_len = 0;
+}
+
+static void sha1_transform(struct sha1_ctx *ctx, const uint8_t block[64]) {
+	uint32_t w[80];
+	for(int i = 0; i < 16; i++) {
+		w[i] = ((uint32_t)block[i * 4] << 24) |
+			((uint32_t)block[i * 4 + 1] << 16) |
+			((uint32_t)block[i * 4 + 2] << 8) |
+			(uint32_t)block[i * 4 + 3];
+	}
+	for(int i = 16; i < 80; i++)
+		w[i] = rol32(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
+
+	uint32_t a = ctx->h[0];
+	uint32_t b = ctx->h[1];
+	uint32_t c = ctx->h[2];
+	uint32_t d = ctx->h[3];
+	uint32_t e = ctx->h[4];
+
+	for(int i = 0; i < 80; i++) {
+		uint32_t f;
+		uint32_t k;
+		if(i < 20) {
+			f = (b & c) | ((~b) & d);
+			k = 0x5A827999;
+		} else if(i < 40) {
+			f = b ^ c ^ d;
+			k = 0x6ED9EBA1;
+		} else if(i < 60) {
+			f = (b & c) | (b & d) | (c & d);
+			k = 0x8F1BBCDC;
+		} else {
+			f = b ^ c ^ d;
+			k = 0xCA62C1D6;
+		}
+		uint32_t temp = rol32(a, 5) + f + e + k + w[i];
+		e = d;
+		d = c;
+		c = rol32(b, 30);
+		b = a;
+		a = temp;
+	}
+
+	ctx->h[0] += a;
+	ctx->h[1] += b;
+	ctx->h[2] += c;
+	ctx->h[3] += d;
+	ctx->h[4] += e;
+}
+
+static void sha1_update(struct sha1_ctx *ctx, const uint8_t *data, size_t len) {
+	ctx->length += (uint64_t)len * 8;
+	while(len > 0) {
+		size_t copy_len = 64 - ctx->block_len;
+		if(copy_len > len)
+			copy_len = len;
+		memcpy(ctx->block + ctx->block_len, data, copy_len);
+		ctx->block_len += copy_len;
+		data += copy_len;
+		len -= copy_len;
+		if(ctx->block_len == 64) {
+			sha1_transform(ctx, ctx->block);
+			ctx->block_len = 0;
+		}
+	}
+}
+
+static void sha1_final(struct sha1_ctx *ctx, uint8_t out[20]) {
+	ctx->block[ctx->block_len++] = 0x80;
+	if(ctx->block_len > 56) {
+		while(ctx->block_len < 64)
+			ctx->block[ctx->block_len++] = 0;
+		sha1_transform(ctx, ctx->block);
+		ctx->block_len = 0;
+	}
+	while(ctx->block_len < 56)
+		ctx->block[ctx->block_len++] = 0;
+
+	for(int i = 7; i >= 0; i--)
+		ctx->block[ctx->block_len++] = (ctx->length >> (i * 8)) & 0xff;
+
+	sha1_transform(ctx, ctx->block);
+
+	for(int i = 0; i < 5; i++) {
+		out[i * 4] = (ctx->h[i] >> 24) & 0xff;
+		out[i * 4 + 1] = (ctx->h[i] >> 16) & 0xff;
+		out[i * 4 + 2] = (ctx->h[i] >> 8) & 0xff;
+		out[i * 4 + 3] = ctx->h[i] & 0xff;
+	}
+}
+
+static int base64_encode(const uint8_t *src, size_t src_len, char *dst, size_t dst_size) {
+	static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	size_t out_len = ((src_len + 2) / 3) * 4;
+	if(dst_size < out_len + 1)
+		return -1;
+
+	size_t j = 0;
+	for(size_t i = 0; i < src_len; i += 3) {
+		uint32_t v = (uint32_t)src[i] << 16;
+		if(i + 1 < src_len)
+			v |= (uint32_t)src[i + 1] << 8;
+		if(i + 2 < src_len)
+			v |= src[i + 2];
+
+		dst[j++] = table[(v >> 18) & 0x3f];
+		dst[j++] = table[(v >> 12) & 0x3f];
+		dst[j++] = (i + 1 < src_len) ? table[(v >> 6) & 0x3f] : '=';
+		dst[j++] = (i + 2 < src_len) ? table[v & 0x3f] : '=';
+	}
+
+	dst[j] = 0x00;
+	return (int)j;
+}
+
+static int ws_send_frame(struct http_connection *hcon, uint8_t opcode, const char *payload, size_t payload_len) {
+	if(!hcon || payload_len > WS_MAX_PAYLOAD_SIZE)
+		return -1;
+
+	uint8_t hdr[10];
+	size_t hdr_len = 0;
+	hdr[hdr_len++] = 0x80 | (opcode & 0x0f);
+
+	if(payload_len < 126) {
+		hdr[hdr_len++] = (uint8_t)payload_len;
+	} else if(payload_len <= 0xffff) {
+		hdr[hdr_len++] = 126;
+		hdr[hdr_len++] = (payload_len >> 8) & 0xff;
+		hdr[hdr_len++] = payload_len & 0xff;
+	} else {
+		hdr[hdr_len++] = 127;
+		for(int i = 7; i >= 0; i--)
+			hdr[hdr_len++] = (payload_len >> (i * 8)) & 0xff;
+	}
+
+	if(queue_response_data(hcon, (const char*)hdr, hdr_len) != 0)
+		return -1;
+
+	if(payload_len && queue_response_data(hcon, payload, payload_len) != 0)
+		return -1;
+
+	return 0;
+}
+
+static int ws_append_buf(char **buf, size_t *buf_len, size_t *buf_cap, const char *data, size_t len) {
+	if(!len)
+		return 0;
+
+	if(*buf_len + len > WS_MAX_PAYLOAD_SIZE)
+		return -1;
+
+	if(*buf_cap < *buf_len + len) {
+		size_t new_cap = *buf_cap ? *buf_cap : 1024;
+		while(new_cap < *buf_len + len)
+			new_cap *= 2;
+		char *new_buf = realloc(*buf, new_cap);
+		if(!new_buf)
+			return -1;
+		*buf = new_buf;
+		*buf_cap = new_cap;
+	}
+
+	memcpy(*buf + *buf_len, data, len);
+	*buf_len += len;
+	return 0;
+}
+
+static int ws_validate_utf8(const uint8_t *data, size_t len) {
+	size_t i = 0;
+	while(i < len) {
+		uint8_t c = data[i];
+		if(c <= 0x7f) {
+			i++;
+			continue;
+		}
+
+		if((c & 0xe0) == 0xc0) {
+			if(i + 1 >= len)
+				return 0;
+			uint8_t c1 = data[i + 1];
+			if((c1 & 0xc0) != 0x80)
+				return 0;
+			uint32_t cp = ((uint32_t)(c & 0x1f) << 6) | (uint32_t)(c1 & 0x3f);
+			if(cp < 0x80)
+				return 0;
+			i += 2;
+			continue;
+		}
+
+		if((c & 0xf0) == 0xe0) {
+			if(i + 2 >= len)
+				return 0;
+			uint8_t c1 = data[i + 1];
+			uint8_t c2 = data[i + 2];
+			if((c1 & 0xc0) != 0x80 || (c2 & 0xc0) != 0x80)
+				return 0;
+			uint32_t cp = ((uint32_t)(c & 0x0f) << 12) |
+				((uint32_t)(c1 & 0x3f) << 6) |
+				(uint32_t)(c2 & 0x3f);
+			if(cp < 0x800)
+				return 0;
+			if(cp >= 0xd800 && cp <= 0xdfff)
+				return 0;
+			i += 3;
+			continue;
+		}
+
+		if((c & 0xf8) == 0xf0) {
+			if(i + 3 >= len)
+				return 0;
+			uint8_t c1 = data[i + 1];
+			uint8_t c2 = data[i + 2];
+			uint8_t c3 = data[i + 3];
+			if((c1 & 0xc0) != 0x80 || (c2 & 0xc0) != 0x80 || (c3 & 0xc0) != 0x80)
+				return 0;
+			uint32_t cp = ((uint32_t)(c & 0x07) << 18) |
+				((uint32_t)(c1 & 0x3f) << 12) |
+				((uint32_t)(c2 & 0x3f) << 6) |
+				(uint32_t)(c3 & 0x3f);
+			if(cp < 0x10000 || cp > 0x10ffff)
+				return 0;
+			i += 4;
+			continue;
+		}
+
+		return 0;
+	}
+
+	return 1;
+}
+
+static void ws_reset_frag(struct http_connection *hcon) {
+	hcon->ws_frag_active = 0;
+	hcon->ws_frag_opcode = 0;
+	hcon->ws_frag_len = 0;
+}
+
+static void ws_timer_cb(struct ev_loop *loop, struct ev_timer *w, int revents) {
+	(void)revents;
+	struct http_connection *hcon = w->data;
+	if(!hcon || !hcon->ws_enabled)
+		return;
+
+	ev_tstamp now = ev_now(loop);
+	if(hcon->ws_waiting_pong) {
+		if(now - hcon->ws_ping_sent_at >= WS_PONG_TIMEOUT) {
+			warn("websocket pong timeout");
+			if(hs_ws_close(hcon, 1001, "pong timeout") != 0)
+				rem_connection(hcon);
+		}
+		return;
+	}
+
+	if(now - hcon->ws_last_rx >= WS_IDLE_PING_INTERVAL) {
+		if(ws_send_frame(hcon, WS_OP_PING, NULL, 0) != 0) {
+			rem_connection(hcon);
+			return;
+		}
+		hcon->ws_waiting_pong = 1;
+		hcon->ws_ping_sent_at = now;
+	}
+}
 
 int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *sub_path) {
 	int err;
@@ -252,6 +585,12 @@ static void rem_connection(struct http_connection *hcon) {
 
 	if(hcon->body)
 		free(hcon->body);
+	if(hcon->ws_inbuf)
+		free(hcon->ws_inbuf);
+	if(hcon->ws_frag_buf)
+		free(hcon->ws_frag_buf);
+	if(hcon->ws_enabled)
+		ev_timer_stop(hcon->hs->loop, &hcon->ws_timer);
 
 	close(hcon->fd);
 	free(hcon);
@@ -467,6 +806,21 @@ static void hcon_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 			return;
 		}
 
+		if(hcon->upgraded) {
+			if(!r) {
+				dbg0("connection closed");
+				rem_connection(hcon);
+				return;
+			}
+			if(hcon->upgraded_data_cb) {
+				if(hcon->upgraded_data_cb(hcon, buf, (size_t)r, hcon->upgraded_data)) {
+					rem_connection(hcon);
+					return;
+				}
+			}
+			continue;
+		}
+
 		nparsed = http_parser_execute(&hcon->parser, &hcon->settings, buf, r);
 
 		/*
@@ -476,10 +830,26 @@ static void hcon_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		}
 		*/
 
-		if(nparsed != r || HTTP_PARSER_ERRNO(&hcon->parser) != HPE_OK) {
+		if((nparsed != r && !hcon->parser.upgrade) || HTTP_PARSER_ERRNO(&hcon->parser) != HPE_OK) {
 			dbg0("Parser error: %s", http_errno_name(HTTP_PARSER_ERRNO(&hcon->parser)));
 			rem_connection(hcon);
 			return;
+		}
+
+		if(hcon->parser.upgrade) {
+			if(!hcon->upgraded) {
+				warn("HTTP upgrade requested but no upgraded mode handler installed");
+				rem_connection(hcon);
+				return;
+			}
+
+			if((size_t)nparsed < (size_t)r && hcon->upgraded_data_cb) {
+				if(hcon->upgraded_data_cb(hcon, buf + nparsed, (size_t)r - (size_t)nparsed, hcon->upgraded_data)) {
+					rem_connection(hcon);
+					return;
+				}
+			}
+			continue;
 		}
 
 		if(!r) {
@@ -517,6 +887,11 @@ static void hcon_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	if(PG_LISTEMPTY(&hcon->response_list))
 		ev_io_stop(hcon->hs->loop, &hcon->w_out);
+
+	if(PG_LISTEMPTY(&hcon->response_list) && hcon->terminate) {
+		rem_connection(hcon);
+		return;
+	}
 
 }
 
@@ -724,17 +1099,297 @@ void hs_send_headers(struct http_connection *hcon, uint16_t code, const char *co
 }
 
 void hs_send_chunk(struct http_connection *hcon, const char *data, size_t len) {
-	struct http_response *hr;
+	(void)queue_response_data(hcon, data, len);
+}
 
-	if(!len)
-		return;
+const char *hs_get_req_header(struct http_connection *hcon, const char *name) {
+	if(!hcon || !name)
+		return NULL;
 
-	hr = w_calloc(1, sizeof(*hr) + len + 1);
-	hr->data = (char*)&hr[1];
-	memcpy(hr->data, data ,len);
-	hr->len = len;
-	PG_AddTail(&hcon->response_list, &hr->node);
-	ev_io_start(hcon->hs->loop, &hcon->w_out);
+	for(uint16_t i = 0; i <= hcon->req_header_idx && i < MAX_HEADERS; i++) {
+		struct header *h = &hcon->req_header[i];
+		if(!h->name_len)
+			continue;
+		if(!strcasecmp(h->name, name))
+			return h->value;
+	}
+
+	return NULL;
+}
+
+int hs_set_upgraded_mode(struct http_connection *hcon, hcon_data_cb cb, void *user_data) {
+	if(!hcon)
+		return -1;
+
+	hcon->upgraded = 1;
+	hcon->upgraded_data_cb = cb;
+	hcon->upgraded_data = user_data;
+	return 0;
+}
+
+static int ws_raw_data_cb(struct http_connection *hcon, const char *data, size_t len, void *user_data) {
+	(void)user_data;
+
+	if(!hcon || !len)
+		return 0;
+
+	if(hcon->ws_inbuf_len + len > WS_MAX_PAYLOAD_SIZE * 2) {
+		warn("websocket receive buffer exceeded");
+		return -1;
+	}
+
+	if(hcon->ws_inbuf_cap < hcon->ws_inbuf_len + len) {
+		size_t new_cap = hcon->ws_inbuf_cap ? hcon->ws_inbuf_cap : 1024;
+		while(new_cap < hcon->ws_inbuf_len + len)
+			new_cap *= 2;
+		char *new_buf = realloc(hcon->ws_inbuf, new_cap);
+		if(!new_buf)
+			return -1;
+		hcon->ws_inbuf = new_buf;
+		hcon->ws_inbuf_cap = new_cap;
+	}
+
+	memcpy(hcon->ws_inbuf + hcon->ws_inbuf_len, data, len);
+	hcon->ws_inbuf_len += len;
+	hcon->ws_last_rx = ev_now(hcon->hs->loop);
+
+	size_t off = 0;
+	while(hcon->ws_inbuf_len - off >= 2) {
+		uint8_t *p = (uint8_t*)hcon->ws_inbuf + off;
+		uint8_t b0 = p[0];
+		uint8_t b1 = p[1];
+		uint8_t fin = (b0 >> 7) & 0x01;
+		uint8_t opcode = b0 & 0x0f;
+		uint8_t masked = (b1 >> 7) & 0x01;
+		uint64_t payload_len = b1 & 0x7f;
+		size_t hdr_len = 2;
+
+		if((b0 & 0x70) != 0) {
+			warn("websocket RSV bits not supported");
+			return -1;
+		}
+
+		if((opcode & 0x08) && !fin) {
+			warn("fragmented websocket control frames are not allowed");
+			return -1;
+		}
+
+		if(payload_len == 126) {
+			if(hcon->ws_inbuf_len - off < 4)
+				break;
+			payload_len = ((uint8_t)p[2] << 8) | (uint8_t)p[3];
+			hdr_len += 2;
+		} else if(payload_len == 127) {
+			if(hcon->ws_inbuf_len - off < 10)
+				break;
+			payload_len = 0;
+			for(int i = 0; i < 8; i++)
+				payload_len = (payload_len << 8) | (uint8_t)p[2 + i];
+			hdr_len += 8;
+		}
+
+		if(!masked) {
+			warn("websocket client frame must be masked");
+			return -1;
+		}
+
+		if(payload_len > WS_MAX_PAYLOAD_SIZE) {
+			warn("websocket payload too large");
+			return -1;
+		}
+
+		if(hcon->ws_inbuf_len - off < hdr_len + 4 + payload_len)
+			break;
+
+		uint8_t *mask = p + hdr_len;
+		uint8_t *payload = p + hdr_len + 4;
+		for(uint64_t i = 0; i < payload_len; i++)
+			payload[i] ^= mask[i % 4];
+
+		if((opcode & 0x08) && payload_len > 125) {
+			warn("invalid websocket control frame");
+			return -1;
+		}
+
+		switch(opcode) {
+		case WS_OP_TEXT:
+		case WS_OP_BINARY:
+			if(hcon->ws_frag_active) {
+				warn("received new data frame while fragmented message is active");
+				return -1;
+			}
+			if(fin) {
+				if(opcode == WS_OP_TEXT && !ws_validate_utf8((const uint8_t*)payload, (size_t)payload_len)) {
+					hs_ws_close(hcon, 1007, "invalid UTF-8");
+					return 0;
+				}
+				if(hcon->ws_msg_cb) {
+					if(hcon->ws_msg_cb(hcon, opcode, (const char*)payload, (size_t)payload_len, hcon->ws_user_data))
+						return -1;
+				}
+			} else {
+				hcon->ws_frag_active = 1;
+				hcon->ws_frag_opcode = opcode;
+				hcon->ws_frag_len = 0;
+				if(ws_append_buf(&hcon->ws_frag_buf, &hcon->ws_frag_len, &hcon->ws_frag_cap,
+					(const char*)payload, (size_t)payload_len) != 0)
+					return -1;
+			}
+			break;
+		case WS_OP_CONT:
+			if(!hcon->ws_frag_active) {
+				warn("unexpected websocket continuation frame");
+				return -1;
+			}
+			if(ws_append_buf(&hcon->ws_frag_buf, &hcon->ws_frag_len, &hcon->ws_frag_cap,
+				(const char*)payload, (size_t)payload_len) != 0)
+				return -1;
+			if(fin) {
+				if(hcon->ws_frag_opcode == WS_OP_TEXT &&
+				   !ws_validate_utf8((const uint8_t*)hcon->ws_frag_buf, hcon->ws_frag_len)) {
+					hs_ws_close(hcon, 1007, "invalid UTF-8");
+					ws_reset_frag(hcon);
+					return 0;
+				}
+				if(hcon->ws_msg_cb) {
+					if(hcon->ws_msg_cb(hcon, hcon->ws_frag_opcode, hcon->ws_frag_buf,
+						hcon->ws_frag_len, hcon->ws_user_data))
+						return -1;
+				}
+				ws_reset_frag(hcon);
+			}
+			break;
+		case WS_OP_PING:
+			if(ws_send_frame(hcon, WS_OP_PONG, (const char*)payload, (size_t)payload_len) != 0)
+				return -1;
+			break;
+		case WS_OP_PONG:
+			hcon->ws_waiting_pong = 0;
+			break;
+		case WS_OP_CLOSE:
+			if(ws_send_frame(hcon, WS_OP_CLOSE, (const char*)payload, (size_t)payload_len) != 0)
+				return -1;
+			hcon->terminate = 1;
+			ev_io_stop(hcon->hs->loop, &hcon->w_in);
+			break;
+		default:
+			warn("unsupported websocket opcode %u", opcode);
+			return -1;
+		}
+
+		off += hdr_len + 4 + payload_len;
+	}
+
+	if(off > 0) {
+		size_t rem = hcon->ws_inbuf_len - off;
+		if(rem)
+			memmove(hcon->ws_inbuf, hcon->ws_inbuf + off, rem);
+		hcon->ws_inbuf_len = rem;
+	}
+
+	return 0;
+}
+
+int hs_ws_upgrade(struct http_connection *hcon, hcon_ws_msg_cb cb, void *user_data) {
+	if(!hcon)
+		return -1;
+
+	if(hs_get_method(hcon) != HS_HTTP_GET)
+		return -1;
+
+	const char *upgrade = hs_get_req_header(hcon, "Upgrade");
+	const char *connection = hs_get_req_header(hcon, "Connection");
+	const char *key = hs_get_req_header(hcon, "Sec-WebSocket-Key");
+	const char *version = hs_get_req_header(hcon, "Sec-WebSocket-Version");
+
+	if(!upgrade || !connection || !key || !version)
+		return -1;
+
+	if(strcasecmp(upgrade, "websocket"))
+		return -1;
+
+	if(!strcasestr(connection, "upgrade"))
+		return -1;
+
+	if(strcmp(version, "13"))
+		return -1;
+
+	char accept_src[256];
+	if(strlen(key) + 36 >= sizeof(accept_src))
+		return -1;
+
+	snprintf(accept_src, sizeof(accept_src), "%s258EAFA5-E914-47DA-95CA-C5AB0DC85B11", key);
+
+	uint8_t digest[20];
+	struct sha1_ctx sha1;
+	sha1_init(&sha1);
+	sha1_update(&sha1, (const uint8_t*)accept_src, strlen(accept_src));
+	sha1_final(&sha1, digest);
+
+	char accept_b64[64];
+	if(base64_encode(digest, sizeof(digest), accept_b64, sizeof(accept_b64)) < 0)
+		return -1;
+
+	hcon->ws_msg_cb = cb;
+	hcon->ws_user_data = user_data;
+	hcon->ws_enabled = 1;
+	hcon->ws_waiting_pong = 0;
+	hcon->ws_last_rx = ev_now(hcon->hs->loop);
+	hcon->ws_ping_sent_at = 0;
+	ws_reset_frag(hcon);
+	ev_timer_init(&hcon->ws_timer, ws_timer_cb, 1.0, 1.0);
+	hcon->ws_timer.data = hcon;
+	ev_timer_start(hcon->hs->loop, &hcon->ws_timer);
+
+	hs_add_rsp_header(hcon, "Upgrade", "websocket");
+	hs_add_rsp_header(hcon, "Connection", "Upgrade");
+	hs_add_rsp_header(hcon, "Sec-WebSocket-Accept", accept_b64);
+	hs_send_headers(hcon, 101, "application/octet-stream");
+
+	return hs_set_upgraded_mode(hcon, ws_raw_data_cb, hcon);
+}
+
+int hs_ws_send_text(struct http_connection *hcon, const char *data, size_t len) {
+	if(!data)
+		return -1;
+	return ws_send_frame(hcon, WS_OP_TEXT, data, len);
+}
+
+int hs_ws_send_binary(struct http_connection *hcon, const char *data, size_t len) {
+	if(!data)
+		return -1;
+	return ws_send_frame(hcon, WS_OP_BINARY, data, len);
+}
+
+int hs_ws_send_pong(struct http_connection *hcon, const char *data, size_t len) {
+	if(!data && len)
+		return -1;
+	return ws_send_frame(hcon, WS_OP_PONG, data, len);
+}
+
+int hs_ws_close(struct http_connection *hcon, uint16_t code, const char *reason) {
+	if(!hcon)
+		return -1;
+
+	if(hcon->terminate)
+		return 0;
+
+	char payload[127];
+	size_t reason_len = reason ? strlen(reason) : 0;
+	if(reason_len > 123)
+		reason_len = 123;
+
+	payload[0] = (code >> 8) & 0xff;
+	payload[1] = code & 0xff;
+	if(reason_len)
+		memcpy(payload + 2, reason, reason_len);
+
+	if(ws_send_frame(hcon, WS_OP_CLOSE, payload, reason_len + 2) != 0)
+		return -1;
+
+	hcon->terminate = 1;
+	ev_io_stop(hcon->hs->loop, &hcon->w_in);
+	return 0;
 }
 
 struct http_server *hs_start(struct ev_loop *loop, const char *host_port) {

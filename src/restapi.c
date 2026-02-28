@@ -38,7 +38,9 @@ struct restapi {
 	struct http_handler *config_connector_handler;
 	struct http_handler *device_actions_handler;
 	struct http_handler *events_handler;
+	struct http_handler *ws_handler;
 	struct PGList subscribers;
+	struct PGList ws_subscribers;
 	json_t *rigtypes;
 	json_t *devicetypes;
 	json_t *displayoptions;
@@ -49,6 +51,12 @@ struct restapi {
 struct event_subscriber {
 	struct PGNode node;
 	struct http_connection *hcon;
+};
+
+struct ws_subscriber {
+	struct PGNode node;
+	struct http_connection *hcon;
+	struct restapi *api;
 };
 
 extern const char *log_file_name;
@@ -209,6 +217,11 @@ static void broadcast_event(struct restapi *api, const json_t *event) {
 		hs_send_chunk(sub->hcon, buf, len);
 	}
 
+	struct ws_subscriber *wsub;
+	PG_SCANLIST(&api->ws_subscribers, wsub) {
+		hs_ws_send_text(wsub->hcon, dump, strlen(dump));
+	}
+
 	free(buf);
 	free(dump);
 }
@@ -224,9 +237,62 @@ static void on_keyer_state_changed(const char *serial, int state, void *user_dat
 }
 
 static void on_sub_closed(struct http_connection *hcon, void *data) {
+	(void)hcon;
 	struct event_subscriber *sub = data;
 	PG_Remove(&sub->node);
 	free(sub);
+}
+
+static void on_ws_sub_closed(struct http_connection *hcon, void *data) {
+	(void)hcon;
+	struct ws_subscriber *sub = data;
+	PG_Remove(&sub->node);
+	free(sub);
+}
+
+static int on_ws_message(struct http_connection *hcon, int opcode, const char *data, size_t len, void *user_data) {
+	struct ws_subscriber *sub = user_data;
+	if(!sub || !sub->api)
+		return -1;
+
+	if(opcode != 0x1)
+		return 0;
+
+	json_error_t jerr;
+	json_t *in = json_loadb(data, len, 0, &jerr);
+	if(!in || !json_is_object(in)) {
+		if(in)
+			json_decref(in);
+		hs_ws_close(hcon, 1007, "invalid JSON");
+		return 0;
+	}
+
+	json_t *event = json_object();
+	if(!event) {
+		json_decref(in);
+		return -1;
+	}
+
+	json_object_set_new(event, "type", json_string("client_event"));
+	json_object_set(event, "payload", in);
+	broadcast_event(sub->api, event);
+
+	json_t *ack = json_object();
+	if(ack) {
+		json_object_set_new(ack, "type", json_string("ack"));
+		json_object_set_new(ack, "status", json_string("ok"));
+		json_object_set(ack, "echo", in);
+		char *ack_dump = json_dumps(ack, JSON_COMPACT);
+		if(ack_dump) {
+			hs_ws_send_text(hcon, ack_dump, strlen(ack_dump));
+			free(ack_dump);
+		}
+		json_decref(ack);
+	}
+
+	json_decref(event);
+	json_decref(in);
+	return 0;
 }
 
 static int cb_events(struct http_connection *hcon, const char *path, const char *query,
@@ -243,6 +309,39 @@ static int cb_events(struct http_connection *hcon, const char *path, const char 
 
 	// Send initial comment to keep connection alive or as handshake
 	hs_send_chunk(hcon, ": handshake\n\n", 13);
+
+	return 0;
+}
+
+static int cb_events_ws(struct http_connection *hcon, const char *path, const char *query,
+		 const char *body, uint32_t body_len, void *data) {
+	(void)path; (void)query; (void)body; (void)body_len;
+	struct restapi *api = data;
+
+	struct ws_subscriber *sub = w_calloc(1, sizeof(*sub));
+	sub->hcon = hcon;
+	sub->api = api;
+
+	if(hs_ws_upgrade(hcon, on_ws_message, sub) != 0) {
+		free(sub);
+		hs_send_error_page(hcon, 400);
+		return 0;
+	}
+
+	PG_AddTail(&api->ws_subscribers, &sub->node);
+	hs_set_close_cb(hcon, on_ws_sub_closed, sub);
+
+	json_t *hello = json_object();
+	if(hello) {
+		json_object_set_new(hello, "type", json_string("hello"));
+		json_object_set_new(hello, "channel", json_string("/api/v1/ws"));
+		char *dump = json_dumps(hello, JSON_COMPACT);
+		if(dump) {
+			hs_ws_send_text(hcon, dump, strlen(dump));
+			free(dump);
+		}
+		json_decref(hello);
+	}
 
 	return 0;
 }
@@ -913,6 +1012,7 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
 	api->cfgmgrj = cfgmgrj;
     api->start_time = time(NULL);
 	PG_NewList(&api->subscribers);
+	PG_NewList(&api->ws_subscribers);
 
 	api->runtime_handler = hs_register_handler(hs, "/api/v1/runtime", cb_runtime, api);
 	api->metadata_handler = hs_register_handler(hs, "/api/v1/metadata", cb_metadata, api);
@@ -924,10 +1024,11 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
 	api->config_connector_handler = hs_register_handler(hs, "/api/v1/config/connectors/", cb_config_connector, api);
 	api->device_actions_handler = hs_register_handler(hs, "/api/v1/devices/", cb_device_actions, api);
 	api->events_handler = hs_register_handler(hs, "/api/v1/events", cb_events, api);
+	api->ws_handler = hs_register_handler(hs, "/api/v1/ws", cb_events_ws, api);
 
 	if(!api->runtime_handler || !api->metadata_handler || !api->devices_handler || !api->config_daemon_handler ||
 	   !api->config_devices_handler || !api->config_device_handler || !api->config_connectors_handler ||
-	   !api->config_connector_handler || !api->device_actions_handler || !api->events_handler) {
+	   !api->config_connector_handler || !api->device_actions_handler || !api->events_handler || !api->ws_handler) {
         err("%s() failed to register rest api handlers", __func__);
         goto fail;
     }
@@ -959,6 +1060,8 @@ fail:
 			hs_unregister_handler(hs, api->device_actions_handler);
 		if(api->events_handler)
 			hs_unregister_handler(hs, api->events_handler);
+		if(api->ws_handler)
+			hs_unregister_handler(hs, api->ws_handler);
         if(api->rigtypes)
             json_decref(api->rigtypes);
         if(api->devicetypes)
@@ -982,6 +1085,14 @@ void restapi_shutdown(struct restapi *api) {
 		hs_set_close_cb(sub->hcon, NULL, NULL);
 		PG_Remove(&sub->node);
 		free(sub);
+	}
+
+	struct ws_subscriber *wsub;
+	while((wsub = (void*)PG_FIRSTENTRY(&api->ws_subscribers))) {
+		hs_set_close_cb(wsub->hcon, NULL, NULL);
+		hs_ws_close(wsub->hcon, 1001, "server shutdown");
+		PG_Remove(&wsub->node);
+		free(wsub);
 	}
 
 	if(api->runtime_handler) {
@@ -1015,6 +1126,10 @@ void restapi_shutdown(struct restapi *api) {
 	if(api->events_handler) {
 		hs_unregister_handler(api->hs, api->events_handler);
 		api->events_handler = NULL;
+	}
+	if(api->ws_handler) {
+		hs_unregister_handler(api->hs, api->ws_handler);
+		api->ws_handler = NULL;
 	}
 }
 
