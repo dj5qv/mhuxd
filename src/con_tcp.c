@@ -330,7 +330,7 @@ struct ctcp *ctcp_create(const struct connector_spec *cpsec) {
 		return NULL;
 	}
 
-	lsnr_v6 = net_create_listener(v6_name);
+	lsnr_v6 = net_create_listener_ex(v6_name, NET_LSNR_F_IPV6_V6ONLY);
 	if(lsnr_v6 == NULL)
 		err_v6 = errno;
 
@@ -381,6 +381,10 @@ struct ctcp *ctcp_create(const struct connector_spec *cpsec) {
 	if(ctcp->lsnr_v4)
 		ctcp_watch_start(ctcp, &ctcp->w_lsnr_v4);
 	ctcp_watch_start(ctcp, &ctcp->w_data_in);
+
+	if(ctcp->lsnr_v4 && ctcp->lsnr_v6)
+		dbg0("%s dual-stack listeners active (IPv4+IPv6)", ctcp->devname);
+
 	info("tcp connector %s created", ctcp->devname);
 
 	return ctcp;

@@ -11,11 +11,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
+#include "net.h"
 #include "util.h"
 
 struct netlsnr {
@@ -24,7 +26,7 @@ struct netlsnr {
 	char *spath;
 };
 
-struct netlsnr *net_create_listener(const char *constr) {
+struct netlsnr *net_create_listener_ex(const char *constr, int flags) {
 	int fd = -1;
 	struct sockaddr_un sun;
 	int domain = AF_UNSPEC;
@@ -83,6 +85,11 @@ struct netlsnr *net_create_listener(const char *constr) {
 
 			int opt = 1;
 			setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void*)&opt, sizeof(opt));
+
+			if(ai->ai_family == AF_INET6 && (flags & NET_LSNR_F_IPV6_V6ONLY)) {
+				int v6only = 1;
+				setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (void*)&v6only, sizeof(v6only));
+			}
 
 			if(bind(fd, ai->ai_addr, ai->ai_addrlen) == 0) {
 				domain = ai->ai_family;
@@ -147,6 +154,10 @@ error:
 		errno = tmp_errno;
 		return NULL;
 	}
+}
+
+struct netlsnr *net_create_listener(const char *constr) {
+	return net_create_listener_ex(constr, 0);
 }
 
 void net_destroy_lsnr(struct netlsnr *lsnr) {

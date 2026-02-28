@@ -12,7 +12,12 @@
 
 struct netlsnr;
 
+enum {
+	NET_LSNR_F_IPV6_V6ONLY = (1 << 0)
+};
+
 struct netlsnr *net_create_listener(const char *host_port_str);
+struct netlsnr *net_create_listener_ex(const char *host_port_str, int flags);
 void net_destroy_lsnr(struct netlsnr *lsnr);
 int net_listener_get_fd(struct netlsnr *lsnr);
 int net_accept(int fd);

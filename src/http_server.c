@@ -107,10 +107,12 @@ struct http_server {
 	struct PGList con_list;
 	struct PGList handler_list;
 	struct PGList dir_map_list;
-	int fd;
-	struct netlsnr *lsnr;
+	struct netlsnr *lsnr_v4;
+	struct netlsnr *lsnr_v6;
+	char *bind_desc;
 	struct ev_loop *loop;
-	ev_io w_lsnr;
+	ev_io w_lsnr_v4;
+	ev_io w_lsnr_v6;
 };
 
 struct http_response {
@@ -344,6 +346,43 @@ static int ws_send_frame(struct http_connection *hcon, uint8_t opcode, const cha
 	if(payload_len && queue_response_data(hcon, payload, payload_len) != 0)
 		return -1;
 
+	return 0;
+}
+
+static int split_host_port(const char *host_port, char **host_out, char **port_out) {
+	char *tmp = NULL;
+	char *host = NULL;
+	char *port = NULL;
+
+	if(!host_port || !*host_port)
+		return -1;
+
+	tmp = w_strdup(host_port);
+
+	if(tmp[0] == '[') {
+		char *end = strchr(tmp, ']');
+		if(!end || end[1] != ':' || end[2] == '\0') {
+			free(tmp);
+			return -1;
+		}
+		*end = '\0';
+		host = w_strdup(tmp + 1);
+		port = w_strdup(end + 2);
+		free(tmp);
+	} else {
+		char *sep = strrchr(tmp, ':');
+		if(!sep || sep == tmp || sep[1] == '\0') {
+			free(tmp);
+			return -1;
+		}
+		*sep = '\0';
+		host = w_strdup(tmp);
+		port = w_strdup(sep + 1);
+		free(tmp);
+	}
+
+	*host_out = host;
+	*port_out = port;
 	return 0;
 }
 
@@ -1394,11 +1433,78 @@ int hs_ws_close(struct http_connection *hcon, uint16_t code, const char *reason)
 
 struct http_server *hs_start(struct ev_loop *loop, const char *host_port) {
 	struct http_server *hs;
-	struct netlsnr *lsnr = net_create_listener(host_port);
+	struct netlsnr *lsnr_v4 = NULL;
+	struct netlsnr *lsnr_v6 = NULL;
+	char *bind_desc = NULL;
 
-	if(lsnr == NULL) {
-		err_e(errno, "Could not create listener!");
+	if(!host_port || !*host_port) {
+		err("Could not create listener: empty bind address");
 		return NULL;
+	}
+
+	if(host_port[0] == '/') {
+		lsnr_v4 = net_create_listener(host_port);
+		if(lsnr_v4 == NULL) {
+			err_e(errno, "Could not create listener!");
+			return NULL;
+		}
+		bind_desc = w_strdup(host_port);
+	} else {
+		char *host = NULL;
+		char *port = NULL;
+		if(split_host_port(host_port, &host, &port) != 0) {
+			err("Could not parse bind address %s", host_port);
+			return NULL;
+		}
+
+		if(!strcmp(host, "localhost") || !strcmp(host, "*") || !strcmp(host, "0.0.0.0") || !strcmp(host, "::")) {
+			char v4_name[128];
+			char v6_name[128];
+			int err_v4 = 0;
+			int err_v6 = 0;
+			const char *host_v4 = (!strcmp(host, "localhost")) ? "127.0.0.1" : "0.0.0.0";
+			const char *host_v6 = (!strcmp(host, "localhost")) ? "[::1]" : "[::]";
+
+			if(sizeof(v4_name) <= (size_t)snprintf(v4_name, sizeof(v4_name), "%s:%s", host_v4, port) ||
+			   sizeof(v6_name) <= (size_t)snprintf(v6_name, sizeof(v6_name), "%s:%s", host_v6, port)) {
+				free(host);
+				free(port);
+				err("Could not create listener: bind address too long");
+				return NULL;
+			}
+
+			lsnr_v6 = net_create_listener_ex(v6_name, NET_LSNR_F_IPV6_V6ONLY);
+			if(lsnr_v6 == NULL)
+				err_v6 = errno;
+			lsnr_v4 = net_create_listener(v4_name);
+			if(lsnr_v4 == NULL)
+				err_v4 = errno;
+
+			if(!lsnr_v4 && !lsnr_v6) {
+				errno = err_v6 ? err_v6 : err_v4;
+				err_e(errno, "Could not create listeners %s and %s", v6_name, v4_name);
+				free(host);
+				free(port);
+				return NULL;
+			}
+
+			if(lsnr_v4 && lsnr_v6)
+				bind_desc = w_strdup(!strcmp(host, "localhost") ? host_port : "dual-stack:any");
+			else
+				bind_desc = w_strdup(!lsnr_v4 ? v6_name : v4_name);
+		} else {
+			lsnr_v4 = net_create_listener(host_port);
+			if(lsnr_v4 == NULL) {
+				err_e(errno, "Could not create listener!");
+				free(host);
+				free(port);
+				return NULL;
+			}
+			bind_desc = w_strdup(host_port);
+		}
+
+		free(host);
+		free(port);
 	}
 
 	hs = w_malloc(sizeof(*hs));
@@ -1406,11 +1512,26 @@ struct http_server *hs_start(struct ev_loop *loop, const char *host_port) {
 	PG_NewList(&hs->handler_list);
 	PG_NewList(&hs->dir_map_list);
 	hs->loop = loop;
-	hs->lsnr = lsnr;
-	hs->w_lsnr.data = hs;
-	ev_io_init(&hs->w_lsnr, lsnr_cb, net_listener_get_fd(hs->lsnr), EV_READ);
-	ev_io_start(hs->loop, &hs->w_lsnr);
-	info("http server started on %s", host_port);
+	hs->lsnr_v4 = lsnr_v4;
+	hs->lsnr_v6 = lsnr_v6;
+	hs->bind_desc = bind_desc;
+
+	if(hs->lsnr_v4) {
+		hs->w_lsnr_v4.data = hs;
+		ev_io_init(&hs->w_lsnr_v4, lsnr_cb, net_listener_get_fd(hs->lsnr_v4), EV_READ);
+		ev_io_start(hs->loop, &hs->w_lsnr_v4);
+	}
+
+	if(hs->lsnr_v6) {
+		hs->w_lsnr_v6.data = hs;
+		ev_io_init(&hs->w_lsnr_v6, lsnr_cb, net_listener_get_fd(hs->lsnr_v6), EV_READ);
+		ev_io_start(hs->loop, &hs->w_lsnr_v6);
+	}
+
+	if(hs->lsnr_v4 && hs->lsnr_v6)
+		dbg0("http server dual-stack listeners active (IPv4+IPv6)");
+
+	info("http server started on %s", hs->bind_desc ? hs->bind_desc : host_port);
 	return hs;
 }
 
@@ -1419,7 +1540,10 @@ void hs_stop(struct http_server *hs) {
 	struct http_handler *h;
 	struct http_directory_map *dm;
 
-	ev_io_stop(hs->loop, &hs->w_lsnr);
+	if(hs->lsnr_v4)
+		ev_io_stop(hs->loop, &hs->w_lsnr_v4);
+	if(hs->lsnr_v6)
+		ev_io_stop(hs->loop, &hs->w_lsnr_v6);
 
 	while((hcon = (void*)PG_FIRSTENTRY(&hs->con_list))) {
 		rem_connection(hcon);
@@ -1437,7 +1561,10 @@ void hs_stop(struct http_server *hs) {
 		free(dm);
 	}
 
-	net_destroy_lsnr(hs->lsnr);
+	net_destroy_lsnr(hs->lsnr_v4);
+	net_destroy_lsnr(hs->lsnr_v6);
+	if(hs->bind_desc)
+		free(hs->bind_desc);
 	free(hs);
 
 	info("http server stopped");
