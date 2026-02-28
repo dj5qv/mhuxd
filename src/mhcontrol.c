@@ -410,6 +410,8 @@ static void process_keyer_states(struct mh_control *ctl, unsigned const char *da
 
 		memcpy(ctl->state_buf, data + 1, 8);
 		mk2r_debug_print_mok_values(ctl->state_buf);
+		// Update the rouer so it can properly route CH_PTT_FOCUS channel.
+		mhr_set_wk_tx_focus(ctl->router, mk2r_get_mok_value(ctl->state_buf, "wkTxFocus"));
 
 		struct mhc_state_callback *scb;
 		PG_SCANLIST(&ctl->mok_state_changed_cb_list, scb) {

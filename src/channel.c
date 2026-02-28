@@ -22,6 +22,7 @@ struct channel_map channel_map[]= {
 { "WK", MH_CHANNEL_WINKEY },
 { "PTT1", CH_PTT1 },
 { "PTT2", CH_PTT2 },
+{ "PTT_FOCUS", CH_PTT_FOCUS },
 { "MCP", CH_MCP },
 { "ROTATOR", CH_ROTATOR }
 };
@@ -36,6 +37,9 @@ int ch_ptt_channel(int channel) {
 	case MH_CHANNEL_R2:
 	case MH_CHANNEL_R2_FSK:
 		ptt_channel = CH_PTT2;
+		break;
+	case MH_CHANNEL_WINKEY:
+		ptt_channel = CH_PTT_FOCUS;
 		break;
 	case CH_PTT1:
 	case CH_PTT2:

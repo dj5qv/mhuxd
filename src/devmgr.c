@@ -17,7 +17,6 @@
 #include "linux_udev.h"
 #include "mhrouter.h"
 #include "mhcontrol.h"
-#include "mhinfo.h"
 #include "wkman.h"
 
 #define MOD_ID "dmr"
@@ -60,6 +59,7 @@ static struct device *create_dev(const char *serial, uint16_t type) {
 	}
 
 	dev = w_calloc(1, sizeof(*dev));
+	memcpy(&dev->mhi, &mhi, sizeof(mhi));
 	dev->serial = w_malloc(strlen(serial)+1);
 	strcpy(dev->serial, serial);
 	dev->router = mhr_create(dman->loop, serial, (mhi.flags & MHF_HAS_FLAGS_CHANNEL) ? 1 : 0);

@@ -13,10 +13,11 @@ enum {
 	MH_CHANNEL_R2_FSK  = 7,
 	MH_NUM_CHANNELS    = 8,
 
-	CH_PTT1 = 9,
-	CH_PTT2 = 10,
-	CH_MCP = 11, 
-	CH_ROTATOR = 12,
+	CH_PTT1 = 9,		// routed to radio 1 via flags channel
+	CH_PTT2 = 10,		// routed to radio 2 via flags channel
+	CH_PTT_FOCUS = 11,	// routed to focused radio via flags channel (MK2R), otherwise like CH_PTT1
+	CH_MCP = 12, 
+	CH_ROTATOR = 13,
 	ALL_NUM_CHANNELS
 };
 

@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include "pglist.h"
+#include "mhinfo.h"
 
 typedef struct on_device_connect_cb t_on_device_connect_cb_handle;
 
@@ -21,6 +22,7 @@ struct device {
 	struct mh_control *ctl;
 	struct wkman *wkman;
 	char *serial;
+	struct mh_info mhi;
 };
 
 struct ev_loop;

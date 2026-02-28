@@ -51,5 +51,7 @@ void mhr_send_out(struct mh_router *router, const uint8_t *data, unsigned int le
 void mhr_add_status_cb(struct mh_router *router, MHRStatusCallback callback, void *user_data);
 void mhr_rem_status_cb(struct mh_router *router, MHRStatusCallback callback);
 
+// Some state for Winkey PTT routing.
+void mhr_set_wk_tx_focus(struct mh_router *router, uint8_t focus);
 
 #endif // MHROUTER_H

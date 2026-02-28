@@ -106,6 +106,7 @@ struct mh_router {
 	uint8_t rflag[2];
 	uint8_t wflag;
 	uint8_t has_flags_channel;
+	uint8_t wk_tx_focus;
 };
 
 static int has_consumer_fd(struct mh_router *router, int fd, int channel) {
@@ -193,7 +194,7 @@ static void switch_producer_events(struct mh_router *router, int active) {
 }
 
 static int is_ptt_channel(int channel) {
-	return (channel == CH_PTT1 || channel == CH_PTT2);
+	return (channel == CH_PTT1 || channel == CH_PTT2 || channel == CH_PTT_FOCUS);
 }
 
 static void process_in_flags(struct mh_router *router, int c) {
@@ -220,26 +221,49 @@ static void process_in_flags(struct mh_router *router, int c) {
 static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 	struct mh_router *router = prd->router;
 	uint8_t newflag = router->wflag;
+	uint8_t push = 0;
+	uint8_t mask;
 	int r;
 	int c;
-	int16_t push = 0;
 
-	dbg1("%s %s()", router->serial, __func__);
+
+	dbg0("%s %s()", router->serial, __func__);
 
 	if(!b->size)
 		return;
 
 	while(-1 != (c = buf_get_c(b))) {
 
+		switch(prd->channel) {
+			case  CH_PTT1:
+				dbg0("%s() %s r1 ptt %d", __func__, router->serial, c);
+				mask = MHC2DFL_PTT_R1;
+				break;
+			case  CH_PTT2:
+				dbg0("%s() %s r2 ptt %d", __func__, router->serial, c);
+				mask = MHC2DFL_PTT_R2;
+				break;
+			case CH_PTT_FOCUS:
+				if(router->wk_tx_focus == 1) {  // set when focus on r2
+					dbg0("%s() %s focused r2 ptt %d", __func__, router->serial, c);
+					mask = MHC2DFL_PTT_R2;
+				} else {
+					dbg0("%s() %s focused r1 ptt %d", __func__, router->serial, c);
+					mask = MHC2DFL_PTT_R1;
+				}
+				break;
+			default:
+				dbg0("%s() %s unknown ptt channel %d", __func__, router->serial, prd->channel);
+				continue;
+		}
+
 		if( c == '1' ) {
-			dbg0("%s %s() r%d ptt on", router->serial, __func__, (prd->channel == CH_PTT1) ? 1 : 2);
-			newflag |= (prd->channel == CH_PTT1) ? MHC2DFL_PTT_R1 : MHC2DFL_PTT_R2;
+			newflag |= mask;
 			push = 1;
 		}
 
 		if( c == '0' ) {
-			dbg0("%s %s() r%d ptt off", router->serial, __func__, (prd->channel == CH_PTT1) ? 1 : 2);
-			newflag &= (prd->channel == CH_PTT1) ? ~MHC2DFL_PTT_R1 : ~MHC2DFL_PTT_R2;
+			newflag &= ~mask;
 			push = 1;
 		}
 	}	      
@@ -827,4 +851,8 @@ void mhr_send_out(struct mh_router *router, const uint8_t *data, unsigned int le
 
 const char *mhr_get_serial(struct mh_router *router) {
 	return router->serial;
+}
+
+void mhr_set_wk_tx_focus(struct mh_router *router, uint8_t focus) {
+	router->wk_tx_focus = focus;
 }
