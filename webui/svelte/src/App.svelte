@@ -856,52 +856,59 @@
   };
 
   onMount(async () => {
-    let eventSource;
+    let ws;
     let reconnectTimer;
 
-    const initEventSource = () => {
-      if (eventSource) eventSource.close();
-      eventSource = new EventSource('/api/v1/events');
-      
-      eventSource.onopen = async () => {
+    const wsUrl = () => {
+      const loc = window.location;
+      const proto = loc.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${proto}//${loc.host}/api/v1/ws`;
+    };
+
+    const initWebSocket = () => {
+      if (ws) { ws.onclose = null; ws.close(); }
+      ws = new WebSocket(wsUrl());
+
+      ws.onopen = async () => {
         connectedToDaemon = true;
         retrySeconds = 5;
         if (reconnectTimer) clearInterval(reconnectTimer);
         try {
           await reloadData();
         } catch (err) {
-          // If reload fails, maybe the daemon is not quite ready yet, 
-          // eventSource might close again or we just wait for next event.
+          // If reload fails, the daemon may not be ready yet;
+          // we'll pick up state from subsequent WS events.
         }
       };
 
-      eventSource.onmessage = (event) => {
+      ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'status') {
-            devices = devices.map(d => 
+            devices = devices.map(d =>
               d.serial === data.serial ? { ...d, status: data.status } : d
             );
           } else if (data.type === 'usb_connection') {
-             console.log('USB Event:', data);
+            console.log('USB Event:', data);
           }
         } catch (e) {
-          console.error('Failed to parse event data', e);
+          console.error('Failed to parse WS message', e);
         }
       };
 
-      eventSource.onerror = (err) => {
-        console.error('EventSource failed:', err);
+      ws.onerror = (err) => {
+        console.error('WebSocket error:', err);
+      };
+
+      ws.onclose = () => {
         connectedToDaemon = false;
-        eventSource.close();
-        // Try to reconnect in 5 seconds
         retrySeconds = 5;
         if (reconnectTimer) clearInterval(reconnectTimer);
         reconnectTimer = setInterval(() => {
           retrySeconds -= 1;
           if (retrySeconds <= 0) {
             clearInterval(reconnectTimer);
-            initEventSource();
+            initWebSocket();
           }
         }, 1000);
       };
@@ -909,18 +916,17 @@
 
     try {
       await reloadData();
-      initEventSource();
+      initWebSocket();
     } catch (err) {
       error = err?.message || 'Failed to load data';
       connectedToDaemon = false;
-      // Start trying to reconnect even if initial load failed
       retrySeconds = 5;
       if (reconnectTimer) clearInterval(reconnectTimer);
       reconnectTimer = setInterval(() => {
         retrySeconds -= 1;
         if (retrySeconds <= 0) {
           clearInterval(reconnectTimer);
-          initEventSource();
+          initWebSocket();
         }
       }, 1000);
     } finally {
@@ -935,7 +941,7 @@
     window.addEventListener('hashchange', onHashChange);
     return () => {
       window.removeEventListener('hashchange', onHashChange);
-      if (eventSource) eventSource.close();
+      if (ws) ws.close();
       if (reconnectTimer) clearTimeout(reconnectTimer);
     };
   });

@@ -37,20 +37,13 @@ struct restapi {
 	struct http_handler *config_connectors_handler;
 	struct http_handler *config_connector_handler;
 	struct http_handler *device_actions_handler;
-	struct http_handler *events_handler;
 	struct http_handler *ws_handler;
-	struct PGList subscribers;
 	struct PGList ws_subscribers;
 	json_t *rigtypes;
 	json_t *devicetypes;
 	json_t *displayoptions;
 	time_t start_time;
 	t_on_device_connect_cb_handle *device_connect_cb_handle;
-};
-
-struct event_subscriber {
-	struct PGNode node;
-	struct http_connection *hcon;
 };
 
 struct ws_subscriber {
@@ -209,20 +202,11 @@ static void broadcast_event(struct restapi *api, const json_t *event) {
 	char *dump = json_dumps(event, JSON_COMPACT);
 	if(!dump) return;
 
-	char *buf = w_malloc(strlen(dump) + 16);
-	int len = sprintf(buf, "data: %s\n\n", dump);
-
-	struct event_subscriber *sub;
-	PG_SCANLIST(&api->subscribers, sub) {
-		hs_send_chunk(sub->hcon, buf, len);
-	}
-
 	struct ws_subscriber *wsub;
 	PG_SCANLIST(&api->ws_subscribers, wsub) {
 		hs_ws_send_text(wsub->hcon, dump, strlen(dump));
 	}
 
-	free(buf);
 	free(dump);
 }
 
@@ -234,13 +218,6 @@ static void on_keyer_state_changed(const char *serial, int state, void *user_dat
 	json_object_set_new(event, "status", json_string(mhc_state_str(state)));
 	broadcast_event(api, event);
 	json_decref(event);
-}
-
-static void on_sub_closed(struct http_connection *hcon, void *data) {
-	(void)hcon;
-	struct event_subscriber *sub = data;
-	PG_Remove(&sub->node);
-	free(sub);
 }
 
 static void on_ws_sub_closed(struct http_connection *hcon, void *data) {
@@ -292,24 +269,6 @@ static int on_ws_message(struct http_connection *hcon, int opcode, const char *d
 
 	json_decref(event);
 	json_decref(in);
-	return 0;
-}
-
-static int cb_events(struct http_connection *hcon, const char *path, const char *query,
-		 const char *body, uint32_t body_len, void *data) {
-	(void)path; (void)query; (void)body; (void)body_len;
-	struct restapi *api = data;
-
-	hs_send_headers(hcon, 200, "text/event-stream");
-	
-	struct event_subscriber *sub = w_calloc(1, sizeof(*sub));
-	sub->hcon = hcon;
-	PG_AddTail(&api->subscribers, &sub->node);
-	hs_set_close_cb(hcon, on_sub_closed, sub);
-
-	// Send initial comment to keep connection alive or as handshake
-	hs_send_chunk(hcon, ": handshake\n\n", 13);
-
 	return 0;
 }
 
@@ -1011,7 +970,6 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
     api->hs = hs;
 	api->cfgmgrj = cfgmgrj;
     api->start_time = time(NULL);
-	PG_NewList(&api->subscribers);
 	PG_NewList(&api->ws_subscribers);
 
 	api->runtime_handler = hs_register_handler(hs, "/api/v1/runtime", cb_runtime, api);
@@ -1023,12 +981,11 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
 	api->config_connectors_handler = hs_register_handler(hs, "/api/v1/config/connectors", cb_config_connectors, api);
 	api->config_connector_handler = hs_register_handler(hs, "/api/v1/config/connectors/", cb_config_connector, api);
 	api->device_actions_handler = hs_register_handler(hs, "/api/v1/devices/", cb_device_actions, api);
-	api->events_handler = hs_register_handler(hs, "/api/v1/events", cb_events, api);
 	api->ws_handler = hs_register_handler(hs, "/api/v1/ws", cb_events_ws, api);
 
 	if(!api->runtime_handler || !api->metadata_handler || !api->devices_handler || !api->config_daemon_handler ||
 	   !api->config_devices_handler || !api->config_device_handler || !api->config_connectors_handler ||
-	   !api->config_connector_handler || !api->device_actions_handler || !api->events_handler || !api->ws_handler) {
+	   !api->config_connector_handler || !api->device_actions_handler || !api->ws_handler) {
         err("%s() failed to register rest api handlers", __func__);
         goto fail;
     }
@@ -1058,8 +1015,6 @@ fail:
 			hs_unregister_handler(hs, api->config_device_handler);
 		if(api->device_actions_handler)
 			hs_unregister_handler(hs, api->device_actions_handler);
-		if(api->events_handler)
-			hs_unregister_handler(hs, api->events_handler);
 		if(api->ws_handler)
 			hs_unregister_handler(hs, api->ws_handler);
         if(api->rigtypes)
@@ -1079,13 +1034,6 @@ void restapi_shutdown(struct restapi *api) {
 
 	if(api->device_connect_cb_handle)
 		dmgr_rem_on_device_connect_cb(api->device_connect_cb_handle);
-
-	struct event_subscriber *sub;
-	while((sub = (void*)PG_FIRSTENTRY(&api->subscribers))) {
-		hs_set_close_cb(sub->hcon, NULL, NULL);
-		PG_Remove(&sub->node);
-		free(sub);
-	}
 
 	struct ws_subscriber *wsub;
 	while((wsub = (void*)PG_FIRSTENTRY(&api->ws_subscribers))) {
@@ -1122,10 +1070,6 @@ void restapi_shutdown(struct restapi *api) {
 	if(api->device_actions_handler) {
 		hs_unregister_handler(api->hs, api->device_actions_handler);
 		api->device_actions_handler = NULL;
-	}
-	if(api->events_handler) {
-		hs_unregister_handler(api->hs, api->events_handler);
-		api->events_handler = NULL;
 	}
 	if(api->ws_handler) {
 		hs_unregister_handler(api->hs, api->ws_handler);
