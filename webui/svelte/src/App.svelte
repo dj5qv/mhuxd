@@ -1,6 +1,12 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import StatusDot from './lib/StatusDot.svelte';
+  import ConnectionOverlay from './lib/ConnectionOverlay.svelte';
+  import TopBar from './lib/TopBar.svelte';
+  import TabNav from './lib/TabNav.svelte';
+  import SideMenu from './lib/SideMenu.svelte';
+  import { connectWs, disconnectWs, onWsEvent } from './lib/ws.js';
+  import { loadAllData, apiGet } from './lib/api.js';
 
   let runtime = null;
   let daemonCfg = null;
@@ -18,8 +24,6 @@
   let loglevelTimer;
   let keyerStatus = {};
   let keyerStatusTimer = {};
-  let connectedToDaemon = true;
-  let retrySeconds = 5;
   let radioForm = {};
   let radioFormGen = 0;
   let radioStatus = {};
@@ -800,19 +804,9 @@
     else activeMenu = 'summary';
   };
 
-  const safeFetch = async (url) => {
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!res.ok) throw new Error(`${url} ${res.status}`);
-    return res.json();
-  };
-
   const refreshDeviceConfig = async (serial) => {
     try {
-      const res = await fetch(`/api/v1/config/devices/${serial}`, {
-        headers: { Accept: 'application/json' }
-      });
-      if (!res.ok) return;
-      const updated = await res.json();
+      const updated = await apiGet(`/api/v1/config/devices/${serial}`);
       configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
     } catch {
       // silently ignore — we're already in an error handler
@@ -829,20 +823,14 @@
 
   const reloadData = async () => {
     try {
-      const [runtimeRsp, daemonRsp, devicesRsp, configDevicesRsp, metadataRsp] = await Promise.all([
-        safeFetch('/api/v1/runtime'),
-        safeFetch('/api/v1/config/daemon'),
-        safeFetch('/api/v1/devices'),
-        safeFetch('/api/v1/config/devices'),
-        safeFetch('/api/v1/metadata')
-      ]);
-      runtime = runtimeRsp;
-      daemonCfg = daemonRsp;
-      loglevel = daemonRsp?.loglevel || '';
-      devices = devicesRsp.devices || [];
-      configDevices = configDevicesRsp.devices || [];
-      connectors = configDevicesRsp.connectors || [];
-      metadata = metadataRsp;
+      const data = await loadAllData();
+      runtime = data.runtime;
+      daemonCfg = data.daemonCfg;
+      loglevel = data.daemonCfg?.loglevel || '';
+      devices = data.devices;
+      configDevices = data.configDevices;
+      connectors = data.connectors;
+      metadata = data.metadata;
 
       if (!portForm.serial && devices.length) {
         const serial = devices[0].serial || '';
@@ -855,80 +843,28 @@
     }
   };
 
+  // Subscribe to WS events
+  const unsubStatus = onWsEvent('status', (data) => {
+    devices = devices.map(d =>
+      d.serial === data.serial ? { ...d, status: data.status } : d
+    );
+  });
+  const unsubUsb = onWsEvent('usb_connection', (data) => {
+    console.log('USB Event:', data);
+  });
+
   onMount(async () => {
-    let ws;
-    let reconnectTimer;
-
-    const wsUrl = () => {
-      const loc = window.location;
-      const proto = loc.protocol === 'https:' ? 'wss:' : 'ws:';
-      return `${proto}//${loc.host}/api/v1/ws`;
-    };
-
-    const initWebSocket = () => {
-      if (ws) { ws.onclose = null; ws.close(); }
-      ws = new WebSocket(wsUrl());
-
-      ws.onopen = async () => {
-        connectedToDaemon = true;
-        retrySeconds = 5;
-        if (reconnectTimer) clearInterval(reconnectTimer);
-        try {
-          await reloadData();
-        } catch (err) {
-          // If reload fails, the daemon may not be ready yet;
-          // we'll pick up state from subsequent WS events.
-        }
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'status') {
-            devices = devices.map(d =>
-              d.serial === data.serial ? { ...d, status: data.status } : d
-            );
-          } else if (data.type === 'usb_connection') {
-            console.log('USB Event:', data);
-          }
-        } catch (e) {
-          console.error('Failed to parse WS message', e);
-        }
-      };
-
-      ws.onerror = (err) => {
-        console.error('WebSocket error:', err);
-      };
-
-      ws.onclose = () => {
-        connectedToDaemon = false;
-        retrySeconds = 5;
-        if (reconnectTimer) clearInterval(reconnectTimer);
-        reconnectTimer = setInterval(() => {
-          retrySeconds -= 1;
-          if (retrySeconds <= 0) {
-            clearInterval(reconnectTimer);
-            initWebSocket();
-          }
-        }, 1000);
-      };
-    };
-
     try {
       await reloadData();
-      initWebSocket();
+      connectWs(async () => {
+        try { await reloadData(); } catch { /* pick up state from WS events */ }
+      });
     } catch (err) {
       error = err?.message || 'Failed to load data';
-      connectedToDaemon = false;
-      retrySeconds = 5;
-      if (reconnectTimer) clearInterval(reconnectTimer);
-      reconnectTimer = setInterval(() => {
-        retrySeconds -= 1;
-        if (retrySeconds <= 0) {
-          clearInterval(reconnectTimer);
-          initWebSocket();
-        }
-      }, 1000);
+      // connectWs will keep retrying automatically
+      connectWs(async () => {
+        try { await reloadData(); } catch { }
+      });
     } finally {
       loading = false;
     }
@@ -941,9 +877,13 @@
     window.addEventListener('hashchange', onHashChange);
     return () => {
       window.removeEventListener('hashchange', onHashChange);
-      if (ws) ws.close();
-      if (reconnectTimer) clearTimeout(reconnectTimer);
     };
+  });
+
+  onDestroy(() => {
+    disconnectWs();
+    unsubStatus();
+    unsubUsb();
   });
 
   const applyLoglevel = async () => {
@@ -2041,78 +1981,24 @@
     ? (activeMenuMeta?.label ? `${activeTabLabel} >> ${activeMenuMeta.label}` : activeTabLabel)
     : '';
 
+  $: sideMenuItems =
+    activeTab === 'home' ? homeMenus
+    : activeTab === 'daemon' ? daemonMenus
+    : activeTab.startsWith('keyer:') ? activeKeyerMenus
+    : [{ id: 'summary', label: 'Summary' }];
+
   const activeKeyerMenuTitle = () => activePageTitle || 'Keyer';
 </script>
 
 <div class="page">
-  {#if !connectedToDaemon}
-    <div class="connection-overlay">
-      <div class="connection-message">Can't connect to mhuxd. Retry in {retrySeconds} {retrySeconds === 1 ? 'second' : 'seconds'}</div>
-    </div>
-  {/if}
-  <header class="topbar">
-    <div class="title"><span class="title-italic">m</span>huxd Device Router</div>
-    <div class="top-right">
-      <div class="hostname">Hostname: {runtime?.hostname || '—'} | {runtime?.daemon?.version || '—'}</div>
-      <a class="help" href="http://mhuxd.dj5qv.de/doc/" target="_blank" rel="noreferrer">Help</a>
-    </div>
-  </header>
+  <ConnectionOverlay />
 
-  <nav class="tabs">
-    {#each tabs as tab}
-      <button
-        class={`tab ${activeTab === tab.id ? 'active' : ''}`}
-        on:click={() => !tab.disabled && setTab(tab.id)}
-        disabled={tab.disabled}
-        type="button"
-      >
-        {#if tab.status !== undefined}
-          <StatusDot status={tab.status} />
-        {/if}
-        {tab.label}
-      </button>
-    {/each}
-  </nav>
+  <TopBar hostname={runtime?.hostname || '—'} version={runtime?.daemon?.version || '—'} />
+
+  <TabNav {tabs} {activeTab} on:select={(e) => setTab(e.detail)} />
 
   <div class="layout">
-    <aside class="left">
-      <div class="left-menu">
-        {#if activeTab === 'home'}
-          {#each homeMenus as item}
-            <button
-              class={`left-menu-item ${activeMenuId === item.id ? 'active' : ''}`}
-              on:click={() => (activeMenu = item.id)}
-              type="button"
-            >
-              {item.label}
-            </button>
-          {/each}
-        {:else if activeTab === 'daemon'}
-          {#each daemonMenus as item}
-            <button
-              class={`left-menu-item ${activeMenuId === item.id ? 'active' : ''}`}
-              on:click={() => !item.disabled && (activeMenu = item.id)}
-              disabled={item.disabled}
-              type="button"
-            >
-              {item.label}
-            </button>
-          {/each}
-        {:else if activeTab.startsWith('keyer:')}
-          {#each activeKeyerMenus as item}
-            <button
-              class={`left-menu-item ${activeMenuId === item.id ? 'active' : ''}`}
-              on:click={() => (activeMenu = item.id)}
-              type="button"
-            >
-              {item.label}
-            </button>
-          {/each}
-        {:else}
-          <div class="left-menu-item active">Summary</div>
-        {/if}
-      </div>
-    </aside>
+    <SideMenu items={sideMenuItems} activeId={activeMenuId} on:select={(e) => activeMenu = e.detail} />
 
     <main class="main">
       <div class="breadcrumbs">{breadcrumb}</div>
