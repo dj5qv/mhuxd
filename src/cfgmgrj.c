@@ -16,6 +16,7 @@
 #include "config.h"
 #include "util.h"
 #include "logger.h"
+#include "app_ctx.h"
 #include "devmgr.h"
 #include "mhinfo.h"
 #include "mhcontrol.h"
@@ -30,6 +31,7 @@
 
 struct cfgmgrj {
     struct ev_loop *loop;
+    struct app_ctx *ctx;
     struct conmgr *conmgr;
     json_t *connectors;
     json_t *rig_mode_sync;
@@ -828,11 +830,14 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
     const char *serial = json_string_value(serial_val);
 
     int type = json_get_int(device_obj, "type", 0);
-    struct device *dev = dmgr_get_device(serial);
+    struct device *dev = app_ctx_get_device(cfgmgrj->ctx, serial);
+
     if(!dev)
-        dev = dmgr_add_device(serial, (uint16_t)type);
+        app_ctx_add_device(cfgmgrj->ctx, serial);
+
+    dev = app_ctx_get_device(cfgmgrj->ctx, serial);
     if(!dev)
-        return -1;
+        return -1; 
 
     dbg1_j("apply device ", serial, device_obj);
 
@@ -966,7 +971,7 @@ static int apply_connector_from_json(struct cfgmgrj *cfgmgrj, json_t *conn_obj) 
     }
 
     int id = json_get_int(conn_obj, "id", 0);
-    int run_id = conmgr_create_con_cfg(cfgmgrj->conmgr, cfgmgrj->loop, &ccfg, id);
+    int run_id = conmgr_create_con_cfg(cfgmgrj->ctx, &ccfg, id);
 
     // Registry of Intent: update our internal list regardless of creation success
     if(cfgmgrj->connectors) {
@@ -1079,7 +1084,7 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
         return NULL;
     }
 
-    struct PGList *list = dmgr_get_device_list();
+    struct PGList *list = app_ctx_get_device_list(cfgmgrj->ctx);
     if(list) {
         struct device *dev;
         PG_SCANLIST(list, dev) {
@@ -1271,9 +1276,9 @@ static int winkey_builder_cb(const char *key, int val, void *user_data) {
     return 0;
 }
 
-int cfgmgrj_sm_load(const char *serial) {
+int cfgmgrj_sm_load(struct cfgmgrj *cfgmgrj, const char *serial) {
     dbg1("%s()", __func__);
-    struct device *dev = dmgr_get_device(serial);
+    struct device *dev =  app_ctx_get_device(cfgmgrj->ctx, serial);
     struct sm *sm;
 
     if(!dev) {
@@ -1295,9 +1300,9 @@ int cfgmgrj_sm_load(const char *serial) {
     return 0;
 }
 
-int cfgmgrj_sm_store(const char *serial) {
+int cfgmgrj_sm_store(struct cfgmgrj *cfgmgrj, const char *serial) {
     dbg1("%s()", __func__);
-    struct device *dev = dmgr_get_device(serial);
+    struct device *dev =  app_ctx_get_device(cfgmgrj->ctx, serial);
     struct sm *sm;
 
     if(!dev) {
@@ -1320,13 +1325,14 @@ int cfgmgrj_sm_store(const char *serial) {
     return 0;
 }
 
-struct cfgmgrj *cfgmgrj_create(struct ev_loop *loop, struct conmgr *conmgr) {
+struct cfgmgrj *cfgmgrj_create(struct app_ctx *app_ctx) {
     struct cfgmgrj *cfgmgrj = w_calloc(1, sizeof(*cfgmgrj));
     if(!cfgmgrj)
         return NULL;
 
-    cfgmgrj->loop = loop;
-    cfgmgrj->conmgr = conmgr;
+    cfgmgrj->loop = app_ctx_get_loop(app_ctx);
+    cfgmgrj->ctx = app_ctx;
+    cfgmgrj->conmgr = app_ctx_get_conmgr(app_ctx);
     cfgmgrj->connectors = json_array();
     cfgmgrj->rig_mode_sync = json_object();
     PG_NewList(&cfgmgrj->rig_clients);

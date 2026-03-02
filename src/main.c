@@ -13,6 +13,7 @@
 #include "config.h"
 #include "util.h"
 #include "logger.h"
+#include "app_ctx.h"
 #include "devmgr.h"
 #include "conmgr.h"
 #include "cfgmgr.h"
@@ -25,86 +26,30 @@
 
 #define MOD_ID "main"
 
-#ifndef LOGDIR
-#error LOGDIR not defined
-#endif
-
 #ifndef RUNDIR
 #error RUNDIR not defined
 #endif
 
-#define LOGFILE LOGDIR "/mhuxd.log"
 #define PIDFILE RUNDIR "/mhuxd.pid"
-
-const char *log_file_name = LOGFILE;
-static FILE *logfile = NULL;
-
-static int signum = 0;
-static void sigint_cb(struct ev_loop *loop, struct ev_signal *w, int revents)
-{
-	(void)w; (void)revents;
-	signum = w->signum;
-	ev_break(loop, EVBREAK_ALL);
-}
-static void sighup_cb(struct ev_loop *loop, struct ev_signal *w, int revents) {
-	(void)w; (void)revents; (void)loop;
-	if(logfile && logfile != stdout) {
-		info("*** SIGHUP received-> closing log file");
-		fclose(logfile);
-		logfile = fopen(log_file_name, "a");
-		log_init(logfile);
-		info("*** logfile opened");
-	}
-}
-
-static int cb_redirect_home(struct http_connection *hcon, const char *path, const char *query,
-		 const char *body, uint32_t body_len, void *data) {
-	(void)path; (void)query; (void)body; (void)body_len;(void)data;
-
-	dbg1("redirect / to /svelte/index.html");
-	hs_add_rsp_header(hcon, "Location", "/svelte/index.html");
-	hs_send_response(hcon, 301, "text/html", NULL, 0, NULL, 0);
-	return 0;
-}
-
 
 int main(int argc, char **argv)
 {
-    struct ev_signal w_sigint, w_sigterm, w_sighup;
-    struct ev_loop *loop;
-	struct cfgmgr *cfgmgr;
-	struct cfgmgrj *cfgmgrj; 
-	struct conmgr *conmgr;
+	struct ev_loop *loop;
 	FILE *pidfile = NULL;
-
-	printf("\n%s (C)2012-2026 Matthias Moeller, DJ5QV\n", PACKAGE_STRING);
 
 	// options
 	process_opts(argc, argv);
 	if(-1 == log_set_level_by_str(log_level_str)) // from opt.c
 		fprintf(stderr, "Invalid log level: %s", log_level_str);
 
-	// logging
-	if(!background) {
-		logfile = stdout;
-	} else {
-		logfile = fopen(log_file_name, "a");
-		printf("Logfile is: %s\n", log_file_name);
-	}
-
-	if(logfile == NULL) {
-		fprintf(stderr, "could not open logfile %s (%s)!\n", log_file_name, strerror(errno));
-		return -1;
-	}
-
-	log_init(logfile);
+	log_open(background ? 0 : 1);
 
 	if(background) {
 		dmn_daemonize();
 	}
 
 	info("%s (C)2012-2026 Matthias Moeller, DJ5QV", PACKAGE_STRING);
-	info("Logfile: %s", log_file_name);
+	info("Logfile: %s", log_get_file_name());
 
 	// pid file
 	pidfile = dmn_pidfile_lock(PIDFILE);
@@ -115,135 +60,20 @@ int main(int argc, char **argv)
 	ev_set_allocator((void*)w_realloc);
 	loop = ev_default_loop(EVFLAG_AUTO);
 
-	// Device manager, alloc/init only.
-	dmgr_create(loop);
+	// App context, orchestrator.
+	struct app_ctx *app_ctx = app_ctx_create();
+	app_ctx_init(app_ctx, loop);
 
-	// Connector manager
-	conmgr = conmgr_create();
+	app_ctx_run(app_ctx);
 
-	// load config & apply the daemon part
-	cfgmgr = cfgmgr_create(conmgr, loop);
-	if(!cfgmgr) {
-		fatal("(mhuxd) Could not create configuration manager, exiting!");
-		exit(-1);
-	}
-
-	cfgmgrj = cfgmgrj_create(loop, conmgr);
-	if(!cfgmgrj) {
-		fatal("(mhuxd) Could not create json manager, exiting!");
-		exit(-1);
-	}
-
-
-	// start webserver & webui
-	struct http_server *hs = hs_start(loop, webui_host_port);
-	if(!hs) {
-		fatal("(mhuxd) Could not start webserver, exiting!");
-		exit(-1);
-	}
-
-	struct restapi *restapi = restapi_create(hs, cfgmgrj);
-	if(!restapi) {
-		fatal("(mhuxd) Could not start REST API, exiting!");
-		hs_stop(hs);
-		exit(-1);
-	}
-
-	struct webui *webui = webui_create(hs, cfgmgr);
-
-	if(!webui) {
-		fatal("(mhuxd) Could not start webui, exiting!");
-		restapi_destroy(restapi);
-		hs_stop(hs);
-		exit(-1);
-	}
-
-	static const char static_path[] = WEBUIDIR "/static";
-	static const char svelte_path[] = WEBUIDIR "/svelte";
-	struct http_handler *handler_redir[1];
-	hs_add_directory_map(hs, "/static/", static_path);
-	hs_add_directory_map(hs, "/svelte/", svelte_path);
-	handler_redir[0] = hs_register_handler(hs, "/", cb_redirect_home, webui);
-
-	ev_signal_init (&w_sigint, sigint_cb, SIGINT);
-	ev_signal_init (&w_sigterm, sigint_cb, SIGTERM);
-	ev_signal_init (&w_sighup, sighup_cb, SIGHUP);
-
-	ev_signal_start (loop, &w_sigint);
-	ev_signal_start (loop, &w_sigterm);
-	ev_signal_start (loop, &w_sighup);
-
-/*
-    if(cfgmgr_init(cfgmgr))
-        err("(main) error initializing config manager!");
-*/
-    int rc_j = cfgmgrj_load_cfg(cfgmgrj);
-	if(rc_j == 0)
-		info("(main) json config loaded successfully.");
-
-	if(rc_j == -2) {
-        info("(main) json config not found, attempting migration from legacy HDF...");
-        if(cfgmgr_init(cfgmgr) == 0) {
-            cfgmgrj_sync_from_conmgr(cfgmgrj);
-            cfgmgrj_save_cfg(cfgmgrj);
-            info("(main) hdf to json migration complete.");
-        } else {
-            err("(main) legacy config migration failed.");
-        }
-    } else if(rc_j < 0) {
-        err("(main) error initializing json config manager!");
-    }
-
-    dmgr_enable_monitor();
-
-	if(demo_mode) {
-		dmgr_add_device("CK_DEMO_CK_1", 0);
-		dmgr_add_device("DK_DEMO_DK_1", 0);
-		dmgr_add_device("D2_DEMO_DK2_1", 0);
-		dmgr_add_device("MK_DEMO_MK_1", 0);
-		dmgr_add_device("M2_DEMO_MK2_1", 0);
-		dmgr_add_device("M3_DEMO_MK3_1", 0);
-		dmgr_add_device("2R_DEMO_MK2R_1", 0);
-		dmgr_add_device("2P_DEMO_MK2Rp_1", 0);
-		dmgr_add_device("UR_DEMO_U2R_1", 0);
-		dmgr_add_device("SM_DEMO_SM_1", 0);
-		dmgr_add_device("SD_DEMO_SMD_1", 0);
-	}
-
-	ev_run(loop, 0);
-
-	if(signum) 
-		info("*** %s received!", strsignal(signum));
-
-	dmgr_disable_monitor();
-
-	// shutdown restapi and have it unregister all callbacks.
-	// Don't want it to mess around with lower level modules now.
-	restapi_shutdown(restapi);
-	hs_unregister_handler(hs, handler_redir[0]);
-	webui_destroy(webui);
-	hs_stop(hs);
-
-	cfgmgr_save_cfg(cfgmgr);
-	cfgmgrj_save_cfg(cfgmgrj);
-
-	cfgmgr_destroy(cfgmgr);
-	cfgmgrj_destroy(cfgmgrj);
-	conmgr_destroy(conmgr);
-
-	restapi_destroy(restapi);
-
-	// This also kills sub modules, mhcontrol, mhrouter, wkm etc.
-	dmgr_destroy();
+	info("<<< exit >>>");
+	app_ctx_destroy(app_ctx);
 
 	ev_default_destroy();
 
 	dmn_pidfile_unlock(pidfile, PIDFILE);
 
-	info("<<< exit >>>");
-
-	if(logfile && logfile != stdout)
-		fclose(logfile);
+	log_close();
 
 	nerr_free();
 

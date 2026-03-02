@@ -11,7 +11,7 @@
 
 struct cfg;
 
-struct cfg *cfg_create();
+struct cfg *cfg_create(void);
 void cfg_destroy(struct cfg *cfg);
 
 const char *cfg_get_val(struct cfg *n, const char *key, const char *defval);

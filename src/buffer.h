@@ -22,7 +22,7 @@ struct buffer {
 	uint16_t rpos;
 };
 
-struct buffer *buf_alloc();
+struct buffer *buf_alloc(void);
 void buf_free(struct buffer *b);
 void buf_reset(struct buffer *b);
 uint16_t buf_size_avail(struct buffer *b);

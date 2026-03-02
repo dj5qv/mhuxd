@@ -17,7 +17,7 @@ struct dbuf {
 	uint8_t *data;
 };
 
-struct dbuf *dbuf_create();
+struct dbuf *dbuf_create(void);
 void dbuf_destroy(struct dbuf *dbuf) ;
 void dbuf_set_inc_size(struct dbuf *dbuf, size_t size);
 void dbuf_append(struct dbuf *dbuf, uint8_t *data, size_t length);

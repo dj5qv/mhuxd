@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2013  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -12,10 +12,6 @@
 #include <errno.h>
 
 #include "util.h"
-
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
-
 
 void *w_calloc(size_t nmemb, size_t size) {
 	void *p;

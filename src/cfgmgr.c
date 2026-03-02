@@ -13,6 +13,7 @@
 #include <ev.h>
 #include "clearsilver/util/neo_hdf.h"
 #include "cfgmgr.h"
+#include "app_ctx.h"
 #include "logger.h"
 #include "util.h"
 #include "cfgnod.h"
@@ -43,16 +44,13 @@
 #define HOST_NAME_MAX 255
 #endif
 
-extern const char *log_file_name;
-
 struct cfgmgr {
-	struct ev_loop *loop;
-	struct conmgr *conmgr;
+	struct app_ctx *app_ctx;
 	struct cfg *runtime_cfg;
 };
 
 // Wrapper during HDF/JSON transition
-int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *cfg, int id) {
+int conmgr_create_con(struct app_ctx *ctx, struct cfg *cfg, int id) {
 	struct con_cfg ccfg = { 0 };
 	const char *serial = cfg_get_val(cfg, "serial", NULL);
 	const char *channel_str = cfg_get_val(cfg, "channel", NULL);
@@ -80,7 +78,7 @@ int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *c
 		ccfg.tcp.remote_access = cfg_get_int_val(cfg, "remote_access", 0);
 	}
 
-	return conmgr_create_con_cfg(conmgr, loop, &ccfg, id);
+	return conmgr_create_con_cfg(ctx, &ccfg, id);
 }
 
 static void log_neoerr(NEOERR *err, const char *what) {
@@ -102,7 +100,7 @@ static int merge_runtime_cfg(struct cfg *cfg) {
 	rval |= cfg_set_value(cfg, "mhuxd.run.program.name", _package);
 	rval |= cfg_set_value(cfg, "mhuxd.run.program.version", _package_version);
 	rval |= cfg_set_value(cfg, "mhuxd.run.hostname", buf);
-	rval |= cfg_set_value(cfg, "mhuxd.run.logfile", log_file_name);
+	rval |= cfg_set_value(cfg, "mhuxd.run.logfile", log_get_file_name());
 	rval |= cfg_set_int_value(cfg, "mhuxd.run.pid", getpid());
 
 	int i;
@@ -405,7 +403,7 @@ int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg)
 	// Winkey config
 	if((mhi->flags & MHF_HAS_WINKEY)) {
 		if(!dev->wkman) {
-			dev->wkman = wkm_create(cfgmgr->loop, dev);
+			dev->wkman = wkm_create(app_ctx_get_loop(cfgmgr->app_ctx), dev);
 		}
 		err = hdf_get_node(knod, "winkey", &winkey_nod);
 		if(err != STATUS_OK) goto failed;
@@ -453,7 +451,7 @@ int cfgmgr_merge_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	rval |= cfg_set_value(cfg, "mhuxd.daemon.loglevel", log_get_level_str());
 	rval |= cfg_merge(cfg, cfgmgr->runtime_cfg);
 
-	PG_SCANLIST(dmgr_get_device_list(), dev) {
+	PG_SCANLIST(app_ctx_get_device_list(cfgmgr->app_ctx), dev) {
 		rval |= merge_device_cfg(cfgmgr, dev, cfg);
 	}
 
@@ -612,10 +610,10 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 		HDF *chan_hdf, *winkey_hdf;
 		int result;
 
-		struct device *dev = dmgr_get_device(serial);
+		struct device *dev = app_ctx_get_device(cfgmgr->app_ctx, serial);
 		if(!dev) {
-			uint16_t type = hdf_get_int_value(hdf, "type", MHT_UNKNOWN);
-			dev = dmgr_add_device(serial, type);
+			app_ctx_add_device(cfgmgr->app_ctx, serial);
+			dev = app_ctx_get_device(cfgmgr->app_ctx, serial);
 		}
 
 		if(!dev)
@@ -640,7 +638,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 			mhc_set_speed(dev->ctl, channel, (struct cfg *)chan_hdf, completion_cb, &result);
 
 			while(result == -1) {
-				ev_run(cfgmgr->loop, EVRUN_ONCE);
+				ev_run(app_ctx_get_loop(cfgmgr->app_ctx), EVRUN_ONCE);
 			} 
 
 			if(result != CMD_RESULT_OK) {
@@ -658,7 +656,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 			result = -1;
 			mhc_load_kopts(dev->ctl, completion_cb, &result);
 			while(result == -1) {
-				ev_run(cfgmgr->loop, EVRUN_ONCE);
+				ev_run( app_ctx_get_loop(cfgmgr->app_ctx), EVRUN_ONCE);
 			}
 			if(result != CMD_RESULT_OK) {
 				err("error writing config to keyer %s", serial);
@@ -682,7 +680,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 
 			mhc_store_cw_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result);
 			while(result == -1) {
-				ev_run(cfgmgr->loop, EVRUN_ONCE);
+				ev_run( app_ctx_get_loop(cfgmgr->app_ctx), EVRUN_ONCE);
 			}
 			if(result != CMD_RESULT_OK) {
 				err("%s error store cw message %d", serial, idx);
@@ -704,7 +702,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 
 			mhc_store_fsk_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result);
 			while(result == -1) {
-				ev_run(cfgmgr->loop, EVRUN_ONCE);
+				ev_run(app_ctx_get_loop(cfgmgr->app_ctx), EVRUN_ONCE);
 			}
 			if(result != CMD_RESULT_OK) {
 				err("%s error store fsk message %d", serial, idx);
@@ -717,7 +715,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 		mhi = mhc_get_mhinfo(dev->ctl);
 
 		if((mhi->flags & MHF_HAS_WINKEY) && !dev->wkman)
-			dev->wkman = wkm_create(cfgmgr->loop, dev);
+			dev->wkman = wkm_create(app_ctx_get_loop(cfgmgr->app_ctx), dev);
 		
 		if(dev->wkman) {
 			int werr,val;
@@ -780,7 +778,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 			continue;
 		}
 		int id, requested_id = atoi(id_str);
-		id = conmgr_create_con(cfgmgr->conmgr, cfgmgr->loop, pcfg, requested_id);
+		id = conmgr_create_con(cfgmgr->app_ctx, pcfg, requested_id);
 		if(!id) {
 			err("failed to create connector!");
 			rval++;
@@ -849,14 +847,14 @@ int cfgmgr_remove(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 			rval++;
 			continue;
 		}
-		conmgr_destroy_con(cfgmgr->conmgr, id);
+		conmgr_destroy_con(app_ctx_get_conmgr(cfgmgr->app_ctx), id);
 		cfg_remove_child_i(cfgmgr->runtime_cfg, "mhuxd.run.connector", id);
 	}
 
 	// SM
 	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.keyer")); pcfg; pcfg = cfg_next_child(pcfg)) {
 		const char *serial = cfg_name(pcfg);
-		struct device *dev = dmgr_get_device(serial);
+		struct device *dev = app_ctx_get_device(cfgmgr->app_ctx, serial);
 		struct cfg *smcfg;
 		if(!dev) {
 			err("%s() could not find device %s in device list!", __func__, serial);
@@ -903,7 +901,7 @@ int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	// SM
 	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.keyer")); pcfg; pcfg = cfg_next_child(pcfg)) {
 		const char *serial = cfg_name(pcfg);
-		struct device *dev = dmgr_get_device(serial);
+		struct device *dev =  app_ctx_get_device(cfgmgr->app_ctx, serial);
 		struct cfg *smcfg;
 		if(!dev) {
 			err("%s() could not find device %s in device list!", __func__, serial);
@@ -925,9 +923,9 @@ int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	return rval;
 }
 
-int cfgmgr_sm_load(const char *serial) {
+int cfgmgr_sm_load(struct cfgmgr *cfgmgr, const char *serial) {
 	dbg1("%s()", __func__);
-	struct device *dev = dmgr_get_device(serial);
+	struct device *dev = app_ctx_get_device(cfgmgr->app_ctx, serial);
 	struct sm *sm;
 
 	if(!dev) {
@@ -949,9 +947,9 @@ int cfgmgr_sm_load(const char *serial) {
 	return 0;
 }
 
-int cfgmgr_sm_store(const char *serial) {
+int cfgmgr_sm_store(struct cfgmgr *cfgmgr, const char *serial) {
 	dbg1("%s()", __func__);
-	struct device *dev = dmgr_get_device(serial);
+	struct device *dev = app_ctx_get_device(cfgmgr->app_ctx, serial);
 	struct sm *sm;
 
 	if(!dev) {
@@ -975,15 +973,14 @@ int cfgmgr_sm_store(const char *serial) {
 }
 
 
-struct cfgmgr *cfgmgr_create(struct conmgr *conmgr, struct ev_loop *loop) {
+struct cfgmgr *cfgmgr_create(struct app_ctx *ctx) {
 	dbg1("%s()", __func__);
 	struct cfg *runtime_cfg = cfg_create();
 	if(!runtime_cfg)
 		return NULL;
 
 	struct cfgmgr *cfgmgr = w_calloc(1, sizeof(*cfgmgr));
-	cfgmgr->loop = loop;
-	cfgmgr->conmgr = conmgr;
+	cfgmgr->app_ctx = ctx;
 	cfgmgr->runtime_cfg = runtime_cfg;
 	merge_runtime_cfg(cfgmgr->runtime_cfg);
 	return cfgmgr;

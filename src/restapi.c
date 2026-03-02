@@ -14,6 +14,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "restapi.h"
+#include "app_ctx.h"
 #include "http_server.h"
 #include "mhinfo.h"
 #include "mhcontrol.h"
@@ -26,6 +27,7 @@
 #define MOD_ID "restapi"
 
 struct restapi {
+	struct app_ctx *ctx;
 	struct http_server *hs;
 	struct cfgmgrj *cfgmgrj;
 	struct http_handler *runtime_handler;
@@ -51,8 +53,6 @@ struct ws_subscriber {
 	struct http_connection *hcon;
 	struct restapi *api;
 };
-
-extern const char *log_file_name;
 
 struct mh_flag_name {
 	uint32_t flag;
@@ -331,7 +331,7 @@ static int cb_runtime(struct http_connection *hcon, const char *path, const char
 
 	json_object_set_new(daemon, "name", json_string("mhuxd"));
 	json_object_set_new(daemon, "version", json_string(_package_version));
-	json_object_set_new(daemon, "logfile", json_string(log_file_name ? log_file_name : ""));
+	json_object_set_new(daemon, "logfile", json_string(log_get_file_name()));
 	json_object_set_new(daemon, "pid", json_integer((json_int_t)getpid()));
 	json_object_set_new(daemon, "uptimeSec", json_integer((json_int_t)uptime));
 	json_object_set_new(root, "daemon", daemon);
@@ -353,7 +353,6 @@ static int cb_runtime(struct http_connection *hcon, const char *path, const char
 
 static int cb_devices(struct http_connection *hcon, const char *path, const char *query,
 		 const char *body, uint32_t body_len, void *data) {
-	(void)path; (void)query; (void)body; (void)body_len; (void)data;
 
 	json_t *root = json_object();
 	json_t *devices = json_array();
@@ -366,7 +365,9 @@ static int cb_devices(struct http_connection *hcon, const char *path, const char
 		return 0;
 	}
 
-	struct PGList *list = dmgr_get_device_list();
+	struct restapi *api = data;
+
+	struct PGList *list = dmgr_get_device_list(app_ctx_get_device_manager(api->ctx));
 	if(list) {
 		struct device *dev;
 		PG_SCANLIST(list, dev) {
@@ -417,7 +418,7 @@ static int cb_devices(struct http_connection *hcon, const char *path, const char
 
 static int cb_config_daemon(struct http_connection *hcon, const char *path, const char *query,
 		 const char *body, uint32_t body_len, void *data) {
-	(void)path; (void)query; (void)data;
+//	struct restapi *api = data;
 	int16_t method = hs_get_method(hcon);
 
 	dbg1("%s %s", __func__, hs_method_str(method));
@@ -817,8 +818,8 @@ static int cb_config_device(struct http_connection *hcon, const char *path, cons
 
 static int cb_device_actions(struct http_connection *hcon, const char *path, const char *query,
 		 const char *body, uint32_t body_len, void *data) {
-	(void)query;
-	(void)data;
+
+	struct restapi *api = data;
 	int16_t method = hs_get_method(hcon);
 
 	/* path is "SERIAL/actions" - extract serial and verify suffix */
@@ -879,11 +880,11 @@ static int cb_device_actions(struct http_connection *hcon, const char *path, con
 	const char *err_msg = NULL;
 
 	if(strcmp(action_str, "sm_load") == 0) {
-		rc = cfgmgrj_sm_load(serial);
+		rc = cfgmgrj_sm_load(api->cfgmgrj, serial);
 		ok_msg = "Antenna switching settings loaded from device.";
 		err_msg = "Could not load antenna switching settings from device.";
 	} else if(strcmp(action_str, "sm_store") == 0) {
-		rc = cfgmgrj_sm_store(serial);
+		rc = cfgmgrj_sm_store(api->cfgmgrj, serial);
 		ok_msg = "Antenna switching settings stored to device.";
 		err_msg = "Could not store antenna switching settings to device.";
 	} else {
@@ -934,7 +935,8 @@ static void on_device_added(struct device *dev, void *user_data) {
 	json_decref(event);
 }
 
-struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) {
+// FIXME: pass ctx alone.
+struct restapi *restapi_create(struct app_ctx *ctx, struct http_server *hs, struct cfgmgrj *cfgmgrj) {
     struct restapi *api = NULL;
     json_error_t jerr;
 	const char *rigtypes_path = JSONDIR "/mh_rigtypes.json";
@@ -946,6 +948,7 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
     }
 
     api = w_calloc(1, sizeof(*api));
+	api->ctx = ctx;
 
     api->rigtypes = json_load_file(rigtypes_path, 0, &jerr);
     if(!api->rigtypes || !json_is_array(api->rigtypes)) {
@@ -991,11 +994,11 @@ struct restapi *restapi_create(struct http_server *hs, struct cfgmgrj *cfgmgrj) 
     }
 
 	struct device *dev;
-	PG_SCANLIST(dmgr_get_device_list(), dev) {
+	PG_SCANLIST(app_ctx_get_device_list(api->ctx), dev) {
 		mhc_add_keyer_state_changed_cb(dev->ctl, on_keyer_state_changed, api);
 	}
 
-	api->device_connect_cb_handle = dmgr_add_on_device_connect_cb(on_device_added, api);
+	api->device_connect_cb_handle = dmgr_add_on_device_connect_cb(app_ctx_get_device_manager(api->ctx), on_device_added, api);
 
     return api;
 
@@ -1033,7 +1036,7 @@ void restapi_shutdown(struct restapi *api) {
 		return;
 
 	if(api->device_connect_cb_handle)
-		dmgr_rem_on_device_connect_cb(api->device_connect_cb_handle);
+		dmgr_rem_on_device_connect_cb(app_ctx_get_device_manager(api->ctx), api->device_connect_cb_handle);
 
 	struct ws_subscriber *wsub;
 	while((wsub = (void*)PG_FIRSTENTRY(&api->ws_subscribers))) {

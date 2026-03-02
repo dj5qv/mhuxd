@@ -19,6 +19,7 @@
 #include "util.h"
 #include "pglist.h"
 #include "logger.h"
+#include "app_ctx.h"
 #include "channel.h"
 #include "mhrouter.h"
 #include "devmgr.h"
@@ -57,7 +58,7 @@ struct conmgr {
 	struct PGList connector_list;
 };
 
-struct conmgr *conmgr_create() {
+struct conmgr *conmgr_create(void) {
 	struct conmgr *conmgr = w_calloc(1, sizeof(*conmgr));
 	PG_NewList(&conmgr->connector_list);
 	return conmgr;
@@ -68,7 +69,7 @@ void conmgr_destroy(struct conmgr *conmgr) {
 	free(conmgr);
 }
 
-int conmgr_create_con_cfg(struct conmgr *conmgr, struct ev_loop *loop, const struct con_cfg *cfg, int id) {
+int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, int id) {
 	const char *serial;
 	struct connector *ctr = NULL;
 	int sodat[2] = { -1, -1 };
@@ -77,6 +78,10 @@ int conmgr_create_con_cfg(struct conmgr *conmgr, struct ev_loop *loop, const str
 	const char *type_str = "UNKNOWN";
 
 	dbg1("%s()", __func__);
+
+
+	struct conmgr *conmgr = app_ctx_get_conmgr(app_ctx);
+	struct ev_loop *loop = app_ctx_get_loop(app_ctx);
 
 	if(!conmgr || !loop || !cfg) {
 		err("%s() missing parameters", __func__);
@@ -116,7 +121,7 @@ int conmgr_create_con_cfg(struct conmgr *conmgr, struct ev_loop *loop, const str
 		goto fail;
 	}
 
-	ctr->dev = dmgr_get_device(serial);
+	ctr->dev =  app_ctx_get_device(app_ctx, serial);
 	if(ctr->dev == NULL) {
 		err("can't create connector, device %s not found!", serial);
 		goto fail;
@@ -273,6 +278,11 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 	struct connector *ctr;
 	
 	dbg1("%s()", __func__);
+
+	if(!conmgr) {
+		warn("%s() conmgr is NULL", __func__);
+		return -1;
+	}
 
 	PG_SCANLIST(&conmgr->connector_list, ctr) {
 		if(ctr->id == id) {

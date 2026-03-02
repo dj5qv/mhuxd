@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <jansson.h>
 
 enum {
@@ -29,15 +30,20 @@ enum {
 
 extern int log_level;
 
-inline static int log_get_level() {
+inline static int log_get_level(void) {
 	return log_level;
 }
 
-void log_init(FILE *f);
+void log_open(uint8_t use_stdout);
+void log_close(void);
+void log_set_file_name(const char *name);
+const char *log_get_file_name(void);
+void log_reopen(void);
+
 void log_set_ident(const char *);
 void log_set_level(int level);
 int log_set_level_by_str(const char *s);
-const char *log_get_level_str();
+const char *log_get_level_str(void);
 void log_hex(int severity, const char *msg1, const char *msg2, const char *msg3, const char *buf, int len);
 void log_json(int severity, const char *msg1, const char *msg2, const char *msg3, const json_t *obj);
 void log_msg(int severity, const char *header, const char *fmt, ...)

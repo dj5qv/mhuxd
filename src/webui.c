@@ -523,7 +523,7 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 	}
 
 	if(action == ACTION_SM_LOAD) {
-		if(cfgmgr_sm_load(hdf_get_value(webui->hdf, "mhuxd.webui.session.unit", "Unkown"))) {
+		if(cfgmgr_sm_load(webui->cfgmgr, hdf_get_value(webui->hdf, "mhuxd.webui.session.unit", "Unkown"))) {
 			warn("(webui) could not load antenna switching settings!");
 			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error", 
 					    "Could not load antenna switching settings! Check log file for details.");
@@ -536,7 +536,7 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 	}
 
 	if(action == ACTION_SM_STORE) {
-		if(cfgmgr_sm_store(hdf_get_value(webui->hdf, "mhuxd.webui.session.unit", "Unkown"))) {
+		if(cfgmgr_sm_store(webui->cfgmgr, hdf_get_value(webui->hdf, "mhuxd.webui.session.unit", "Unkown"))) {
 			warn("(webui) could not store antenna switching settings!");
 			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error", 
 					    "Could not store antenna switching settings! Check log file for details.");

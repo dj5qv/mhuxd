@@ -67,12 +67,14 @@ struct con_info {
 	int remote_access;
 };
 
+struct app_ctx;
+
 typedef void (*conmgr_iter_cb)(const struct con_info *info, void *user_data);
 
-struct conmgr *conmgr_create();
+struct conmgr *conmgr_create(void);
 void conmgr_destroy(struct conmgr *conmgr);
-int conmgr_create_con(struct conmgr *conmgr, struct ev_loop *loop, struct cfg *cfg, int id);
-int conmgr_create_con_cfg(struct conmgr *conmgr, struct ev_loop *loop, const struct con_cfg *cfg, int id);
+int conmgr_create_con(struct app_ctx *ctx, struct cfg *cfg, int id);
+int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, int id);
 int conmgr_destroy_con(struct conmgr *, int id);
 void conmgr_destroy_all(struct conmgr *);
 void conmgr_foreach(struct conmgr *conmgr, conmgr_iter_cb cb, void *user_data);

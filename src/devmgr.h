@@ -27,16 +27,17 @@ struct device {
 
 struct ev_loop;
 
-void *dmgr_create(struct ev_loop *loop);
-void dmgr_enable_monitor();
-void dmgr_disable_monitor();
-struct device *dmgr_add_device(const char *serial, uint16_t type);
-void dmgr_destroy();
-struct device *dmgr_get_device(const char *serial);
-struct PGList *dmgr_get_device_list();
+struct device_manager *dmgr_create(struct ev_loop *loop);
+void dmgr_enable_monitor(struct device_manager *dmgr);
+void dmgr_disable_monitor(struct device_manager *dmgr);
+struct device *dmgr_add_device(struct device_manager *dmgr, const char *serial);
+void dmgr_destroy(struct device_manager *dmgr);
+struct device *dmgr_get_device(struct device_manager *dmgr, const char *serial);
+struct PGList *dmgr_get_device_list(struct device_manager *dmgr);
 
 typedef void (*dmgr_device_cb)(struct device *dev, void *user_data);
-t_on_device_connect_cb_handle *dmgr_add_on_device_connect_cb(dmgr_device_cb cb, void *user_data);
-void dmgr_rem_on_device_connect_cb(t_on_device_connect_cb_handle *handle);
+t_on_device_connect_cb_handle *dmgr_add_on_device_connect_cb(struct device_manager *dmgr, dmgr_device_cb cb, void *user_data);
+void dmgr_rem_on_device_connect_cb(struct device_manager *dmgr, t_on_device_connect_cb_handle *handle);
+
 
 #endif // DEVMGR_H

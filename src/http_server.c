@@ -660,6 +660,8 @@ static void lsnr_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	fd = net_accept(w->fd);
 	if(fd != -1) {
+		dbg0("%s(): accepted new connection, fd=%d", __func__, fd);
+
 		struct http_connection *hcon = w_calloc(1, sizeof(*hcon));
 		PG_NewList(&hcon->response_list);
 		hcon->fd = fd;
@@ -966,7 +968,7 @@ struct http_server *hs_start(struct ev_loop *loop, const char *host_port) {
 		free(port);
 	}
 
-	hs = w_malloc(sizeof(*hs));
+	hs = w_calloc(1, sizeof(*hs));
 	PG_NewList(&hs->con_list);
 	PG_NewList(&hs->handler_list);
 	PG_NewList(&hs->dir_map_list);
@@ -976,14 +978,14 @@ struct http_server *hs_start(struct ev_loop *loop, const char *host_port) {
 	hs->bind_desc = bind_desc;
 
 	if(hs->lsnr_v4) {
-		hs->w_lsnr_v4.data = hs;
 		ev_io_init(&hs->w_lsnr_v4, lsnr_cb, net_listener_get_fd(hs->lsnr_v4), EV_READ);
+		hs->w_lsnr_v4.data = hs;
 		ev_io_start(hs->loop, &hs->w_lsnr_v4);
 	}
 
 	if(hs->lsnr_v6) {
-		hs->w_lsnr_v6.data = hs;
 		ev_io_init(&hs->w_lsnr_v6, lsnr_cb, net_listener_get_fd(hs->lsnr_v6), EV_READ);
+		hs->w_lsnr_v6.data = hs;
 		ev_io_start(hs->loop, &hs->w_lsnr_v6);
 	}
 

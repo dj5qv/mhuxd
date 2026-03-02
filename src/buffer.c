@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include "buffer.h"
 
-struct buffer *buf_alloc() {
+struct buffer *buf_alloc(void) {
 	struct buffer *b = calloc(1, sizeof(*b));
 	return b;
 }

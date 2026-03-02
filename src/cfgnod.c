@@ -13,7 +13,7 @@
 
 #define MOD_ID "cfg"
 
-struct cfg *cfg_create() {
+struct cfg *cfg_create(void) {
 	NEOERR *err;
 	HDF *hdf;
 	err = hdf_init(&hdf);
