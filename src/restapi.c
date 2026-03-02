@@ -244,16 +244,6 @@ static int on_ws_message(struct http_connection *hcon, int opcode, const char *d
 		return 0;
 	}
 
-	json_t *event = json_object();
-	if(!event) {
-		json_decref(in);
-		return -1;
-	}
-
-	json_object_set_new(event, "type", json_string("client_event"));
-	json_object_set(event, "payload", in);
-	broadcast_event(sub->api, event);
-
 	json_t *ack = json_object();
 	if(ack) {
 		json_object_set_new(ack, "type", json_string("ack"));
@@ -267,7 +257,6 @@ static int on_ws_message(struct http_connection *hcon, int opcode, const char *d
 		json_decref(ack);
 	}
 
-	json_decref(event);
 	json_decref(in);
 	return 0;
 }
