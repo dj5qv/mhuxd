@@ -22,6 +22,7 @@
 #include "mhmk2r.h"
 #include "mhmk2.h"
 #include "mhsm.h"
+#include "eventbus.h"
 
 #define MOD_ID "mhc"
 
@@ -171,6 +172,7 @@ struct mh_control {
 	const char *serial;
 	struct mh_router *router;
 	struct ev_loop *loop;
+	eventbus_t *ebus;
 	struct kcfg *kcfg;
 	struct sm *sm;
 	struct PGList cmd_list;
@@ -323,9 +325,18 @@ static void set_state(struct mh_control *ctl, uint8_t state) {
 
 	if(new_keyer_state != ctl->keyer_state) {
 		ctl->keyer_state = new_keyer_state;
+
+		// FIXME: deprecated callback mechanism.
 		PG_SCANLIST(&ctl->keyer_state_changed_cb_list, sccb)
 			if(sccb->func)
 				sccb->func(ctl->serial, ctl->keyer_state, sccb->user_data);
+
+		// new event based callback.
+		eventbus_publish(ctl->ebus, EV_KEYER_STATE, &(struct ev_keyer_state) {
+		    .serial = ctl->serial,
+		    .state = ctl->keyer_state,
+		});
+
 	}
 }
 
@@ -737,13 +748,14 @@ static void radio_info_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, in
 }
 
 
-struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, struct mh_info *mhi) {
+struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, struct mh_info *mhi, eventbus_t *eventbus) {
 	struct mh_control *ctl;
 
 	dbg1("%s %s()", mhr_get_serial(router), __func__);
 
 	ctl = w_calloc(1, sizeof(*ctl));
 	ctl->loop = loop;
+	ctl->ebus = eventbus;
 	ctl->router = router;
 	ctl->serial = mhr_get_serial(router);
 	ctl->tracked_keyer_mode = -1;

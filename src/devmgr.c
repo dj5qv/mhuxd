@@ -21,6 +21,8 @@
 
 #define MOD_ID "dmr"
 
+typedef struct eventbus eventbus_t;
+
 typedef struct on_device_connect_cb {
 	struct PGNode node;
 	dmgr_device_cb cb;
@@ -32,6 +34,7 @@ struct device_manager {
 	struct PGList on_device_connect_cbs;
 	struct ev_loop *loop;
 	struct devmon *devmon;
+	eventbus_t *ebus;
 };
 
 static struct device *create_dev(struct device_manager *dmgr, const char *serial) {
@@ -56,13 +59,13 @@ static struct device *create_dev(struct device_manager *dmgr, const char *serial
 	}
 
 	dev = w_calloc(1, sizeof(*dev));
-	memcpy(&dev->mhi, &mhi, sizeof(mhi));
 	dev->serial = w_malloc(strlen(serial)+1);
 	strcpy(dev->serial, serial);
 	dev->router = mhr_create(dmgr->loop, serial, (mhi.flags & MHF_HAS_FLAGS_CHANNEL) ? 1 : 0);
-	dev->ctl = mhc_create(dmgr->loop, dev->router, &mhi);
+	dev->ctl = mhc_create(dmgr->loop, dev->router, &mhi, dmgr->ebus);
 	PG_AddTail(&dmgr->device_list, &dev->node);
 
+	// Deprecated callback.
 	t_on_device_connect_cb_handle *odccb;
 	PG_SCANLIST(&dmgr->on_device_connect_cbs, odccb) {
 		if(odccb->cb)			
@@ -84,6 +87,7 @@ static void devmon_callback(const char *serial, int status, void *user_data) {
 	//	printf("device changed: %s - %d\n", serial, status);
 
 	if(status == DEVMON_DISCONNECTED) {
+		// no need to propagate this up, as usually mhrouter will get a read error first anyway.
 		info("%s disconnected from USB", serial);
 		return;
 	}
@@ -121,11 +125,12 @@ static void devmon_callback(const char *serial, int status, void *user_data) {
 	free((void*)devnode);
 }
 
-struct device_manager *dmgr_create(struct ev_loop *loop) {
+struct device_manager *dmgr_create(struct ev_loop *loop, eventbus_t *ebus) {
 	struct device_manager *dmgr = w_calloc(1, sizeof(*dmgr));
 	PG_NewList(&dmgr->device_list);
 	PG_NewList(&dmgr->on_device_connect_cbs);
 	dmgr->loop = loop;
+	dmgr->ebus = ebus;
 	return dmgr;
 }
 

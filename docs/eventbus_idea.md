@@ -29,6 +29,8 @@ This plan introduces a central `struct app_ctx` to manage global state and a `st
 
 3.  **Refactor Producers (Managers/Drivers)**
     - Update conmgr.c, `devmgr.c`, and `mhcontrol.c` to accept a pointer to `app_ctx` instead of individual dependencies.
+      2026-03-02, no, the above would be overkill. No need to pass app_ctx down to lower end modules. It can act as an interface
+      between higher end modules(restapi, websockets) to the lower end modules (mhcontrol, mhrouter, devmgr).
     - Replace the custom callback lists in conmgr.c and `mhcontrol.c` with a simple call to `app_publish`.
     - Example: Instead of `conmgr_notify_status_changed` iterating its own list, it calls `app_publish(ctx, EV_CON_STATUS, &status)`.
 

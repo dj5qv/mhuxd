@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 
+typedef struct eventbus eventbus_t;
+
 enum  {
 	CMD_RESULT_OK,
 	CMD_RESULT_ERROR,   // "some" error occured. Usually log file has meaningful error message.
@@ -53,7 +55,7 @@ struct mhc_keyer_state_callback;
 struct mhc_state_callback;
 struct mhc_mode_callback;
 
-struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, struct mh_info *mhi);
+struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, struct mh_info *mhi, eventbus_t *eventbus);
 void mhc_destroy(struct mh_control *ctl);
 int mhc_get_keyer_mode(struct mh_control *ctl);
 int mhc_is_connected(struct mh_control *ctl);

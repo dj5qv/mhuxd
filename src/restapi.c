@@ -13,16 +13,18 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include "pglist.h"
 #include "restapi.h"
 #include "app_ctx.h"
 #include "http_server.h"
 #include "mhinfo.h"
 #include "mhcontrol.h"
-#include "devmgr.h"
+#include "device.h"
 #include "cfgmgrj.h"
 #include "util.h"
 #include "version.h"
 #include "logger.h"
+#include "eventbus.h"
 
 #define MOD_ID "restapi"
 
@@ -45,7 +47,6 @@ struct restapi {
 	json_t *devicetypes;
 	json_t *displayoptions;
 	time_t start_time;
-	t_on_device_connect_cb_handle *device_connect_cb_handle;
 };
 
 struct ws_subscriber {
@@ -211,11 +212,25 @@ static void broadcast_event(struct restapi *api, const json_t *event) {
 }
 
 static void on_keyer_state_changed(const char *serial, int state, void *user_data) {
+	dbg0("%s() keyer state changed: %s", serial, mhc_state_str(state));
 	struct restapi *api = user_data;
 	json_t *event = json_object();
 	json_object_set_new(event, "type", json_string("status"));
 	json_object_set_new(event, "serial", json_string(serial));
 	json_object_set_new(event, "status", json_string(mhc_state_str(state)));
+	broadcast_event(api, event);
+	json_decref(event);
+}
+
+void ev_keyer_state_cb(enum app_event_type type, const void *data, void *user_data) {
+	struct restapi *api = user_data;
+	const struct ev_keyer_state *ev = data;
+	dbg0("%s() event received: type=%d serial=%s state=%d", __func__, type, ev ? ev->serial : "NULL", ev ? ev->state : -1);
+	if(type != EV_KEYER_STATE || !ev)		return;
+	json_t *event = json_object();
+	json_object_set_new(event, "type", json_string("status"));
+	json_object_set_new(event, "serial", json_string(ev->serial));
+	json_object_set_new(event, "status", json_string(mhc_state_str(ev->state)));
 	broadcast_event(api, event);
 	json_decref(event);
 }
@@ -356,9 +371,9 @@ static int cb_devices(struct http_connection *hcon, const char *path, const char
 
 	struct restapi *api = data;
 
-	struct PGList *list = dmgr_get_device_list(app_ctx_get_device_manager(api->ctx));
+	const struct PGList *list = app_ctx_get_device_list(api->ctx);
 	if(list) {
-		struct device *dev;
+		const struct device *dev;
 		PG_SCANLIST(list, dev) {
 			json_t *device = json_object();
 			const struct mh_info *mhi = mhc_get_mhinfo(dev->ctl);
@@ -912,18 +927,6 @@ static int cb_device_actions(struct http_connection *hcon, const char *path, con
 	return 0;
 }
 
-static void on_device_added(struct device *dev, void *user_data) {
-	struct restapi *api = user_data;
-	mhc_add_keyer_state_changed_cb(dev->ctl, on_keyer_state_changed, api);
-
-	json_t *event = json_object();
-	json_object_set_new(event, "type", json_string("usb_connection"));
-	json_object_set_new(event, "serial", json_string(dev->serial));
-	json_object_set_new(event, "connected", json_true());
-	broadcast_event(api, event);
-	json_decref(event);
-}
-
 // FIXME: pass ctx alone.
 struct restapi *restapi_create(struct app_ctx *ctx, struct http_server *hs, struct cfgmgrj *cfgmgrj) {
     struct restapi *api = NULL;
@@ -987,7 +990,7 @@ struct restapi *restapi_create(struct app_ctx *ctx, struct http_server *hs, stru
 		mhc_add_keyer_state_changed_cb(dev->ctl, on_keyer_state_changed, api);
 	}
 
-	api->device_connect_cb_handle = dmgr_add_on_device_connect_cb(app_ctx_get_device_manager(api->ctx), on_device_added, api);
+	eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_STATE, ev_keyer_state_cb, api);	
 
     return api;
 
@@ -1023,9 +1026,6 @@ fail:
 void restapi_shutdown(struct restapi *api) {
 	if(!api)
 		return;
-
-	if(api->device_connect_cb_handle)
-		dmgr_rem_on_device_connect_cb(app_ctx_get_device_manager(api->ctx), api->device_connect_cb_handle);
 
 	struct ws_subscriber *wsub;
 	while((wsub = (void*)PG_FIRSTENTRY(&api->ws_subscribers))) {

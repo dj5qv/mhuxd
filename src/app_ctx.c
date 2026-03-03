@@ -23,11 +23,14 @@
 #include "http_server.h"
 #include "webui.h"
 #include "restapi.h"
+#include "eventbus.h"
+#include "events.h"
 
 #define MOD_ID "ctx"
 
 typedef struct app_ctx {
     struct ev_loop *loop;
+    eventbus_t *ebus;
     struct device_manager *dmgr;
     struct conmgr *conmgr;
     struct cfgmgr *cfgmgr;
@@ -63,13 +66,14 @@ static int cb_redirect_home(struct http_connection *hcon, const char *path, cons
 
 app_ctx *app_ctx_create() {
     struct app_ctx *ctx = w_calloc(1, sizeof(app_ctx));
+    ctx->ebus = eventbus_create();
     return ctx;
 }
 
 app_ctx *app_ctx_init(struct app_ctx *ctx, struct ev_loop *loop) {
     ctx->loop = loop;
 
-    ctx->dmgr = dmgr_create(loop);
+    ctx->dmgr = dmgr_create(loop, ctx->ebus);
     ctx->conmgr = conmgr_create();
     ctx->cfgmgr = cfgmgr_create(ctx);
 
@@ -194,9 +198,10 @@ void app_ctx_destroy(app_ctx *ctx) {
         restapi_destroy(ctx->restapi);
     if(ctx->dmgr)
         dmgr_destroy(ctx->dmgr);
+    if(ctx->ebus) 
+        eventbus_destroy(ctx->ebus);
 
     free(ctx);
-
 } 
 
 void app_ctx_run(app_ctx *ctx) {
@@ -225,6 +230,10 @@ struct conmgr *app_ctx_get_conmgr(app_ctx *ctx) {
     return ctx ? ctx->conmgr : NULL;
 }
 
+eventbus_t *app_ctx_get_eventbus(app_ctx *ctx) {
+    return ctx ? ctx->ebus : NULL;
+}
+
 int8_t app_ctx_add_device(struct app_ctx *ctx, const char *serial) {
     struct device *dev = dmgr_add_device(ctx->dmgr, serial);
     return dev ? 0 : -1;
@@ -233,3 +242,4 @@ int8_t app_ctx_add_device(struct app_ctx *ctx, const char *serial) {
 struct PGList *app_ctx_get_device_list(app_ctx *ctx) {
     return ctx && ctx->dmgr ? dmgr_get_device_list(ctx->dmgr) : NULL;
 }
+

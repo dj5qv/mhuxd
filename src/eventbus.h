@@ -11,17 +11,17 @@
 
 #include "events.h"
 
-struct eventbus;
-struct eventbus_sub;
+typedef struct eventbus eventbus_t;
+typedef struct eventbus_sub eventbus_sub_t;
 
 typedef void (*event_cb_fn)(enum app_event_type type, const void *data, void *user_data);
 
-struct eventbus *eventbus_create(void);
-void eventbus_destroy(struct eventbus *bus);
+eventbus_t *eventbus_create(void);
+void eventbus_destroy(eventbus_t *bus);
 
-struct eventbus_sub *eventbus_subscribe(struct eventbus *bus, enum app_event_type type, event_cb_fn cb, void *user_data);
-void eventbus_unsubscribe(struct eventbus_sub *sub);
+eventbus_sub_t *eventbus_subscribe(eventbus_t *bus, enum app_event_type type, event_cb_fn cb, void *user_data);
+void eventbus_unsubscribe(eventbus_sub_t *sub);
 
-void eventbus_publish(struct eventbus *bus, enum app_event_type type, const void *data);
+void eventbus_publish(eventbus_t *bus, enum app_event_type type, const void *data);
 
 #endif // EVENTBUS_H

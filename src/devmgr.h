@@ -11,23 +11,16 @@
 #define DEVMGR_H
 
 #include <stdint.h>
+#include "device.h"
 #include "pglist.h"
 #include "mhinfo.h"
 
 typedef struct on_device_connect_cb t_on_device_connect_cb_handle;
 
-struct device {
-	struct PGNode node;
-	struct mh_router *router;
-	struct mh_control *ctl;
-	struct wkman *wkman;
-	char *serial;
-	struct mh_info mhi;
-};
-
 struct ev_loop;
+typedef struct eventbus eventbus_t;
 
-struct device_manager *dmgr_create(struct ev_loop *loop);
+struct device_manager *dmgr_create(struct ev_loop *loop, eventbus_t *ebus);
 void dmgr_enable_monitor(struct device_manager *dmgr);
 void dmgr_disable_monitor(struct device_manager *dmgr);
 struct device *dmgr_add_device(struct device_manager *dmgr, const char *serial);
