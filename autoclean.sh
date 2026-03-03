@@ -9,7 +9,7 @@ rm -f depcomp
 rm -f install-sh
 rm -f Makefile.in
 rm -f missing
-rm -f config.h.in config.guess config.sub
+rm -f config.h.in config.guess config.sub config.h.in~
 rm -f ./webui/Makefile.in
 rm -f ./src/Makefile.in
 rm -f ./src/clearsilver/Makefile.in

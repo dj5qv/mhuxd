@@ -8,6 +8,9 @@ SVELTE_DIR = $(abs_builddir)/svelte
 SVELTE_BUILD_DIR = $(SVELTE_DIR)/dist
 SVELTE_NPM ?= npm
 
+dist_hdf_DATA = \
+    hdf/mhuxd.hdf
+
 dist_webuistatic_DATA = \
 	static/monda400.woff \
 	static/monda700.woff \
@@ -90,7 +93,8 @@ EXTRA_DIST = \
 	svelte/vite.config.js \
 	svelte/svelte.config.js \
 	svelte/index.html \
-	svelte/src
+	svelte/src \
+	hdf/mhuxd.hdf
 
 svelte-ui-build:
 	@echo "Starte Svelte Build Prozess..."

@@ -23,5 +23,5 @@ mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 	    ws.h http_server_int.h app_ctx.h eventbus.h events.h device.h
 
 install-data-local:
-	$(MKDIR_P) $(DESTDIR)$(STATEDIR) $(DESTDIR)$(LOGDIR)
+	$(MKDIR_P) $(DESTDIR)$(STATEDIR) $(DESTDIR)$(LOGDIR) $(DESTDIR)$(RUNDIR)
 
