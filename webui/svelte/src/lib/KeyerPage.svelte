@@ -1545,6 +1545,17 @@
   $: activePttR1 = activeSerial ? (pttForm[activeSerial]?.r1 || defaultPttForm(activeSerial, 'r1')) : null;
   $: activePttR2 = activeSerial ? (pttForm[activeSerial]?.r2 || defaultPttForm(activeSerial, 'r2')) : null;
 
+  // Reset forms when configDevices changes (data reload) - must run BEFORE the
+  // ensure block so that when configDevices is first loaded the ensure block
+  // sees cleared forms and re-populates them from fresh data.
+  $: if (configDevices) {
+    resetRadioForms();
+    resetRigModeSyncForms();
+    resetPttForms();
+    resetMessageForms();
+    resetAllParamForms();
+  }
+
   // Ensure forms are populated when serial or config changes
   $: if (activeSerial && configDevices) {
     void radioFormGen; void pttFormGen; void messageFormGen; void allParamFormGen;
@@ -1559,15 +1570,6 @@
     ensureMessageForm(activeSerial, 'cw');
     ensureMessageForm(activeSerial, 'fsk');
     ensureAllParamForm(activeSerial);
-  }
-
-  // Reset forms when configDevices changes (data reload)
-  $: if (configDevices) {
-    resetRadioForms();
-    resetRigModeSyncForms();
-    resetPttForms();
-    resetMessageForms();
-    resetAllParamForms();
   }
 
   const activeKeyerMenuTitle = () => activeMenuId || 'Keyer';
