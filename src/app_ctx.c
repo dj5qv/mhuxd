@@ -185,7 +185,9 @@ void app_ctx_destroy(app_ctx *ctx) {
     if(ctx->hs)
         hs_stop(ctx->hs);
 
+#if 0
     cfgmgr_save_cfg(ctx->cfgmgr);
+#endif    
     cfgmgrj_save_cfg(ctx->cfgmgrj);
 
     if(ctx->cfgmgr)

@@ -986,6 +986,7 @@ struct cfgmgr *cfgmgr_create(struct app_ctx *ctx) {
 	return cfgmgr;
 }
 
+#if 0
 int cfgmgr_save_cfg(struct cfgmgr *cfgmgr) {
 	NEOERR *err;
 	HDF *save_hdf;
@@ -1017,6 +1018,7 @@ int cfgmgr_save_cfg(struct cfgmgr *cfgmgr) {
 	hdf_destroy(&save_hdf);
 	return rval;
 }
+#endif
 
 void cfgmgr_destroy(struct cfgmgr *cfgmgr) {
 	dbg1("%s()", __func__);

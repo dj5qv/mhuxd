@@ -41,7 +41,9 @@ int cfgmgr_merge_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg);
 int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode);
 int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg);
 int cfgmgr_remove(struct cfgmgr *cfgmgr, struct cfg *cfg);
+#if 0
 int cfgmgr_save_cfg(struct cfgmgr *cfgmgr);
+#endif
 int cfgmgr_sm_load(struct cfgmgr *cfgmgr, const char *serial);
 int cfgmgr_sm_store(struct cfgmgr *cfgmgr, const char *serial);
 

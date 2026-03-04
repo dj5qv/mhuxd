@@ -547,14 +547,21 @@ static int cb_cs(struct http_connection *hcon, const char *path, const char *que
 			nerr_ignore(&err);
 		}
 	}
-	
 	if(action != ACTION_NONE) {
+#if 1
+		err("(webui) %s() HDF config save not implemented anymore, use the new UI!", __func__);
+		err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error",
+			"Could not save configuration! Check log file for details.");
+
+#else
 		if(cfgmgr_save_cfg(webui->cfgmgr)) {
 			err = hdf_set_value(webui->hdf, "mhuxd.webui.notify.error",
 				    "Could not save configuration! Check log file for details.");
 			nerr_ignore(&err);
 		}
+#endif
 	}
+
 
 	// merge current configuration
 	cfgmgr_merge_cfg(webui->cfgmgr, (struct cfg *)webui->hdf);

@@ -7,11 +7,13 @@
   let loglevelSaving = false;
   let loglevelTimer;
 
-  // Keep loglevel in sync when parent pushes new daemonCfg
-  $: loglevel = daemonCfg?.loglevel || loglevel;
+  // Keep loglevel in sync when parent pushes new daemonCfg,
+  // but only when not actively saving to avoid overwriting user selection.
+  $: if (!loglevelSaving && daemonCfg?.loglevel) loglevel = daemonCfg.loglevel;
 
-  const applyLoglevel = async () => {
-    if (!loglevel) return;
+  const applyLoglevel = async (e) => {
+    const selectedLevel = e.target.value;
+    if (!selectedLevel) return;
     loglevelSaving = true;
     loglevelStatus = '';
     loglevelStatusKind = 'success';
@@ -19,12 +21,12 @@
       const res = await fetch('/api/v1/config/daemon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ loglevel })
+        body: JSON.stringify({ loglevel: selectedLevel })
       });
       if (!res.ok) throw new Error(`config/daemon ${res.status}`);
       const data = await res.json();
       daemonCfg = data;
-      loglevel = data?.loglevel || loglevel;
+      loglevel = data?.loglevel || selectedLevel;
       loglevelStatus = 'Log level updated.';
       loglevelStatusKind = 'success';
     } catch (err) {
@@ -44,7 +46,7 @@
     <div class="row">
       <div class="label">Log Level:</div>
       <div class="value">
-        <select class="select" bind:value={loglevel} on:change={applyLoglevel} disabled={loglevelSaving}>
+        <select class="select" value={loglevel} on:change={applyLoglevel} disabled={loglevelSaving}>
           <option value="CRIT">CRIT</option>
           <option value="ERROR">ERROR</option>
           <option value="WARN">WARN</option>
