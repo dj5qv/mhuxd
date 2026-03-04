@@ -27,7 +27,7 @@
   const parseHash = () => {
     const h = location.hash.replace(/^#\/?/, '');
     const [t, m] = h.split('/');
-    return { tab: t || 'home', menu: m || '' };
+    return { tab: t || 'daemon', menu: m || '' };
   };
   const initHash = parseHash();
   let activeTab = initHash.tab;
@@ -35,12 +35,11 @@
   let hashRestoredMenu = !!initHash.menu;
 
   const baseTabs = [
-    { id: 'home', label: 'Home' },
     { id: 'daemon', label: 'Daemon' }
   ];
 
-  const homeMenus = [{ id: 'summary', label: 'Summary', title: 'Summary' }];
   const daemonMenus = [
+    { id: 'summary', label: 'Summary', title: 'Summary' },
     { id: 'ports', label: 'Ports', title: 'Daemon Ports Configuration and Routing' },
     { id: 'settings', label: 'Settings', title: 'Daemon Settings' },
     { id: 'action', label: 'Action', title: 'Daemon Actions', disabled: true }
@@ -89,8 +88,7 @@
 
   const setTab = (id) => {
     activeTab = id;
-    if (id === 'daemon') activeMenu = 'ports';
-    else if (id === 'home') activeMenu = 'summary';
+    if (id === 'daemon') activeMenu = 'summary';
     else if (id.startsWith('keyer:')) activeMenu = 'mode';
     else activeMenu = 'summary';
   };
@@ -231,22 +229,18 @@
   $: activeTab, activeMenu, updateHash();
 
   $: activeMenuMeta =
-    activeTab === 'home'
-      ? homeMenus.find((m) => m.id === activeMenuId) || null
-      : activeTab === 'daemon'
-        ? daemonMenus.find((m) => m.id === activeMenuId) || null
-        : activeTab.startsWith('keyer:')
-          ? activeKeyerMenus.find((m) => m.id === activeMenuId) || null
-          : null;
+    activeTab === 'daemon'
+      ? daemonMenus.find((m) => m.id === activeMenuId) || null
+      : activeTab.startsWith('keyer:')
+        ? activeKeyerMenus.find((m) => m.id === activeMenuId) || null
+        : null;
 
   $: activeTabLabel =
-    activeTab === 'home'
-      ? 'Home'
-      : activeTab === 'daemon'
-        ? 'Daemon'
-        : activeTab.startsWith('keyer:')
-          ? (activeKeyer?.name || activeSerial || 'Keyer')
-          : '';
+    activeTab === 'daemon'
+      ? 'Daemon'
+      : activeTab.startsWith('keyer:')
+        ? (activeKeyer?.name || activeSerial || 'Keyer')
+        : '';
 
   $: activePageTitle = activeMenuMeta?.title || (activeTab.startsWith('keyer:') ? 'Keyer' : '');
   $: breadcrumb = activeTabLabel
@@ -254,10 +248,9 @@
     : '';
 
   $: sideMenuItems =
-    activeTab === 'home' ? homeMenus
-    : activeTab === 'daemon' ? daemonMenus
+    activeTab === 'daemon' ? daemonMenus
     : activeTab.startsWith('keyer:') ? activeKeyerMenus
-    : [{ id: 'summary', label: 'Summary' }];
+    : [];
 
 </script>
 
@@ -281,7 +274,7 @@
       {:else if error}
         <div class="error">{error}</div>
       {:else}
-        {#if activeTab === 'home'}
+        {#if activeTab === 'daemon' && activeMenu === 'summary'}
           <HomeSummary {runtime} {daemonCfg} {devices} {fwString} />
         {:else if activeTab === 'daemon' && activeMenu === 'ports'}
           <DaemonPorts {connectors} {keyers} {devices} {metadata} {reloadData} />

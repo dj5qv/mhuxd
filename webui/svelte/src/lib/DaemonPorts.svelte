@@ -29,6 +29,7 @@
   let portSaving = false;
   let portStatusTimer;
   let selectedConnectorIds = [];
+  let showAddPortOverlay = false;
 
   // Auto-select first keyer when portForm has no serial yet
   $: if (!portForm.serial && keyers.length) {
@@ -125,6 +126,7 @@
       await reloadData();
       portStatus = 'Port saved.';
       portStatusKind = 'success';
+      showAddPortOverlay = false;
     } catch (err) {
       portStatus = err?.message || 'Failed to save port.';
       portStatusKind = 'error';
@@ -217,6 +219,7 @@
     {/if}
   </div>
   <div class="button-row">
+    <button class="btn" on:click={() => (showAddPortOverlay = true)}>Add</button>
     <button class="btn" on:click={removePorts} disabled={!selectedConnectorIds.length || portSaving}>
       Remove
     </button>
@@ -226,8 +229,15 @@
   {/if}
 </section>
 
-<section class="section">
-  <div class="section-title">Add Port</div>
+{#if showAddPortOverlay}
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<div class="add-port-backdrop" on:click|self={() => (showAddPortOverlay = false)}>
+  <div class="add-port-modal">
+  <div class="section-title add-port-modal-title">
+    Add Port
+    <button class="overlay-close-btn" on:click={() => (showAddPortOverlay = false)}>✕</button>
+  </div>
   <div class="panel">
     <div class="row">
       <div class="label">Port Type:</div>
@@ -319,9 +329,67 @@
       <button class="btn" on:click={applyPort} disabled={portSaving || keyers.length === 0}>
         {portSaving ? 'Saving…' : 'Create'}
       </button>
+      <button class="btn" on:click={() => (showAddPortOverlay = false)} disabled={portSaving}>
+        Cancel
+      </button>
     </div>
     {#if portStatus}
       <div class={`inline-status ${portStatusKind === 'error' ? 'error' : ''}`}>{portStatus}</div>
     {/if}
   </div>
-</section>
+  </div>
+</div>
+{/if}
+
+<style>
+  .add-port-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .add-port-modal {
+    background: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    min-width: 480px;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+  }
+
+  .add-port-modal-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0;
+  }
+
+  .overlay-close-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+
+  .overlay-close-btn:hover {
+    opacity: 0.7;
+  }
+
+  .button-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+</style>
