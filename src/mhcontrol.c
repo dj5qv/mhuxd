@@ -523,8 +523,15 @@ static void control_channel_cb(struct mh_router *router, unsigned const char *da
 			keyer_modes[ctl->tracked_keyer_mode_r1r2[1]]);
 
 
-	 	if(ctl->kcfg)
+	 	if(ctl->kcfg) {
 			kcfg_update_keyer_mode(ctl->kcfg, ctl->tracked_keyer_mode, ctl->tracked_keyer_mode_r1r2[0], ctl->tracked_keyer_mode_r1r2[1]);
+			eventbus_publish(ctl->ebus, EV_KEYER_MODE, &(struct ev_keyer_mode) {
+			    .serial = ctl->serial,
+			    .mode_cur = ctl->tracked_keyer_mode,
+			    .mode_r1 = ctl->tracked_keyer_mode_r1r2[0],
+			    .mode_r2 = ctl->tracked_keyer_mode_r1r2[1],
+			});
+		}
 
 		if(ctl->mhi.type == MHT_MK && old_keyer_mode != ctl->tracked_keyer_mode) {
 			// Special handling of MK1 model. No mode specific r1FrBase.

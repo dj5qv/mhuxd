@@ -235,11 +235,89 @@ void ev_keyer_state_cb(enum app_event_type type, const void *data, void *user_da
 	json_decref(event);
 }
 
+void ev_keyer_mode_cb(enum app_event_type type, const void *data, void *user_data) {
+	struct restapi *api = user_data;
+	const struct ev_keyer_mode *ev = data;
+	dbg0("%s() event received: type=%d serial=%s mode_cur=%d mode_r1=%d mode_r2=%d", __func__, type, ev ? ev->serial : "NULL", ev ? ev->mode_cur : -1, ev ? ev->mode_r1 : -1, ev ? ev->mode_r2 : -1);
+	if(type != EV_KEYER_MODE || !ev)		return;
+	json_t *event = json_object();
+	json_object_set_new(event, "type", json_string("mode_change"));
+	json_object_set_new(event, "serial", json_string(ev->serial));
+	json_object_set_new(event, "mode_cur", json_integer((json_int_t)ev->mode_cur));
+	json_object_set_new(event, "mode_r1", json_integer((json_int_t)ev->mode_r1));
+	json_object_set_new(event, "mode_r2", json_integer((json_int_t)ev->mode_r2));
+	broadcast_event(api, event);
+	json_decref(event);
+}
+
 static void on_ws_sub_closed(struct http_connection *hcon, void *data) {
 	(void)hcon;
 	struct ws_subscriber *sub = data;
 	PG_Remove(&sub->node);
 	free(sub);
+}
+
+static void ws_send_ack_ok(struct http_connection *hcon, json_t *echo) {
+	json_t *ack = json_object();
+	if(!ack) return;
+	json_object_set_new(ack, "type", json_string("ack"));
+	json_object_set_new(ack, "status", json_string("ok"));
+	if(echo)
+		json_object_set(ack, "echo", echo);
+	char *dump = json_dumps(ack, JSON_COMPACT);
+	if(dump) {
+		hs_ws_send_text(hcon, dump, strlen(dump));
+		free(dump);
+	}
+	json_decref(ack);
+}
+
+static void ws_send_ack_error(struct http_connection *hcon, const char *error) {
+	json_t *ack = json_object();
+	if(!ack) return;
+	json_object_set_new(ack, "type", json_string("ack"));
+	json_object_set_new(ack, "status", json_string("error"));
+	json_object_set_new(ack, "error", json_string(error));
+	char *dump = json_dumps(ack, JSON_COMPACT);
+	if(dump) {
+		hs_ws_send_text(hcon, dump, strlen(dump));
+		free(dump);
+	}
+	json_decref(ack);
+}
+
+/* Command handlers: return NULL on success, error string on failure */
+
+static const char *cmd_get_device(struct restapi *api, json_t *in, struct device **dev_out) {
+	json_t *serial_val = json_object_get(in, "serial");
+	if(!serial_val || !json_is_string(serial_val))
+		return "missing or invalid 'serial'";
+	*dev_out = app_ctx_get_device(api->ctx, json_string_value(serial_val));
+	if(!*dev_out)
+		return "device not found";
+	return NULL;
+}
+
+static const char *cmd_play_message(struct restapi *api, json_t *in) {
+	struct device *dev;
+	const char *e = cmd_get_device(api, in, &dev);
+	if(e) return e;
+	json_t *message_val = json_object_get(in, "message");
+	if(!message_val || !json_is_integer(message_val))
+		return "missing or invalid 'message'";
+	json_int_t msg_num = json_integer_value(message_val);
+	if(msg_num < 1 || msg_num > 8)
+		return "'message' out of range (1-8)";
+	mhc_play_message(dev->ctl, (uint8_t)msg_num, NULL, NULL);
+	return NULL;
+}
+
+static const char *cmd_abort_message(struct restapi *api, json_t *in) {
+	struct device *dev;
+	const char *e = cmd_get_device(api, in, &dev);
+	if(e) return e;
+	mhc_abort_message(dev->ctl, NULL, NULL);
+	return NULL;
 }
 
 static int on_ws_message(struct http_connection *hcon, int opcode, const char *data, size_t len, void *user_data) {
@@ -259,19 +337,31 @@ static int on_ws_message(struct http_connection *hcon, int opcode, const char *d
 		return 0;
 	}
 
-	json_t *ack = json_object();
-	if(ack) {
-		json_object_set_new(ack, "type", json_string("ack"));
-		json_object_set_new(ack, "status", json_string("ok"));
-		json_object_set(ack, "echo", in);
-		char *ack_dump = json_dumps(ack, JSON_COMPACT);
-		if(ack_dump) {
-			hs_ws_send_text(hcon, ack_dump, strlen(ack_dump));
-			free(ack_dump);
+	json_t *type_val = json_object_get(in, "type");
+	if(type_val && json_is_string(type_val) && strcmp(json_string_value(type_val), "command") == 0) {
+		json_t *cmd_val = json_object_get(in, "command");
+		const char *cmd_str = (cmd_val && json_is_string(cmd_val)) ? json_string_value(cmd_val) : NULL;
+		const char *cmd_err;
+
+		if(!cmd_str) {
+			cmd_err = "missing or invalid 'command'";
+		} else if(strcmp(cmd_str, "play_message") == 0) {
+			cmd_err = cmd_play_message(sub->api, in);
+		} else if(strcmp(cmd_str, "abort_message") == 0) {
+			cmd_err = cmd_abort_message(sub->api, in);
+		} else {
+			cmd_err = "unknown command";
 		}
-		json_decref(ack);
+
+		if(cmd_err) {
+			err("%s: %s", cmd_str ? cmd_str : "command", cmd_err);
+			ws_send_ack_error(hcon, cmd_err);
+			json_decref(in);
+			return 0;
+		}
 	}
 
+	ws_send_ack_ok(hcon, in);
 	json_decref(in);
 	return 0;
 }
@@ -644,7 +734,6 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 			return 0;
 		}
 		json_t *devices = json_object_get(root, "devices");
-		json_t *connectors = json_object_get(root, "connectors");
 		json_t *rsp = json_object();
 		if(!rsp) {
 			json_decref(root);
@@ -652,8 +741,6 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 			return 0;
 		}
 		json_object_set_new(rsp, "devices", devices ? json_incref(devices) : json_array());
-		if(connectors && json_is_array(connectors))
-			json_object_set_new(rsp, "connectors", json_incref(connectors));
 		json_decref(root);
 		send_json_payload(hcon, rsp);
 		json_decref(rsp);
@@ -692,7 +779,6 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 		return 0;
 	}
 	json_t *devices = json_object_get(rsp_root, "devices");
-	json_t *connectors = json_object_get(rsp_root, "connectors");
 	json_t *rsp = json_object();
 	if(!rsp) {
 		json_decref(rsp_root);
@@ -700,8 +786,6 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 		return 0;
 	}
 	json_object_set_new(rsp, "devices", devices ? json_incref(devices) : json_array());
-	if(connectors && json_is_array(connectors))
-		json_object_set_new(rsp, "connectors", json_incref(connectors));
 	json_decref(rsp_root);
 	send_json_payload(hcon, rsp);
 	json_decref(rsp);
@@ -991,6 +1075,7 @@ struct restapi *restapi_create(struct app_ctx *ctx, struct http_server *hs, stru
 	}
 
 	eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_STATE, ev_keyer_state_cb, api);	
+	eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_MODE,  ev_keyer_mode_cb, api);
 
     return api;
 

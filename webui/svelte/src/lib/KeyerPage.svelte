@@ -1,5 +1,10 @@
 <script>
   import { apiGet } from './api.js';
+  import { wsSend } from './ws.js';
+
+  const playMessage = (serial, messageNum) => {
+    wsSend({ type: 'command', command: 'play_message', serial, message: messageNum });
+  };
 
   // --- Props ---
   export let activeSerial = '';
@@ -3079,14 +3084,15 @@
       {#each messageSlots as idx}
         <div class="row">
           <div class="label">Message #{idx}:</div>
-          <div class="value">
+          <div class="value" style="display:flex; gap:0.4em;">
             <input
               class="input"
-              style="width: 100%;"
+              style="flex:1;"
               type="text"
               value={messageForm[activeSerial]?.cw?.[idx] ?? ''}
               on:input={(e) => updateMessageForm(activeSerial, 'cw', idx, e.target.value)}
             />
+            <button class="btn" type="button" on:click={() => playMessage(activeSerial, idx)}>Test</button>
           </div>
         </div>
       {/each}
@@ -3107,14 +3113,15 @@
       {#each messageSlots as idx}
         <div class="row">
           <div class="label">Message #{idx}:</div>
-          <div class="value">
+          <div class="value" style="display:flex; gap:0.4em;">
             <input
               class="input"
-              style="width: 100%;"
+              style="flex:1;"
               type="text"
               value={messageForm[activeSerial]?.fsk?.[idx] ?? ''}
               on:input={(e) => updateMessageForm(activeSerial, 'fsk', idx, e.target.value)}
             />
+            <button class="btn" type="button" on:click={() => playMessage(activeSerial, idx)}>Test</button>
           </div>
         </div>
       {/each}

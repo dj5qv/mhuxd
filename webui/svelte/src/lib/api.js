@@ -53,10 +53,11 @@ export async function apiDelete(url) {
  * Returns an object with { runtime, daemonCfg, devices, configDevices, connectors, metadata }.
  */
 export async function loadAllData() {
-  const [runtime, daemonCfg, devicesRsp, configDevicesRsp, metadata] = await Promise.all([
+  const [runtime, daemonCfg, devicesRsp, configConnectors, configDevicesRsp, metadata] = await Promise.all([
     apiGet('/api/v1/runtime'),
     apiGet('/api/v1/config/daemon'),
     apiGet('/api/v1/devices'),
+    apiGet('/api/v1/config/connectors'),
     apiGet('/api/v1/config/devices'),
     apiGet('/api/v1/metadata')
   ]);
@@ -65,7 +66,7 @@ export async function loadAllData() {
     daemonCfg,
     devices: devicesRsp.devices || [],
     configDevices: configDevicesRsp.devices || [],
-    connectors: configDevicesRsp.connectors || [],
+    connectors: configConnectors || [],
     metadata
   };
 }

@@ -26,3 +26,4 @@ curl -X PATCH ... -d '{"serial":"SERIAL","sm":{"obj":{"action":"mod","type":0,"i
 
 # Remove antenna id 3
 curl -X PATCH ... -d '{"serial":"SERIAL","sm":{"obj":{"action":"rem","id":3}}}'
+
