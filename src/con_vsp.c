@@ -24,6 +24,7 @@
 #include "logger.h"
 #include "buffer.h"
 #include "conmgr.h"
+#include "ptt_byte.h"
 
 #define MOD_ID "vsp"
 
@@ -229,11 +230,12 @@ static int set_bits(struct vsp_session *vs, int bits) {
 		data |= 1;
 	if((bits & TIOCM_DTR) && vsp->dtr_is_ptt)
 		data |= 1;
-	dbg1("%s() %s RTS: %d DTR %d", __func__, vsp->devname, bits & TIOCM_RTS ? 1:0, bits & TIOCM_DTR ? 1:0);
+	dbg0("%s() %s RTS: %d DTR %d", __func__, vsp->devname, bits & TIOCM_RTS ? 1:0, bits & TIOCM_DTR ? 1:0);
 
-	uint8_t state = data ? '1' : '0';
+	uint8_t state = data ? PTT_ON_BYTE : PTT_OFF_BYTE;
 	//	buf_append(&vs->buf_in, &state, 1);
 	io_res = io_write_nonblock(vsp->fd_ptt, &state, 1, &res, &errsv);
+	dbg0("%s() %s write to ptt channel: requested state %d, io_res %d, res %zd, errsv %d", __func__, vsp->devname, data ? 1:0, io_res, res, errsv);
 	if(io_res == MHUXD_IO_RW_PROGRESS && res == 1)
 		vs->ptt_status = state;
 	if(io_res != MHUXD_IO_RW_PROGRESS || res != 1) {
@@ -401,10 +403,10 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 				int i;
 				for(i = 0; i < (b->size - b->rpos); i++) {
 					switch( b->data[i]) {
-					case '0':
+					case PTT_OFF_BYTE:
 						vs->ptt_status = 0;
 						break;
-					case '1':
+					case PTT_ON_BYTE:
 						vs->ptt_status = 1;
 						break;
 					}

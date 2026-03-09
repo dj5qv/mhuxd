@@ -26,6 +26,7 @@
 #include "mux.h"
 #include "demux.h"
 #include "tty.h"
+#include "ptt_byte.h"
 
 #define MOD_ID "mhr"
 
@@ -207,12 +208,12 @@ static void process_in_flags(struct mh_router *router, int c) {
 		PG_SCANLIST(&router->consumer_list[ptt_ch], cns) {
 			// no need to keep outdated values
 			buf_reset(&cns->buf);
-			buf_append_c(&cns->buf, (c & MHD2CFL_ANY_PTT) ? '1' : '0');
+			buf_append_c(&cns->buf, (c & MHD2CFL_ANY_PTT) ? PTT_ON_BYTE : PTT_OFF_BYTE);
 			ev_io_start(router->loop, &cns->w);
 		}
 
 		PG_SCANLIST(&router->consumer_cb_list[ptt_ch], cnc) {
-			uint8_t b = (c & MHD2CFL_ANY_PTT) ? '1' : '0';
+			uint8_t b = (c & MHD2CFL_ANY_PTT) ? PTT_ON_BYTE : PTT_OFF_BYTE;
 			cnc->callback(router, &b, 1, ptt_ch, cnc->user_data);
 		}
 	}
@@ -227,12 +228,16 @@ static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 	int c;
 
 
-	dbg0("%s %s()", router->serial, __func__);
+	dbg0("%s() %s", __func__, router->serial);
 
 	if(!b->size)
 		return;
 
 	while(-1 != (c = buf_get_c(b))) {
+		if(c != PTT_ON_BYTE && c != PTT_OFF_BYTE) {
+			dbg0("%s() %s ignoring invalid ptt state %d", __func__, router->serial, c);
+			continue;
+		}
 
 		switch(prd->channel) {
 			case  CH_PTT1:
@@ -257,12 +262,12 @@ static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 				continue;
 		}
 
-		if( c == '1' ) {
+		if( c == 1 ) {
 			newflag |= mask;
 			push = 1;
 		}
 
-		if( c == '0' ) {
+		if( c == 0 ) {
 			newflag &= ~mask;
 			push = 1;
 		}
