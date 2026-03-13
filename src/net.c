@@ -79,7 +79,7 @@ struct netlsnr *net_create_listener_ex(const char *constr, int flags) {
 			goto error;
 
 		for(ai = res; ai != NULL; ai = ai->ai_next) {
-			fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+			fd = socket(ai->ai_family, ai->ai_socktype | SOCK_CLOEXEC, ai->ai_protocol);
 			if(fd == -1)
 				continue;
 
@@ -105,7 +105,7 @@ struct netlsnr *net_create_listener_ex(const char *constr, int flags) {
 	}
 
 	if(domain == AF_LOCAL) {
-		fd = socket(domain, SOCK_STREAM, 0);
+		fd = socket(domain, SOCK_STREAM | SOCK_CLOEXEC, 0);
 
 		int opt = 1;
 		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void*)&opt, sizeof(opt));
@@ -178,14 +178,9 @@ int net_listener_get_fd(struct netlsnr *lsnr) {
 }
 
 int net_accept(int fd) {
-	int con_fd = accept(fd, NULL, NULL);
+	int con_fd = accept4(fd, NULL, NULL, SOCK_CLOEXEC | SOCK_NONBLOCK);
 	if(con_fd == -1)
 		return -1;
-	if(-1 == fcntl(con_fd, F_SETFL, O_NONBLOCK)) {
-		close(con_fd);
-		return -1;
-	}
-
 	return con_fd;
 }
 

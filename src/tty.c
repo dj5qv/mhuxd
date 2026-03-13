@@ -44,7 +44,7 @@ int tty_open(const char *name) {
 		is_initialized = 1;
 	}
 
-	fd = open(name, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	fd = open(name, O_RDWR | O_NOCTTY | O_NONBLOCK | O_CLOEXEC);
 
 	if(fd == -1)
 		return -1;

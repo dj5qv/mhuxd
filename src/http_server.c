@@ -245,7 +245,7 @@ int serve_dmap(struct http_connection *hcon, const char *fs_path, const char *su
 		return 0;
 	}
 
-	int fd = open(sub_path, O_RDONLY);
+	int fd = open(sub_path, O_RDONLY | O_CLOEXEC);
 
 	if(fd < 0) {
 		err_e(errno, "Could not open file %s/%s !", fs_path, sub_path);

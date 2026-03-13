@@ -267,7 +267,9 @@
         port: Number(radios?.r1?.port ?? 4532),
         connect_timeout_ms: Number(radios?.r1?.connect_timeout_ms ?? 1500),
         io_timeout_ms: Number(radios?.r1?.io_timeout_ms ?? 1500),
-        poll_ms: Number(radios?.r1?.poll_ms ?? 500)
+        poll_ms: Number(radios?.r1?.poll_ms ?? 500),
+        auto_start: boolish(radios?.r1?.auto_start),
+        rigctld_options: radios?.r1?.rigctld_options ?? ''
       },
       r2: {
         enabled: boolish(radios?.r2?.enabled),
@@ -275,7 +277,9 @@
         port: Number(radios?.r2?.port ?? 4533),
         connect_timeout_ms: Number(radios?.r2?.connect_timeout_ms ?? 1500),
         io_timeout_ms: Number(radios?.r2?.io_timeout_ms ?? 1500),
-        poll_ms: Number(radios?.r2?.poll_ms ?? 500)
+        poll_ms: Number(radios?.r2?.poll_ms ?? 500),
+        auto_start: boolish(radios?.r2?.auto_start),
+        rigctld_options: radios?.r2?.rigctld_options ?? ''
       }
     };
   };
@@ -327,7 +331,9 @@
           port: Number(form.r1?.port || 4532),
           connect_timeout_ms: Number(form.r1?.connect_timeout_ms || 1500),
           io_timeout_ms: Number(form.r1?.io_timeout_ms || 1500),
-          poll_ms: Number(form.r1?.poll_ms || 500)
+          poll_ms: Number(form.r1?.poll_ms || 500),
+          auto_start: form.r1?.auto_start ? 1 : 0,
+          rigctld_options: String(form.r1?.rigctld_options || '')
         }
       }
     };
@@ -339,7 +345,9 @@
         port: Number(form.r2?.port || 4533),
         connect_timeout_ms: Number(form.r2?.connect_timeout_ms || 1500),
         io_timeout_ms: Number(form.r2?.io_timeout_ms || 1500),
-        poll_ms: Number(form.r2?.poll_ms || 500)
+        poll_ms: Number(form.r2?.poll_ms || 500),
+        auto_start: form.r2?.auto_start ? 1 : 0,
+        rigctld_options: String(form.r2?.rigctld_options || '')
       };
     }
   
@@ -1970,6 +1978,30 @@
           />
         </div>
       </div>
+      <div class="row">
+        <div class="label">Auto-start rigctld:</div>
+        <div class="value">
+          <input
+            type="checkbox"
+            checked={!!activeRigModeSync?.r1?.auto_start}
+            on:change={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'auto_start', e.target.checked)}
+          />
+        </div>
+      </div>
+      {#if activeRigModeSync?.r1?.auto_start}
+      <div class="row">
+        <div class="label">rigctld options:</div>
+        <div class="value">
+          <input
+            class="input"
+            type="text"
+            placeholder="-m 361 -r /dev/ttyUSB0"
+            value={activeRigModeSync?.r1?.rigctld_options ?? ''}
+            on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'rigctld_options', e.target.value)}
+          />
+        </div>
+      </div>
+      {/if}
     </div>
 
     {#if hasR2}
@@ -2044,6 +2076,30 @@
             />
           </div>
         </div>
+        <div class="row">
+          <div class="label">Auto-start rigctld:</div>
+          <div class="value">
+            <input
+              type="checkbox"
+              checked={!!activeRigModeSync?.r2?.auto_start}
+              on:change={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'auto_start', e.target.checked)}
+            />
+          </div>
+        </div>
+        {#if activeRigModeSync?.r2?.auto_start}
+        <div class="row">
+          <div class="label">rigctld options:</div>
+          <div class="value">
+            <input
+              class="input"
+              type="text"
+              placeholder="-m 361 -r /dev/ttyUSB0"
+              value={activeRigModeSync?.r2?.rigctld_options ?? ''}
+              on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'rigctld_options', e.target.value)}
+            />
+          </div>
+        </div>
+        {/if}
       </div>
     {/if}
 

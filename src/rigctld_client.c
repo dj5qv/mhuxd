@@ -9,11 +9,15 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/prctl.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include "rigctld_client.h"
 #include "mhcontrol.h"
@@ -56,6 +60,10 @@ struct rigctld_client {
 	int running;
 	int fd;
 	enum rigcl_io_phase phase;
+	int auto_start;
+	char *rigctld_options;
+	pid_t child_pid;
+	ev_child child_watcher;
 	char tx_buf[80];
 	size_t tx_len;
 	size_t tx_off;
@@ -72,6 +80,105 @@ struct rigctld_client {
 
 static const char *radio_str(uint8_t radio) {
 	return radio == 2 ? "r2" : "r1";
+}
+
+static void rigcl_child_cb(struct ev_loop *loop, ev_child *w, int revents) {
+	(void)revents;
+	struct rigctld_client *client = w->data;
+	ev_child_stop(loop, w);
+	dbg0("%s auto-started rigctld pid=%d exited status=%d",
+	     client->serial, w->rpid, w->rstatus);
+	client->child_pid = 0;
+}
+
+static void rigcl_spawn_rigctld(struct rigctld_client *client) {
+	if(!client->auto_start || client->child_pid > 0)
+		return;
+
+	char port_str[16];
+	snprintf(port_str, sizeof(port_str), "%d", client->port);
+
+	/* Tokenize options string into argv (simple whitespace split, no shell expansion) */
+	char *args_buf = NULL;
+	char *argv_ptrs[68]; /* "rigctld" + up to 64 opts + "-t" + port + NULL */
+	int argc = 0;
+	argv_ptrs[argc++] = "rigctld";
+	if(client->rigctld_options && *client->rigctld_options) {
+		args_buf = strdup(client->rigctld_options);
+		if(args_buf) {
+			char *saveptr = NULL;
+			char *tok = strtok_r(args_buf, " \t", &saveptr);
+			while(tok && argc < 65) {
+				argv_ptrs[argc++] = tok;
+				tok = strtok_r(NULL, " \t", &saveptr);
+			}
+		}
+	}
+	argv_ptrs[argc++] = "-t";
+	argv_ptrs[argc++] = port_str;
+	argv_ptrs[argc] = NULL;
+
+	dbg0("%s auto-starting rigctld (port=%d options: %s)",
+	     client->serial, client->port,
+	     client->rigctld_options ? client->rigctld_options : "");
+
+	pid_t mhuxd_pid = getpid();
+	pid_t pid = fork();
+	if(pid < 0) {
+		dbg0("%s rigctld auto-start fork failed: err=%d", client->serial, errno);
+		free(args_buf);
+		return;
+	}
+	if(pid == 0) {
+		/* child: ask the kernel to send SIGKILL when the parent (mhuxd) dies,
+		 * regardless of how it dies (including SIGKILL).  This prevents rigctld
+		 * from outliving mhuxd and holding the VSP device open. */
+		prctl(PR_SET_PDEATHSIG, SIGKILL);
+		/* Guard against the race where mhuxd died between fork() and prctl():
+		 * if the parent already changed, kill ourselves now. */
+		if(getppid() != mhuxd_pid)
+			_exit(0);
+		execvp("rigctld", argv_ptrs);
+		_exit(127);
+	}
+	/* parent */
+	free(args_buf);
+	client->child_pid = pid;
+	ev_child_init(&client->child_watcher, rigcl_child_cb, pid, 0);
+	client->child_watcher.data = client;
+	ev_child_start(EV_DEFAULT_ &client->child_watcher);
+	dbg0("%s rigctld auto-started pid=%d", client->serial, (int)client->child_pid);
+}
+
+static void rigcl_kill_rigctld(struct rigctld_client *client) {
+	if(!client->auto_start || client->child_pid <= 0)
+		return;
+	dbg0("%s stopping auto-started rigctld pid=%d", client->serial, (int)client->child_pid);
+	ev_child_stop(EV_DEFAULT_ &client->child_watcher);
+	kill(client->child_pid, SIGTERM);
+	client->child_pid = 0;
+	/* libev's SIGCHLD handler will reap the child when it exits */
+}
+
+/* Called at destroy time (outside the ev loop) to reap the child.
+ * PR_SET_PDEATHSIG ensures rigctld is killed if mhuxd is killed externally,
+ * but on a graceful shutdown the parent is still alive so we must drive the
+ * kill ourselves.  Give SIGTERM ~1 s to take effect, then escalate to SIGKILL. */
+static void rigcl_ensure_dead(const char *serial, pid_t pid) {
+	int i;
+	for(i = 0; i < 10; i++) {
+		int r = waitpid(pid, NULL, WNOHANG);
+		if(r == pid || (r < 0 && errno == ECHILD))
+			return; /* already exited */
+		usleep(100 * 1000); /* 100 ms */
+	}
+	dbg0("%s rigctld pid=%d did not exit after SIGTERM; sending SIGKILL", serial, (int)pid);
+	kill(pid, SIGKILL);
+	/* Do NOT block-wait here: rigctld may be in D state (uninterruptible sleep)
+	 * waiting on mhuxd's own CUSE fds.  Blocking would deadlock — mhuxd waits
+	 * for rigctld, rigctld waits for mhuxd's fuse loop.  Once mhuxd finishes
+	 * shutdown and closes the CUSE fds, rigctld unblocks, dies, and is reaped
+	 * by init. */
 }
 
 static void rigcl_finish_request(struct rigctld_client *client) {
@@ -371,16 +478,9 @@ static int rigcl_open_nonblock_socket(const char *host, int port, int *fd_out) {
 	}
 
 	for(ai = res; ai; ai = ai->ai_next) {
-		fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+		fd = socket(ai->ai_family, ai->ai_socktype | SOCK_NONBLOCK | SOCK_CLOEXEC, ai->ai_protocol);
 		if(fd < 0)
 			continue;
-
-		int flags = fcntl(fd, F_GETFL, 0);
-		if(flags < 0 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-			close(fd);
-			fd = -1;
-			continue;
-		}
 
 		if(connect(fd, ai->ai_addr, ai->ai_addrlen) == 0 || errno == EINPROGRESS)
 			break;
@@ -442,6 +542,7 @@ static void rigcl_stop(struct rigctld_client *client) {
 	client->running = 0;
 	dbg1("%s %s stop polling (%s %s:%d)", client->serial, __func__,
 	     radio_str(client->radio), client->host, client->port);
+	rigcl_kill_rigctld(client);
 }
 
 static void rigcl_start(struct rigctld_client *client) {
@@ -451,6 +552,7 @@ static void rigcl_start(struct rigctld_client *client) {
 		return;
 	if(client->running)
 		return;
+	rigcl_spawn_rigctld(client);
 	ev_timer_set(&client->poll_timer, 0., (double)client->poll_ms / 1000.0);
 	ev_timer_start(client->loop, &client->poll_timer);
 	client->running = 1;
@@ -507,6 +609,9 @@ struct rigctld_client *rigctld_client_create(struct ev_loop *loop, struct mh_con
 	client->io_timeout_ms = cfg->io_timeout_ms > 0 ? cfg->io_timeout_ms : RIGCL_DEF_IO_TIMEOUT_MS;
 	client->poll_ms = cfg->poll_ms >= 10 ? cfg->poll_ms : RIGCL_DEF_POLL_MS;
 	client->enabled = cfg->enabled ? 1 : 0;
+	client->auto_start = cfg->auto_start ? 1 : 0;
+	client->rigctld_options = (cfg->rigctld_options && *cfg->rigctld_options) ? w_strdup(cfg->rigctld_options) : NULL;
+	client->child_pid = 0;
 	client->fd = -1;
 	client->last_info.radio = client->radio;
 	client->last_info.mode = -1;
@@ -533,9 +638,17 @@ void rigctld_client_destroy(struct rigctld_client *client) {
 	if(!client)
 		return;
 
+	/* Save pid before rigcl_stop() → rigcl_kill_rigctld() zeros it.
+	 * We need it below to guarantee the process is dead before we exit,
+	 * since the CUSE virtual serial ports disappear with mhuxd. */
+	pid_t child_pid = client->child_pid;
+
 	rigcl_stop(client);
 	if(client->kscb)
 		mhc_rem_keyer_state_changed_cb(client->ctl, client->kscb);
+
+	if(client->auto_start && child_pid > 0)
+		rigcl_ensure_dead(client->serial, child_pid);
 
 	dbg0("%s rigctld client destroyed (%s)",
 	     client->serial ? client->serial : "<unknown>", radio_str(client->radio));
@@ -546,5 +659,7 @@ void rigctld_client_destroy(struct rigctld_client *client) {
 		free(client->backend);
 	if(client->host)
 		free(client->host);
+	if(client->rigctld_options)
+		free(client->rigctld_options);
 	free(client);
 }

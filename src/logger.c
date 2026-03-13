@@ -72,7 +72,7 @@ const char *log_get_file_name(void) {
 void log_reopen(void) {
 	if(file && file != stdout) {
 		fclose(file);
-		file = fopen(log_file_name, "a");
+		file = fopen(log_file_name, "ae");
 		info("*** logfile reopened");
 	}
 }	
@@ -81,7 +81,7 @@ void log_open(uint8_t use_stdout) {
 	if(use_stdout) {
 		file = stdout;
 	} else {
-		file = fopen(log_file_name, "a");
+		file = fopen(log_file_name, "ae");
 		printf("Logfile is: %s\n", log_file_name);
 	}
 

@@ -187,6 +187,8 @@ static int start_rig_mode_sync_clients(struct cfgmgrj *cfgmgrj, struct mh_contro
         cfg.io_timeout_ms = json_get_int(defs[i].obj, "io_timeout_ms", 1500);
         cfg.poll_ms = json_get_int(defs[i].obj, "poll_ms", 500);
         cfg.enabled = 1;
+        cfg.auto_start = json_get_boolish(defs[i].obj, "auto_start", 0);
+        cfg.rigctld_options = json_get_str_or(defs[i].obj, "rigctld_options", NULL);
 
         struct rigctld_client *client = rigctld_client_create(cfgmgrj->loop, ctl, &cfg);
         if(!client) {
@@ -262,6 +264,18 @@ static int validate_rig_mode_sync_radio(const char *radio_name, json_t *radio_ob
             warn("cfgmgrj: rig_mode_sync.%s.io_timeout_ms must be integer >= 100", radio_name);
             return -1;
         }
+    }
+
+    json_t *auto_start = json_object_get(radio_obj, "auto_start");
+    if(auto_start && !json_is_boolean(auto_start) && !json_is_integer(auto_start)) {
+        warn("cfgmgrj: rig_mode_sync.%s.auto_start must be bool/int", radio_name);
+        return -1;
+    }
+
+    json_t *rigctld_options = json_object_get(radio_obj, "rigctld_options");
+    if(rigctld_options && !json_is_string(rigctld_options)) {
+        warn("cfgmgrj: rig_mode_sync.%s.rigctld_options must be string", radio_name);
+        return -1;
     }
 
     return 0;

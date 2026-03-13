@@ -189,7 +189,7 @@ static int check_cuse_dev(const char *devname) {
 
 	dbg1("%s()", __func__);
 
-	fd = open(cusepath, O_RDWR);
+	fd = open(cusepath, O_RDWR | O_CLOEXEC);
 	if (fd == -1) {
 		if (errno == ENODEV || errno == ENOENT)
 			err("/dev/cuse device not found, try 'modprobe cuse' first\n");

@@ -8,6 +8,7 @@
 
 
 #include <stdio.h>
+#include <fcntl.h>
 #include <libudev.h>
 #include <ev.h>
 #include "config.h"
@@ -192,6 +193,7 @@ struct devmon *devmon_create(struct ev_loop *loop, devmon_cb devmon_cb, void *us
 #endif
 	udev_monitor_enable_receiving(devmon->mon);
 	devmon->fd = udev_monitor_get_fd(devmon->mon);
+	fcntl(devmon->fd, F_SETFD, FD_CLOEXEC);
 
 	ev_io_init(&devmon->w, mon_cb, devmon->fd, EV_READ);
 	devmon->w.data = devmon;

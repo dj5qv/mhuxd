@@ -25,6 +25,8 @@ struct rigctld_client_cfg {
 	int io_timeout_ms;
 	int poll_ms;
 	int enabled;
+	int auto_start;
+	const char *rigctld_options;
 };
 
 struct rigctld_client *rigctld_client_create(struct ev_loop *loop, struct mh_control *ctl,
