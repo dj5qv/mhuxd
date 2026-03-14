@@ -1,14 +1,15 @@
-# Make sure virtual serial ports create by mhuxd belong to group "mhuxd". 
+# /dev/cuse access for mhuxd user
+KERNEL=="cuse", RUN+="/usr/bin/setfacl -m u:mhuxd:rw /dev/cuse"
 
+# Virtual serial ports group owned by mhuxd
 SUBSYSTEM=="cuse", KERNEL=="mhuxd*", GROUP="mhuxd", GOTO="mm_microham_device_blacklist_end"
 
-# modemmanager should ignore our keyer
+# 3. ModemManager-Blacklist for keyer
 ACTION!="add|change", GOTO="mm_microham_device_blacklist_end"
 SUBSYSTEM!="usb", GOTO="mm_microham_device_blacklist_end"
-ENV{DEVTYPE}!="usb_device",  GOTO="mm_microham_device_blacklist_end"
+ENV{DEVTYPE}!="usb_device", GOTO="mm_microham_device_blacklist_end"
 
+# FTDI / microHAM Vendor/Product ID Check
 ATTRS{idVendor}=="0403", ATTRS{idProduct}=="eeef", ENV{ID_MM_DEVICE_IGNORE}="1"
 
 LABEL="mm_microham_device_blacklist_end"
-
-

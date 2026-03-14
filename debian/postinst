@@ -6,13 +6,39 @@ fi
 
 MHUXD=mhuxd
 
-adduser --system --quiet --home /nonexistent --no-create-home  \
-        --group $MHUXD 
+case "$1" in
+    configure)
+        # add user / group
+        if ! getent passwd $MHUXD >/dev/null; then
+            adduser --system --quiet --home /nonexistent --no-create-home --group $MHUXD
+        fi
 
-# udev may have ignored our new rule as group mhuxd may not have 
-# existed yet.
+        # dialout group to access the USB serial device
+        if getent group dialout >/dev/null; then
+            adduser $MHUXD dialout
+        fi
 
-udevadm control --reload-rules
+        # we don't run as root anymore
+        if [ -d /var/log/mhuxd ]; then
+            chown -R $MHUXD:$MHUXD /var/log/mhuxd
+            chmod 750 /var/log/mhuxd
+        fi        
+        if [ -d /var/lib/mhuxd ]; then
+            chown -R $MHUXD:$MHUXD /var/lib/mhuxd
+            chmod 750 /var/lib/mhuxd
+        fi       
+
+        # activate udev rules 
+        modprobe cuse || true
+        udevadm control --reload-rules
+
+        # if /dev/cuse already present, we need to apply our acl
+        if [ -e /dev/cuse ]; then
+            udevadm trigger --action=add /dev/cuse
+            udevadm settle
+        fi
+    ;;
+esac
 
 #DEBHELPER#
 

@@ -22,8 +22,8 @@ MHUXD=mhuxd
 
 case "$1" in
     purge|abort-install)
+	# Implies group removal. FIXME: Consider keeping user and group though.
 	deluser --system --quiet $MHUXD || true
-	delgroup --system --quiet $MHUXD || true
 	[ -d /var/run/mhuxd ] && rm -rf /var/run/mhuxd
 	[ -d /var/lib/mhuxd ] && rm -rf /var/lib/mhuxd
 	[ -d /var/log/mhuxd ] && rm -rf /var/log/mhuxd

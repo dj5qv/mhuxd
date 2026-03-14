@@ -29,5 +29,6 @@ int cfgmgrj_sync_from_conmgr(struct cfgmgrj *cfgmgrj);
 
 int cfgmgrj_sm_load(struct cfgmgrj *cfgmgrj, const char *serial);
 int cfgmgrj_sm_store(struct cfgmgrj *cfgmgrj, const char *serial);
+const char *cfgmgrj_get_cfg_path(void);
 
 #endif // CFGMGRJ_H

@@ -12,9 +12,14 @@
 %:
 	dh $@ --with autoreconf
 
-override_dh_installudev:
-	dh_installudev --priority 59 -n
+
+override_dh_auto_build:
 	# Build the Svelte Web UI
 	cd webui/svelte && npm install && npm run build
+	dh_auto_build
 	# Continue with standard build
 	dh_auto_build
+
+override_dh_installudev:
+	dh_installudev --priority 59 -n
+

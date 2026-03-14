@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <errno.h>
+#include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #include <ev.h>
@@ -1406,11 +1408,25 @@ int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj) {
         err("cfgmgrj: failed to build config JSON, can't save to %s", CFGFILE);
         return -1;
     }
-    if(json_dump_file(root, CFGFILE, JSON_INDENT(2) | JSON_PRESERVE_ORDER) != 0) {
+
+    FILE *f = fopen(CFGFILE, "w");
+    if(!f) {
+        err("cfgmgrj: failed to open %s for writing: %s", CFGFILE, strerror(errno));
         json_decref(root);
-        err("cfgmgrj: failed to save config to %s", CFGFILE);
         return -1;
     }
+    if(json_dumpf(root, f, JSON_INDENT(2) | JSON_PRESERVE_ORDER) != 0) {
+        err("cfgmgrj: failed to write config to %s: %s", CFGFILE, strerror(errno));
+        fclose(f);
+        json_decref(root);
+        return -1;
+    }
+    if(fclose(f) != 0) {
+        err("cfgmgrj: failed to flush config to %s: %s", CFGFILE, strerror(errno));
+        json_decref(root);
+        return -1;
+    }
+
     json_decref(root);
     return 0;
 }
@@ -1488,4 +1504,8 @@ int cfgmgrj_sync_from_conmgr(struct cfgmgrj *cfgmgrj) {
     
     conmgr_foreach(cfgmgrj->conmgr, sync_con_cb, cfgmgrj);
     return 0;
+}
+
+const char *cfgmgrj_get_cfg_path(void) {
+    return CFGFILE;
 }

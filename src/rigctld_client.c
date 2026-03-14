@@ -166,7 +166,7 @@ static void rigcl_kill_rigctld(struct rigctld_client *client) {
  * kill ourselves.  Give SIGTERM ~1 s to take effect, then escalate to SIGKILL. */
 static void rigcl_ensure_dead(const char *serial, pid_t pid) {
 	int i;
-	for(i = 0; i < 10; i++) {
+	for(i = 0; i < 5; i++) {
 		int r = waitpid(pid, NULL, WNOHANG);
 		if(r == pid || (r < 0 && errno == ECHILD))
 			return; /* already exited */

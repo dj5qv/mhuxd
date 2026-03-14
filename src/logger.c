@@ -100,7 +100,7 @@ void log_close(void) {
 void log_set_level(int level) {
 	if(level >= 0 && level <= LOGSV_MAX) {
 		log_level = level;
-		info("log level changed to %s", level_map[level].name);
+		info("log level set to %s", level_map[level].name);
 	}
 }
 

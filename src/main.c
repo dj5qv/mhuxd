@@ -66,7 +66,6 @@ int main(int argc, char **argv)
 
 	app_ctx_run(app_ctx);
 
-	info("<<< exit >>>");
 	app_ctx_destroy(app_ctx);
 
 	ev_default_destroy();
@@ -76,6 +75,8 @@ int main(int argc, char **argv)
 	log_close();
 
 	nerr_free();
+
+	info("<<< exit >>>");
 
 	return 0;
 }

@@ -471,6 +471,15 @@ static void completion_cb(unsigned const char *reply_buf, int len, int result, v
         *notify = result;
 }
 
+int cfgmgr_has_cfg_file(struct cfgmgr *cfgmgr) {
+	(void)cfgmgr;
+	return access(CFGFILE, F_OK) == 0 ? 1 : 0;
+}
+
+const char *cfgmgr_get_cfg_path(void) {
+	return CFGFILE;
+}
+
 int cfgmgr_init(struct cfgmgr *cfgmgr) {
 	HDF *saved_hdf;
 	NEOERR *err;

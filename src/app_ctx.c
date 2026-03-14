@@ -129,19 +129,26 @@ app_ctx *app_ctx_init(struct app_ctx *ctx, struct ev_loop *loop) {
 */
     int rc_j = cfgmgrj_load_cfg(ctx->cfgmgrj);
 	if(rc_j == 0)
-		info("(main) json config loaded successfully.");
+		info("json config loaded successfully from %s.", cfgmgrj_get_cfg_path());
 
 	if(rc_j == -2) {
-        info("(main) json config not found, attempting migration from legacy HDF...");
-        if(cfgmgr_init(ctx->cfgmgr) == 0) {
-            cfgmgrj_sync_from_conmgr(ctx->cfgmgrj);
-            cfgmgrj_save_cfg(ctx->cfgmgrj);
-            info("(main) hdf to json migration complete.");
+        info("json config %s not found.", cfgmgrj_get_cfg_path());
+        if(cfgmgr_has_cfg_file(ctx->cfgmgr)) {
+            info("legacy config file %s found, attempting migration...", cfgmgr_get_cfg_path());
+            if(cfgmgr_init(ctx->cfgmgr) == 0) {
+                cfgmgrj_sync_from_conmgr(ctx->cfgmgrj);
+                cfgmgrj_save_cfg(ctx->cfgmgrj);
+                info("hdf to json migration complete.");
+            } else {
+                err("legacy config migration failed.");
+            }
+
         } else {
-            err("(main) legacy config migration failed.");
+            info("no legacy config file %s found, starting with empty configuration.", cfgmgr_get_cfg_path());
+            return ctx;
         }
     } else if(rc_j < 0) {
-        err("(main) error initializing json config manager!");
+        err("error initializing json config manager!");
     }
 
     dmgr_enable_monitor(ctx->dmgr);

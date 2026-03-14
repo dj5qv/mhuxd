@@ -48,5 +48,7 @@ int cfgmgr_sm_load(struct cfgmgr *cfgmgr, const char *serial);
 int cfgmgr_sm_store(struct cfgmgr *cfgmgr, const char *serial);
 
 void cfgmr_state_changed_cb(const char *serial, int state, void *user_data);
+int cfgmgr_has_cfg_file(struct cfgmgr *cfgmgr);
+const char *cfgmgr_get_cfg_path(void);
 
 #endif // CFGMGR_H

@@ -49,7 +49,7 @@ void dmn_daemonize(void) {
 		exit(EXIT_SUCCESS);
 	}
 
-	umask(0);
+	umask(022);
 
 	sid = setsid();
 	if (sid < 0) {

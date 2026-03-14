@@ -1,4 +1,4 @@
-mhuxd (0.90~beta) unstable; urgency=low
+mhuxd (0.90) unstable; urgency=low
   * Clearsilver/HDF based web UI and config management deprecated now.
   * Configuration now JSON based, with auto-migration HDF->JSON
   * Implemented RestAPI.
