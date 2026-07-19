@@ -56,9 +56,14 @@ int tty_open(const char *name) {
 	ioctl(fd, TIOCEXCL, NULL);
 
 	struct termios newtio;
-	bzero(&newtio, sizeof(newtio));
-	newtio.c_cflag = B230400 | CS8 | CLOCAL | CREAD | CRTSCTS;
-	//cfmakeraw(&newtio);
+	memset(&newtio, 0, sizeof(newtio));
+	cfmakeraw(&newtio);
+	cfsetispeed(&newtio, B230400);
+	cfsetospeed(&newtio, B230400);
+	newtio.c_cflag |= CS8 | CLOCAL | CREAD;
+	/* Modern FTDI/USB-serial adapters are more reliable without CRTSCTS.
+	 * The microHam protocol is binary and does not need hardware flow control. */
+	newtio.c_cflag &= ~CRTSCTS;
 	int err = tcsetattr(fd, TCSANOW, &newtio);
 
 	if(err) {
