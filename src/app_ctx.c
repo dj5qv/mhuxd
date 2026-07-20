@@ -110,7 +110,8 @@ app_ctx *app_ctx_init(struct app_ctx *ctx, struct ev_loop *loop) {
 	}
 
 	static const char static_path[] = WEBUIDIR "/static";
-	static const char svelte_path[] = WEBUIDIR "/svelte";
+    /* Serve compiled Svelte assets; source tree index expects Vite dev server. */
+    static const char svelte_path[] = WEBUIDIR "/svelte/dist";
 	hs_add_directory_map(ctx->hs, "/static/", static_path);
 	hs_add_directory_map(ctx->hs, "/svelte/", svelte_path);
 	ctx->handler_redir[0] = hs_register_handler(ctx->hs, "/", cb_redirect_home, ctx->webui);
