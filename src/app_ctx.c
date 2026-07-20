@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <unistd.h>
 #include <ev.h>
 #include "app_ctx.h"
 #include "logger.h"
@@ -110,8 +111,18 @@ app_ctx *app_ctx_init(struct app_ctx *ctx, struct ev_loop *loop) {
 	}
 
 	static const char static_path[] = WEBUIDIR "/static";
-    /* Serve compiled Svelte assets; source tree index expects Vite dev server. */
-    static const char svelte_path[] = WEBUIDIR "/svelte/dist";
+    char svelte_path[512];
+
+    /*
+     * Support both layouts:
+     * - source tree: WEBUIDIR/svelte/dist/index.html
+     * - installed:   WEBUIDIR/svelte/index.html
+     */
+    if(access(WEBUIDIR "/svelte/dist/index.html", R_OK) == 0)
+        snprintf(svelte_path, sizeof(svelte_path), "%s", WEBUIDIR "/svelte/dist");
+    else
+        snprintf(svelte_path, sizeof(svelte_path), "%s", WEBUIDIR "/svelte");
+
 	hs_add_directory_map(ctx->hs, "/static/", static_path);
 	hs_add_directory_map(ctx->hs, "/svelte/", svelte_path);
 	ctx->handler_redir[0] = hs_register_handler(ctx->hs, "/", cb_redirect_home, ctx->webui);
