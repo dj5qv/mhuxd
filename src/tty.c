@@ -61,8 +61,7 @@ int tty_open(const char *name) {
 	cfsetispeed(&newtio, B230400);
 	cfsetospeed(&newtio, B230400);
 	newtio.c_cflag |= CS8 | CLOCAL | CREAD;
-	/* Modern FTDI/USB-serial adapters are more reliable without CRTSCTS.
-	 * The microHam protocol is binary and does not need hardware flow control. */
+	// microham ignores RTS, CTS is undefined.
 	newtio.c_cflag &= ~CRTSCTS;
 	int err = tcsetattr(fd, TCSANOW, &newtio);
 
