@@ -68,7 +68,6 @@ RIG Mode Sync is configured in the lower part of the *Radio* page:
 * *Enabled* – master switch for mode synchronization on this keyer.
 * *Backend* – how the rig is queried:
 ** *rigctld* – Hamlib’s `rigctld` daemon (TCP, default port 4532)
-** *flrig* / *flrig_xmlrpc* – flrig via its XML-RPC interface
 
 For each radio (Radio 1, and Radio 2 on dual-radio keyers) an endpoint can be configured:
 

@@ -1892,7 +1892,7 @@
   {/if}
 
   <section class="section">
-    <div class="section-title">RIG Mode Sync (rigctld/flrig)</div>
+    <div class="section-title">RIG Mode Sync (rigctld)</div>
     <div class="panel">
       <div class="row">
         <div class="label">Enabled:</div>
@@ -1913,8 +1913,6 @@
             on:change={(e) => updateRigModeSyncTop(activeSerial, 'backend', e.target.value)}
           >
             <option value="rigctld">rigctld</option>
-            <option value="flrig">flrig</option>
-            <option value="flrig_xmlrpc">flrig_xmlrpc</option>
           </select>
         </div>
       </div>

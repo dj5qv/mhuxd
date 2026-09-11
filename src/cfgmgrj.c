@@ -93,10 +93,6 @@ static int is_supported_rig_mode_backend(const char *backend) {
         return 0;
     if(!strcmp(backend, "rigctld"))
         return 1;
-    if(!strcmp(backend, "flrig_xmlrpc"))
-        return 1;
-    if(!strcmp(backend, "flrig"))
-        return 1;
     return 0;
 }
 

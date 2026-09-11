@@ -167,7 +167,7 @@
       "properties": {
         "backend": {
           "type": "string",
-          "enum": ["rigctld", "flrig", "flrig_xmlrpc"]
+          "enum": ["rigctld"]
         },
         "enabled": {
           "oneOf": [
