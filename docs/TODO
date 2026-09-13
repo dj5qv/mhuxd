@@ -46,7 +46,7 @@ I will patch linux_termios.c to enable support for these baud rates.
 COMMENT: Idea was that keyer don't support baud rate > 57600 to the rig anyway. But since rigctl(d) defaults to 115200 baud, this baud rate is allowed now.
 
 
-16) Consider using acl, eg. by ExecStartPre in systemd integration so we wouldn't need to run as root anymore. Example:
+16) DONE: Consider using acl, eg. by ExecStartPre in systemd integration so we wouldn't need to run as root anymore. Example:
 
 [Unit]
 Description=Mein Virtueller Serieller Port Daemon
@@ -108,4 +108,4 @@ AmbientCapabilities=CAP_SYS_ADMIN
 2026-02-22 00:01:32.910 DBG1 (vsp) dv_ioctl() cat1, cmd: 0x5402, arg: 0x7ffd2c475740, in_buf: 0x0, in_buf size: 0, out_bufsz: 0
 2026-02-22 00:01:32.910 DBG1 (vsp) chan_in_cb()
 
-18) Discard characters from connectors when keyer offline.
+18) DONE: Discard characters from connectors when keyer offline.

@@ -44,12 +44,19 @@ For DIGI KEYER II, micro KEYER II and MK2R(+) additional options are available. 
 ** *Band Map* – set keyer mode according to band map
 ** *Always Voice* – set keyer mode always to VOICE
 ** *Always Digital* – set keyer mode always to DIGITAL
-* *Use CAT Decoder if Connected:* Select this to enable the keyers CAT decoder even when the keyer is USB connected to a computer. The CAT decoder is used to synchronize the keyers mode with the rig mode. If disabled the keyer mode must be selected in the WebUI or by an application. The decoder is always active when the keyer is not USB connected to a computer.
-* *Don’t Interfere with USB control:* Disable CAT queries by the keyer if it is USB connected to a computer. Only answers to the computer will be interpreted. [red]#This may not work as advertised for DIGI KEYER II and maybe other keyers.#
+* *Use CAT Decoder if Connected:* Select this to enable the keyers CAT decoder even when the keyer is USB connected to a computer. 
+The CAT decoder is used to synchronize the keyers mode with the rig mode. If disabled the keyer mode must be selected in the WebUI or by an application. 
+The decoder is always active when the keyer is not USB connected to a computer.
+[red]#Enabling this may lead to interference. That is, CAT requests from the keyer colliding with CAT requests from an application like WSJTX. RIG Mode Sync offers a more stable solution to provide the keyer with the current mode and frequency, see next chapter.#
+* *Don’t Interfere with USB control:* Disable CAT queries by the keyer if it is USB connected to a computer. Only answers to the computer will be interpreted. 
+[red]#This may not work as advertised for DIGI KEYER II and maybe other keyers.#
 
 ==== RIG Mode Sync
 
-mhuxd can keep the keyer mode (CW, VOICE, FSK, DIGITAL) in sync with the actual rig mode. Rather than decoding CAT itself, mhuxd queries the rig through an external backend and updates the keyer mode whenever the rig mode changes. This avoids the collisions that occur when the keyer runs its own CAT queries in parallel with logging or digimode software.
+mhuxd can keep the keyer mode (CW, VOICE, FSK, DIGITAL) in sync with the actual rig mode. 
+Rather than decoding CAT itself, mhuxd queries the rig through an external backend and updates the keyer mode whenever the rig mode changes. 
+This avoids the collisions that occur when the keyer runs its own CAT queries in parallel with logging or digimode software.
+
 
 The mode mapping is as follows:
 
@@ -74,11 +81,12 @@ For each radio (Radio 1, and Radio 2 on dual-radio keyers) an endpoint can be co
 * *Enabled* – synchronize this radio
 * *Host* / *Port* – where the backend is listening (default `127.0.0.1`, port 4532 for Radio 1 and 4533 for Radio 2)
 * *Connect Timeout*, *I/O Timeout*, *Poll Interval* – connection and polling timing in milliseconds
-* *Auto-start rigctld* – let mhuxd start a `rigctld` instance itself. When enabled you can pass the required *rigctld options* in the field that appears, e.g. `-m 361 -r /dev/ttyUSB0`.
-
+* *Auto-start rigctld* – let mhuxd start a `rigctld` instance itself. When enabled you can pass the required *rigctld options* in the field that appears, e.g. `-m 361 -r /dev/mhuxd/cat1`.
+The -m switch specifies the rig number in hamlib. Run `rigctld -l` to display a list of rigs and the corresponding id. 
+The -r switch should be followed by the virtual serial port for CAT, that you've configured in mhuxd.
 Press *Apply* to store the settings.
 
-NOTE: When RIG Mode Sync is used, the keyer’s own CAT decoder should be turned off (“Use CAT Decoder if Connected” disabled) to avoid interference.
+NOTE: When RIG Mode Sync is used, the keyer’s own CAT decoder should be turned off (“Use CAT Decoder if Connected” disabled).
 
 === Menu AUX
 This menu is only available for keyers with AUX support (microKEYER II). Allows to specify the serial parameters of the AUX port.
