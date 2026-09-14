@@ -29,7 +29,7 @@ jobs:
       run: make distcheck
     - name: Build Debian Package
       run: |
-        dpkg-buildpackage -us -uc -b
+        make deb
         mkdir -p output
         mv ../mhuxd*.deb output/
     - name: Upload Artifact

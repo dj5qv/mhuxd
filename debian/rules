@@ -19,6 +19,12 @@
 override_dh_installudev:
 	dh_installudev --priority 59 -n
 
+# "make deb" (see Makefile.am) passes a snapshot version in MHUXD_DEB_VERSION,
+# which replaces the debian/changelog version in the generated .deb files.
+# Plain dpkg-buildpackage runs are unaffected.
+override_dh_gencontrol:
+	dh_gencontrol $(if $(MHUXD_DEB_VERSION),-- -v$(MHUXD_DEB_VERSION))
+
 # install-data-local (src/Makefile.am) creates the runtime dir under
 # $(RUNDIR) for plain "make install" use. On Debian it's recreated at
 # boot by debian/mhuxd.tmpfile instead, so drop the empty dir lintian

@@ -81,6 +81,10 @@ This would install everything into `/usr/local/mhuxd`.
 
 If you cloned the source code from GITHUB then you also need the packages `autoconf` and `automake` and run `./autogen.sh` first.
 
+To build Debian packages instead, run `make deb` in a configured source tree (needs `dpkg-dev` and `debhelper`).
+The version, e.g. `0.90~beta+20260914.144712.gff27a37`, contains the commit time and hash, so builds of the same commit match across
+platforms. With uncommitted changes the build time is used and `.dirty` appended. The `.deb` files are written to the parent directory.
+
 ## ACKNOWLEDGEMENTS
 
 - **microHam** - For providing the protocol specs and support
