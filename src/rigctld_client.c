@@ -70,6 +70,7 @@ struct rigctld_client {
 	ev_tstamp respawn_not_before; /* earliest allowed respawn (ev_now based) */
 	int respawn_fails;           /* consecutive child exits (log display only) */
 	int respawn_delay_ms;        /* current backoff delay, doubled on each exit */
+	int exec_errno;              /* errno of last failed rigctld exec, 0 if last exec succeeded */
 	int child_log_fd;
 	ev_io child_log_w;
 	char child_log_buf[512];
@@ -215,7 +216,10 @@ static void rigcl_child_cb(struct ev_loop *loop, ev_child *w, int revents) {
 	struct rigctld_client *client = w->data;
 	ev_child_stop(loop, w);
 
-	if(WIFEXITED(w->rstatus)) {
+	if(client->exec_errno) {
+		/* already reported by rigcl_spawn_rigctld() */
+		dbg0("%s rigctld pid=%d exited after exec failure", client->serial, w->rpid);
+	} else if(WIFEXITED(w->rstatus)) {
 		warn("%s auto-started rigctld pid=%d exited code=%d",
 		     client->serial, w->rpid, WEXITSTATUS(w->rstatus));
 	} else if(WIFSIGNALED(w->rstatus)) {
@@ -239,6 +243,15 @@ static void rigcl_child_cb(struct ev_loop *loop, ev_child *w, int revents) {
 		client->respawn_delay_ms = RIGCL_RESPAWN_MAX_MS;
 }
 
+/* Child side of fork(): pass errno to the parent through the CLOEXEC pipe and exit. */
+static void rigcl_child_report_exec_failure(int fd, int errsv) {
+	ssize_t r;
+	do {
+		r = write(fd, &errsv, sizeof(errsv));
+	} while(r < 0 && errno == EINTR);
+	_exit(127);
+}
+
 static void rigcl_spawn_rigctld(struct rigctld_client *client) {
 	dbg0("%s rigctld spawn requested, auto-start: %d, child_pid: %d", client->serial, client->auto_start, client->child_pid);
 
@@ -252,6 +265,7 @@ static void rigcl_spawn_rigctld(struct rigctld_client *client) {
 	char *args_buf = NULL;
 	int child_log_rd = -1;
 	int child_log_wr = -1;
+	int exec_err_pipe[2] = { -1, -1 };
 	char *argv_ptrs[68]; /* "rigctld" + up to 64 opts + "-t" + port + NULL */
 	int argc = 0;
 	argv_ptrs[argc++] = "rigctld";
@@ -280,6 +294,16 @@ static void rigcl_spawn_rigctld(struct rigctld_client *client) {
 		return;
 	}
 
+	/* A successful execvp() closes the write end (EOF for the parent),
+	 * otherwise the child writes errno into it. */
+	if(pipe2(exec_err_pipe, O_CLOEXEC) != 0) {
+		dbg0("%s rigctld auto-start exec error pipe failed: err=%d", client->serial, errno);
+		fd_close(&child_log_rd);
+		fd_close(&child_log_wr);
+		free(args_buf);
+		return;
+	}
+
 	rigcl_close_child_log(client, 0);
 
 	pid_t mhuxd_pid = getpid();
@@ -288,15 +312,18 @@ static void rigcl_spawn_rigctld(struct rigctld_client *client) {
 		dbg0("%s rigctld auto-start fork failed: err=%d", client->serial, errno);
 		fd_close(&child_log_rd);
 		fd_close(&child_log_wr);
+		fd_close(&exec_err_pipe[0]);
+		fd_close(&exec_err_pipe[1]);
 		free(args_buf);
 		return;
 	}
 	if(pid == 0) {
 		fd_close(&child_log_rd);
+		fd_close(&exec_err_pipe[0]);
 		if(dup2(child_log_wr, STDOUT_FILENO) < 0)
-			_exit(127);
+			rigcl_child_report_exec_failure(exec_err_pipe[1], errno);
 		if(dup2(child_log_wr, STDERR_FILENO) < 0)
-			_exit(127);
+			rigcl_child_report_exec_failure(exec_err_pipe[1], errno);
 		if(child_log_wr > STDERR_FILENO)
 			close(child_log_wr);
 
@@ -309,11 +336,38 @@ static void rigcl_spawn_rigctld(struct rigctld_client *client) {
 		if(getppid() != mhuxd_pid)
 			_exit(0);
 		execvp("rigctld", argv_ptrs);
-		_exit(127);
+		rigcl_child_report_exec_failure(exec_err_pipe[1], errno);
 	}
 	/* parent */
 	fd_close(&child_log_wr);
+	fd_close(&exec_err_pipe[1]);
 	free(args_buf);
+
+	/* Blocks only until the child reaches execvp(): EOF on success, errno on failure. */
+	int exec_errno = 0;
+	ssize_t r;
+	do {
+		r = read(exec_err_pipe[0], &exec_errno, sizeof(exec_errno));
+	} while(r < 0 && errno == EINTR);
+	fd_close(&exec_err_pipe[0]);
+	if(r != (ssize_t)sizeof(exec_errno))
+		exec_errno = 0;
+
+	if(exec_errno) {
+		/* Report as error once, repeats during respawn backoff at debug level only */
+		if(exec_errno != client->exec_errno) {
+			const char *path = getenv("PATH");
+			if(exec_errno == ENOENT)
+				err("%s cannot auto-start rigctld: executable not found in PATH=%s",
+				    client->serial, path ? path : "<unset>");
+			else
+				err("%s cannot auto-start rigctld: %s", client->serial, strerror(exec_errno));
+		} else {
+			dbg0("%s cannot auto-start rigctld: %s", client->serial, strerror(exec_errno));
+		}
+	}
+	client->exec_errno = exec_errno;
+
 	client->child_pid = pid;
 	client->child_log_fd = child_log_rd;
 	client->child_log_len = 0;
@@ -323,7 +377,8 @@ static void rigcl_spawn_rigctld(struct rigctld_client *client) {
 	client->child_watcher.data = client;
 	// libev child watcher works in default loop only
 	ev_child_start(EV_DEFAULT_ &client->child_watcher);
-	dbg0("%s rigctld auto-started pid=%d", client->serial, (int)client->child_pid);
+	if(!exec_errno)
+		dbg0("%s rigctld auto-started pid=%d", client->serial, (int)client->child_pid);
 }
 
 static void rigcl_kill_rigctld(struct rigctld_client *client) {
@@ -747,6 +802,7 @@ static void rigcl_start(struct rigctld_client *client) {
 	client->respawn_fails = 0;
 	client->respawn_not_before = 0.;
 	client->respawn_delay_ms = RIGCL_RESPAWN_INITIAL_MS;
+	client->exec_errno = 0;
 	rigcl_spawn_rigctld(client);
 	ev_timer_set(&client->poll_timer, 0., (double)client->poll_ms / 1000.0);
 	ev_timer_start(client->loop, &client->poll_timer);
