@@ -37,6 +37,7 @@ Download the source from the Download page and extract it, e.g.
 
 NOTE: If you cloned the source from GitHub instead, you also need the packages
 `autoconf` and `automake` and must run `./autogen.sh` once before `./configure`.
+`pkg-config` must already be installed at that point, otherwise `./autogen.sh` fails.
 
 {empty} +
 

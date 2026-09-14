@@ -68,8 +68,8 @@ Binary packages are available. Refer to [mhuxd.dj5qv.de](https://mhuxd.dj5qv.de/
 
 ### Compile from source code
 
-To compile mhuxd you'll need the development packages for libudev, libfuse, libev and pkg-config.
-(For Debian & Ubuntu that would be `libev-dev`, `libfuse-dev`, `libudev-dev` and `pkg-config`).
+To compile mhuxd you'll need pkg-config and the development packages for libudev, libfuse, libev and libjansson.
+(For Debian & Ubuntu that would be `pkg-config`, `libev-dev`, `libfuse-dev`, `libudev-dev` and `libjansson-dev`).
 
 ```bash
 ./configure --prefix=/usr/local/mhuxd
@@ -80,6 +80,7 @@ make install
 This would install everything into `/usr/local/mhuxd`.
 
 If you cloned the source code from GITHUB then you also need the packages `autoconf` and `automake` and run `./autogen.sh` first.
+`pkg-config` must already be installed at that point, otherwise `./autogen.sh` fails.
 
 To build Debian packages instead, run `make deb` in a configured source tree (needs `dpkg-dev` and `debhelper`).
 The version, e.g. `0.90~beta+20260914.144712.gff27a37`, contains the commit time and hash, so builds of the same commit match across

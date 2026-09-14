@@ -2,6 +2,11 @@ AC_PREREQ([2.69])
 AC_INIT([mhuxd], [0.90beta], [mhuxd@maxec.de])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
+# pkg.m4 (from pkg-config/pkgconf) must be present when running autogen.sh,
+# otherwise autoconf fails with a misleading "undefined macro: AC_MSG_ERROR".
+m4_ifndef([PKG_CHECK_MODULES],
+  [m4_fatal([PKG_CHECK_MODULES macro not found. Install pkg-config (Debian/Ubuntu: pkgconf) and re-run ./autogen.sh])])
+
 AC_PROG_CC
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
