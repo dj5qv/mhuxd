@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Install deps
       run: |
         sudo apt-get update
@@ -33,7 +33,7 @@ jobs:
         mkdir -p output
         mv ../mhuxd*.deb output/
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: mhuxd-debian-package
         path: output/mhuxd*.deb
