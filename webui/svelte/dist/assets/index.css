@@ -1,0 +1,498 @@
+
+/* ─── Design tokens ─────────────────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --color-brand:        #000050;
+  --color-brand-mid:    #7070a0;
+  --color-brand-light:  #d0d0f0;
+
+  /* Text */
+  --color-text:         #111;
+  --color-text-muted:   #555;
+  --color-text-subtle:  #777;
+
+  /* Backgrounds */
+  --color-bg:           #fff;
+  --color-bg-panel:     #eee;
+  --color-bg-btn:       #f5f5f5;
+  --color-bg-row:       #f9f9f9;
+  --color-bg-row-alt:   #eee;
+  --color-bg-th:        #ccc;
+
+  /* Borders */
+  --color-border:       #555;
+  --color-border-light: #999;
+  --color-border-faint: #ccc;
+
+  /* Semantic */
+  --color-error-bg:     #ffe6d0;
+  --color-error-border: #aa0000;
+  --color-error-text:   #660000;
+  --color-error-inline: #a10000;
+  --color-error-dot:    #d1242f;
+  --color-success-text: #2d5f2e;
+
+  /* Ant-table specials */
+  --color-bg-table-th:  #e8e8e8;
+  --color-bg-table-even: #f6f6f6;
+  --color-bg-add-row:   #fffbe6;
+  --color-bg-vr-row:    #e8eef8;
+
+  /* Typography */
+  font-family: 'Monda', Arial, Helvetica, sans-serif;
+//  font-size: 16px; /* browser base — rem values scale from here */
+  color: var(--color-text);
+  background: var(--color-bg);
+
+  /* Layout */
+  --sidebar-width: 170px;
+  --radius:         4px;
+  --radius-lg:      8px;
+}
+
+/* ─── Global resets ──────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+/* Form controls inherit font by default in modern browsers,
+   but this guarantees it for older engines too. */
+input,
+select,
+button,
+textarea {
+  font: inherit;
+}
+
+/* ─── Page shell ─────────────────────────────────────────────────────────── */
+.page {
+  min-height: 100dvh; /* respects mobile browser chrome */
+}
+
+/* ─── Top bar ────────────────────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  background: var(--color-brand);
+  color: var(--color-bg);
+}
+
+.title {
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.title-italic {
+  font-style: italic;
+}
+
+.top-right {
+  text-align: right;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.top-right .help {
+  color: var(--color-bg);
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 0.25rem;
+}
+
+/* ─── Tab navigation ─────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.625rem 0.625rem 0;
+  background: var(--color-brand);
+  border-bottom: 5px solid var(--color-brand-light);
+}
+
+.tab {
+  padding: 0.375rem 0.75rem;
+  background: var(--color-brand-mid);
+  color: var(--color-bg);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: var(--radius) var(--radius) 0 0;
+  border: none;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: var(--color-brand-light);
+  color: var(--color-text);
+}
+
+.tab:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ─── Two-column layout ──────────────────────────────────────────────────── */
+.layout {
+  display: inline-grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  gap: 1.25rem;
+  padding: 0.625rem 1rem 2.5rem;
+}
+
+@media (max-width: 640px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Side menu ──────────────────────────────────────────────────────────── */
+.left-menu {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-panel);
+}
+
+.left-menu-item {
+  padding: 0.5rem 0.625rem;
+  font-size: 0.75rem;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.left-menu-item.active {
+  background: var(--color-brand-light);
+  font-weight: 700;
+}
+
+.left-menu-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ─── Main content ───────────────────────────────────────────────────────── */
+/*
+.main {
+  max-width: 1200px;
+}
+*/
+.breadcrumbs {
+  color: var(--color-text-subtle);
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  font-size: 1.25rem;
+  color: var(--color-text-muted);
+  margin: 0 0 1rem;
+}
+
+/* ─── Sections & panels ──────────────────────────────────────────────────── */
+.section {
+  margin: 1.25rem 0 1.875rem;
+}
+
+.section-title {
+  background: var(--color-brand-mid);
+  color: var(--color-bg);
+  font-weight: 700;
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.panel {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-panel);
+  padding: 0.75rem;
+}
+
+.panel.table {
+  padding: 0;
+  overflow-x: auto;
+}
+
+/* ─── Form rows ──────────────────────────────────────────────────────────── */
+.row {
+  display: grid;
+  grid-template-columns: 10rem 1fr;
+  gap: 1rem;
+  padding: 0.375rem 0;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: 0.8125rem;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.label {
+  text-align: right;
+  font-weight: 700;
+}
+
+/* ─── Form controls ──────────────────────────────────────────────────────── */
+/* font: inherit handled globally above */
+.select {
+  padding: 0.125rem 0.375rem;
+}
+
+.input {
+  padding: 0.125rem 0.375rem;
+  width: 7.5rem;
+}
+
+/* ─── Generic table ──────────────────────────────────────────────────────── */
+
+.table {
+  /*display: inline-grid;*/
+  display: block;
+}
+
+.table-header,
+.table-row {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 2fr;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.8125rem;
+  align-items: center;
+  justify-items: start;
+}
+
+.table-header > div,
+.table-row > div {
+  justify-self: start;
+  text-align: left;
+}
+
+.panel.table .select {
+  width: 100%;
+  max-width: 13.75rem;
+}
+
+/* ─── Specialised grid layouts ───────────────────────────────────────────── */
+.audio-grid-3 .table-header,
+.audio-grid-3 .table-row {
+  grid-template-columns: 8.75rem minmax(13.75rem, 1fr) minmax(15rem, 1fr);
+  column-gap: 1rem;
+}
+
+.audio-grid-4 .table-header,
+.audio-grid-4 .table-row {
+  grid-template-columns: 8.75rem minmax(13.75rem, 1fr) minmax(13.75rem, 1fr) minmax(15rem, 1fr);
+  column-gap: 1rem;
+}
+
+.audio-grid-8 .table-header,
+.audio-grid-8 .table-row {
+  grid-template-columns:
+    7.5rem
+    minmax(10rem, 1fr)
+    3.75rem
+    minmax(10rem, 1fr)
+    3.75rem
+    minmax(12.5rem, 1fr)
+    3.75rem
+    minmax(7.5rem, 1fr);
+  column-gap: 0.75rem;
+}
+
+.display-grid .table-header,
+.display-grid .table-row {
+  grid-template-columns: 2fr 7.5rem 10rem;
+  column-gap: 1rem;
+}
+
+.ports-grid .table-header,
+.ports-grid .table-row {
+  min-width: max-content;
+  grid-template-columns:
+    1.875rem
+    3.75rem
+    4.375rem
+    9.375rem
+    5rem
+    6.875rem
+    5rem
+    5rem
+    11.25rem
+    9.375rem
+    5rem;
+  column-gap: 0.75rem;
+}
+
+.ports-grid .table-header > div:first-child,
+.ports-grid .table-row > div:first-child {
+  justify-self: center;
+}
+
+/* ─── Table rows ─────────────────────────────────────────────────────────── */
+.table-header {
+  background: var(--color-bg-th);
+  font-weight: 700;
+}
+
+.table-row {
+  background: var(--color-bg-row);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.table-row.alt {
+  background: var(--color-bg-row-alt);
+}
+
+.table-empty {
+  padding: 0.75rem 0.625rem;
+  font-size: 0.8125rem;
+}
+
+/* ─── State & feedback ───────────────────────────────────────────────────── */
+.loading {
+  padding: 0.75rem 0;
+  font-size: 0.8125rem;
+}
+
+.error {
+  padding: 0.75rem;
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+  border: 1px solid var(--color-error-border);
+  font-size: 0.8125rem;
+}
+
+.text-error {
+  color: var(--color-error-dot);
+  font-weight: bold;
+}
+
+.inline-status {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-success-text);
+}
+
+.inline-status.error {
+  color: var(--color-error-inline);
+}
+
+.placeholder {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+.button-row {
+  display: flex;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.btn {
+  font-size: 0.8125rem;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-btn);
+  cursor: pointer;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ─── Inline form helpers ────────────────────────────────────────────────── */
+.inline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+}
+
+/* ─── Ant-style table ────────────────────────────────────────────────────── */
+.ant-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.ant-table th,
+.ant-table td {
+  border: 1px solid var(--color-border-faint);
+  padding: 0.1875rem 0.3125rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ant-table th {
+  background: var(--color-bg-table-th);
+  font-weight: 600;
+}
+
+.ant-table tr:nth-child(even) {
+  background: var(--color-bg-table-even);
+}
+
+.ant-table .add-row {
+  background: var(--color-bg-add-row);
+}
+
+.ant-table .vr-main-row {
+  background: var(--color-bg-vr-row);
+  font-weight: 600;
+}
+
+/* ─── Connection lost overlay ────────────────────────────────────────────── */
+.connection-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.connection-message {
+  background: var(--color-error-dot);
+  color: var(--color-bg);
+  padding: 1.25rem 2.5rem;
+  border-radius: var(--radius-lg);
+  font-size: clamp(1rem, 3vw, 1.5rem);
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── All-params panel ───────────────────────────────────────────────────── */
+.all-params-panel {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+}
+
+.all-params-panel .row {
+  display: contents; /* children participate in the parent grid */
+}
+
+.all-params-panel .label {
+  white-space: nowrap;
+}
+
+.all-params-panel .input {
+  width: 100%;
+}.status-dot.svelte-bogpxu{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;position:relative;top:-1px;box-shadow:inset 0 0 0 1px rgba(0, 0, 0, 0.2)}.status-dot.ok.svelte-bogpxu{background:#2da44e}.status-dot.warn.svelte-bogpxu{background:#d29922}.status-dot.bad.svelte-bogpxu{background:#d1242f}.add-port-backdrop.svelte-udangm{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0, 0, 0, 0.45);display:flex;justify-content:center;align-items:center;z-index:1000}.add-port-modal.svelte-udangm{background:#fff;border:1px solid #555;border-radius:4px;min-width:480px;max-width:600px;width:100%;box-shadow:0 4px 16px rgba(0, 0, 0, 0.3);overflow:hidden}.add-port-modal-title.svelte-udangm{display:flex;justify-content:space-between;align-items:center;border-radius:0}.overlay-close-btn.svelte-udangm{background:transparent;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 4px;line-height:1}.overlay-close-btn.svelte-udangm:hover{opacity:0.7}.button-row.svelte-udangm{display:flex;gap:6px;margin-top:8px}

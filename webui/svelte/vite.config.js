@@ -7,5 +7,15 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true
-  }
+  },
+  build: {
+      minify: false,
+      rollupOptions: {
+        output: {
+          entryFileNames: `assets/[name].js`,
+          chunkFileNames: `assets/[name].js`,
+          assetFileNames: `assets/[name].[ext]`
+        }
+      }
+    }  
 });

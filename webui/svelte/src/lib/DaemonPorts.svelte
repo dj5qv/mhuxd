@@ -30,12 +30,20 @@
   let portStatusTimer;
   let selectedConnectorIds = [];
   let showAddPortOverlay = false;
+  let devnameTouched = false;
 
   // Auto-select first keyer when portForm has no serial yet
   $: if (!portForm.serial && keyers.length) {
     const serial = keyers[0].serial || '';
     const opts = channelOptionsForSerial(serial);
     portForm = { ...portForm, serial, channel: opts[0] || '' };
+  }
+
+  // Prefill the VSP device name from the destination channel until the user edits it.
+  // TCP gets no prefill, a channel name is no port number.
+  $: if (!devnameTouched) {
+    const devname = portForm.type === 'VSP' ? suggestVspDevname(portForm.channel, connectors) : '';
+    if (portForm.devname !== devname) portForm = { ...portForm, devname };
   }
 
   const keyerFlagsForSerial = (serial) => {
@@ -72,6 +80,23 @@
     if (channel === 'R1') return 'CAT1';
     if (channel === 'R2') return 'CAT2';
     return channel;
+  };
+
+  // Channel name, suffixed when another VSP already uses it (e.g. CAT1 of a second keyer),
+  // as the daemon refuses to create an existing /dev/mhuxd/ device.
+  const suggestVspDevname = (channel, existing) => {
+    if (!channel) return '';
+    const base = displayPortChannel(channel).toLowerCase();
+    const used = new Set(existing.filter((c) => c.type === 'VSP').map((c) => c.devname));
+    if (!used.has(base)) return base;
+    let n = 2;
+    while (used.has(`${base}_${n}`)) n++;
+    return `${base}_${n}`;
+  };
+
+  const openAddPort = () => {
+    devnameTouched = false;
+    showAddPortOverlay = true;
   };
 
   const checkMark = (value) => (value ? '✓' : '—');
@@ -219,7 +244,7 @@
     {/if}
   </div>
   <div class="button-row">
-    <button class="btn" on:click={() => (showAddPortOverlay = true)}>Add</button>
+    <button class="btn" on:click={openAddPort}>Add</button>
     <button class="btn" on:click={removePorts} disabled={!selectedConnectorIds.length || portSaving}>
       Remove
     </button>
@@ -245,7 +270,7 @@
         <div class="inline-list">
           {#each portTypeOptions as opt}
             <label class="radio-option">
-              <input type="radio" bind:group={portForm.type} value={opt} />
+              <input type="radio" bind:group={portForm.type} value={opt} on:change={() => (devnameTouched = false)} />
               {opt === 'VSP' ? 'VSP Virtual Serial Port' : 'TCP Network Port'}
             </label>
           {/each}
@@ -288,7 +313,7 @@
         <div class="label">Device Path:</div>
         <div class="value">
           /dev/mhuxd/
-          <input class="input" type="text" bind:value={portForm.devname} placeholder="ttyMHUXD0" />
+          <input class="input" type="text" bind:value={portForm.devname} on:input={() => (devnameTouched = true)} />
         </div>
       </div>
       <div class="row">
@@ -307,7 +332,7 @@
       <div class="row">
         <div class="label">Port Number:</div>
         <div class="value">
-          <input class="input" type="number" min="1" step="1" inputmode="numeric" bind:value={portForm.devname} placeholder="9001" />
+          <input class="input" type="number" min="1" step="1" inputmode="numeric" bind:value={portForm.devname} on:input={() => (devnameTouched = true)} placeholder="9001" />
         </div>
       </div>
       <div class="row">
