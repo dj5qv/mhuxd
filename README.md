@@ -15,12 +15,13 @@
 
 - Rest-API interface, used by the Web-UI to interact with mhuxd.
 
-- Websocket interface, providing status changes
+- Websocket interface, providing status changes.
 
 - Can communicate with rigctld. This solves an issue where keyer internal CAT queries are enabled while an application like WSJTX runs 
-  CAT queries, too, leading to collusions and instability. Using rigctld, mhuxd can sync the rig mode and frequency with the keyer.
+  CAT queries, too, leading to collisions and instability. Using rigctld, mhuxd can sync the rig mode and frequency with the keyer.
+  It also allows multiple applications to use CAT simultaneously.
 
-- TCP connector supports IPv6 now.
+- WebUI and TCP connector support IPv6 now.
 
 
 ---
@@ -29,7 +30,7 @@
 
 **Homepage:** [http://mhuxd.dj5qv.de](http://mhuxd.dj5qv.de)
 
-Mhuxd is a device router for microHam keyers. Currently it runs on the Linux operating system only. Supported microHam keyers are:
+Mhuxd is a device router for microHam keyers for the Linux operating system. Supported microHam keyers are:
 
 - micro KEYER
 - micro KEYER II
@@ -40,13 +41,13 @@ Mhuxd is a device router for microHam keyers. Currently it runs on the Linux ope
 - CW KEYER
 - Experimental: Station Master (DeLuxe)
 
-mhuxd provides a web interface for configuration. It allows to perform keyer configuration changes including Winkey configuration. Once mhuxd is running the web interfaces can be accessed at:
+mhuxd provides a web interface for configuration. It allows performing keyer configuration changes, including Winkey configuration. Once mhuxd is running, the web interfaces can be accessed at:
 
 [http://localhost:5052](http://localhost:5052)
 
 This can be changed by the `-w` option.
 
-Similar to the microHam device router mhuxd can create virtual serial ports. This allows ham radio applications like CQRLOG or Fldigi to send rig commands or utilize the K1EL Winkey chip. These ports can be created using the web interface.
+Similar to the microHam device router, mhuxd can create virtual serial ports. This allows ham radio applications like CQRLOG or Fldigi to send rig commands or utilize the K1EL Winkey chip. These ports can be created using the web interface.
 
 
 
@@ -56,12 +57,12 @@ Similar to the microHam device router mhuxd can create virtual serial ports. Thi
 
 Binary packages are available for Debian (and derived distributions, Ubuntu, Mint). Refer to [mhuxd.dj5qv.de](https://mhuxd.dj5qv.de/) for details.
 
-Installing from these packages takes care of permission issues and will make mhuxd auto-start via systemd.
+Installing from these packages is the easiest way, like plug & play. Everything is handled automatically: systemd integration, permissions, account creation, etc.
 
 ### Compile from source code
 
-The steps here a a little more complex that for usual programs. mhuxd will run
-under the mhuxd account, which will be created below. Though possible, I'd not advice to run it under you normal user.
+The steps here are a little more complex than for usual programs. mhuxd will run
+under the mhuxd account, which will be created below. Though possible, I'd advise against running it under your normal user.
 
 Install required packages:
 
@@ -96,7 +97,7 @@ sudo chown -R mhuxd:mhuxd /usr/local/mhuxd/var
 sudo /usr/bin/setfacl -m u:mhuxd:rw /dev/cuse
 
 # Do set acl for /dev/cuse and the right ownership for virtual serial ports in /dev/mhuxd,
-# copy the udev file into the apropiate system directory:
+# copy the udev file into the appropriate system directory:
 sudo cp ../debian/mhuxd.udev /usr/lib/udev/rules.d/59-mhuxd.rules
 
 # And reload the udev rules (or reboot):
@@ -119,12 +120,12 @@ systemctl stop mhuxd
 systemctl start mhuxd
 
 # Or, if you use init scripts instead of systemd:
-systemctl stop mhuxd
-systemctl start mhuxd
+/etc/init.d/mhuxd stop
+/etc/init.d/mhuxd start
 ```
 
 ### When self compiled
-If you compiled mhuxd yourself, it can be started "manually" on command line. 
+If you compiled mhuxd yourself, it can be started "manually" on the command line. 
 As described in the compile section, mhuxd should run under account mhuxd:
 ```bash
 
@@ -132,7 +133,7 @@ As described in the compile section, mhuxd should run under account mhuxd:
 # Terminate with Ctrl-C:
 sudo su - mhuxd -c "exec /usr/local/mhuxd/sbin/mhuxd"
 
-# Start mhuxd in background, output goes into the log file ()
+# Start mhuxd in background, output goes into the log file:
 sudo su - mhuxd -c "exec /usr/local/mhuxd/sbin/mhuxd -b"
 
 
@@ -142,7 +143,7 @@ sudo -u mhuxd /usr/local/mhuxd/sbin/mhuxd
 # Or in background:
 sudo -u mhuxd /usr/local/mhuxd/sbin/mhuxd -b
 
-# To stop the daeamon, when running in background:
+# To stop the daemon, when running in background:
 kill `cat /usr/local/mhuxd/var/run/mhuxd/mhuxd.pid`
 ```
 
@@ -150,7 +151,7 @@ kill `cat /usr/local/mhuxd/var/run/mhuxd/mhuxd.pid`
 
 ## Make sure mhuxd has recognized your keyer
 
-If you keyer is connected to the computer and turned on, mhuxd should have recognized it 
+If your keyer is connected to the computer and turned on, mhuxd should have recognized it 
 immediately. In the Web-UI a dedicated tab should show up for that keyer:
 
 ![Mhuxd summary tab log](images/mhuxd_summary_tab_log.png)
@@ -169,7 +170,7 @@ You'd likely see an empty list here. Click the add button:
 
 ![Mhuxd add port](images/mhuxd_add_port.png)
 
-Click "Create" and the VSP will be created. If an error is indicates, check the log what went wrong.
+Click "Create" and the VSP will be created. If an error is indicated, check the log to see what went wrong.
 For a PTT port you'd want to select RTS and / or DTR.
 
 ### Configure CAT / radio
@@ -178,21 +179,21 @@ For a PTT port you'd want to select RTS and / or DTR.
 
 - Select your radio model and serial settings that match your radio.
 - "Use decoder if connected" would enable internal CAT polling from keyer to radio. 
-   That is used to keep the keyer in sync with the rigs operating mode and frequency.
-- "Don't interfere USB control" This should prevent CAT polls from the keyer while some
+   That is used to keep the keyer in sync with the rig's operating mode and frequency.
+- "Don't interfere USB control": This should prevent CAT polls from the keyer while some
    program on the computer already runs CAT polls. For me that is not working anymore
    with my current setup (IC-7300, MKIII, WSJTX), so I have 
    disabled both.  
 
-- Section "Rig Mode Sync", this enables the use of hamlibs rigctld. With this 
+- Section "Rig Mode Sync", this enables the use of hamlib's rigctld. With this 
   feature mhuxd can run CAT queries to identify the current operating mode and QRG.
   It can then set mode and QRG in the keyer accordingly.
-- rigctld allows multiple application to connect to it and run CAT queries simultaneously, 
+- rigctld allows multiple applications to connect to it and run CAT queries simultaneously, 
   without interference. So WSJTX, fldigi, QLog can, when configured to use rigctld, at the
   same time run CAT queries.
 - mhuxd can "manage" rigctld (auto-start rigctld enabled). Whenever the corresponding keyer 
   gets turned on or connected to the computer, mhuxd will start a rigctld instance. Once 
-  the keyer get's disconnected or turned off, mhuxd will terminate rigctld.
+  the keyer gets disconnected or turned off, mhuxd will terminate rigctld.
 - When enabling "auto-start rigctld", you need to provide the correct rigctld parameters
   in field "rigctld options":
 
@@ -208,14 +209,17 @@ Example, WSJTX CAT setting to connect to a locally running rigctld:
 
 ![WSJTX with rigctld](images/WSJTX_with_rigctld.png)
 
-Although there is CAT PTT enabled, that is not really CAT PTT from the rigs perspective. rigctld
+Although CAT PTT is enabled, that is not really CAT PTT from the rig's perspective. rigctld
 will translate this to RTS via /dev/mhuxd/ptt1, if configured like shown above. The keyer will
 then trigger PTT via PTT line, not CAT.
 
-Of course WSJTX could be also configured completely without rigctld, directly accessing the virtual
+Of course WSJTX could also be configured completely without rigctld, directly accessing the virtual
 serial ports provided by mhuxd. In that case, no other application can open these ports anymore:
 
 ![WSJTX direct](images/WSJTX_direct.png)
+
+For this to work, "Rig mode sync" must be disabled. Otherwise /dev/mhuxd/cat1 would be occupied by 
+rigctld already.
 
 ## ACKNOWLEDGEMENTS
 
@@ -224,4 +228,4 @@ serial ports provided by mhuxd. In that case, no other application can open thes
 - **Brandon Long** - For the ClearSilver template system
 - **Igor Sysoev, Joyent Inc. et al.** - For http\_parser
 - **Google Inc., Filipe Almeida** - For streamhtmlparser
-- **Petri Lehtinen** - For libjannson
+- **Petri Lehtinen** - For libjansson
