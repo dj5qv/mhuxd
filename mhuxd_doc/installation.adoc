@@ -21,6 +21,8 @@ The web interface is built from Svelte sources, which requires:
 * `nodejs`
 * `npm`
 
+However the source code ships with a compiled UI (pure JavaScript), so nodejs and npm is not strictly required.
+
 (On Debian/Ubuntu the package names are given in parentheses.)
 
 ==== Building
