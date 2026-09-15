@@ -68,8 +68,15 @@ Install required packages:
 
 
 ```bash
-# Install required packages, names work for Debian and Ubuntu. For other distros you need to find out:
+## Install required packages
+# for Debian and Ubuntu:
 sudo apt install acl git pkgconf automake autoconf make gcc libev-dev libfuse-dev libudev-dev libjansson-dev
+
+# for Arch Linux
+pacman -S --needed pkgconf git automake autoconf make gcc libev fuse systemd-libs jansson
+
+# for Alpine Linux (you might need to compile the kernel, the provided ones seem to lack cuse/CONFIG_CUSE)
+apk add pkgconf git automake autoconf make gcc libev-dev fuse-dev libudev-zero-dev jansson-dev musl-dev acl
 
 # Get the source code from github:
 git clone https://github.com/dj5qv/mhuxd.git
@@ -85,7 +92,7 @@ make
 
 # create mhuxd user and group. These will be the owners of virtual serial ports in /dev/mhuxd/
 sudo useradd --system --home-dir /nonexistent --no-create-home --user-group mhuxd
-sudo usermod -G dialout mhuxd
+sudo usermod -G dialout mhuxd # for Arch Linux use 'uucp' instead of 'dialout'
 
 # Install it into your $HOME directory, mhuxd folder:
 sudo make install
@@ -99,6 +106,9 @@ sudo /usr/bin/setfacl -m u:mhuxd:rw /dev/cuse
 # Do set acl for /dev/cuse and the right ownership for virtual serial ports in /dev/mhuxd,
 # copy the udev file into the appropriate system directory:
 sudo cp ../debian/mhuxd.udev /usr/lib/udev/rules.d/59-mhuxd.rules
+
+# Make sure kernel module get's loaded after boot
+echo cuse | sudo tee /etc/modules-load.d/cuse.conf
 
 # And reload the udev rules (or reboot):
 sudo udevadm control --reload-rules
@@ -128,6 +138,9 @@ systemctl start mhuxd
 If you compiled mhuxd yourself, it can be started "manually" on the command line. 
 As described in the compile section, mhuxd should run under account mhuxd:
 ```bash
+
+# make sure, kernel module cuse is loaded:
+sudo modprobe cuse
 
 # Start mhuxd in foreground, output goes to the terminal, not the log file.
 # Terminate with Ctrl-C:
