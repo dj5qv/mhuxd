@@ -403,7 +403,7 @@ int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg)
 	// Winkey config
 	if((mhi->flags & MHF_HAS_WINKEY)) {
 		if(!dev->wkman) {
-			dev->wkman = wkm_create(app_ctx_get_loop(cfgmgr->app_ctx), dev);
+			dev->wkman = wkm_create(cfgmgr->app_ctx, dev);
 		}
 		err = hdf_get_node(knod, "winkey", &winkey_nod);
 		if(err != STATUS_OK) goto failed;
@@ -724,7 +724,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 		mhi = mhc_get_mhinfo(dev->ctl);
 
 		if((mhi->flags & MHF_HAS_WINKEY) && !dev->wkman)
-			dev->wkman = wkm_create(app_ctx_get_loop(cfgmgr->app_ctx), dev);
+			dev->wkman = wkm_create(cfgmgr->app_ctx, dev);
 		
 		if(dev->wkman) {
 			int werr,val;

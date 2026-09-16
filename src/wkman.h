@@ -1,6 +1,7 @@
 #ifndef WKMAN_H
 #define WKMAN_H 1
 
+struct app_ctx;
 struct device;
 struct wkman;
 struct cfg;
@@ -15,7 +16,7 @@ enum {
 
 typedef void (*wkm_completion_cb)(int result, void *user_data);
 
-struct wkman *wkm_create(struct ev_loop *loop, struct device *dev);
+struct wkman *wkm_create(struct app_ctx *ctx, struct device *dev);
 void wkm_destroy(struct wkman *wkman);
 int wkm_set_value(struct wkman *wkman, const char *key, uint8_t val);
 int wkm_foreach(struct wkman *wkman, int (*cb)(const char *key, int val, void *user_data), void *user_data);

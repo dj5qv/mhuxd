@@ -188,7 +188,7 @@ static int start_rig_mode_sync_clients(struct cfgmgrj *cfgmgrj, struct mh_contro
         cfg.auto_start = json_get_boolish(defs[i].obj, "auto_start", 0);
         cfg.rigctld_options = json_get_str_or(defs[i].obj, "rigctld_options", NULL);
 
-        struct rigctld_client *client = rigctld_client_create(cfgmgrj->loop, ctl, &cfg);
+        struct rigctld_client *client = rigctld_client_create(cfgmgrj->ctx, ctl, &cfg);
         if(!client) {
             warn("cfgmgrj: unable to create rigctld client for %s %s", serial,
                  defs[i].radio == 2 ? "r2" : "r1");
@@ -679,7 +679,7 @@ static int apply_winkey_from_json(struct cfgmgrj *cfgmgrj, struct device *dev, j
     if(!json_is_object(winkey_obj))
         return 0;
     if(!dev->wkman)
-        dev->wkman = wkm_create(cfgmgrj->loop, dev);
+        dev->wkman = wkm_create(cfgmgrj->ctx, dev);
     if(!dev->wkman)
         return -1;
 

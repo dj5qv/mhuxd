@@ -42,6 +42,8 @@ struct restapi {
 	struct http_handler *config_connector_handler;
 	struct http_handler *device_actions_handler;
 	struct http_handler *ws_handler;
+	eventbus_sub_t *keyer_state_sub;
+	eventbus_sub_t *keyer_mode_sub;
 	struct PGList ws_subscribers;
 	json_t *rigtypes;
 	json_t *devicetypes;
@@ -209,17 +211,6 @@ static void broadcast_event(struct restapi *api, const json_t *event) {
 	}
 
 	free(dump);
-}
-
-static void on_keyer_state_changed(const char *serial, int state, void *user_data) {
-	dbg0("%s() keyer state changed: %s", serial, mhc_state_str(state));
-	struct restapi *api = user_data;
-	json_t *event = json_object();
-	json_object_set_new(event, "type", json_string("status"));
-	json_object_set_new(event, "serial", json_string(serial));
-	json_object_set_new(event, "status", json_string(mhc_state_str(state)));
-	broadcast_event(api, event);
-	json_decref(event);
 }
 
 void ev_keyer_state_cb(enum app_event_type type, const void *data, void *user_data) {
@@ -1069,13 +1060,8 @@ struct restapi *restapi_create(struct app_ctx *ctx, struct http_server *hs, stru
         goto fail;
     }
 
-	struct device *dev;
-	PG_SCANLIST(app_ctx_get_device_list(api->ctx), dev) {
-		mhc_add_keyer_state_changed_cb(dev->ctl, on_keyer_state_changed, api);
-	}
-
-	eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_STATE, ev_keyer_state_cb, api);	
-	eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_MODE,  ev_keyer_mode_cb, api);
+	api->keyer_state_sub = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_STATE, ev_keyer_state_cb, api);
+	api->keyer_mode_sub  = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_MODE,  ev_keyer_mode_cb, api);
 
     return api;
 
@@ -1111,6 +1097,15 @@ fail:
 void restapi_shutdown(struct restapi *api) {
 	if(!api)
 		return;
+
+	if(api->keyer_state_sub) {
+		eventbus_unsubscribe(api->keyer_state_sub);
+		api->keyer_state_sub = NULL;
+	}
+	if(api->keyer_mode_sub) {
+		eventbus_unsubscribe(api->keyer_mode_sub);
+		api->keyer_mode_sub = NULL;
+	}
 
 	struct ws_subscriber *wsub;
 	while((wsub = (void*)PG_FIRSTENTRY(&api->ws_subscribers))) {

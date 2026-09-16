@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-struct ev_loop;
+struct app_ctx;
 struct mh_control;
 
 struct rigctld_client;
@@ -29,7 +29,7 @@ struct rigctld_client_cfg {
 	const char *rigctld_options;
 };
 
-struct rigctld_client *rigctld_client_create(struct ev_loop *loop, struct mh_control *ctl,
+struct rigctld_client *rigctld_client_create(struct app_ctx *ctx, struct mh_control *ctl,
 					     const struct rigctld_client_cfg *cfg);
 void rigctld_client_destroy(struct rigctld_client *client);
 

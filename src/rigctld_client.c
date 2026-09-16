@@ -20,8 +20,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "rigctld_client.h"
+#include "app_ctx.h"
 #include "mhcontrol.h"
 #include "mhinfo.h"
+#include "eventbus.h"
+#include "events.h"
 #include "util.h"
 #include "logger.h"
 
@@ -86,7 +89,7 @@ struct rigctld_client {
 	ev_timer poll_timer;
 	ev_timer op_timeout_timer;
 	ev_io io_w;
-	struct mhc_keyer_state_callback *kscb;
+	eventbus_sub_t *kscb;
 };
 
 static const char *radio_str(uint8_t radio) {
@@ -831,16 +834,18 @@ static void rigcl_poll_cb(struct ev_loop *loop, struct ev_timer *w, int revents)
 	rigcl_start_request(client);
 }
 
-static void rigcl_keyer_state_changed_cb(const char *serial, int state, void *user_data) {
+static void rigcl_keyer_state_changed_cb(enum app_event_type type, const void *data, void *user_data) {
     struct rigctld_client *client = user_data;
-	if(!client)
+	const struct ev_keyer_state *ev = data;
+
+	if(!client || type != EV_KEYER_STATE || !ev)
 		return;
     dbg1("%s for %s", __func__, client->serial);
 
-    if(serial && strcmp(serial, client->serial))
+    if(ev->serial && strcmp(ev->serial, client->serial))
 		return;
 
-	if(state == MHC_KEYER_STATE_ONLINE) {
+	if(ev->state == MHC_KEYER_STATE_ONLINE) {
 		rigcl_start(client);
 		return;
 	}
@@ -848,16 +853,16 @@ static void rigcl_keyer_state_changed_cb(const char *serial, int state, void *us
 	rigcl_stop(client);
 }
 
-struct rigctld_client *rigctld_client_create(struct ev_loop *loop, struct mh_control *ctl,
+struct rigctld_client *rigctld_client_create(struct app_ctx *ctx, struct mh_control *ctl,
 					     const struct rigctld_client_cfg *cfg) {
 
     dbg1("%s for %s", __func__, cfg->serial);
 
-    if(!loop || !ctl || !cfg || !cfg->serial || !cfg->serial[0])
+    if(!ctx || !ctl || !cfg || !cfg->serial || !cfg->serial[0])
 		return NULL;
 
 	struct rigctld_client *client = w_calloc(1, sizeof(*client));
-	client->loop = loop;
+	client->loop = app_ctx_get_loop(ctx);
 	client->ctl = ctl;
 	client->serial = w_strdup(cfg->serial);
 	client->radio = cfg->radio == 2 ? 2 : 1;
@@ -888,7 +893,7 @@ struct rigctld_client *rigctld_client_create(struct ev_loop *loop, struct mh_con
 	ev_io_init(&client->io_w, rigcl_io_cb, -1, EV_WRITE);
 	client->io_w.data = client;
 
-	client->kscb = mhc_add_keyer_state_changed_cb(ctl, rigcl_keyer_state_changed_cb, client);
+	client->kscb = eventbus_subscribe(app_ctx_get_eventbus(ctx), EV_KEYER_STATE, rigcl_keyer_state_changed_cb, client);
 	if(client->enabled && mhc_is_online(ctl))
 		rigcl_start(client);
 
@@ -910,7 +915,7 @@ void rigctld_client_destroy(struct rigctld_client *client) {
 
 	rigcl_stop(client);
 	if(client->kscb)
-		mhc_rem_keyer_state_changed_cb(client->ctl, client->kscb);
+		eventbus_unsubscribe(client->kscb);
 
 	if(client->auto_start && child_pid > 0)
 		rigcl_ensure_dead(client->serial, child_pid);
