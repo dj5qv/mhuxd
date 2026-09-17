@@ -864,7 +864,7 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 		break;
 
 	case TCFLSH:
-		switch((int)(long)in_buf) {
+		switch((int)(long)arg) {
 		case TCIFLUSH:
 			buf_reset(&vs->buf_out);
 			break;
@@ -911,9 +911,9 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 		break;
 
 	case TIOCGICOUNT:
-		if(!in_bufsz) {
+		if(!out_bufsz) {
 			struct iovec iov = { arg, sizeof(struct serial_icounter_struct) };
-			fuse_reply_ioctl_retry(req, &iov, 1, NULL, 0);
+			fuse_reply_ioctl_retry(req, NULL, 0, &iov, 1);
 		} else {
 			dbg1("TIOCGICOUNT");
 			fuse_reply_ioctl(req, 0, &vs->sis, sizeof(struct serial_icounter_struct));
