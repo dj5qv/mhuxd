@@ -77,7 +77,8 @@ struct vsp_session {
 	fuse_req_t pending_in_req;
 	size_t pending_in_size;
 	size_t pending_in_processed;
-	const char *pending_in_buf;
+	size_t pending_in_buf_capacity;
+	char *pending_in_buf;
 
 	fuse_req_t pending_out_req;
 	size_t pending_out_size;
@@ -102,17 +103,17 @@ static struct vsp_session *find_vs(struct vsp *vsp, int id) {
 
 #define RTS_DTR (TIOCM_RTS|TIOCM_DTR)
 
-static int vsp_is_terminal(const struct vsp *vsp) {
+static int is_terminal(const struct vsp *vsp) {
 	return vsp->state == MHUXD_IO_FAILED || vsp->state == MHUXD_IO_CLOSED;
 }
 
-static void vsp_dbg_terminal_cb(struct vsp *vsp, const char *cb_name) {
+static void dbg_terminal_cb(struct vsp *vsp, const char *cb_name) {
 	vsp->dbg_cb_after_terminal++;
 	dbg0("%s callback %s after terminal state %s (count=%u)",
 	     vsp->devname, cb_name, io_state_to_str(vsp->state), vsp->dbg_cb_after_terminal);
 }
 
-static void vsp_set_state(struct vsp *vsp, enum mhuxd_io_state state) {
+static void set_state(struct vsp *vsp, enum mhuxd_io_state state) {
 	if(vsp->state == state)
 		return;
 	if(!io_state_transition(&vsp->state, state)) {
@@ -121,8 +122,8 @@ static void vsp_set_state(struct vsp *vsp, enum mhuxd_io_state state) {
 	}
 }
 
-static void vsp_watch_start(struct vsp *vsp, ev_io *watcher) {
-	if(vsp_is_terminal(vsp)) {
+static void watch_start(struct vsp *vsp, ev_io *watcher) {
+	if(is_terminal(vsp)) {
 		dbg1("%s refusing watcher start in terminal state %s",
 		     vsp->devname, io_state_to_str(vsp->state));
 		return;
@@ -136,30 +137,30 @@ static void vsp_watch_start(struct vsp *vsp, ev_io *watcher) {
 	ev_io_start(vsp->loop, watcher);
 }
 
-static void vsp_watch_stop(struct vsp *vsp, ev_io *watcher) {
+static void watch_stop(struct vsp *vsp, ev_io *watcher) {
 	ev_io_stop(vsp->loop, watcher);
 }
 
-static void vsp_watch_stop_all(struct vsp *vsp) {
-	vsp_watch_stop(vsp, &vsp->w_chan_in);
-	vsp_watch_stop(vsp, &vsp->w_data_in);
-	vsp_watch_stop(vsp, &vsp->w_data_out);
+static void watch_stop_all(struct vsp *vsp) {
+	watch_stop(vsp, &vsp->w_chan_in);
+	watch_stop(vsp, &vsp->w_data_in);
+	watch_stop(vsp, &vsp->w_data_out);
 }
 
-static void vsp_close_endpoints(struct vsp *vsp) {
+static void close_endpoints(struct vsp *vsp) {
 	if(vsp->fd_ptt == vsp->fd_data)
 		vsp->fd_ptt = -1;
 	fd_close(&vsp->fd_data);
 	fd_close(&vsp->fd_ptt);
 }
 
-static void vsp_fail(struct vsp *vsp, int errnum, const char *msg) {
-	if(vsp_is_terminal(vsp))
+static void fail(struct vsp *vsp, int errnum, const char *msg) {
+	if(is_terminal(vsp))
 		return;
 
-	vsp_set_state(vsp, MHUXD_IO_FAILED);
-	vsp_watch_stop_all(vsp);
-	vsp_close_endpoints(vsp);
+	set_state(vsp, MHUXD_IO_FAILED);
+	watch_stop_all(vsp);
+	close_endpoints(vsp);
 	if(vsp->se)
 		fuse_session_exit(vsp->se);
 
@@ -218,7 +219,7 @@ static int check_cuse_dev(const char *devname) {
 
 static int set_bits(struct vsp_session *vs, int bits) {
 	struct vsp *vsp = vs->vsp;
-	if(vsp_is_terminal(vsp))
+	if(is_terminal(vsp))
 		return -1;
 
 	if(bits == vsp->mbits)
@@ -262,15 +263,15 @@ static void chan_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct vsp *vsp = w->data;
 	struct fuse_session *se = vsp->se;
 
-	if(vsp_is_terminal(vsp)) {
-		vsp_dbg_terminal_cb(vsp, __func__);
+	if(is_terminal(vsp)) {
+		dbg_terminal_cb(vsp, __func__);
 		return;
 	}
 
 	if(vsp->force_cuse_fail_once) {
 		vsp->force_cuse_fail_once = 0;
 		errno = EIO;
-		vsp_fail(vsp, errno, "cuse read error (fault injection)");
+		fail(vsp, errno, "cuse read error (fault injection)");
 		return;
 	}
 
@@ -289,7 +290,7 @@ static void chan_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		// We can provoke it for testing by setting the chan_buf_size to a small value and access
 		// the VSP.
 		(void)se;
-		vsp_fail(vsp, errno, "cuse read error");
+		fail(vsp, errno, "cuse read error");
 	}
 }
 
@@ -302,8 +303,8 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	int errsv = 0;
 	enum mhuxd_io_rw_result io_res;
 
-	if(vsp_is_terminal(vsp)) {
-		vsp_dbg_terminal_cb(vsp, __func__);
+	if(is_terminal(vsp)) {
+		dbg_terminal_cb(vsp, __func__);
 		return;
 	}
 
@@ -312,7 +313,7 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	do {
 		io_res = io_read_nonblock(w->fd, buf, sizeof(buf), &size, &errsv);
 		if(io_res == MHUXD_IO_RW_ERROR) {
-			vsp_fail(vsp, errsv, "error reading data from router");
+			fail(vsp, errsv, "error reading data from router");
 			break;
 		}
 
@@ -375,8 +376,8 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	int errsv = 0;
 	enum mhuxd_io_rw_result io_res;
 
-	if(vsp_is_terminal(vsp)) {
-		vsp_dbg_terminal_cb(vsp, __func__);
+	if(is_terminal(vsp)) {
+		dbg_terminal_cb(vsp, __func__);
 		return;
 	}
 
@@ -393,7 +394,7 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		}
 		if(io_res == MHUXD_IO_RW_ERROR) {
 			//FIXME: handle error.
-			vsp_fail(vsp, errsv, "error writing data to router");
+			fail(vsp, errsv, "error writing data to router");
 			return;
 		}
 		if(io_res == MHUXD_IO_RW_EOF)
@@ -428,7 +429,6 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 					fuse_reply_write(vs->pending_in_req, vs->pending_in_size);
 					vs->pending_in_size = 0;
 					vs->pending_in_req = NULL;
-					vs->pending_in_buf = NULL;
 				}
 			}
 		}
@@ -438,7 +438,7 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	}
 
 	if(!need_to_write)
-		vsp_watch_stop(vsp, &vsp->w_data_out);
+		watch_stop(vsp, &vsp->w_data_out);
 }
 
 static int16_t get_free_session_id(struct vsp *vsp) {
@@ -526,6 +526,9 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 	if(vs->pending_out_buf)
 		free(vs->pending_out_buf);
 
+	if(vs->pending_in_buf)
+		free(vs->pending_in_buf);
+
 	free_session_id(vsp, vs->id);
 	vsp->open_cnt--;
 	PG_Remove(&vs->node);
@@ -549,6 +552,7 @@ static void interrupt_func(fuse_req_t req, void *data) {
 		fuse_reply_err(vs->pending_in_req, EINTR);
 		vs->pending_in_req = NULL;
 		vs->pending_in_size = 0;
+		vs->pending_in_processed = 0;
 	}
 	if(vs->pending_out_req) {
 		fuse_reply_err(vs->pending_out_req, EINTR);
@@ -595,8 +599,6 @@ static void dv_read(fuse_req_t req, size_t size, off_t off,
 		memcpy(vs->pending_out_buf, b->data + b->rpos, b->size - b->rpos);
 		vs->pending_out_processed = b->size - b->rpos;
 		buf_reset(b);
-
-
 		fuse_req_interrupt_func(req, interrupt_func, vs);
 		return;
 	}
@@ -638,11 +640,21 @@ static void dv_write(fuse_req_t req, const char *buf, size_t size,
 	struct buffer *b = &vs->buf_in;
 
 	if(!(fi->flags & O_NONBLOCK) && size > buf_size_avail(b)) {
+		// Blocking write request. Since request size may exceed the
+		// size of our struct buffer use a separate dynamic buffer.
+		// Also buf is only valid within this callback.
 		vs->pending_in_req = req;
 		vs->pending_in_size = size;
-		vs->pending_in_buf = buf;
+		if(vs->pending_in_buf_capacity < size) {
+			if(vs->pending_in_buf)
+				free(vs->pending_in_buf);
+			vs->pending_in_buf = w_malloc(size);
+			vs->pending_in_buf_capacity = size;
+		}
+
+		memcpy(vs->pending_in_buf, buf, size);
 		vs->pending_in_processed = buf_append(b, (uint8_t*)buf, buf_size_avail(b));
-		vsp_watch_start(vsp, &vsp->w_data_out);
+		watch_start(vsp, &vsp->w_data_out);
 		fuse_req_interrupt_func(req, interrupt_func, vs);
 		return;
 	}
@@ -651,7 +663,7 @@ static void dv_write(fuse_req_t req, const char *buf, size_t size,
 		size = buf_size_avail(b);
 
 	buf_append(b, (uint8_t*)buf, size);
-	vsp_watch_start(vsp, &vsp->w_data_out);
+	watch_start(vsp, &vsp->w_data_out);
 
 out:
 	if(!err)
@@ -1055,8 +1067,8 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 	vsp->w_data_out.data = vsp;
 	vsp->w_chan_in.data = vsp;
 
-	vsp_watch_start(vsp, &vsp->w_chan_in);
-	vsp_watch_start(vsp, &vsp->w_data_in);
+	watch_start(vsp, &vsp->w_chan_in);
+	watch_start(vsp, &vsp->w_data_in);
 
 	info("%s created", vsp->devname);
 
@@ -1079,9 +1091,9 @@ void vsp_destroy(struct vsp *vsp) {
 
 	dbg1("%s()", __func__);
 
-	vsp_set_state(vsp, MHUXD_IO_CLOSED);
+	set_state(vsp, MHUXD_IO_CLOSED);
 
-        while((vs = (void*)PG_FIRSTENTRY(&vsp->session_list))) {
+	while((vs = (void*)PG_FIRSTENTRY(&vsp->session_list))) {
 		if(vs->ptt_status) {
 			uint8_t state = '0';
 			ssize_t res;
@@ -1099,12 +1111,15 @@ void vsp_destroy(struct vsp *vsp) {
 			fuse_reply_err(vs->pending_out_req, EINTR);
 		if(vs->pending_out_buf)
 			free(vs->pending_out_buf);
+		if(vs->pending_in_buf)
+			free(vs->pending_in_buf);
+
 		PG_Remove(&vs->node);
 		free(vs);
-        }
+	}
 
-	vsp_watch_stop_all(vsp);
-	vsp_close_endpoints(vsp);
+	watch_stop_all(vsp);
+	close_endpoints(vsp);
 
 	if(vsp->se)
 		fuse_session_destroy(vsp->se);
