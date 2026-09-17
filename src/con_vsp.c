@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -27,6 +27,8 @@
 #include "ptt_byte.h"
 
 #define MOD_ID "vsp"
+
+#define MAX_VSP_SESSIONS 128
 
 struct vsp {
 	/* Connector-owned endpoint from socketpair (connector side). */
@@ -58,14 +60,16 @@ struct vsp {
 	int force_cuse_fail_once;
 	unsigned int dbg_cb_after_terminal;
 	unsigned int dbg_watch_invalid_fd;
+	uint8_t session_ids[MAX_VSP_SESSIONS];
 };
 
 struct vsp_session {
 	struct PGNode node;
 	struct vsp *vsp;
 	struct fuse_pollhandle *ph;
-	int fd;
-	int fd_flags;
+	int16_t id;
+	int is_readable :1;
+
 	int client_pid;
 	struct buffer buf_out;  // VSP -> client app
 	struct buffer buf_in;   // client app -> VSP
@@ -87,10 +91,10 @@ struct vsp_session {
 };
 
 
-static struct vsp_session *find_vs(struct vsp *vsp, int fd) {
+static struct vsp_session *find_vs(struct vsp *vsp, int id) {
 	struct vsp_session *vs;
 	PG_SCANLIST(&vsp->session_list, vs) {
-		if(vs->fd == fd)
+		if(vs->id == id)
 			return vs;
 	}
 	return NULL;
@@ -320,7 +324,7 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		PG_SCANLIST(&vsp->session_list, vs) {
 			struct buffer *b = &vs->buf_out;
 
-			if(vs->fd_flags & O_WRONLY)
+			if( ! vs->is_readable)
 				continue;
 
 			avail = buf_size_avail(b);
@@ -437,29 +441,52 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		vsp_watch_stop(vsp, &vsp->w_data_out);
 }
 
+static int16_t get_free_session_id(struct vsp *vsp) {
+	int16_t i, id = -1;
+
+	for (i = 0; i < MAX_VSP_SESSIONS; i++) {
+		if(vsp->session_ids[i] == 0) {
+			vsp->session_ids[i] = 1;
+			id = i;
+			break;
+		}
+	}
+	return id;
+}
+
+static void free_session_id(struct vsp *vsp, int16_t id) {
+	if(vsp && id >= 0 && id < MAX_VSP_SESSIONS)
+		vsp->session_ids[id] = 0;
+}
+
 static void dv_open(fuse_req_t req, struct fuse_file_info *fi)
 {
-        struct vsp *vsp = fuse_req_userdata(req);
-        int err = 0;
-        info("%s req open", vsp->devname);
+	struct vsp *vsp = fuse_req_userdata(req);
+	int err = 0;
+	int16_t id;
+	info("%s req open", vsp->devname);
 
-	if(vsp->open_cnt >= vsp->max_con) {
-                warn("%s open by pid %d failed, maximum number of connections reached!", 
-		     vsp->devname, fuse_req_ctx(req)->pid);
-                err = EBUSY;
+	id = get_free_session_id(vsp);
+
+	if(vsp->open_cnt >= vsp->max_con || id == -1) {
+		warn("%s open by pid %d failed, maximum number of connections reached!", 
+		vsp->devname, fuse_req_ctx(req)->pid);
+		err = EBUSY;
+		if(id != -1)
+			free_session_id(vsp, id);
 		goto out;
 	}
 
 	vsp->open_cnt++;
 	struct vsp_session *vs = w_calloc(1, sizeof(*vs));
 	vs->vsp = vsp;
-	vs->fd = fi->fh;
-	vs->fd_flags = fi->flags;
+	fi->fh = id;
+	vs->id = id;
+	vs->is_readable = (fi->flags & O_ACCMODE) != O_WRONLY;
 	vs->client_pid = fuse_req_ctx(req)->pid;;
 
 	PG_AddTail(&vsp->session_list, &vs->node);
 
-	// ev_io_start(vsp->loop, &vsp->w_data_in);
  out:
         if(!err)
                 fuse_reply_open(req, fi);
@@ -499,6 +526,7 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 	if(vs->pending_out_buf)
 		free(vs->pending_out_buf);
 
+	free_session_id(vsp, vs->id);
 	vsp->open_cnt--;
 	PG_Remove(&vs->node);
 	if(vs->ph)
