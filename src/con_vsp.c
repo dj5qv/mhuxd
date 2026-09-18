@@ -881,33 +881,11 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 		break;
 
 	case TIOCMIWAIT:
-		warn("TIOCMIWAIT 1!");
-		if(!in_bufsz) {
-			struct iovec iov = { arg, sizeof(int) };
-			fuse_reply_ioctl_retry(req, &iov, 1, NULL, 0);
-		} else {
-			int arg = *((int*)in_buf);
-			warn("TIOCMIWAIT 2!");
-
-			if(arg & TIOCM_LE)
-				dbg1("TIOCMIWAIT / TIOCM_LE");
-			if(arg & TIOCM_RTS)
-				dbg1("TIOCMIWAIT / TIOCM_RTS");
-			if(arg & TIOCM_ST)
-				dbg1("TIOCMIWAIT / TIOCM_ST");
-			if(arg & TIOCM_SR)
-				dbg1("TIOCMIWAIT / TIOCM_SR");
-			if(arg & TIOCM_CTS)
-				dbg1("TIOCMIWAIT / TIOCM_CTS");
-			if(arg & TIOCM_CAR)
-				dbg1("TIOCMIWAIT / TIOCM_CAR");
-			if(arg & TIOCM_RNG)
-				dbg1("TIOCMIWAIT / TIOCM_RNG");
-			if(arg & TIOCM_DSR)
-				dbg1("TIOCMIWAIT / TIOCM_DSR");
-
-			fuse_reply_ioctl(req, 0, NULL, 0);
-		}
+		// Not supported. The argument is passed by value, so it is in arg, not in_buf.
+		// Implementing this would mean holding the request until a modem status line
+		// changes; replying success right away would make clients spin.
+		warn("%s TIOCMIWAIT (mask 0x%x) not supported", vsp->devname, (int)(long)arg);
+		fuse_reply_err(req, ENOTTY);
 		break;
 
 	case TIOCGICOUNT:
