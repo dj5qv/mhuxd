@@ -278,21 +278,36 @@ static void chan_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	dbg1("%s()", __func__);
 	
-        int res = 0;
-        struct fuse_chan *ch = fuse_session_next_chan(se, NULL);
+	int res = 0;
+	struct fuse_chan *ch = fuse_session_next_chan(se, NULL);
 
 	struct fuse_chan *tmpch = ch;
 	res = fuse_chan_recv(&tmpch, vsp->chan_buf, vsp->chan_buf_size);
-	if(res > 0)
-		fuse_session_process(se, vsp->chan_buf, res, tmpch);
 
-	if (res <= 0 && res != -EINTR) {
-		// Now this should normally never happen.
-		// We can provoke it for testing by setting the chan_buf_size to a small value and access
-		// the VSP.
-		(void)se;
-		fail(vsp, errno, "cuse read error");
+	if(res > 0) {
+		fuse_session_process(se, vsp->chan_buf, res, tmpch);
+		return;
 	}
+
+	if(res == 0) {
+		// The kernel aborted the connection (read() returned ENODEV) or somebody called
+		// fuse_session_exit(). Neither happens on our own request, the device is gone and
+		// the connector can no longer do its work. libfuse swallows the errno, so there is
+		// none to report. fuse_session_exited() stays true from now on, so every further
+		// read returns 0 immediately and the watchers have to be stopped here or we spin
+		// on a permanently ready fd.
+		fail(vsp, 0, "cuse session ended, device gone");
+		return;
+	}
+
+	if(res == -EINTR || res == -EAGAIN)
+		return;		// transient, ev will call us again
+
+	// Now this should normally never happen.
+	// We can provoke it for testing by setting the chan_buf_size to a small value and access
+	// the VSP.
+	// fuse_chan_recv() returns -errno, errno itself may already have been clobbered.
+	fail(vsp, -res, "cuse read error");
 }
 
 static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
@@ -1081,9 +1096,13 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 	return vsp;
 
  failed:
+	// Do not use cuse_lowlevel_teardown() here (or in vsp_destroy()). It calls
+	// fuse_remove_signal_handlers(), which resets SIGPIPE from SIG_IGN back to SIG_DFL
+	// because libfuse assumes it was the one that ignored it. We ignore SIGPIPE in main()
+	// on purpose, so the daemon would die on the next EPIPE. fuse_session_destroy() is
+	// the part we actually want.
 	if(vsp && vsp->se)
 			fuse_session_destroy(vsp->se);
-	//cuse_lowlevel_teardown(vsp->se);
 	if(vsp) {
 	if(vsp->devname)
 		free(vsp->devname);
