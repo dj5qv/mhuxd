@@ -315,7 +315,7 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct vsp *vsp = w->data;
 	struct vsp_session *vs;
 	uint8_t buf[1024];
-	ssize_t size, avail;
+	ssize_t size;
 	int errsv = 0;
 	enum mhuxd_io_rw_result io_res;
 
@@ -340,19 +340,25 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 		PG_SCANLIST(&vsp->session_list, vs) {
 			struct buffer *b = &vs->buf_out;
+			ssize_t avail, n = size;
 
 			if( ! vs->is_readable)
 				continue;
 
 			avail = buf_size_avail(b);
 
-			if(size > avail) {
+			// Keep this per session. Clamping the outer size would rob every
+			// session scanned after this one and end the read loop early.
+			if(n > avail) {
 				warn("%s not enough buffer space available (%zd/%zd) client pid %d",
-				     vsp->devname, size, avail, vs->client_pid);
-				size = avail;
+				     vsp->devname, n, avail, vs->client_pid);
+				// Same meaning as a tty driver that cannot push into the flip
+				// buffer: count the bytes dropped, TIOCGICOUNT reports them.
+				vs->sis.buf_overrun += n - avail;
+				n = avail;
 			}
 
-			buf_append(b, buf, size);
+			buf_append(b, buf, n);
 
 			if(vs->pending_out_req) {
 				size_t quanta = b->size - b->rpos;
@@ -377,7 +383,7 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 				vs->ph = NULL;
 			}
 
-			vs->sis.rx += size;
+			vs->sis.rx += n;
 		}
 
 	} while(size > 0);
