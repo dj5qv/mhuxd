@@ -383,6 +383,7 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	} while(size > 0);
 }
 
+// write data received from VSP client -> router.
 static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)loop; (void)revents;
 	struct vsp *vsp = w->data;
@@ -422,16 +423,9 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 			// If PTT channel, track PTT status
 			if(vsp->fd_data == vsp->fd_ptt) {
 				int i;
-				for(i = 0; i < (b->size - b->rpos); i++) {
-					switch( b->data[i]) {
-					case PTT_OFF_BYTE:
-						vs->ptt_status = 0;
-						break;
-					case PTT_ON_BYTE:
-						vs->ptt_status = 1;
-						break;
-					}
-				}
+				for(i = b->rpos; i < b->rpos + size; i++)
+					if(b->data[i] == PTT_ON_BYTE || b->data[i] == PTT_OFF_BYTE)
+						vs->ptt_status = b->data[i];
 			}
 
 			buf_consume(b, size);
@@ -532,8 +526,8 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 		goto out;
 	}
 
-	if(vs->ptt_status == 1) {
-		uint8_t state = '0';
+	if(vs->ptt_status == PTT_ON_BYTE) {
+		uint8_t state = PTT_OFF_BYTE;
 		ssize_t res;
 		int errsv = 0;
 		enum mhuxd_io_rw_result io_res = io_write_nonblock(vsp->fd_ptt, &state, 1, &res, &errsv);
@@ -1119,8 +1113,8 @@ void vsp_destroy(struct vsp *vsp) {
 	set_state(vsp, MHUXD_IO_CLOSED);
 
 	while((vs = (void*)PG_FIRSTENTRY(&vsp->session_list))) {
-		if(vs->ptt_status) {
-			uint8_t state = '0';
+		if(vs->ptt_status == PTT_ON_BYTE) {
+			uint8_t state = PTT_OFF_BYTE;
 			ssize_t res;
 			int errsv = 0;
 			enum mhuxd_io_rw_result io_res = io_write_nonblock(vsp->fd_ptt, &state, 1, &res, &errsv);
