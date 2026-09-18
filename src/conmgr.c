@@ -163,7 +163,9 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 	}
 
 	// create the data sockets
-	if(socketpair(AF_UNIX, SOCK_STREAM, 0, sodat)) {
+	// SOCK_CLOEXEC: keep the sockets out of child processes (rigctld), they would keep
+	// the router endpoint alive after the connector has been destroyed.
+	if(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sodat)) {
 		err_e(errno, "could not create data socket for %s!", type_str);
 		goto fail;
 	}
@@ -192,7 +194,7 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 			cspec.fd_ptt = cspec.fd_data;
 		} else {
 			if(ctr->ptt_channel != -1) {
-				if(socketpair(AF_UNIX, SOCK_STREAM, 0, soptt)) {
+				if(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, soptt)) {
 					err_e(errno, "could not create ptt socket for VSP!");
 					goto fail;
 				}

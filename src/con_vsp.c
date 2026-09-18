@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1050,6 +1051,14 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 	struct fuse_chan *ch = fuse_session_next_chan(vsp->se, NULL);
 	if(ch == NULL) {
 		err("could not obtain fuse channel!");
+		goto failed;
+	}
+
+	// libfuse opens /dev/cuse without O_CLOEXEC. Without this the channel fd is inherited
+	// by child processes (rigctld), which keeps the cuse device registered in the kernel
+	// after the connector has been destroyed.
+	if(fcntl(fuse_chan_fd(ch), F_SETFD, FD_CLOEXEC) == -1) {
+		err_e(errno, "could not set FD_CLOEXEC on cuse channel for %s!", vsp->devname);
 		goto failed;
 	}
 
