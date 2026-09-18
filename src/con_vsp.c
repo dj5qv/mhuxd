@@ -431,6 +431,13 @@ static void data_out_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 					vs->pending_in_req = NULL;
 				}
 			}
+
+			if(vs->ph && buf_size_avail(b)) {
+				fuse_lowlevel_notify_poll(vs->ph);
+				fuse_pollhandle_destroy(vs->ph);
+				vs->ph = NULL;
+			}
+
 		}
 
 		if(b->rpos < b->size)
@@ -685,6 +692,7 @@ static void dv_poll(fuse_req_t req, struct fuse_file_info *fi,
 	if(vs == NULL) {
 		err = EBADF;
 		err("attempt to poll a non-existent connection!");
+		fuse_pollhandle_destroy(ph);
 		goto out;
 	}
 
@@ -863,7 +871,9 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 		}
 		break;
 
-	case TCFLSH:
+	case TCFLSH: {
+		int was_full = (buf_size_avail(&vs->buf_in) == 0);
+
 		switch((int)(long)arg) {
 		case TCIFLUSH:
 			buf_reset(&vs->buf_out);
@@ -877,8 +887,17 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 			break;
 		}
 
+		// Flushing buf_in frees space. Wake up a client waiting for POLLOUT,
+		// data_out_cb won't run for a buffer that was emptied here.
+		if(was_full && buf_size_avail(&vs->buf_in) && vs->ph) {
+			fuse_lowlevel_notify_poll(vs->ph);
+			fuse_pollhandle_destroy(vs->ph);
+			vs->ph = NULL;
+		}
+
 		fuse_reply_ioctl(req, 0, NULL, 0);
 		break;
+	}
 
 	case TIOCMIWAIT:
 		// Not supported. The argument is passed by value, so it is in arg, not in_buf.
