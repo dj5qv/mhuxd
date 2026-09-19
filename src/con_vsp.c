@@ -611,6 +611,13 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 
 	free_session_id(vsp, vs->id);
 	vsp->open_cnt--;
+
+	// Last close. A real UART lowers DTR/RTS here when HUPCL is set, which is the
+	// kernel default. Clear the cached bits to match the line, or the
+	// next client's TIOCMGET would be told RTS/DTR is still asserted.
+	if(!vsp->open_cnt)
+		vsp->mbits &= ~RTS_DTR;
+
 	PG_Remove(&vs->node);
 	if(vs->ph)
 		fuse_pollhandle_destroy(vs->ph);

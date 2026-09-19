@@ -566,6 +566,26 @@ def t_ptt_reopen(h):
         os.close(fd)
 
 
+@test("modem_bits_clear_after_last_close", ptt="rts")
+def t_mbits_last_close(h):
+    """A real UART lowers DTR/RTS on last close (HUPCL). We always drop PTT
+    there, so the cached bits must go down too or TIOCMGET lies to the next
+    client about the state of the line."""
+    fd = h.open_client(nonblock=True)
+    set_modem_bits(fd, termios.TIOCM_RTS)
+    require(get_modem_bits(fd) & termios.TIOCM_RTS,
+            "TIOCMGET did not report RTS after TIOCMSET")
+    os.close(fd)
+
+    fd = h.open_client(nonblock=True)
+    try:
+        bits = get_modem_bits(fd)
+        require(not (bits & termios.TIOCM_RTS),
+                "TIOCMGET still reports RTS asserted after last close (0x%x)" % bits)
+    finally:
+        os.close(fd)
+
+
 @test("throughput_smoke")
 def t_throughput(h):
     """Push data through and report the rate. The connector drops on overflow
