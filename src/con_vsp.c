@@ -225,8 +225,6 @@ static int set_bits(struct vsp_session *vs, int bits) {
 	if(is_terminal(vsp))
 		return -1;
 
-	if(bits == vsp->mbits)
-                return 0;
 	if(!vsp->rts_is_ptt && !vsp->dtr_is_ptt)
 		return 0;
 
