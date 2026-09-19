@@ -33,6 +33,7 @@
  *   quit                 destroy the vsp and exit             -> ok
  *
  * usage: vsp_harness <devname> [maxcon]
+ * env:   VSP_HARNESS_PTT=rts|dtr|both, VSP_HARNESS_LOG, VSP_HARNESS_LOGLEVEL
  */
 
 #include <stdio.h>
@@ -443,6 +444,17 @@ int main(int argc, char **argv) {
 	cspec.fd_ptt = sv[1];
 	cspec.vsp.devname = argv[1];
 	cspec.vsp.maxcon = argc > 2 ? atoi(argv[2]) : 4;
+
+	/* VSP_HARNESS_PTT=rts|dtr|both maps the modem lines to PTT, so the PTT byte
+	 * path can be tested. fd_ptt aliases fd_data here, as it does for a connector
+	 * whose channel is its own PTT channel. */
+	{
+		const char *ptt = getenv("VSP_HARNESS_PTT");
+		if(ptt) {
+			cspec.vsp.ptt_rts = !strcmp(ptt, "rts") || !strcmp(ptt, "both");
+			cspec.vsp.ptt_dtr = !strcmp(ptt, "dtr") || !strcmp(ptt, "both");
+		}
+	}
 
 	h.vsp = vsp_create(&cspec);
 	if(!h.vsp) {

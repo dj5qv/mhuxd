@@ -100,10 +100,11 @@ def preflight():
     return None
 
 
-def test(name, known=None):
-    """Register a test. known="#12" marks a known-failing finding."""
+def test(name, known=None, ptt=None):
+    """Register a test. known="#12" marks a known-failing finding, ptt maps the
+    modem lines to PTT for that test's harness."""
     def deco(fn):
-        TESTS.append((name, fn, known))
+        TESTS.append((name, fn, known, ptt))
         return fn
     return deco
 
@@ -122,13 +123,15 @@ class Harness:
 
     _seq = 0
 
-    def __init__(self, maxcon=4, verbose=False):
+    def __init__(self, maxcon=4, verbose=False, ptt=None):
         Harness._seq += 1
         self.name = "vsptest%d_%d" % (os.getpid(), Harness._seq)
         self.path = os.path.join(DEVDIR, self.name)
         self.verbose = verbose
         self.logfile = "/tmp/vsp_harness_%s.log" % self.name
         env = dict(os.environ, VSP_HARNESS_LOG=self.logfile)
+        if ptt:
+            env["VSP_HARNESS_PTT"] = ptt
         self.proc = subprocess.Popen(
             [HARNESS, self.name, str(maxcon)],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -293,6 +296,14 @@ class BackgroundRead:
     def data(self):
         require("err" not in self.box, "read failed: %s" % self.box.get("err"))
         return self.box.get("data")
+
+
+def set_modem_bits(fd, bits):
+    fcntl.ioctl(fd, termios.TIOCMSET, struct.pack("i", bits))
+
+
+def get_modem_bits(fd):
+    return struct.unpack("i", fcntl.ioctl(fd, termios.TIOCMGET, struct.pack("i", 0)))[0]
 
 
 def set_vmin_vtime(fd, vmin, vtime):
@@ -533,6 +544,28 @@ def t_overrun(h):
         os.close(fd)
 
 
+@test("ptt_rekeys_after_reopen", ptt="rts")
+def t_ptt_reopen(h):
+    """Closing with RTS still asserted sends PTT off but leaves vsp->mbits
+    claiming RTS. The next client asserting RTS must still key the rig."""
+    PTT_ON, PTT_OFF = b"\x01", b"\x00"
+
+    fd = h.open_client(nonblock=True)
+    set_modem_bits(fd, termios.TIOCM_RTS)
+    require(h.recv_until(1) == PTT_ON, "RTS did not key PTT")
+    os.close(fd)
+    require(h.recv_until(1) == PTT_OFF, "close did not send PTT off")
+
+    fd = h.open_client(nonblock=True)
+    try:
+        set_modem_bits(fd, termios.TIOCM_RTS)
+        got = h.recv_until(1)
+        require(got == PTT_ON,
+                "PTT did not key again after reopen, router saw %r" % got)
+    finally:
+        os.close(fd)
+
+
 @test("throughput_smoke")
 def t_throughput(h):
     """Push data through and report the rate. The connector drops on overflow
@@ -588,7 +621,7 @@ def main():
 
     failed, known_failed, passed = [], [], 0
 
-    for name, fn, known in TESTS:
+    for name, fn, known, ptt in TESTS:
         if args.only and args.only not in name:
             continue
         tag = " [%s]" % known if known else ""
@@ -596,7 +629,7 @@ def main():
         h = None
         try:
             signal.alarm(WATCHDOG)
-            h = Harness(verbose=args.verbose)
+            h = Harness(verbose=args.verbose, ptt=ptt)
             fn(h)
             signal.alarm(0)
             print("PASS" + (" (known issue is fixed)" if known else ""))
