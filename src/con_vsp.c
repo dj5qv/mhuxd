@@ -84,8 +84,10 @@ struct vsp_session {
 	fuse_req_t pending_out_req;
 	size_t pending_out_size;
 	size_t pending_out_processed;
+	size_t pending_out_want;	/* bytes needed before the read can be answered */
 	size_t pending_out_buf_capacity;
 	char *pending_out_buf;
+	ev_timer w_read_timer;		/* VTIME */
 
 	struct serial_icounter_struct sis;
 
@@ -259,6 +261,57 @@ static int set_bits(struct vsp_session *vs, int bits) {
 }
 
 
+/*
+ * VMIN/VTIME, POSIX non canonical mode. ICANON is ignored, this is a raw port.
+ *
+ *   VMIN 0, VTIME 0    return at once with whatever is there, 0 bytes is a valid
+ *                      answer and does not mean EOF
+ *   VMIN >0, VTIME 0   wait for VMIN bytes (or for the requested size, whichever
+ *                      is smaller), no timer
+ *   VMIN 0, VTIME >0   return on the first byte, or empty after VTIME deciseconds
+ *   VMIN >0, VTIME >0  interbyte timer: starts with the first byte, restarts with
+ *                      every byte, returns on VMIN bytes or on expiry
+ */
+
+static void read_timer_stop(struct vsp_session *vs) {
+	ev_timer_stop(vs->vsp->loop, &vs->w_read_timer);
+}
+
+/* (Re)start the timer. Does nothing when VTIME is 0, so callers do not have to
+ * care which of the four cases they are in. */
+static void read_timer_arm(struct vsp_session *vs) {
+	unsigned vtime = vs->vsp->termios.c_cc[VTIME];
+
+	if(!vtime)
+		return;
+	vs->w_read_timer.repeat = (ev_tstamp)vtime / 10.;
+	ev_timer_again(vs->vsp->loop, &vs->w_read_timer);
+}
+
+/* Answer a held read with what has been collected so far. That may be fewer
+ * bytes than were asked for, and on a VTIME expiry it may be none at all. */
+static void reply_pending_read(struct vsp_session *vs) {
+	read_timer_stop(vs);
+	fuse_reply_buf(vs->pending_out_req, vs->pending_out_buf, vs->pending_out_processed);
+	vs->pending_out_req = NULL;
+	vs->pending_out_size = 0;
+	vs->pending_out_processed = 0;
+	vs->pending_out_want = 0;
+}
+
+static void read_timer_cb(struct ev_loop *loop, ev_timer *w, int revents) {
+	(void)loop; (void)revents;
+	struct vsp_session *vs = w->data;
+
+	if(!vs->pending_out_req) {
+		read_timer_stop(vs);
+		return;
+	}
+	dbg1("%s() %s read timeout, returning %zu bytes", __func__,
+	     vs->vsp->devname, vs->pending_out_processed);
+	reply_pending_read(vs);
+}
+
 static void chan_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)loop; (void)revents;
 	struct vsp *vsp = w->data;
@@ -369,11 +422,12 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 				       b->data + b->rpos, quanta);
 				buf_consume(b, quanta);
 				vs->pending_out_processed += quanta;
-				if(vs->pending_out_processed == vs->pending_out_size) {
-					fuse_reply_buf(vs->pending_out_req, vs->pending_out_buf, vs->pending_out_size);
-					vs->pending_out_req = NULL;
-					vs->pending_out_size = 0;
-					vs->pending_out_processed = 0;
+				if(vs->pending_out_processed >= vs->pending_out_want ||
+				   vs->pending_out_processed == vs->pending_out_size) {
+					reply_pending_read(vs);
+				} else if(quanta) {
+					// VMIN not reached yet, restart the interbyte timer
+					read_timer_arm(vs);
 				}
 			}
 
@@ -506,6 +560,8 @@ static void dv_open(fuse_req_t req, struct fuse_file_info *fi)
 	fi->fh = id;
 	vs->id = id;
 	vs->is_readable = (fi->flags & O_ACCMODE) != O_WRONLY;
+	ev_timer_init(&vs->w_read_timer, read_timer_cb, 0., 0.);
+	vs->w_read_timer.data = vs;
 	vs->client_pid = fuse_req_ctx(req)->pid;;
 
 	PG_AddTail(&vsp->session_list, &vs->node);
@@ -540,6 +596,9 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 		if(io_res != MHUXD_IO_RW_PROGRESS || res != 1)
 			err("%s() %s could not send PTT off", __func__, vsp->devname);
 	}
+
+	// The timer holds a pointer to vs, it must not outlive the session.
+	read_timer_stop(vs);
 
 	if(vs->pending_in_req)
 		fuse_reply_err(vs->pending_in_req, EINTR);
@@ -578,10 +637,12 @@ static void interrupt_func(fuse_req_t req, void *data) {
 		vs->pending_in_processed = 0;
 	}
 	if(vs->pending_out_req) {
+		read_timer_stop(vs);
 		fuse_reply_err(vs->pending_out_req, EINTR);
 		vs->pending_out_req = NULL;
 		vs->pending_out_size = 0;
 		vs->pending_out_processed = 0;
+		vs->pending_out_want = 0;
 	}
 }
 
@@ -607,27 +668,56 @@ static void dv_read(fuse_req_t req, size_t size, off_t off,
 	}
 
 	struct buffer *b = &vs->buf_out;
+	size_t avail = b->size - b->rpos;
+	unsigned vmin = vsp->termios.c_cc[VMIN];
+	unsigned vtime = vsp->termios.c_cc[VTIME];
+	size_t want;
 
-	if(!(fi->flags & O_NONBLOCK) && size > (size_t)(b->size - b->rpos)) {
-		// Blocking read request. Since request size may exceed the
-		// size of our struct buffer use a separate dynamic buffer.
-		vs->pending_out_req = req;
-		vs->pending_out_size = size;
-		if(vs->pending_out_buf_capacity < size) {
-			if(vs->pending_out_buf)
-				free(vs->pending_out_buf);
-			vs->pending_out_buf = w_malloc(size);
-			vs->pending_out_buf_capacity = size;
-		}
-		memcpy(vs->pending_out_buf, b->data + b->rpos, b->size - b->rpos);
-		vs->pending_out_processed = b->size - b->rpos;
-		buf_reset(b);
-		fuse_req_interrupt_func(req, interrupt_func, vs);
-		return;
+	// How much has to be there before this read can be answered. O_NONBLOCK
+	// overrides VMIN/VTIME: take anything, but never wait.
+	if(fi->flags & O_NONBLOCK)
+		want = 1;
+	else if(vmin == 0)
+		want = vtime ? 1 : 0;
+	else
+		want = vmin;
+	if(want > size)
+		want = size;	// cannot deliver more than asked; size 0 returns 0
+
+	if(avail >= want) {
+		if(size > avail)
+			size = avail;
+		goto out;
 	}
 
-	if(size > (size_t)(b->size - b->rpos))
-		size = b->size - b->rpos;
+	// Nothing to give and the client does not want to wait. Replying with zero
+	// bytes would look like EOF and make the application close the port.
+	if(fi->flags & O_NONBLOCK) {
+		err = EAGAIN;
+		goto out;
+	}
+
+	// Hold the request. The requested size may exceed our struct buffer, so
+	// collect into a separate dynamic buffer until VMIN or VTIME says stop.
+	vs->pending_out_req = req;
+	vs->pending_out_size = size;
+	vs->pending_out_want = want;
+	if(vs->pending_out_buf_capacity < size) {
+		if(vs->pending_out_buf)
+			free(vs->pending_out_buf);
+		vs->pending_out_buf = w_malloc(size);
+		vs->pending_out_buf_capacity = size;
+	}
+	memcpy(vs->pending_out_buf, b->data + b->rpos, avail);
+	vs->pending_out_processed = avail;
+	buf_reset(b);
+
+	// With VMIN > 0 the interbyte timer only starts once a byte has arrived.
+	if(vmin == 0 || avail)
+		read_timer_arm(vs);
+
+	fuse_req_interrupt_func(req, interrupt_func, vs);
+	return;
 out:
 	if(!err) {
 		fuse_reply_buf(req, (char *)(b->data + b->rpos), size);
@@ -661,6 +751,13 @@ static void dv_write(fuse_req_t req, const char *buf, size_t size,
 	}
 
 	struct buffer *b = &vs->buf_in;
+
+	// No room and the client does not want to wait. Replying 0 would make the
+	// application spin, a short write is only legal if we accept something.
+	if((fi->flags & O_NONBLOCK) && !buf_size_avail(b) && size) {
+		err = EAGAIN;
+		goto out;
+	}
 
 	if(!(fi->flags & O_NONBLOCK) && size > buf_size_avail(b)) {
 		// Blocking write request. Since request size may exceed the
@@ -1032,6 +1129,11 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 	vsp->devname = w_strdup(p);
 	PG_NewList(&vsp->session_list);
 	vsp->termios.c_cflag = B19200 | CS8 | CLOCAL | CREAD | CRTSCTS;
+	// What the kernel gives a fresh port (INIT_C_CC): return as soon as one byte
+	// is there. Leaving c_cc zeroed would mean VMIN 0, which turns every blocking
+	// read into a poll and makes applications spin.
+	vsp->termios.c_cc[VMIN] = 1;
+	vsp->termios.c_cc[VTIME] = 0;
 	memcpy(&vsp->termios2, &vsp->termios, sizeof(vsp->termios));
 	vsp->termios2.c_ispeed = 19200;
 	vsp->termios2.c_ospeed = 19200;
@@ -1127,6 +1229,8 @@ void vsp_destroy(struct vsp *vsp) {
 			if(io_res != MHUXD_IO_RW_PROGRESS || res != 1)
 				err("%s() %s could not send PTT off", __func__, vsp->devname);
 		}
+
+		read_timer_stop(vs);
 
 		if(vs->ph)
 			fuse_pollhandle_destroy(vs->ph);
