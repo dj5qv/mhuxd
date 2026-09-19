@@ -36,7 +36,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from run_tests import Harness, Failure, icount, CUSE, HARNESS  # noqa: E402
+from run_tests import Harness, Failure, icount, preflight  # noqa: E402
 
 BAUDS = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600]
 
@@ -172,12 +172,9 @@ def main():
                          "model a busy application (default 0)")
     args = ap.parse_args()
 
-    if not os.path.exists(HARNESS):
-        print("SKIP: %s not built, run 'make -C tests/vsp' first" % HARNESS)
-        return 77
-    if not os.access(CUSE, os.R_OK | os.W_OK):
-        print("SKIP: no access to %s, run as root" % CUSE)
-        return 77
+    rc = preflight()
+    if rc is not None:
+        return rc
 
     rates = [b for b in BAUDS if b <= args.max_baud]
 

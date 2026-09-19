@@ -30,6 +30,7 @@ import signal
 import subprocess
 import struct
 import sys
+import termios
 import threading
 import time
 
@@ -54,7 +55,49 @@ def icount(fd):
     vals = struct.unpack("20i", raw)
     return dict(zip(ICOUNT_FIELDS, vals))
 
+# The harness links these objects at build time, so a change to con_vsp.c that
+# is not followed by a relink means the suite silently tests the old code.
+OBJDIR = os.path.normpath(os.path.join(HERE, "..", "..", "build", "src"))
+OBJS = ["mhuxd-con_vsp.o", "mhuxd-buffer.o", "mhuxd-pglist.o",
+        "mhuxd-util.o", "mhuxd-logger.o", "mhuxd-linux_termios.o"]
+
 TESTS = []
+
+
+def stale_objects():
+    """Objects newer than the harness binary."""
+    try:
+        harness_mtime = os.path.getmtime(HARNESS)
+    except OSError:
+        return []
+    stale = []
+    for name in OBJS:
+        try:
+            if os.path.getmtime(os.path.join(OBJDIR, name)) > harness_mtime:
+                stale.append(name)
+        except OSError:
+            pass
+    return stale
+
+
+def preflight():
+    """Returns an exit code to bail out with, or None to continue."""
+    if not os.path.exists(HARNESS):
+        print("SKIP: %s not built, run 'make -C tests/vsp' first" % HARNESS)
+        return 77
+    stale = stale_objects()
+    if stale:
+        print("ERROR: vsp_harness is older than %s" % ", ".join(stale))
+        print("       It would test the previously built code. Run:")
+        print("           make -C tests/vsp")
+        return 1
+    if not os.path.exists(CUSE):
+        print("SKIP: %s missing, try 'modprobe cuse'" % CUSE)
+        return 77
+    if not os.access(CUSE, os.R_OK | os.W_OK):
+        print("SKIP: no access to %s, run as root" % CUSE)
+        return 77
+    return None
 
 
 def test(name, known=None):
@@ -228,6 +271,42 @@ def read_deadline(fd, size, timeout=TIMEOUT):
     return box.get("data"), box.get("err"), False
 
 
+class BackgroundRead:
+    """A blocking read running in a thread, so a test can check that it is
+    still waiting, feed it more, and then check what came back."""
+
+    def __init__(self, fd, size):
+        self.box = {}
+        self.t = threading.Thread(target=self._run, args=(fd, size), daemon=True)
+        self.t.start()
+
+    def _run(self, fd, size):
+        try:
+            self.box["data"] = os.read(fd, size)
+        except OSError as e:
+            self.box["err"] = e
+
+    def done(self, timeout):
+        self.t.join(timeout)
+        return not self.t.is_alive()
+
+    def data(self):
+        require("err" not in self.box, "read failed: %s" % self.box.get("err"))
+        return self.box.get("data")
+
+
+def set_vmin_vtime(fd, vmin, vtime):
+    attrs = termios.tcgetattr(fd)
+    attrs[6] = list(attrs[6])
+    attrs[6][termios.VMIN] = vmin
+    attrs[6][termios.VTIME] = vtime
+    termios.tcsetattr(fd, termios.TCSANOW, attrs)
+    check = termios.tcgetattr(fd)[6]
+    require(check[termios.VMIN] == vmin and check[termios.VTIME] == vtime,
+            "VMIN/VTIME did not stick (got %s/%s)"
+            % (check[termios.VMIN], check[termios.VTIME]))
+
+
 # ---------------------------------------------------------------- tests
 
 @test("smoke_roundtrip")
@@ -258,7 +337,7 @@ def t_poll_in(h):
         os.close(fd)
 
 
-@test("blocking_read_returns_available", known="#12")
+@test("blocking_read_returns_available")
 def t_blocking_read(h):
     """A blocking read must return as soon as any data is there (VMIN=1),
     not wait for the full requested count."""
@@ -276,7 +355,77 @@ def t_blocking_read(h):
         os.close(fd)
 
 
-@test("nonblocking_read_empty_is_eagain", known="#13")
+@test("vmin0_vtime0_returns_immediately")
+def t_vmin0_vtime0(h):
+    """VMIN 0 / VTIME 0: a blocking read returns at once with whatever is
+    there. Zero bytes is a valid answer in this mode, not EOF."""
+    fd = h.open_client(nonblock=False)
+    try:
+        set_vmin_vtime(fd, 0, 0)
+        data, err, timed_out = read_deadline(fd, 512, 1.0)
+        require(not timed_out, "read blocked although VMIN=0 VTIME=0")
+        require(err is None, "read failed: %s" % err)
+        require(data == b"", "expected 0 bytes, got %r" % data)
+    finally:
+        os.close(fd)
+
+
+@test("vtime_timeout_returns_empty")
+def t_vtime_timeout(h):
+    """VMIN 0 / VTIME 3: no data means a 300 ms wait, then an empty read."""
+    fd = h.open_client(nonblock=False)
+    try:
+        set_vmin_vtime(fd, 0, 3)
+        start = time.time()
+        data, err, timed_out = read_deadline(fd, 512, 2.0)
+        waited = time.time() - start
+        require(not timed_out, "read did not come back within 2s")
+        require(err is None, "read failed: %s" % err)
+        require(data == b"", "expected 0 bytes on timeout, got %r" % data)
+        require(0.2 <= waited <= 0.9,
+                "waited %.2fs, expected about 0.3s" % waited)
+    finally:
+        os.close(fd)
+
+
+@test("vmin_waits_for_min_bytes")
+def t_vmin_min(h):
+    """VMIN 4 / VTIME 0: hold the read until 4 bytes have arrived."""
+    fd = h.open_client(nonblock=False)
+    try:
+        set_vmin_vtime(fd, 4, 0)
+        r = BackgroundRead(fd, 512)
+        h.send(b"\x01\x02")
+        require(not r.done(0.4), "read returned before VMIN was reached")
+        h.send(b"\x03\x04")
+        require(r.done(1.0), "read did not return after VMIN was reached")
+        require(r.data() == b"\x01\x02\x03\x04", "wrong data: %r" % r.data())
+    finally:
+        os.close(fd)
+
+
+@test("vmin_vtime_interbyte")
+def t_interbyte(h):
+    """VMIN 8 / VTIME 2: the interbyte timer starts with the first byte, so a
+    short burst comes back after 200 ms instead of waiting for all 8."""
+    fd = h.open_client(nonblock=False)
+    try:
+        set_vmin_vtime(fd, 8, 2)
+        r = BackgroundRead(fd, 512)
+        time.sleep(0.4)
+        require(not r.done(0), "read returned before any byte arrived")
+
+        start = time.time()
+        h.send(b"\xaa\xbb\xcc")
+        require(r.done(1.5), "interbyte timer never fired")
+        waited = time.time() - start
+        require(r.data() == b"\xaa\xbb\xcc", "wrong data: %r" % r.data())
+        require(waited <= 0.9, "took %.2fs, expected about 0.2s" % waited)
+    finally:
+        os.close(fd)
+
+
+@test("nonblocking_read_empty_is_eagain")
 def t_nonblocking_read(h):
     """A non-blocking read with no data must fail with EAGAIN. Returning 0 bytes
     means EOF to the application, which makes it close the port."""
@@ -291,7 +440,7 @@ def t_nonblocking_read(h):
         os.close(fd)
 
 
-@test("nonblocking_write_full_is_eagain", known="#13")
+@test("nonblocking_write_full_is_eagain")
 def t_nonblocking_write(h):
     """A non-blocking write with no buffer space must fail with EAGAIN.
     Returning 0 makes applications spin."""
@@ -428,15 +577,9 @@ def main():
                     help="exit 0 if only known-issue tests fail")
     args = ap.parse_args()
 
-    if not os.path.exists(HARNESS):
-        print("SKIP: %s not built, run 'make -C tests/vsp' first" % HARNESS)
-        return 77
-    if not os.path.exists(CUSE):
-        print("SKIP: %s missing, try 'modprobe cuse'" % CUSE)
-        return 77
-    if not os.access(CUSE, os.R_OK | os.W_OK):
-        print("SKIP: no access to %s, run as root" % CUSE)
-        return 77
+    rc = preflight()
+    if rc is not None:
+        return rc
 
     def watchdog(signum, frame):
         raise Failure("test timed out after %ds (watchdog)" % WATCHDOG)

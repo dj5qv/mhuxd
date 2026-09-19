@@ -50,20 +50,31 @@ the next one with a leftover device node.
 
 ## Expected result
 
-Tests tagged with a finding number from `docs/review_con_csp.md` are expected to
-fail until that finding is fixed — they are the reproduction cases:
+All tests pass. Any failure is a real one — there are no known-issue tests left.
 
-| Test | Finding |
+`smoke_roundtrip` and `poll_pollin` validate the rig itself; the rest are
+regression tests for findings in `docs/review_con_csp.md`:
+
+| Test | Covers |
 |---|---|
-| `blocking_read_returns_available` | #12 blocking read waits for the full count instead of VMIN=1 |
-| `nonblocking_read_empty_is_eagain` | #13 read replies 0 bytes (EOF) instead of EAGAIN |
-| `nonblocking_write_full_is_eagain` | #13 write replies 0 instead of EAGAIN |
-| `two_clients_one_idle` | #17 `size` clobbered in the fan-out starves later sessions |
+| `blocking_read_returns_available` | #12 VMIN=1, a blocking read returns on the first byte |
+| `vmin0_vtime0_returns_immediately` | #12 VMIN 0 / VTIME 0, returns at once, 0 bytes is valid |
+| `vtime_timeout_returns_empty` | #12 VMIN 0 / VTIME >0, empty read after the timeout |
+| `vmin_waits_for_min_bytes` | #12 VMIN >0 / VTIME 0, holds until VMIN bytes |
+| `vmin_vtime_interbyte` | #12 VMIN >0 / VTIME >0, interbyte timer |
+| `nonblocking_read_empty_is_eagain` | #13 EAGAIN instead of a 0-byte reply (EOF) |
+| `nonblocking_write_full_is_eagain` | #13 EAGAIN instead of 0 |
+| `poll_pollout_after_drain` | #6 POLLOUT notification when space frees up |
+| `two_clients_one_idle` | #17 a stalled client must not starve the others |
+| `overrun_is_counted` | dropped bytes land in TIOCGICOUNT's buf_overrun (also covers #3) |
 
-The others must always pass: `smoke_roundtrip` and `poll_pollin` validate the rig
-itself, `poll_pollout_after_drain` is the regression test for #6, and
-`throughput_smoke` reports the rate and how much the connector drops when a client
-cannot keep up (it measures, it does not assert).
+`throughput_smoke` reports the rate and how much is dropped when a client cannot
+keep up; it measures, it does not assert.
+
+If a test fails right after you edited `con_vsp.c`, check the run did not abort
+with "vsp_harness is older than ...". The harness links the objects from
+`../../build/src`, so `make -C build` alone is not enough — the suite refuses to
+run rather than testing the previous build.
 
 ## Throughput ramp
 
