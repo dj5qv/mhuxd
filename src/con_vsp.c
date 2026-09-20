@@ -105,6 +105,12 @@ static struct vsp_session *find_vs(struct vsp *vsp, int id) {
 }
 
 #define RTS_DTR (TIOCM_RTS|TIOCM_DTR)
+/* Input lines. A virtual port has no cable to unplug, so TIOCMGET reports CTS,
+ * DSR and CAR asserted, but they are never stored in mbits: TIOCMSET on a real
+ * UART only applies the output lines (see uart_tiocmset()), and keeping mbits a
+ * pure output cache keeps the TIOCMBIS/TIOCMBIC arithmetic clean. RNG is left
+ * alone, an asserted ring indicator would mean an incoming call. */
+#define TIOCM_INPUT_LINES (TIOCM_CTS|TIOCM_DSR|TIOCM_CAR)
 
 static int is_terminal(const struct vsp *vsp) {
 	return vsp->state == MHUXD_IO_FAILED || vsp->state == MHUXD_IO_CLOSED;
@@ -225,6 +231,8 @@ static int set_bits(struct vsp_session *vs, int bits) {
 	if(is_terminal(vsp))
 		return -1;
 
+	vsp->mbits = bits & ~(TIOCM_INPUT_LINES|TIOCM_RNG);
+
 	if(!vsp->rts_is_ptt && !vsp->dtr_is_ptt)
 		return 0;
 
@@ -239,7 +247,7 @@ static int set_bits(struct vsp_session *vs, int bits) {
 	dbg0("%s() %s RTS: %d DTR %d", __func__, vsp->devname, bits & TIOCM_RTS ? 1:0, bits & TIOCM_DTR ? 1:0);
 
 	uint8_t state = data ? PTT_ON_BYTE : PTT_OFF_BYTE;
-	//	buf_append(&vs->buf_in, &state, 1);
+
 	io_res = io_write_nonblock(vsp->fd_ptt, &state, 1, &res, &errsv);
 	dbg0("%s() %s write to ptt channel: requested state %d, io_res %d, res %zd, errsv %d", __func__, vsp->devname, data ? 1:0, io_res, res, errsv);
 	if(io_res == MHUXD_IO_RW_PROGRESS && res == 1)
@@ -251,11 +259,7 @@ static int set_bits(struct vsp_session *vs, int bits) {
 			err("%s could not write to ptt channel!", vsp->devname);
 	}
 
-	//ev_io_start(vsp->loop, &vsp->w_data_out);
-
-        vsp->mbits = bits;
-
-        return 0;
+    return 0;
 }
 
 
@@ -955,7 +959,8 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 			struct iovec iov = { arg, sizeof(int) };
 			fuse_reply_ioctl_retry(req, NULL, 0, &iov, 1);
 		} else {
-			fuse_reply_ioctl(req, 0, &vsp->mbits, sizeof(int));
+			int bits = vsp->mbits | TIOCM_INPUT_LINES;
+			fuse_reply_ioctl(req, 0, &bits, sizeof(int));
 		}
 		break;
 
@@ -1154,6 +1159,11 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 	vsp->force_cuse_fail_once = env_enabled("MHUXD_VSP_FORCE_CUSE_FAIL_ONCE");
 	if(vsp->force_cuse_fail_once)
 		warn("%s fault injection enabled: first CUSE channel read will fail", vsp->devname);
+
+	if((vsp->dtr_is_ptt || vsp->rts_is_ptt) && vsp->fd_ptt == -1 ) {
+		err("Could not create VSP %s, DTR or RTS PTT requested, but no PTT file descriptor provided!", vsp->devname);
+		goto failed;
+	}
 
 	struct cuse_info ci;
 	memset(&ci, 0, sizeof(ci));

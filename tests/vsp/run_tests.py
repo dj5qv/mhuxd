@@ -566,6 +566,60 @@ def t_ptt_reopen(h):
         os.close(fd)
 
 
+@test("input_modem_lines_reported")
+def t_input_lines(h):
+    """A virtual port has no cable to unplug, so CTS/DSR/CAR must read asserted,
+    or an application that gates transmit on CD/CTS thinks the line is dead. They
+    must also survive the read-modify-write cycle applications do."""
+    fd = h.open_client(nonblock=True)
+    try:
+        bits = get_modem_bits(fd)
+        for name in ("TIOCM_CTS", "TIOCM_DSR", "TIOCM_CAR"):
+            require(bits & getattr(termios, name),
+                    "%s not reported by TIOCMGET (0x%x)" % (name, bits))
+        require(not (bits & termios.TIOCM_RNG),
+                "TIOCM_RNG should not be asserted (0x%x)" % bits)
+
+        set_modem_bits(fd, termios.TIOCM_RTS)
+        bits = get_modem_bits(fd)
+        require(bits & termios.TIOCM_RTS and bits & termios.TIOCM_CTS,
+                "RTS or CTS missing after TIOCMSET (0x%x)" % bits)
+
+        # read-modify-write: clearing RTS must not disturb the input lines
+        set_modem_bits(fd, bits & ~termios.TIOCM_RTS)
+        bits = get_modem_bits(fd)
+        require(not (bits & termios.TIOCM_RTS),
+                "RTS not cleared by read-modify-write (0x%x)" % bits)
+        require(bits & termios.TIOCM_CTS,
+                "CTS lost after read-modify-write (0x%x)" % bits)
+    finally:
+        os.close(fd)
+
+
+@test("modem_bits_stick_without_ptt_mapping")
+def t_mbits_no_ptt(h):
+    """A VSP with no RTS/DTR PTT mapping still has to remember the modem bits.
+    set_bits() used to return before updating mbits in that case, so TIOCMGET
+    reported stale state and TIOCMBIS/TIOCMBIC composed from a stale mask."""
+    fd = h.open_client(nonblock=True)       # harness default: no PTT mapping
+    try:
+        set_modem_bits(fd, termios.TIOCM_RTS)
+        bits = get_modem_bits(fd)
+        require(bits & termios.TIOCM_RTS, "TIOCMGET does not report RTS (0x%x)" % bits)
+
+        fcntl.ioctl(fd, termios.TIOCMBIS, struct.pack("i", termios.TIOCM_DTR))
+        bits = get_modem_bits(fd)
+        require(bits & termios.TIOCM_RTS and bits & termios.TIOCM_DTR,
+                "TIOCMBIS lost the previously set RTS (0x%x)" % bits)
+
+        fcntl.ioctl(fd, termios.TIOCMBIC, struct.pack("i", termios.TIOCM_RTS))
+        bits = get_modem_bits(fd)
+        require(not (bits & termios.TIOCM_RTS) and bits & termios.TIOCM_DTR,
+                "TIOCMBIC cleared the wrong bit (0x%x)" % bits)
+    finally:
+        os.close(fd)
+
+
 @test("modem_bits_clear_after_last_close", ptt="rts")
 def t_mbits_last_close(h):
     """A real UART lowers DTR/RTS on last close (HUPCL). We always drop PTT

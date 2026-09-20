@@ -27,6 +27,7 @@
 #include "con_tcp.h"
 #include "proc_mcp.h"
 #include "proc_rotator.h"
+#include "mhcontrol.h"
 
 #define MOD_ID "con"
 
@@ -210,6 +211,9 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 				cspec.fd_ptt = soptt[1];
 				mhr_add_endpoint_fd(ctr->dev->router, soptt[0], ctr->ptt_channel, serial);
 				ctr->router_owns_ptt = 1;
+			} else {
+				err("Could not determine ptt channel for channel %s", ch_channel2str_new(ctr->channel, mhc_get_mhinfo(ctr->dev->ctl)));
+				goto fail;
 			}
 		}
 	}
