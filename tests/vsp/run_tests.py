@@ -62,6 +62,7 @@ OBJS = ["mhuxd-con_vsp.o", "mhuxd-buffer.o", "mhuxd-pglist.o",
         "mhuxd-util.o", "mhuxd-logger.o", "mhuxd-linux_termios.o"]
 
 TESTS = []
+KEEP_LOGS = False
 
 
 def stale_objects():
@@ -128,7 +129,12 @@ class Harness:
         self.name = "vsptest%d_%d" % (os.getpid(), Harness._seq)
         self.path = os.path.join(DEVDIR, self.name)
         self.verbose = verbose
-        self.logfile = "/tmp/vsp_harness_%s.log" % self.name
+        # The connector logs here, including the "not enough buffer space"
+        # warnings from data_in_cb. Kept when the caller asks or when something
+        # went wrong, removed otherwise so runs do not litter /tmp.
+        self.logfile = os.environ.get(
+            "VSP_HARNESS_LOG", "/tmp/vsp_harness_%s.log" % self.name)
+        self.keep_log = KEEP_LOGS or "VSP_HARNESS_LOG" in os.environ
         env = dict(os.environ, VSP_HARNESS_LOG=self.logfile)
         if ptt:
             env["VSP_HARNESS_PTT"] = ptt
@@ -226,6 +232,9 @@ class Harness:
         except subprocess.TimeoutExpired:
             self.proc.kill()
             self.proc.wait()
+        if self.keep_log:
+            print("      harness log: %s" % self.logfile)
+            return
         try:
             os.unlink(self.logfile)
         except OSError:
@@ -711,7 +720,14 @@ def main():
     ap.add_argument("--only", metavar="NAME", help="run only tests matching NAME")
     ap.add_argument("--allow-known", action="store_true",
                     help="exit 0 if only known-issue tests fail")
+    ap.add_argument("--keep-logs", action="store_true",
+                    help="keep the per-harness connector log in /tmp (it holds "
+                         "the buffer overflow warnings from data_in_cb); logs of "
+                         "failing tests are kept anyway")
     args = ap.parse_args()
+
+    global KEEP_LOGS
+    KEEP_LOGS = args.keep_logs
 
     rc = preflight()
     if rc is not None:
@@ -741,9 +757,13 @@ def main():
             passed += 1
         except Failure as e:
             print("FAIL\n      %s" % e)
+            if h:
+                h.keep_log = True
             (known_failed if known else failed).append((name, known, str(e)))
         except Exception as e:  # noqa: BLE001 - report anything a test throws
             print("ERROR\n      %s: %s" % (type(e).__name__, e))
+            if h:
+                h.keep_log = True
             failed.append((name, known, "%s: %s" % (type(e).__name__, e)))
         finally:
             signal.alarm(0)

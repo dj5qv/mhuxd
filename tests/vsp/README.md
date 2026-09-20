@@ -76,6 +76,23 @@ with "vsp_harness is older than ...". The harness links the objects from
 `../../build/src`, so `make -C build` alone is not enough — the suite refuses to
 run rather than testing the previous build.
 
+## Connector logs
+
+The harness points the logger at a file so it cannot corrupt the line protocol.
+Each harness instance gets its own `/tmp/vsp_harness_<device>.log` at level `WARN`,
+which is where the `not enough buffer space available (<wanted>/<avail>)` warnings
+from `data_in_cb` end up — useful when reading the ramp results, since an `avail`
+of 0 that stays 0 is the buffer's dead-space effect rather than a slow reader.
+
+Logs are removed when the run finishes, so repeated runs do not litter `/tmp`.
+To keep them:
+
+* `--keep-logs` on either tool, which prints the path it kept, or
+* set `VSP_HARNESS_LOG=/path/to/log`, which is honoured and implies keeping it.
+
+The log of a *failing* test is always kept and its path printed. Set
+`VSP_HARNESS_LOGLEVEL` (MUTE/CRIT/ERROR/WARN/INFO/DEBUG0/DEBUG1) for more detail.
+
 ## Throughput ramp
 
 `ramp.py` is a measurement tool rather than a pass/fail test. It steps through the

@@ -33,12 +33,14 @@ import argparse
 import os
 import select
 import sys
+import termios
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import run_tests  # noqa: E402
 from run_tests import Harness, Failure, icount, preflight  # noqa: E402
 
-BAUDS = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600]
+BAUDS = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600, 1843200]
 
 
 def baud_to_bps(baud):
@@ -46,11 +48,25 @@ def baud_to_bps(baud):
     return baud / 10.0
 
 
-def measure_inbound(h, baud, seconds, reader_delay=0.0, read_size=65536):
-    """Harness -> client. Returns a result dict."""
+def measure_inbound(h, baud, seconds, reader_delay=0.0, read_size=65536,
+                    blocking=False):
+    """Harness -> client. Returns a result dict.
+
+    Non-blocking by default: poll() then read(), which is dv_read's "take what is
+    there" path. With blocking=True the read is parked in pending_out_req instead
+    and answered from data_in_cb, a different path with different buffer
+    behaviour. VMIN 0 / VTIME 1 gives the loop a 100 ms timeout so the last read
+    cannot hang once the generator stops.
+    """
     bps = baud_to_bps(baud)
-    fd = h.open_client(nonblock=True)
+    fd = h.open_client(nonblock=not blocking)
     try:
+        if blocking:
+            attrs = termios.tcgetattr(fd)
+            attrs[6] = list(attrs[6])
+            attrs[6][termios.VMIN] = 0
+            attrs[6][termios.VTIME] = 1
+            termios.tcsetattr(fd, termios.TCSANOW, attrs)
         h.cmd("reset")
         before = icount(fd)
         offered = int(bps * seconds)
@@ -62,6 +78,14 @@ def measure_inbound(h, baud, seconds, reader_delay=0.0, read_size=65536):
         pacing_done = start + seconds
         deadline = pacing_done + 0.5          # hard cap, only hit if something sticks
         while time.time() < deadline:
+            if blocking:
+                chunk = os.read(fd, read_size)      # VTIME bounds this
+                got += len(chunk)
+                if reader_delay:
+                    time.sleep(reader_delay)
+                if not chunk and time.time() >= pacing_done:
+                    break
+                continue
             if wait_readable(fd, 0.05):
                 try:
                     chunk = os.read(fd, read_size)
@@ -174,7 +198,15 @@ def main():
                     help="bytes per inbound read(). Small values model an "
                          "application that reads a byte or a frame at a time, "
                          "which never lets buf_out drain completely (default 65536)")
+    ap.add_argument("--blocking", action="store_true",
+                    help="read on a blocking fd (VMIN 0 / VTIME 1) instead of "
+                         "poll+read, exercising dv_read's held-request path")
+    ap.add_argument("--keep-logs", action="store_true",
+                    help="keep the connector log in /tmp; it holds the buffer "
+                         "overflow warnings from data_in_cb")
     args = ap.parse_args()
+
+    run_tests.KEEP_LOGS = args.keep_logs
 
     rc = preflight()
     if rc is not None:
@@ -188,7 +220,8 @@ def main():
                (", reader stalls %.0f ms between reads" % args.reader_delay
                 if args.reader_delay else "")
                + (", read() of %d bytes" % args.read_size
-                  if args.read_size != 65536 else "")))
+                  if args.read_size != 65536 else "")
+               + (", blocking fd" if args.blocking else "")))
         print("  %9s %10s %10s %10s  %s" % ("baud", "offered", "delivered", "dropped", "verdict"))
         clean = None
         first_fail = None
@@ -196,7 +229,8 @@ def main():
         try:
             for baud in rates:
                 r = measure_inbound(h, baud, args.seconds,
-                                    args.reader_delay / 1000.0, args.read_size)
+                                    args.reader_delay / 1000.0, args.read_size,
+                                    args.blocking)
                 if r["dropped"] == 0 and r["sent"] >= r["offered"] * 0.98:
                     verdict = "ok"
                     clean = baud
