@@ -14,7 +14,7 @@
 #include <string.h>
 #include <unistd.h> // needed for musl
 
-#define BUFFER_CAPACITY 512
+#define BUFFER_CAPACITY 4096
 
 
 struct buffer {
