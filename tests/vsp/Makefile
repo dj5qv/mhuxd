@@ -25,9 +25,13 @@ CPPFLAGS += -D_GNU_SOURCE -DEV_NO_THREADS -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERS
 CFLAGS   ?= -g -O2 -Wall
 LDLIBS   += -lfuse -lev -ljansson
 
-all: vsp_harness
+all: vsp_harness devname_test
 
 vsp_harness: vsp_harness.c $(OBJS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $< $(OBJS) $(LDLIBS)
+
+# Pure unit test, no devices and no root required.
+devname_test: devname_test.c $(OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $< $(OBJS) $(LDLIBS)
 
 $(OBJS):
@@ -35,6 +39,6 @@ $(OBJS):
 	@false
 
 clean:
-	rm -f vsp_harness
+	rm -f vsp_harness devname_test
 
 .PHONY: all clean

@@ -27,7 +27,9 @@
 	      <td class="titlesettingscell" align="right">Device Path:</td>
 	      <td class="spacersettingscell" align="right">&nbsp;&nbsp;</td>
 	      <td class="contentsettingscell" align="left">
-		/dev/mhuxd/ <input type="text" name="set.mhuxd.connector.0.devname" value="">
+		/dev/mhuxd/ <input type="text" name="set.mhuxd.connector.0.devname" value=""
+		  maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_.-]*"
+		  title="1 to 64 characters from A-Z a-z 0-9 _ - . starting with a letter or digit">
 	      </td>
 	    </tr>
 

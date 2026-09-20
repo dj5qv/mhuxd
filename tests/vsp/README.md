@@ -24,6 +24,14 @@ make -C tests/vsp
 sudo ./tests/vsp/run_tests.py
 ```
 
+`devname_test` is separate: a plain unit test for `vsp_devname_is_valid()`, the
+rule that decides which names may become `/dev/mhuxd/<name>`. It links the same
+objects but needs no root and creates no devices.
+
+```sh
+./tests/vsp/devname_test
+```
+
 You need access to two things, so either run as root or arrange both:
 
 * `/dev/cuse`, which is `0600 root:root` by default. An ACL granting your user

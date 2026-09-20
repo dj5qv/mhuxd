@@ -101,6 +101,13 @@
 
   const checkMark = (value) => (value ? '✓' : '—');
 
+  // Mirrors vsp_devname_is_valid() in src/con_vsp.c. The name becomes the leaf of
+  // /dev/mhuxd/<name> and of the udev symlink, so the daemon rejects anything else -
+  // catch it here and say why, instead of letting the request come back as an error.
+  const VSP_DEVNAME_MAX = 64;
+  const vspDevnameValid = (name) =>
+    typeof name === 'string' && name.length <= VSP_DEVNAME_MAX && /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(name);
+
   const buildConnectorPayload = () => {
     if (!portForm.serial || !portForm.channel || !portForm.type || !portForm.devname) return null;
     const base = {
@@ -135,6 +142,14 @@
       portStatusKind = 'error';
       clearTimeout(portStatusTimer);
       portStatusTimer = setTimeout(() => (portStatus = ''), 3000);
+      return;
+    }
+
+    if (connector.type === 'VSP' && !vspDevnameValid(connector.devname)) {
+      portStatus = `Device name must be 1 to ${VSP_DEVNAME_MAX} characters from A-Z a-z 0-9 _ - . and start with a letter or digit.`;
+      portStatusKind = 'error';
+      clearTimeout(portStatusTimer);
+      portStatusTimer = setTimeout(() => (portStatus = ''), 6000);
       return;
     }
 
@@ -313,7 +328,7 @@
         <div class="label">Device Path:</div>
         <div class="value">
           /dev/mhuxd/
-          <input class="input" type="text" bind:value={portForm.devname} on:input={() => (devnameTouched = true)} />
+          <input class="input" type="text" maxlength={VSP_DEVNAME_MAX} bind:value={portForm.devname} on:input={() => (devnameTouched = true)} />
         </div>
       </div>
       <div class="row">

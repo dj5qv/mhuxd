@@ -26,6 +26,7 @@
 #include "mhsm.h"
 #include "channel.h"
 #include "conmgr.h"
+#include "con_vsp.h"
 #include "rigctld_client.h"
 
 #define CFGFILE STATEDIR "/mhuxd-state.json"
@@ -968,6 +969,13 @@ static int apply_connector_from_json(struct cfgmgrj *cfgmgrj, json_t *conn_obj) 
         if(!devname_val || !json_is_string(devname_val))
             return -1;
         ccfg.vsp.devname = json_string_value(devname_val);
+        // Reject here as well as in conmgr, so that a bad name is not written to the
+        // config file and the caller sees the request fail.
+        if(!vsp_devname_is_valid(ccfg.vsp.devname)) {
+            err("invalid VSP devname '%s', expected up to %d characters from [A-Za-z0-9._-], "
+                "starting with a letter or digit!", ccfg.vsp.devname, VSP_DEVNAME_MAX);
+            return -1;
+        }
         ccfg.vsp.maxcon = json_get_int(conn_obj, "maxcon", 1);
         ccfg.vsp.ptt_rts = json_get_int(conn_obj, "ptt_rts", 0);
         ccfg.vsp.ptt_dtr = json_get_int(conn_obj, "ptt_dtr", 0);

@@ -195,6 +195,35 @@ static int env_enabled(const char *name) {
 }
 
 
+// A VSP name becomes the leaf of the CUSE device name (/dev/mhuxd/<name>), and from there
+// it ends up in udev symlinks and in the paths applications hand to open(). Restrict it to
+// characters that need no quoting in a shell, cannot introduce a path separator, and survive
+// the sysfs name mangling ("/dev/mhuxd/cat1" is "mhuxd!cat1" in /sys/class/cuse, which flrig
+// translates back by rewriting the first '!'). The first character must be alphanumeric, which
+// also rules out "." and "..".
+int vsp_devname_is_valid(const char *devname) {
+	if(devname == NULL || !*devname)
+		return 0;
+
+	size_t len = 0;
+	for(const char *p = devname; *p; p++) {
+		char c = *p;
+		int alnum = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+
+		if(++len > VSP_DEVNAME_MAX)
+			return 0;
+
+		if(alnum)
+			continue;
+
+		// '_', '-' and '.' are fine, but not as the first character.
+		if(len == 1 || (c != '_' && c != '-' && c != '.'))
+			return 0;
+	}
+
+	return 1;
+}
+
 // cuse_lowlevel_setup writes nice error messages to stderr which is useless for us running as a
 // daemon. Check /dev/cuse availability here and do some helpful error reporting to the log.
 static int check_cuse_dev(const char *devname) {
@@ -1142,6 +1171,11 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 	const char *p = cspec->vsp.devname;
 	if(p == NULL || !*p) {
 		err("could not create vsp device: missing device name!");
+		return NULL;
+	}
+	if(!vsp_devname_is_valid(p)) {
+		err("could not create vsp device: invalid device name '%s', expected up to %d characters "
+		    "from [A-Za-z0-9._-], starting with a letter or digit!", p, VSP_DEVNAME_MAX);
 		return NULL;
 	}
 	snprintf(devname, sizeof(devname) - 1, "DEVNAME=mhuxd/%s", p);

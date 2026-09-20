@@ -150,7 +150,12 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 	}
 
 	if(ctr->type == CON_VSP) {
-		ctr->devname = cfg->vsp.devname ? w_strdup(cfg->vsp.devname) : NULL;
+		if(!vsp_devname_is_valid(cfg->vsp.devname)) {
+			err("can't create connector, invalid parameter for 'devname' (%s)!",
+			    cfg->vsp.devname ? cfg->vsp.devname : "");
+			goto fail;
+		}
+		ctr->devname = w_strdup(cfg->vsp.devname);
 		ctr->maxcon = cfg->vsp.maxcon;
 		ctr->ptt_rts = cfg->vsp.ptt_rts;
 		ctr->ptt_dtr = cfg->vsp.ptt_dtr;

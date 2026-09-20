@@ -1874,23 +1874,23 @@ class HomeSummary extends SvelteComponent {
 }
 function get_each_context$1(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[45] = list[i];
+  child_ctx[46] = list[i];
   return child_ctx;
 }
 function get_each_context_1$1(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[48] = list[i];
+  child_ctx[49] = list[i];
   return child_ctx;
 }
 function get_each_context_2$1(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[51] = list[i];
+  child_ctx[52] = list[i];
   return child_ctx;
 }
 function get_each_context_3$1(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[54] = list[i];
-  child_ctx[56] = i;
+  child_ctx[55] = list[i];
+  child_ctx[57] = i;
   return child_ctx;
 }
 function create_else_block_3$1(ctx) {
@@ -1979,28 +1979,28 @@ function create_each_block_3$1(ctx) {
   let div1;
   let t1_value = (
     /*c*/
-    (ctx[54].id ?? "—") + ""
+    (ctx[55].id ?? "—") + ""
   );
   let t1;
   let t2;
   let div2;
   let t3_value = (
     /*c*/
-    (ctx[54].type || "—") + ""
+    (ctx[55].type || "—") + ""
   );
   let t3;
   let t4;
   let div3;
   let t5_value = (
     /*c*/
-    (ctx[54].devname || "—") + ""
+    (ctx[55].devname || "—") + ""
   );
   let t5;
   let t6;
   let div4;
   let t7_value = (
     /*c*/
-    (ctx[54].status || "—") + ""
+    (ctx[55].status || "—") + ""
   );
   let t7;
   let div4_class_value;
@@ -2008,11 +2008,11 @@ function create_each_block_3$1(ctx) {
   let div5;
   let t9_value = (
     /*c*/
-    (ctx[54].type === "TCP" ? (
+    (ctx[55].type === "TCP" ? (
       /*checkMark*/
       ctx[16](
         /*c*/
-        ctx[54].remote_access
+        ctx[55].remote_access
       )
     ) : "—") + ""
   );
@@ -2021,11 +2021,11 @@ function create_each_block_3$1(ctx) {
   let div6;
   let t11_value = (
     /*c*/
-    (ctx[54].type === "VSP" ? (
+    (ctx[55].type === "VSP" ? (
       /*checkMark*/
       ctx[16](
         /*c*/
-        ctx[54].ptt_rts
+        ctx[55].ptt_rts
       )
     ) : "—") + ""
   );
@@ -2034,11 +2034,11 @@ function create_each_block_3$1(ctx) {
   let div7;
   let t13_value = (
     /*c*/
-    (ctx[54].type === "VSP" ? (
+    (ctx[55].type === "VSP" ? (
       /*checkMark*/
       ctx[16](
         /*c*/
-        ctx[54].ptt_dtr
+        ctx[55].ptt_dtr
       )
     ) : "—") + ""
   );
@@ -2049,7 +2049,7 @@ function create_each_block_3$1(ctx) {
     /*deviceNameForSerial*/
     ctx[12](
       /*c*/
-      ctx[54].serial
+      ctx[55].serial
     ) + ""
   );
   let t15;
@@ -2057,7 +2057,7 @@ function create_each_block_3$1(ctx) {
   let div9;
   let t17_value = (
     /*c*/
-    (ctx[54].serial || "—") + ""
+    (ctx[55].serial || "—") + ""
   );
   let t17;
   let t18;
@@ -2066,7 +2066,7 @@ function create_each_block_3$1(ctx) {
     /*displayPortChannel*/
     ctx[14](
       /*c*/
-      ctx[54].channel
+      ctx[55].channel
     ) + ""
   );
   let t19;
@@ -2078,7 +2078,7 @@ function create_each_block_3$1(ctx) {
       /*change_handler*/
       ctx[24](
         /*c*/
-        ctx[54]
+        ctx[55]
       )
     );
   }
@@ -2122,14 +2122,14 @@ function create_each_block_3$1(ctx) {
       input.checked = input_checked_value = /*selectedConnectorIds*/
       ctx[9].includes(
         /*c*/
-        ctx[54].id
+        ctx[55].id
       );
       input.disabled = input_disabled_value = /*c*/
-      ctx[54].id == null;
+      ctx[55].id == null;
       attr(div4, "class", div4_class_value = /*c*/
-      ctx[54].status === "failed" ? "text-error" : "");
+      ctx[55].status === "failed" ? "text-error" : "");
       attr(div11, "class", null_to_empty(`table-row ${/*i*/
-      ctx[56] % 2 ? "alt" : ""}`) + " svelte-udangm");
+      ctx[57] % 2 ? "alt" : ""}`) + " svelte-udangm");
     },
     m(target, anchor) {
       insert(target, div11, anchor);
@@ -2177,73 +2177,73 @@ function create_each_block_3$1(ctx) {
       513 && input_checked_value !== (input_checked_value = /*selectedConnectorIds*/
       ctx[9].includes(
         /*c*/
-        ctx[54].id
+        ctx[55].id
       ))) {
         input.checked = input_checked_value;
       }
       if (dirty[0] & /*connectors*/
       1 && input_disabled_value !== (input_disabled_value = /*c*/
-      ctx[54].id == null)) {
+      ctx[55].id == null)) {
         input.disabled = input_disabled_value;
       }
       if (dirty[0] & /*connectors*/
       1 && t1_value !== (t1_value = /*c*/
-      (ctx[54].id ?? "—") + "")) set_data(t1, t1_value);
+      (ctx[55].id ?? "—") + "")) set_data(t1, t1_value);
       if (dirty[0] & /*connectors*/
       1 && t3_value !== (t3_value = /*c*/
-      (ctx[54].type || "—") + "")) set_data(t3, t3_value);
+      (ctx[55].type || "—") + "")) set_data(t3, t3_value);
       if (dirty[0] & /*connectors*/
       1 && t5_value !== (t5_value = /*c*/
-      (ctx[54].devname || "—") + "")) set_data(t5, t5_value);
+      (ctx[55].devname || "—") + "")) set_data(t5, t5_value);
       if (dirty[0] & /*connectors*/
       1 && t7_value !== (t7_value = /*c*/
-      (ctx[54].status || "—") + "")) set_data(t7, t7_value);
+      (ctx[55].status || "—") + "")) set_data(t7, t7_value);
       if (dirty[0] & /*connectors*/
       1 && div4_class_value !== (div4_class_value = /*c*/
-      ctx[54].status === "failed" ? "text-error" : "")) {
+      ctx[55].status === "failed" ? "text-error" : "")) {
         attr(div4, "class", div4_class_value);
       }
       if (dirty[0] & /*connectors*/
       1 && t9_value !== (t9_value = /*c*/
-      (ctx[54].type === "TCP" ? (
+      (ctx[55].type === "TCP" ? (
         /*checkMark*/
         ctx[16](
           /*c*/
-          ctx[54].remote_access
+          ctx[55].remote_access
         )
       ) : "—") + "")) set_data(t9, t9_value);
       if (dirty[0] & /*connectors*/
       1 && t11_value !== (t11_value = /*c*/
-      (ctx[54].type === "VSP" ? (
+      (ctx[55].type === "VSP" ? (
         /*checkMark*/
         ctx[16](
           /*c*/
-          ctx[54].ptt_rts
+          ctx[55].ptt_rts
         )
       ) : "—") + "")) set_data(t11, t11_value);
       if (dirty[0] & /*connectors*/
       1 && t13_value !== (t13_value = /*c*/
-      (ctx[54].type === "VSP" ? (
+      (ctx[55].type === "VSP" ? (
         /*checkMark*/
         ctx[16](
           /*c*/
-          ctx[54].ptt_dtr
+          ctx[55].ptt_dtr
         )
       ) : "—") + "")) set_data(t13, t13_value);
       if (dirty[0] & /*connectors*/
       1 && t15_value !== (t15_value = /*deviceNameForSerial*/
       ctx[12](
         /*c*/
-        ctx[54].serial
+        ctx[55].serial
       ) + "")) set_data(t15, t15_value);
       if (dirty[0] & /*connectors*/
       1 && t17_value !== (t17_value = /*c*/
-      (ctx[54].serial || "—") + "")) set_data(t17, t17_value);
+      (ctx[55].serial || "—") + "")) set_data(t17, t17_value);
       if (dirty[0] & /*connectors*/
       1 && t19_value !== (t19_value = /*displayPortChannel*/
       ctx[14](
         /*c*/
-        ctx[54].channel
+        ctx[55].channel
       ) + "")) set_data(t19, t19_value);
     },
     d(detaching) {
@@ -2731,7 +2731,7 @@ function create_each_block_2$1(ctx) {
   let t0;
   let t1_value = (
     /*opt*/
-    ctx[51] === "VSP" ? "VSP Virtual Serial Port" : "TCP Network Port"
+    ctx[52] === "VSP" ? "VSP Virtual Serial Port" : "TCP Network Port"
   );
   let t1;
   let t2;
@@ -2751,7 +2751,7 @@ function create_each_block_2$1(ctx) {
       t2 = space();
       attr(input, "type", "radio");
       input.__value = /*opt*/
-      ctx[51];
+      ctx[52];
       set_input_value(input, input.__value);
       attr(label, "class", "radio-option");
       binding_group.p(input);
@@ -2880,13 +2880,13 @@ function create_each_block_1$1(ctx) {
   let option;
   let t0_value = (
     /*k*/
-    ctx[48].name + ""
+    ctx[49].name + ""
   );
   let t0;
   let t1;
   let t2_value = (
     /*k*/
-    ctx[48].serial + ""
+    ctx[49].serial + ""
   );
   let t2;
   let t3;
@@ -2899,7 +2899,7 @@ function create_each_block_1$1(ctx) {
       t2 = text(t2_value);
       t3 = text(")");
       option.__value = option_value_value = /*k*/
-      ctx[48].serial;
+      ctx[49].serial;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -2912,13 +2912,13 @@ function create_each_block_1$1(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*keyers*/
       2 && t0_value !== (t0_value = /*k*/
-      ctx2[48].name + "")) set_data(t0, t0_value);
+      ctx2[49].name + "")) set_data(t0, t0_value);
       if (dirty[0] & /*keyers*/
       2 && t2_value !== (t2_value = /*k*/
-      ctx2[48].serial + "")) set_data(t2, t2_value);
+      ctx2[49].serial + "")) set_data(t2, t2_value);
       if (dirty[0] & /*keyers*/
       2 && option_value_value !== (option_value_value = /*k*/
-      ctx2[48].serial)) {
+      ctx2[49].serial)) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -3017,7 +3017,7 @@ function create_each_block$1(ctx) {
   let option;
   let t_value = (
     /*ch*/
-    ctx[45] + ""
+    ctx[46] + ""
   );
   let t;
   let option_value_value;
@@ -3026,7 +3026,7 @@ function create_each_block$1(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*ch*/
-      ctx[45];
+      ctx[46];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -3036,10 +3036,10 @@ function create_each_block$1(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*portForm*/
       4 && t_value !== (t_value = /*ch*/
-      ctx2[45] + "")) set_data(t, t_value);
+      ctx2[46] + "")) set_data(t, t_value);
       if (dirty[0] & /*portForm, keyers*/
       6 && option_value_value !== (option_value_value = /*ch*/
-      ctx2[45])) {
+      ctx2[46])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -3211,6 +3211,7 @@ function create_if_block_2$2(ctx) {
       attr(div0, "class", "label");
       attr(input0, "class", "input");
       attr(input0, "type", "text");
+      attr(input0, "maxlength", VSP_DEVNAME_MAX);
       attr(div1, "class", "value");
       attr(div2, "class", "row");
       attr(div3, "class", "label");
@@ -3523,6 +3524,7 @@ function create_fragment$3(ctx) {
     }
   };
 }
+const VSP_DEVNAME_MAX = 64;
 function instance$3($$self, $$props, $$invalidate) {
   let { connectors = [] } = $$props;
   let { keyers = [] } = $$props;
@@ -3596,6 +3598,7 @@ function instance$3($$self, $$props, $$invalidate) {
     $$invalidate(10, showAddPortOverlay = true);
   };
   const checkMark = (value) => value ? "✓" : "—";
+  const vspDevnameValid = (name) => typeof name === "string" && name.length <= VSP_DEVNAME_MAX && /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(name);
   const buildConnectorPayload = () => {
     if (!portForm.serial || !portForm.channel || !portForm.type || !portForm.devname) return null;
     const base = {
@@ -3628,6 +3631,13 @@ function instance$3($$self, $$props, $$invalidate) {
       $$invalidate(5, portStatusKind = "error");
       clearTimeout(portStatusTimer);
       portStatusTimer = setTimeout(() => $$invalidate(4, portStatus = ""), 3e3);
+      return;
+    }
+    if (connector.type === "VSP" && !vspDevnameValid(connector.devname)) {
+      $$invalidate(4, portStatus = `Device name must be 1 to ${VSP_DEVNAME_MAX} characters from A-Z a-z 0-9 _ - . and start with a letter or digit.`);
+      $$invalidate(5, portStatusKind = "error");
+      clearTimeout(portStatusTimer);
+      portStatusTimer = setTimeout(() => $$invalidate(4, portStatus = ""), 6e3);
       return;
     }
     $$invalidate(8, portSaving = true);

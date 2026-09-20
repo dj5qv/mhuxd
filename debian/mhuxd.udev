@@ -2,7 +2,21 @@
 KERNEL=="cuse", RUN+="/usr/bin/setfacl -m u:mhuxd:rw /dev/cuse"
 
 # Virtual serial ports group owned by mhuxd
-SUBSYSTEM=="cuse", KERNEL=="mhuxd*", GROUP="mhuxd", GOTO="mm_microham_device_blacklist_end"
+SUBSYSTEM=="cuse", KERNEL=="mhuxd*", GROUP="mhuxd"
+
+# Publish every VSP under /dev/serial/by-id/ as well. That directory is what ham
+# applications scan when they build a list of serial ports to offer (fldigi globs
+# it, Hamlib globs it, QLog resolves display names through it). A VSP is a CUSE
+# device, so it sits in the "cuse" subsystem and not in "tty" - it can never turn
+# up in /sys/class/tty based enumeration (Qt's QSerialPortInfo and friends) no
+# matter what we name it. The by-id symlink is the one hook that works without
+# patching the applications.
+# basename turns DEVNAME "/dev/mhuxd/cat1" into "cat1". Keep this on a separate
+# rule from GROUP= above: a PROGRAM that fails makes the whole rule line not
+# match, which would otherwise cost us the group ownership as well.
+SUBSYSTEM=="cuse", KERNEL=="mhuxd*", PROGRAM="/usr/bin/basename $env{DEVNAME}", SYMLINK+="serial/by-id/mhuxd-%c"
+
+SUBSYSTEM=="cuse", KERNEL=="mhuxd*", GOTO="mm_microham_device_blacklist_end"
 
 # 3. ModemManager-Blacklist for keyer
 ACTION!="add|change", GOTO="mm_microham_device_blacklist_end"
