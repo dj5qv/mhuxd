@@ -46,7 +46,7 @@ def baud_to_bps(baud):
     return baud / 10.0
 
 
-def measure_inbound(h, baud, seconds, reader_delay=0.0):
+def measure_inbound(h, baud, seconds, reader_delay=0.0, read_size=65536):
     """Harness -> client. Returns a result dict."""
     bps = baud_to_bps(baud)
     fd = h.open_client(nonblock=True)
@@ -64,7 +64,7 @@ def measure_inbound(h, baud, seconds, reader_delay=0.0):
         while time.time() < deadline:
             if wait_readable(fd, 0.05):
                 try:
-                    chunk = os.read(fd, 65536)
+                    chunk = os.read(fd, read_size)
                 except BlockingIOError:
                     continue
                 got += len(chunk)
@@ -170,6 +170,10 @@ def main():
     ap.add_argument("--reader-delay", type=float, default=0.0, metavar="MS",
                     help="stall the inbound reader this long between reads, to "
                          "model a busy application (default 0)")
+    ap.add_argument("--read-size", type=int, default=65536, metavar="N",
+                    help="bytes per inbound read(). Small values model an "
+                         "application that reads a byte or a frame at a time, "
+                         "which never lets buf_out drain completely (default 65536)")
     args = ap.parse_args()
 
     rc = preflight()
@@ -181,15 +185,18 @@ def main():
     if args.direction in ("in", "both"):
         print("\ninbound  (rig -> application), %.1fs per step%s" %
               (args.seconds,
-               ", reader stalls %.0f ms between reads" % args.reader_delay
-               if args.reader_delay else ""))
+               (", reader stalls %.0f ms between reads" % args.reader_delay
+                if args.reader_delay else "")
+               + (", read() of %d bytes" % args.read_size
+                  if args.read_size != 65536 else "")))
         print("  %9s %10s %10s %10s  %s" % ("baud", "offered", "delivered", "dropped", "verdict"))
         clean = None
         first_fail = None
         h = Harness()
         try:
             for baud in rates:
-                r = measure_inbound(h, baud, args.seconds, args.reader_delay / 1000.0)
+                r = measure_inbound(h, baud, args.seconds,
+                                    args.reader_delay / 1000.0, args.read_size)
                 if r["dropped"] == 0 and r["sent"] >= r["offered"] * 0.98:
                     verdict = "ok"
                     clean = baud
