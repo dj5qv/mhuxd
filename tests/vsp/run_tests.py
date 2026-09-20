@@ -566,6 +566,35 @@ def t_ptt_reopen(h):
         os.close(fd)
 
 
+# struct termios2: 4 flags + c_line + c_cc[19] + ispeed + ospeed
+TERMIOS2_FMT = "4IB19sII"
+TERMIOS2_SIZE = struct.calcsize(TERMIOS2_FMT)
+BOTHER = 0o010000
+
+
+def _iow(type_char, nr, size):
+    return (1 << 30) | (size << 16) | (ord(type_char) << 8) | nr
+
+
+@test("unsupported_baud_reports_einval")
+def t_bad_baud(h):
+    """The ioctl result is handed to the caller verbatim, so an unsupported baud
+    has to come back as a -errno. Plain -1 would surface as EPERM."""
+    fd = h.open_client(nonblock=True)
+    try:
+        # BOTHER with ospeed 0: the connector cannot derive a baud rate from that
+        raw = struct.pack(TERMIOS2_FMT, 0, 0, BOTHER, 0, 0, b"\x00" * 19, 0, 0)
+        try:
+            fcntl.ioctl(fd, _iow("T", 0x2B, TERMIOS2_SIZE), raw)   # TCSETS2
+        except OSError as e:
+            require(e.errno == 22,  # EINVAL
+                    "expected EINVAL for an unsupported baud, got %s" % e)
+            return
+        raise Failure("TCSETS2 with an unusable baud rate succeeded")
+    finally:
+        os.close(fd)
+
+
 @test("input_modem_lines_reported")
 def t_input_lines(h):
     """A virtual port has no cable to unplug, so CTS/DSR/CAR must read asserted,

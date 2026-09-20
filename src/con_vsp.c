@@ -841,10 +841,19 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 		     struct fuse_file_info *fi, unsigned flags,
 		     const void *in_buf, size_t in_bufsz, size_t out_bufsz)
 {
-	(void)flags;
 	struct vsp *vsp = fuse_req_userdata(req);
 	dbg1("%s() %s, cmd: 0x%0x, arg: 0x%0lx, in_buf: 0x%0lx, in_buf size: %zd, out_bufsz: %zd", __func__, 
 	     vsp->devname, cmd, (unsigned long)arg, (unsigned long)in_buf, in_bufsz, out_bufsz);
+
+	// A 32 bit process on a 64 bit kernel. struct serial_struct holds a pointer,
+	// so replying with the native layout would hand the caller a struct it cannot
+	// parse. The rest of the structs used here happen to be ABI identical, but
+	// guessing which ones the caller means is not worth it.
+	if(flags & FUSE_IOCTL_COMPAT) {
+		warn("%s 32 bit ioctl 0x%x not supported!", vsp->devname, cmd);
+		fuse_reply_err(req, ENOSYS);
+		return;
+	}
 
 	struct vsp_session *vs = find_vs(vsp, fi->fh);
 	if(vs == NULL) {
@@ -896,7 +905,9 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 				info("%s TCSETS2 Baud rate set to %d", vsp->devname, baud);
 			} else {
 				warn("%s TCSETS2 unsupported baud rate!", vsp->devname);
-				err = -1;
+				// The result is handed to the caller verbatim, so it has
+				// to be a -errno. Plain -1 would surface as EPERM.
+				err = -EINVAL;
 			}
 
 			fuse_reply_ioctl(req, err, NULL, 0);
@@ -924,7 +935,7 @@ static void dv_ioctl(fuse_req_t req, int cmd, void *arg,
 				info("%s TCSETS Baud rate set to %d", vsp->devname, baud);
 			} else {
 				warn("%s TCSETS unsupported baud rate!", vsp->devname);
-				err = -1;
+				err = -EINVAL;
 			}
 
 			fuse_reply_ioctl(req, err, NULL, 0);
