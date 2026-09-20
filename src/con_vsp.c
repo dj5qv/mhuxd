@@ -369,7 +369,7 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)loop; (void)revents;
 	struct vsp *vsp = w->data;
 	struct vsp_session *vs;
-	uint8_t buf[1024];
+	uint8_t buf[BUFFER_CAPACITY];
 	ssize_t size;
 	int errsv = 0;
 	enum mhuxd_io_rw_result io_res;
@@ -411,7 +411,7 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 				// buffer: count the bytes dropped, TIOCGICOUNT reports them.
 				vs->sis.buf_overrun += n - avail;
 				n = avail;
-			}
+			} 
 
 			buf_append(b, buf, n);
 
