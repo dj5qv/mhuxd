@@ -22,7 +22,6 @@ struct cfgmgr;
 struct cfgmgrj;
 struct http_server;
 struct restapi;
-struct webui;
 
 typedef struct eventbus eventbus_t;
 typedef void (*app_ctx_event_cb_fn)(enum app_event_type type, const void *data, void *user_data);

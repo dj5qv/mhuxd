@@ -21,7 +21,6 @@
 #include "cfgmgr.h"
 #include "cfgmgrj.h"
 #include "http_server.h"
-#include "webui.h"
 #include "restapi.h"
 #include "eventbus.h"
 #include "events.h"
@@ -37,7 +36,6 @@ typedef struct app_ctx {
     struct cfgmgrj *cfgmgrj;
     struct http_server *hs;
     struct restapi *restapi;
-    struct webui *webui;
     struct http_handler *handler_redir[1];
 
     struct ev_signal w_sigint, w_sigterm, w_sighup;
@@ -101,19 +99,9 @@ app_ctx *app_ctx_init(struct app_ctx *ctx, struct ev_loop *loop) {
 		exit(-1);
 	}
 
-	ctx->webui = webui_create(ctx->hs, ctx->cfgmgr);
-	if(!ctx->webui) {
-		fatal("(mhuxd) Could not start webui, exiting!");
-		restapi_destroy(ctx->restapi);
-		hs_stop(ctx->hs);
-		exit(-1);
-	}
-
-	static const char static_path[] = WEBUIDIR "/static";
 	static const char svelte_path[] = WEBUIDIR "/svelte";
-	hs_add_directory_map(ctx->hs, "/static/", static_path);
 	hs_add_directory_map(ctx->hs, "/svelte/", svelte_path);
-	ctx->handler_redir[0] = hs_register_handler(ctx->hs, "/", cb_redirect_home, ctx->webui);
+	ctx->handler_redir[0] = hs_register_handler(ctx->hs, "/", cb_redirect_home, ctx);
 
 	ev_signal_init (&ctx->w_sigint, sigint_cb, SIGINT);
 	ev_signal_init (&ctx->w_sigterm, sigint_cb, SIGTERM);
@@ -185,8 +173,6 @@ void app_ctx_destroy(app_ctx *ctx) {
     if(ctx->handler_redir[0])
    	    hs_unregister_handler(ctx->hs, ctx->handler_redir[0]);
 
-    if(ctx->webui)
-        webui_destroy(ctx->webui);
 
     if(ctx->hs)
         hs_stop(ctx->hs);

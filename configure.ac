@@ -142,18 +142,6 @@ if test ! -z "$WEBUIDIR"; then
 fi
 AC_SUBST(WEBUIDIR)
 
-# Add hdfdir option
-HDFDIR='${datadir}/mhuxd/hdf'
-AC_ARG_WITH([hdfdir],
-        [  --with-hdfdir=DIR       hdf files [[DATADIR/mhuxd/hdf]]],
-        HDFDIR=$withval)
-if test ! -z "$HDFDIR"; then
-  if test "$HDFDIR" = "yes" -o "$HDFDIR" = "no"; then
-    AC_MSG_ERROR([--with-hdfdir must specify a path])
-  fi
-fi
-AC_SUBST(HDFDIR)
-
 # Add jsondir option
 JSONDIR='${datadir}/mhuxd/json'
 AC_ARG_WITH([jsondir],

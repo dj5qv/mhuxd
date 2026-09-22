@@ -21,7 +21,6 @@
 #include "opts.h"
 #include "daemon.h"
 #include "http_server.h"
-#include "webui.h"
 #include "restapi.h"
 #include "cfgmgrj.h"
 

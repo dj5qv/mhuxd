@@ -229,11 +229,11 @@ It is enforced at all three entry points:
 * `vsp_create()` (`src/con_vsp.c`) - last line of defence, next to the code that
   builds the device name.
 
-Both web UIs check the same rule before submitting: the Svelte UI in
+The web UI checks the same rule before submitting, in
 `webui/svelte/src/lib/DaemonPorts.svelte` (`vspDevnameValid`, with a message
-naming what is allowed), and the classic UI via `maxlength` / `pattern` on the
-input in `webui/cs/daemon_ports.cs`. A Node cross-check confirmed the JavaScript
-and C rules agree on all 28 cases.
+naming what is allowed). A Node cross-check confirmed the JavaScript and C rules
+agree on all 28 cases. (The classic ClearSilver UI enforced the same rule via
+`maxlength` / `pattern` before it was removed.)
 
 `tests/vsp/devname_test.c` is a unit test that links the real `con_vsp.o`. It
 needs no root and touches no devices:
