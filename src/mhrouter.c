@@ -104,7 +104,9 @@ struct mh_router {
 	ev_io w_in, w_out;
 	struct dmx *dmx;
 	char *serial;
+#ifdef MHUXD_SEND_STATUS_VIA_PTT_CONNECTOR
 	uint8_t rflag[2];
+#endif
 	uint8_t wflag;
 	uint8_t has_flags_channel;
 	uint8_t wk_tx_focus;
@@ -198,6 +200,7 @@ static int is_ptt_channel(int channel) {
 	return (channel == CH_PTT1 || channel == CH_PTT2 || channel == CH_PTT_FOCUS);
 }
 
+#ifdef MHUXD_SEND_STATUS_VIA_PTT_CONNECTOR
 static void process_in_flags(struct mh_router *router, int c) {
 	struct Consumer *cns;
 	struct ConsumerCb *cnc;
@@ -216,8 +219,10 @@ static void process_in_flags(struct mh_router *router, int c) {
 			uint8_t b = (c & MHD2CFL_ANY_PTT) ? PTT_ON_BYTE : PTT_OFF_BYTE;
 			cnc->callback(router, &b, 1, ptt_ch, cnc->user_data);
 		}
+		router->rflag[idx] = c & MHD2CFL_ANY_PTT;
 	}
 }
+#endif
 
 static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 	struct mh_router *router = prd->router;
@@ -262,16 +267,18 @@ static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 				continue;
 		}
 
-		if( c == 1 ) {
+		if( c == PTT_ON_BYTE ) {
 			newflag |= mask;
 			push = 1;
 		}
 
-		if( c == 0 ) {
+		if( c == PTT_OFF_BYTE ) {
 			newflag &= ~mask;
 			push = 1;
 		}
 	}	      
+
+	router->wflag = newflag;
 
 	if(push) {
 		r = mhr_send_in(router, &newflag, 1, MH_CHANNEL_FLAGS);
@@ -415,8 +422,10 @@ static void keyer_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		if(channel < 0 || channel >= MH_NUM_CHANNELS)
 			continue;
 
+#ifdef MHUXD_SEND_STATUS_VIA_PTT_CONNECTOR
 		if(channel == MH_CHANNEL_FLAGS && router->has_flags_channel)
 			process_in_flags(router, router->dmx->result_byte);
+#endif
 
 		PG_SCANLIST(&router->consumer_list[channel], cns) {
 			if(channel == MH_CHANNEL_CONTROL) {
