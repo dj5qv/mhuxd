@@ -409,7 +409,11 @@ static void keyer_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		buf_add_size(&router->buf_in, r);
 	}
 
-	if((r < 0 && errno != EAGAIN) || r == 0) {
+	if(r == 0) {
+		// EOF, e.g. USB unplugged. errno is not set in this case.
+		err("(mhr) Connection to keyer closed!");
+		mhr_set_keyer_fd(router, -1);
+	} else if(r < 0 && errno != EAGAIN) {
 		err_e(errno, "(mhr) Error reading from keyer!");
 		mhr_set_keyer_fd(router, -1);
 	}

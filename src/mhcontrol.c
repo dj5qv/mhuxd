@@ -366,6 +366,11 @@ static void heartbeat_completed_cb(unsigned const char *reply, int len, int resu
 		}
 		return;
 	}
+	if(result == CMD_RESULT_OFFLINE) {
+		// ping was still pending when the keyer got disconnected.
+		dbg0("%s heartbeat aborted, keyer disconnected", ctl->serial);
+		return;
+	}
 
 	err("heartbeat invalid result!");
 }
@@ -393,6 +398,22 @@ static void cmd_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, int reven
 		return;
 	}
 	err("timeout received with no command pending!");
+}
+
+// Complete all sent and queued commands with the given result, e.g. when the keyer got disconnected.
+// Otherwise a pending command would time out later and its callback would act on a stale state.
+static void flush_cmds(struct mh_control *ctl, int result) {
+	struct command *cmd;
+
+	ev_timer_stop(ctl->loop, &ctl->cmd_timeout_timer);
+
+	while((cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list))) {
+		PG_Remove(&cmd->node);
+		if(cmd->cmd_completion_cb)
+			cmd->cmd_completion_cb(NULL, 0, result, cmd->user_data);
+
+		PG_AddTail(&ctl->free_list, &cmd->node);
+	}
 }
 
 static const char *keyer_modes[] = {
@@ -577,6 +598,11 @@ out:
 static void initializer_cb(unsigned const char *reply, int len, int result, void *user_data) {
 	struct mh_control *ctl = user_data;
 
+	// Completion of a command that was still pending when the keyer got disconnected.
+	// Must not change the state, otherwise we'd go from DISCONNECTED to OFFLINE with fd == -1.
+	if(ctl->state == CTL_STATE_DEVICE_DISC)
+		return;
+
 	// previous step failed?
 	if(result != CMD_RESULT_OK && result != CMD_RESULT_ERROR) {
 		if(result == CMD_RESULT_TIMEOUT) {
@@ -741,6 +767,7 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 	if(status == MHROUTER_DISCONNECTED) {
 		set_state(ctl, CTL_STATE_DEVICE_DISC);
 		info("%s DISCONNECTED", ctl->serial);
+		flush_cmds(ctl, CMD_RESULT_OFFLINE);
 	}
 }
 
@@ -1730,24 +1757,31 @@ void mhc_rem_mode_changed_cb(struct mh_control *ctl, struct mhc_mode_callback *m
 }
 
 static int push_cmds(struct mh_control *ctl) {
-	struct command *cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list);
-	if(cmd == NULL)
-		return 0;
-	if(cmd->state == CMD_STATE_SENT)
-		return 0;
-#if 1
-	int r = mhr_send_in(ctl->router, cmd->cmd, cmd->len, MH_CHANNEL_CONTROL);
-	dbg1_h(ctl->serial, "cmd to k", cmd->cmd, cmd->len);
-	if(r != cmd->len) {
+	struct command *cmd;
+	int ret = 0;
+
+	while((cmd = (void*)PG_FIRSTENTRY(&ctl->cmd_list))) {
+		if(cmd->state == CMD_STATE_SENT)
+			return ret;
+
+		int r = mhr_send_in(ctl->router, cmd->cmd, cmd->len, MH_CHANNEL_CONTROL);
+		dbg1_h(ctl->serial, "cmd to k", cmd->cmd, cmd->len);
+		if(r == cmd->len) {
+			ev_timer_set(&ctl->cmd_timeout_timer, CMD_TIMEOUT, 0.);
+			ev_timer_start(ctl->loop, &ctl->cmd_timeout_timer);
+			cmd->state = CMD_STATE_SENT;
+			return ret;
+		}
+
+		// Drop the failed command. Leaving it at the head of the queue would re-send it with the
+		// next push and complete it a second time.
 		warn("could not send command! (%d/%d)", r, cmd->len);
+		PG_Remove(&cmd->node);
 		defer_callback(ctl->loop, cmd->cmd_completion_cb, CMD_RESULT_ERROR, cmd->user_data);
-		return -1;
+		PG_AddTail(&ctl->free_list, &cmd->node);
+		ret = -1;
 	}
-#endif
-	ev_timer_set(&ctl->cmd_timeout_timer, CMD_TIMEOUT, 0.);
-	ev_timer_start(ctl->loop, &ctl->cmd_timeout_timer);
-	cmd->state = CMD_STATE_SENT;
-	return 0;
+	return ret;
 }
 
 static void submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completion_cb_fn cb, void *user_data) {
