@@ -310,7 +310,7 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 			}
 
 			if(ctr->rot) {
-				mhr_rem_processor_cb(ctr->dev->router, mcp_cb, CH_ROTATOR);
+				mhr_rem_processor_cb(ctr->dev->router, rot_cb, CH_ROTATOR);
 				rot_destroy(ctr->rot);
 				ctr->rot = NULL;
 			}
@@ -344,6 +344,24 @@ void conmgr_destroy_all(struct conmgr *conmgr) {
 	struct connector *ctr;
 	while((ctr = (void*)PG_FIRSTENTRY(&conmgr->connector_list))) {
 		conmgr_destroy_con(conmgr, ctr->id);
+	}
+}
+
+void conmgr_destroy_device_cons(struct conmgr *conmgr, const struct device *dev) {
+	struct connector *ctr;
+	if(!conmgr)
+		return;
+	while(1) {
+		struct connector *match = NULL;
+		PG_SCANLIST(&conmgr->connector_list, ctr) {
+			if(ctr->dev == dev) {
+				match = ctr;
+				break;
+			}
+		}
+		if(!match)
+			break;
+		conmgr_destroy_con(conmgr, match->id);
 	}
 }
 

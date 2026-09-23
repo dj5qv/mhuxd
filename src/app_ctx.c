@@ -233,6 +233,10 @@ int8_t app_ctx_add_device(struct app_ctx *ctx, const char *serial) {
     return dev ? 0 : -1;
 }
 
+int app_ctx_remove_device(struct app_ctx *ctx, const char *serial) {
+    return dmgr_remove_device(ctx->dmgr, serial);
+}
+
 struct PGList *app_ctx_get_device_list(app_ctx *ctx) {
     return ctx && ctx->dmgr ? dmgr_get_device_list(ctx->dmgr) : NULL;
 }

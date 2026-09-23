@@ -75,8 +75,33 @@ static struct device *create_dev(struct device_manager *dmgr, const char *serial
 	return dev;
 }
 
+static void destroy_dev(struct device *dev) {
+	dbg1("%s %s()", dev->serial, __func__);
+	wkm_destroy(dev->wkman);
+	mhc_destroy(dev->ctl);
+	mhr_destroy(dev->router);
+	PG_Remove(&dev->node);
+	if(dev->serial)
+		free(dev->serial);
+	free(dev);
+}
+
 struct device *dmgr_add_device(struct device_manager *dmgr, const char *serial) {
 	return create_dev(dmgr, serial);
+}
+
+int dmgr_remove_device(struct device_manager *dmgr, const char *serial) {
+	struct device *dev = dmgr_get_device(dmgr, serial);
+	if(!dev)
+		return -ENOENT;
+
+	// A connected keyer has its tty open and commands in flight. Besides, devmon would not
+	// add it again before it gets re-plugged.
+	if(mhc_is_connected(dev->ctl))
+		return -EBUSY;
+
+	destroy_dev(dev);
+	return 0;
 }
 
 static void devmon_callback(const char *serial, int status, void *user_data) {
@@ -166,13 +191,7 @@ void dmgr_destroy(struct device_manager *dmgr) {
 	}
 
 	while((dev = (void*)PG_FIRSTENTRY(&dmgr->device_list))) {
-		wkm_destroy(dev->wkman);
-		mhc_destroy(dev->ctl);
-		mhr_destroy(dev->router);
-		PG_Remove(&dev->node);
-		if(dev->serial)
-			free(dev->serial);
-		free(dev);
+		destroy_dev(dev);
 	}
 
 	if (dmgr->devmon)

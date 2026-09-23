@@ -24,6 +24,10 @@ struct device_manager *dmgr_create(struct ev_loop *loop, eventbus_t *ebus);
 void dmgr_enable_monitor(struct device_manager *dmgr);
 void dmgr_disable_monitor(struct device_manager *dmgr);
 struct device *dmgr_add_device(struct device_manager *dmgr, const char *serial);
+// Remove a keyer, which must be disconnected. Anything else referencing it (connectors, winkey manager
+// users, rigctld clients) must have been destroyed before.
+// Returns 0 on success, -ENOENT if not known, -EBUSY if still connected.
+int dmgr_remove_device(struct device_manager *dmgr, const char *serial);
 void dmgr_destroy(struct device_manager *dmgr);
 struct device *dmgr_get_device(struct device_manager *dmgr, const char *serial);
 struct PGList *dmgr_get_device_list(struct device_manager *dmgr);

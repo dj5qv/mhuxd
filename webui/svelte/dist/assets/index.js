@@ -1366,8 +1366,8 @@ class SideMenu extends SvelteComponent {
 }
 function get_each_context$2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[4] = list[i];
-  child_ctx[6] = i;
+  child_ctx[14] = list[i];
+  child_ctx[16] = i;
   return child_ctx;
 }
 function create_else_block$3(ctx) {
@@ -1401,8 +1401,8 @@ function create_else_block$3(ctx) {
       current = true;
     },
     p(ctx2, dirty) {
-      if (dirty & /*devices, fwString*/
-      12) {
+      if (dirty & /*devices, fwString, selectedSerials, isRemovable, removing, toggleSelection*/
+      828) {
         each_value = ensure_array_like(
           /*devices*/
           ctx2[2]
@@ -1449,7 +1449,7 @@ function create_else_block$3(ctx) {
     }
   };
 }
-function create_if_block$4(ctx) {
+function create_if_block_1$3(ctx) {
   let div;
   return {
     c() {
@@ -1471,101 +1471,171 @@ function create_if_block$4(ctx) {
   };
 }
 function create_each_block$2(ctx) {
-  let div4;
+  let div5;
   let div0;
-  let t0_value = (
-    /*d*/
-    (ctx[4].name || "Device") + ""
-  );
+  let input;
+  let input_checked_value;
+  let input_disabled_value;
+  let input_title_value;
   let t0;
-  let t1;
   let div1;
-  let t2_value = (
+  let t1_value = (
     /*d*/
-    (ctx[4].serial || "—") + ""
+    (ctx[14].name || "Device") + ""
   );
+  let t1;
   let t2;
-  let t3;
   let div2;
-  let t4_value = (
+  let t3_value = (
+    /*d*/
+    (ctx[14].serial || "—") + ""
+  );
+  let t3;
+  let t4;
+  let div3;
+  let t5_value = (
     /*fwString*/
     ctx[3](
       /*d*/
-      ctx[4]
+      ctx[14]
     ) + ""
   );
-  let t4;
   let t5;
-  let div3;
-  let statusdot;
-  let t6_value = (
-    /*d*/
-    (ctx[4].status || "—") + ""
-  );
   let t6;
+  let div4;
+  let statusdot;
+  let t7_value = (
+    /*d*/
+    (ctx[14].status || "—") + ""
+  );
   let t7;
+  let t8;
   let current;
+  let mounted;
+  let dispose;
+  function change_handler() {
+    return (
+      /*change_handler*/
+      ctx[12](
+        /*d*/
+        ctx[14]
+      )
+    );
+  }
   statusdot = new StatusDot({ props: { status: (
     /*d*/
-    ctx[4].status
+    ctx[14].status
   ) } });
   return {
     c() {
-      div4 = element("div");
+      div5 = element("div");
       div0 = element("div");
-      t0 = text(t0_value);
-      t1 = space();
+      input = element("input");
+      t0 = space();
       div1 = element("div");
-      t2 = text(t2_value);
-      t3 = space();
+      t1 = text(t1_value);
+      t2 = space();
       div2 = element("div");
-      t4 = text(t4_value);
-      t5 = space();
+      t3 = text(t3_value);
+      t4 = space();
       div3 = element("div");
+      t5 = text(t5_value);
+      t6 = space();
+      div4 = element("div");
       create_component(statusdot.$$.fragment);
-      t6 = text(t6_value);
-      t7 = space();
-      attr(div4, "class", `table-row ${/*i*/
-      ctx[6] % 2 ? "alt" : ""}`);
+      t7 = text(t7_value);
+      t8 = space();
+      attr(input, "type", "checkbox");
+      input.checked = input_checked_value = /*selectedSerials*/
+      ctx[4].includes(
+        /*d*/
+        ctx[14].serial
+      );
+      input.disabled = input_disabled_value = !/*isRemovable*/
+      ctx[8](
+        /*d*/
+        ctx[14]
+      ) || /*removing*/
+      ctx[5];
+      attr(input, "title", input_title_value = /*isRemovable*/
+      ctx[8](
+        /*d*/
+        ctx[14]
+      ) ? "" : "Unplug the keyer to remove it");
+      attr(div5, "class", `table-row ${/*i*/
+      ctx[16] % 2 ? "alt" : ""}`);
     },
     m(target, anchor) {
-      insert(target, div4, anchor);
-      append(div4, div0);
-      append(div0, t0);
-      append(div4, t1);
-      append(div4, div1);
-      append(div1, t2);
-      append(div4, t3);
-      append(div4, div2);
-      append(div2, t4);
-      append(div4, t5);
-      append(div4, div3);
-      mount_component(statusdot, div3, null);
-      append(div3, t6);
+      insert(target, div5, anchor);
+      append(div5, div0);
+      append(div0, input);
+      append(div5, t0);
+      append(div5, div1);
+      append(div1, t1);
+      append(div5, t2);
+      append(div5, div2);
+      append(div2, t3);
+      append(div5, t4);
+      append(div5, div3);
+      append(div3, t5);
+      append(div5, t6);
+      append(div5, div4);
+      mount_component(statusdot, div4, null);
       append(div4, t7);
+      append(div5, t8);
       current = true;
+      if (!mounted) {
+        dispose = listen(input, "change", change_handler);
+        mounted = true;
+      }
     },
-    p(ctx2, dirty) {
-      if ((!current || dirty & /*devices*/
-      4) && t0_value !== (t0_value = /*d*/
-      (ctx2[4].name || "Device") + "")) set_data(t0, t0_value);
-      if ((!current || dirty & /*devices*/
-      4) && t2_value !== (t2_value = /*d*/
-      (ctx2[4].serial || "—") + "")) set_data(t2, t2_value);
-      if ((!current || dirty & /*fwString, devices*/
-      12) && t4_value !== (t4_value = /*fwString*/
-      ctx2[3](
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (!current || dirty & /*selectedSerials, devices*/
+      20 && input_checked_value !== (input_checked_value = /*selectedSerials*/
+      ctx[4].includes(
         /*d*/
-        ctx2[4]
-      ) + "")) set_data(t4, t4_value);
+        ctx[14].serial
+      ))) {
+        input.checked = input_checked_value;
+      }
+      if (!current || dirty & /*devices, removing*/
+      36 && input_disabled_value !== (input_disabled_value = !/*isRemovable*/
+      ctx[8](
+        /*d*/
+        ctx[14]
+      ) || /*removing*/
+      ctx[5])) {
+        input.disabled = input_disabled_value;
+      }
+      if (!current || dirty & /*devices*/
+      4 && input_title_value !== (input_title_value = /*isRemovable*/
+      ctx[8](
+        /*d*/
+        ctx[14]
+      ) ? "" : "Unplug the keyer to remove it")) {
+        attr(input, "title", input_title_value);
+      }
+      if ((!current || dirty & /*devices*/
+      4) && t1_value !== (t1_value = /*d*/
+      (ctx[14].name || "Device") + "")) set_data(t1, t1_value);
+      if ((!current || dirty & /*devices*/
+      4) && t3_value !== (t3_value = /*d*/
+      (ctx[14].serial || "—") + "")) set_data(t3, t3_value);
+      if ((!current || dirty & /*fwString, devices*/
+      12) && t5_value !== (t5_value = /*fwString*/
+      ctx[3](
+        /*d*/
+        ctx[14]
+      ) + "")) set_data(t5, t5_value);
       const statusdot_changes = {};
       if (dirty & /*devices*/
       4) statusdot_changes.status = /*d*/
-      ctx2[4].status;
+      ctx[14].status;
       statusdot.$set(statusdot_changes);
       if ((!current || dirty & /*devices*/
-      4) && t6_value !== (t6_value = /*d*/
-      (ctx2[4].status || "—") + "")) set_data(t6, t6_value);
+      4) && t7_value !== (t7_value = /*d*/
+      (ctx[14].status || "—") + "")) set_data(t7, t7_value);
     },
     i(local) {
       if (current) return;
@@ -1578,9 +1648,49 @@ function create_each_block$2(ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(div4);
+        detach(div5);
       }
       destroy_component(statusdot);
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_if_block$4(ctx) {
+  let div;
+  let t;
+  let div_class_value;
+  return {
+    c() {
+      div = element("div");
+      t = text(
+        /*removeStatus*/
+        ctx[6]
+      );
+      attr(div, "class", div_class_value = `inline-status ${/*removeStatusKind*/
+      ctx[7] === "error" ? "error" : ""}`);
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty & /*removeStatus*/
+      64) set_data(
+        t,
+        /*removeStatus*/
+        ctx2[6]
+      );
+      if (dirty & /*removeStatusKind*/
+      128 && div_class_value !== (div_class_value = `inline-status ${/*removeStatusKind*/
+      ctx2[7] === "error" ? "error" : ""}`)) {
+        attr(div, "class", div_class_value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
     }
   };
 }
@@ -1649,13 +1759,21 @@ function create_fragment$4(ctx) {
   let section1;
   let div17;
   let t25;
+  let div24;
   let div23;
-  let div22;
-  let t33;
+  let t34;
   let current_block_type_index;
-  let if_block;
+  let if_block0;
+  let t35;
+  let div25;
+  let button;
+  let t36;
+  let button_disabled_value;
+  let t37;
   let current;
-  const if_block_creators = [create_if_block$4, create_else_block$3];
+  let mounted;
+  let dispose;
+  const if_block_creators = [create_if_block_1$3, create_else_block$3];
   const if_blocks = [];
   function select_block_type(ctx2, dirty) {
     if (
@@ -1665,7 +1783,11 @@ function create_fragment$4(ctx) {
     return 1;
   }
   current_block_type_index = select_block_type(ctx);
-  if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+  if_block0 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+  let if_block1 = (
+    /*removeStatus*/
+    ctx[6] && create_if_block$4(ctx)
+  );
   return {
     c() {
       section0 = element("section");
@@ -1714,11 +1836,17 @@ function create_fragment$4(ctx) {
       div17 = element("div");
       div17.textContent = "Keyer List";
       t25 = space();
+      div24 = element("div");
       div23 = element("div");
-      div22 = element("div");
-      div22.innerHTML = `<div>Name</div> <div>Serial</div> <div>Firmware</div> <div>Status</div>`;
-      t33 = space();
-      if_block.c();
+      div23.innerHTML = `<div></div> <div>Name</div> <div>Serial</div> <div>Firmware</div> <div>Status</div>`;
+      t34 = space();
+      if_block0.c();
+      t35 = space();
+      div25 = element("div");
+      button = element("button");
+      t36 = text("Remove");
+      t37 = space();
+      if (if_block1) if_block1.c();
       attr(div0, "class", "section-title");
       attr(div1, "class", "label");
       attr(div2, "class", "value");
@@ -1738,8 +1866,13 @@ function create_fragment$4(ctx) {
       attr(div16, "class", "panel");
       attr(section0, "class", "section");
       attr(div17, "class", "section-title");
-      attr(div22, "class", "table-header");
-      attr(div23, "class", "panel table");
+      attr(div23, "class", "table-header");
+      attr(div24, "class", "panel table keyers-grid");
+      attr(button, "class", "btn");
+      button.disabled = button_disabled_value = !/*selectedSerials*/
+      ctx[4].length || /*removing*/
+      ctx[5];
+      attr(div25, "class", "button-row");
       attr(section1, "class", "section");
     },
     m(target, anchor) {
@@ -1782,11 +1915,26 @@ function create_fragment$4(ctx) {
       insert(target, section1, anchor);
       append(section1, div17);
       append(section1, t25);
-      append(section1, div23);
-      append(div23, div22);
-      append(div23, t33);
-      if_blocks[current_block_type_index].m(div23, null);
+      append(section1, div24);
+      append(div24, div23);
+      append(div24, t34);
+      if_blocks[current_block_type_index].m(div24, null);
+      append(section1, t35);
+      append(section1, div25);
+      append(div25, button);
+      append(button, t36);
+      append(section1, t37);
+      if (if_block1) if_block1.m(section1, null);
       current = true;
+      if (!mounted) {
+        dispose = listen(
+          button,
+          "click",
+          /*removeKeyers*/
+          ctx[10]
+        );
+        mounted = true;
+      }
     },
     p(ctx2, [dirty]) {
       var _a2, _b2, _c2, _d2, _e2, _f2, _g2, _h2, _i2, _j2;
@@ -1818,24 +1966,45 @@ function create_fragment$4(ctx) {
           if_blocks[previous_block_index] = null;
         });
         check_outros();
-        if_block = if_blocks[current_block_type_index];
-        if (!if_block) {
-          if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
-          if_block.c();
+        if_block0 = if_blocks[current_block_type_index];
+        if (!if_block0) {
+          if_block0 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
+          if_block0.c();
         } else {
-          if_block.p(ctx2, dirty);
+          if_block0.p(ctx2, dirty);
         }
-        transition_in(if_block, 1);
-        if_block.m(div23, null);
+        transition_in(if_block0, 1);
+        if_block0.m(div24, null);
+      }
+      if (!current || dirty & /*selectedSerials, removing*/
+      48 && button_disabled_value !== (button_disabled_value = !/*selectedSerials*/
+      ctx2[4].length || /*removing*/
+      ctx2[5])) {
+        button.disabled = button_disabled_value;
+      }
+      if (
+        /*removeStatus*/
+        ctx2[6]
+      ) {
+        if (if_block1) {
+          if_block1.p(ctx2, dirty);
+        } else {
+          if_block1 = create_if_block$4(ctx2);
+          if_block1.c();
+          if_block1.m(section1, null);
+        }
+      } else if (if_block1) {
+        if_block1.d(1);
+        if_block1 = null;
       }
     },
     i(local) {
       if (current) return;
-      transition_in(if_block);
+      transition_in(if_block0);
       current = true;
     },
     o(local) {
-      transition_out(if_block);
+      transition_out(if_block0);
       current = false;
     },
     d(detaching) {
@@ -1845,6 +2014,9 @@ function create_fragment$4(ctx) {
         detach(section1);
       }
       if_blocks[current_block_type_index].d();
+      if (if_block1) if_block1.d();
+      mounted = false;
+      dispose();
     }
   };
 }
@@ -1853,13 +2025,84 @@ function instance$4($$self, $$props, $$invalidate) {
   let { daemonCfg = null } = $$props;
   let { devices = [] } = $$props;
   let { fwString = () => "" } = $$props;
+  let { reloadData = async () => {
+  } } = $$props;
+  let selectedSerials = [];
+  let removing = false;
+  let removeStatus = "";
+  let removeStatusKind = "success";
+  let removeStatusTimer;
+  const isRemovable = (d) => d.status === "DISCONNECTED";
+  const toggleSelection = (serial) => {
+    $$invalidate(4, selectedSerials = selectedSerials.includes(serial) ? selectedSerials.filter((s) => s !== serial) : [...selectedSerials, serial]);
+  };
+  const removeKeyers = async () => {
+    if (!selectedSerials.length) return;
+    const names = selectedSerials.join(", ");
+    if (!confirm(`Remove ${names}?
+
+All settings of the keyer(s) and their ports will be discarded. A removed keyer shows up again with default settings when it gets plugged in.`)) return;
+    $$invalidate(5, removing = true);
+    $$invalidate(6, removeStatus = "");
+    $$invalidate(7, removeStatusKind = "success");
+    try {
+      await Promise.all(selectedSerials.map(async (serial) => {
+        const res = await fetch(`/api/v1/config/devices/${encodeURIComponent(serial)}`, {
+          method: "DELETE",
+          headers: { Accept: "application/json" }
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(`${serial}: ${body.error || res.status}`);
+        }
+      }));
+      $$invalidate(4, selectedSerials = []);
+      $$invalidate(6, removeStatus = "Keyer(s) removed.");
+    } catch (err) {
+      $$invalidate(6, removeStatus = (err == null ? void 0 : err.message) || "Failed to remove keyer(s).");
+      $$invalidate(7, removeStatusKind = "error");
+    } finally {
+      $$invalidate(5, removing = false);
+      await reloadData().catch(() => {
+      });
+      clearTimeout(removeStatusTimer);
+      removeStatusTimer = setTimeout(
+        () => {
+          $$invalidate(6, removeStatus = "");
+        },
+        5e3
+      );
+    }
+  };
+  const change_handler = (d) => toggleSelection(d.serial);
   $$self.$$set = ($$props2) => {
     if ("runtime" in $$props2) $$invalidate(0, runtime = $$props2.runtime);
     if ("daemonCfg" in $$props2) $$invalidate(1, daemonCfg = $$props2.daemonCfg);
     if ("devices" in $$props2) $$invalidate(2, devices = $$props2.devices);
     if ("fwString" in $$props2) $$invalidate(3, fwString = $$props2.fwString);
+    if ("reloadData" in $$props2) $$invalidate(11, reloadData = $$props2.reloadData);
   };
-  return [runtime, daemonCfg, devices, fwString];
+  $$self.$$.update = () => {
+    if ($$self.$$.dirty & /*selectedSerials, devices*/
+    20) {
+      $$invalidate(4, selectedSerials = selectedSerials.filter((serial) => devices.some((d) => d.serial === serial && isRemovable(d))));
+    }
+  };
+  return [
+    runtime,
+    daemonCfg,
+    devices,
+    fwString,
+    selectedSerials,
+    removing,
+    removeStatus,
+    removeStatusKind,
+    isRemovable,
+    toggleSelection,
+    removeKeyers,
+    reloadData,
+    change_handler
+  ];
 }
 class HomeSummary extends SvelteComponent {
   constructor(options) {
@@ -1868,7 +2111,8 @@ class HomeSummary extends SvelteComponent {
       runtime: 0,
       daemonCfg: 1,
       devices: 2,
-      fwString: 3
+      fwString: 3,
+      reloadData: 11
     });
   }
 }
@@ -33175,15 +33419,15 @@ function create_if_block_5(ctx) {
   let keyerpage_props = {
     activeSerial: (
       /*activeSerial*/
-      ctx[6]
+      ctx[7]
     ),
     activeMenuId: (
       /*activeMenuId*/
-      ctx[8]
+      ctx[9]
     ),
     activeKeyer: (
       /*activeKeyer*/
-      ctx[7]
+      ctx[8]
     ),
     activeKeyerFlags: (
       /*activeKeyerFlags*/
@@ -33222,14 +33466,14 @@ function create_if_block_5(ctx) {
     p(ctx2, dirty) {
       const keyerpage_changes = {};
       if (dirty[0] & /*activeSerial*/
-      64) keyerpage_changes.activeSerial = /*activeSerial*/
-      ctx2[6];
-      if (dirty[0] & /*activeMenuId*/
-      256) keyerpage_changes.activeMenuId = /*activeMenuId*/
-      ctx2[8];
-      if (dirty[0] & /*activeKeyer*/
-      128) keyerpage_changes.activeKeyer = /*activeKeyer*/
+      128) keyerpage_changes.activeSerial = /*activeSerial*/
       ctx2[7];
+      if (dirty[0] & /*activeMenuId*/
+      512) keyerpage_changes.activeMenuId = /*activeMenuId*/
+      ctx2[9];
+      if (dirty[0] & /*activeKeyer*/
+      256) keyerpage_changes.activeKeyer = /*activeKeyer*/
+      ctx2[8];
       if (dirty[0] & /*activeKeyerFlags*/
       131072) keyerpage_changes.activeKeyerFlags = /*activeKeyerFlags*/
       ctx2[17];
@@ -33272,10 +33516,10 @@ function create_if_block_4(ctx) {
   let daemonsettings_props = {};
   if (
     /*daemonCfg*/
-    ctx[10] !== void 0
+    ctx[11] !== void 0
   ) {
     daemonsettings_props.daemonCfg = /*daemonCfg*/
-    ctx[10];
+    ctx[11];
   }
   daemonsettings = new DaemonSettings({ props: daemonsettings_props });
   binding_callbacks.push(() => bind(daemonsettings, "daemonCfg", daemonsettings_daemonCfg_binding));
@@ -33290,10 +33534,10 @@ function create_if_block_4(ctx) {
     p(ctx2, dirty) {
       const daemonsettings_changes = {};
       if (!updating_daemonCfg && dirty[0] & /*daemonCfg*/
-      1024) {
+      2048) {
         updating_daemonCfg = true;
         daemonsettings_changes.daemonCfg = /*daemonCfg*/
-        ctx2[10];
+        ctx2[11];
         add_flush_callback(() => updating_daemonCfg = false);
       }
       daemonsettings.$set(daemonsettings_changes);
@@ -33319,7 +33563,7 @@ function create_if_block_3(ctx) {
     props: {
       connectors: (
         /*connectors*/
-        ctx[11]
+        ctx[12]
       ),
       keyers: (
         /*keyers*/
@@ -33350,8 +33594,8 @@ function create_if_block_3(ctx) {
     p(ctx2, dirty) {
       const daemonports_changes = {};
       if (dirty[0] & /*connectors*/
-      2048) daemonports_changes.connectors = /*connectors*/
-      ctx2[11];
+      4096) daemonports_changes.connectors = /*connectors*/
+      ctx2[12];
       if (dirty[0] & /*keyers*/
       8) daemonports_changes.keyers = /*keyers*/
       ctx2[3];
@@ -33384,11 +33628,11 @@ function create_if_block_2(ctx) {
     props: {
       runtime: (
         /*runtime*/
-        ctx[9]
+        ctx[10]
       ),
       daemonCfg: (
         /*daemonCfg*/
-        ctx[10]
+        ctx[11]
       ),
       devices: (
         /*devices*/
@@ -33397,6 +33641,10 @@ function create_if_block_2(ctx) {
       fwString: (
         /*fwString*/
         ctx[21]
+      ),
+      reloadData: (
+        /*reloadData*/
+        ctx[22]
       )
     }
   });
@@ -33411,11 +33659,11 @@ function create_if_block_2(ctx) {
     p(ctx2, dirty) {
       const homesummary_changes = {};
       if (dirty[0] & /*runtime*/
-      512) homesummary_changes.runtime = /*runtime*/
-      ctx2[9];
-      if (dirty[0] & /*daemonCfg*/
-      1024) homesummary_changes.daemonCfg = /*daemonCfg*/
+      1024) homesummary_changes.runtime = /*runtime*/
       ctx2[10];
+      if (dirty[0] & /*daemonCfg*/
+      2048) homesummary_changes.daemonCfg = /*daemonCfg*/
+      ctx2[11];
       if (dirty[0] & /*devices*/
       1) homesummary_changes.devices = /*devices*/
       ctx2[0];
@@ -33517,11 +33765,11 @@ function create_fragment(ctx) {
     props: {
       hostname: (
         /*runtime*/
-        ((_a = ctx[9]) == null ? void 0 : _a.hostname) || "—"
+        ((_a = ctx[10]) == null ? void 0 : _a.hostname) || "—"
       ),
       version: (
         /*runtime*/
-        ((_c = (_b = ctx[9]) == null ? void 0 : _b.daemon) == null ? void 0 : _c.version) || "—"
+        ((_c = (_b = ctx[10]) == null ? void 0 : _b.daemon) == null ? void 0 : _c.version) || "—"
       )
     }
   });
@@ -33533,7 +33781,7 @@ function create_fragment(ctx) {
       ),
       activeTab: (
         /*activeTab*/
-        ctx[4]
+        ctx[5]
       )
     }
   });
@@ -33550,7 +33798,7 @@ function create_fragment(ctx) {
       ),
       activeId: (
         /*activeMenuId*/
-        ctx[8]
+        ctx[9]
       )
     }
   });
@@ -33571,10 +33819,10 @@ function create_fragment(ctx) {
   const if_blocks = [];
   function select_block_type(ctx2, dirty) {
     if (dirty[0] & /*activeTab*/
-    16) show_if = null;
+    32) show_if = null;
     if (
       /*loading*/
-      ctx2[12]
+      ctx2[4]
     ) return 0;
     if (
       /*error*/
@@ -33582,21 +33830,21 @@ function create_fragment(ctx) {
     ) return 1;
     if (
       /*activeTab*/
-      ctx2[4] === "daemon" && /*activeMenu*/
-      ctx2[5] === "summary"
+      ctx2[5] === "daemon" && /*activeMenu*/
+      ctx2[6] === "summary"
     ) return 2;
     if (
       /*activeTab*/
-      ctx2[4] === "daemon" && /*activeMenu*/
-      ctx2[5] === "ports"
+      ctx2[5] === "daemon" && /*activeMenu*/
+      ctx2[6] === "ports"
     ) return 3;
     if (
       /*activeTab*/
-      ctx2[4] === "daemon" && /*activeMenu*/
-      ctx2[5] === "settings"
+      ctx2[5] === "daemon" && /*activeMenu*/
+      ctx2[6] === "settings"
     ) return 4;
     if (show_if == null) show_if = !!/*activeTab*/
-    ctx2[4].startsWith("keyer:");
+    ctx2[5].startsWith("keyer:");
     if (show_if) return 5;
     return 6;
   }
@@ -33658,27 +33906,27 @@ function create_fragment(ctx) {
       var _a2, _b2, _c2;
       const topbar_changes = {};
       if (dirty[0] & /*runtime*/
-      512) topbar_changes.hostname = /*runtime*/
-      ((_a2 = ctx2[9]) == null ? void 0 : _a2.hostname) || "—";
+      1024) topbar_changes.hostname = /*runtime*/
+      ((_a2 = ctx2[10]) == null ? void 0 : _a2.hostname) || "—";
       if (dirty[0] & /*runtime*/
-      512) topbar_changes.version = /*runtime*/
-      ((_c2 = (_b2 = ctx2[9]) == null ? void 0 : _b2.daemon) == null ? void 0 : _c2.version) || "—";
+      1024) topbar_changes.version = /*runtime*/
+      ((_c2 = (_b2 = ctx2[10]) == null ? void 0 : _b2.daemon) == null ? void 0 : _c2.version) || "—";
       topbar.$set(topbar_changes);
       const tabnav_changes = {};
       if (dirty[0] & /*tabs*/
       262144) tabnav_changes.tabs = /*tabs*/
       ctx2[18];
       if (dirty[0] & /*activeTab*/
-      16) tabnav_changes.activeTab = /*activeTab*/
-      ctx2[4];
+      32) tabnav_changes.activeTab = /*activeTab*/
+      ctx2[5];
       tabnav.$set(tabnav_changes);
       const sidemenu_changes = {};
       if (dirty[0] & /*sideMenuItems*/
       16384) sidemenu_changes.items = /*sideMenuItems*/
       ctx2[14];
       if (dirty[0] & /*activeMenuId*/
-      256) sidemenu_changes.activeId = /*activeMenuId*/
-      ctx2[8];
+      512) sidemenu_changes.activeId = /*activeMenuId*/
+      ctx2[9];
       sidemenu.$set(sidemenu_changes);
       if (!current || dirty[0] & /*breadcrumb*/
       32768) set_data(
@@ -33916,10 +34164,10 @@ function instance($$self, $$props, $$invalidate) {
     if (location.hash !== h) history.replaceState(null, "", h);
   };
   const setTab = (id) => {
-    $$invalidate(4, activeTab = id);
-    if (id === "daemon") $$invalidate(5, activeMenu = "summary");
-    else if (id.startsWith("keyer:")) $$invalidate(5, activeMenu = "mode");
-    else $$invalidate(5, activeMenu = "summary");
+    $$invalidate(5, activeTab = id);
+    if (id === "daemon") $$invalidate(6, activeMenu = "summary");
+    else if (id.startsWith("keyer:")) $$invalidate(6, activeMenu = "mode");
+    else $$invalidate(6, activeMenu = "summary");
   };
   const refreshDeviceConfig = async (serial) => {
     try {
@@ -33938,11 +34186,11 @@ function instance($$self, $$props, $$invalidate) {
   const reloadData = async () => {
     try {
       const data = await loadAllData();
-      $$invalidate(9, runtime = data.runtime);
-      $$invalidate(10, daemonCfg = data.daemonCfg);
+      $$invalidate(10, runtime = data.runtime);
+      $$invalidate(11, daemonCfg = data.daemonCfg);
       $$invalidate(0, devices = data.devices);
       $$invalidate(1, configDevices = data.configDevices);
-      $$invalidate(11, connectors = data.connectors);
+      $$invalidate(12, connectors = data.connectors);
       $$invalidate(2, metadata = data.metadata);
     } catch (err) {
       console.error("Failed to reload data:", err);
@@ -33963,6 +34211,11 @@ function instance($$self, $$props, $$invalidate) {
       return;
     }
     $$invalidate(0, devices = devices.map((d) => d.serial === data.serial ? { ...d, status: data.status } : d));
+  });
+  const unsubRemoved = onWsEvent("device_removed", (data) => {
+    $$invalidate(0, devices = devices.filter((d) => d.serial !== data.serial));
+    $$invalidate(1, configDevices = configDevices.filter((d) => d.serial !== data.serial));
+    $$invalidate(12, connectors = connectors.filter((c) => c.serial !== data.serial));
   });
   const unsubUsb = onWsEvent("usb_connection", (data) => {
     console.log("USB Event:", data);
@@ -33985,12 +34238,12 @@ function instance($$self, $$props, $$invalidate) {
         }
       });
     } finally {
-      $$invalidate(12, loading = false);
+      $$invalidate(4, loading = false);
     }
     const onHashChange = () => {
       const h = parseHash();
-      if (h.tab !== activeTab) $$invalidate(4, activeTab = h.tab);
-      if (h.menu && h.menu !== activeMenu) $$invalidate(5, activeMenu = h.menu);
+      if (h.tab !== activeTab) $$invalidate(5, activeTab = h.tab);
+      if (h.menu && h.menu !== activeMenu) $$invalidate(6, activeMenu = h.menu);
     };
     window.addEventListener("hashchange", onHashChange);
     return () => {
@@ -34000,6 +34253,7 @@ function instance($$self, $$props, $$invalidate) {
   onDestroy(() => {
     disconnectWs();
     unsubStatus();
+    unsubRemoved();
     unsubUsb();
   });
   const buildKeyers = (cfgDevices, devs) => {
@@ -34037,10 +34291,10 @@ function instance($$self, $$props, $$invalidate) {
     });
   };
   const select_handler = (e) => setTab(e.detail);
-  const select_handler_1 = (e) => $$invalidate(5, activeMenu = e.detail);
+  const select_handler_1 = (e) => $$invalidate(6, activeMenu = e.detail);
   function daemonsettings_daemonCfg_binding(value) {
     daemonCfg = value;
-    $$invalidate(10, daemonCfg);
+    $$invalidate(11, daemonCfg);
   }
   function keyerpage_configDevices_binding(value) {
     configDevices = value;
@@ -34065,50 +34319,54 @@ function instance($$self, $$props, $$invalidate) {
       ]);
     }
     if ($$self.$$.dirty[0] & /*activeTab*/
-    16) {
-      $$invalidate(6, activeSerial = activeTab.startsWith("keyer:") ? activeTab.split(":")[1] : "");
+    32) {
+      $$invalidate(7, activeSerial = activeTab.startsWith("keyer:") ? activeTab.split(":")[1] : "");
     }
     if ($$self.$$.dirty[0] & /*activeSerial, keyers*/
-    72) {
-      $$invalidate(7, activeKeyer = activeSerial ? keyers.find((k) => k.serial === activeSerial) : null);
+    136) {
+      $$invalidate(8, activeKeyer = activeSerial ? keyers.find((k) => k.serial === activeSerial) : null);
     }
     if ($$self.$$.dirty[0] & /*activeSerial, keyers, metadata*/
-    76) {
+    140) {
       $$invalidate(17, activeKeyerFlags = activeSerial && keyers && metadata ? keyerFlagsForSerial(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*activeSerial, keyers, metadata*/
-    76) {
+    140) {
       $$invalidate(25, activeKeyerMenus = activeSerial && keyers && metadata ? visibleKeyerMenus(activeSerial) : []);
     }
+    if ($$self.$$.dirty[0] & /*loading, activeSerial, activeKeyer*/
+    400) {
+      if (!loading && activeSerial && !activeKeyer) setTab("daemon");
+    }
     if ($$self.$$.dirty[0] & /*activeTab, activeSerial, lastSerial, hashRestoredMenu, activeKeyerMenus*/
-    58720336) {
+    58720416) {
       if (activeTab.startsWith("keyer:") && activeSerial && activeSerial !== lastSerial) {
         $$invalidate(23, lastSerial = activeSerial);
         if (hashRestoredMenu) {
           $$invalidate(24, hashRestoredMenu = false);
         } else {
-          $$invalidate(5, activeMenu = ((_a = activeKeyerMenus[0]) == null ? void 0 : _a.id) || "summary");
+          $$invalidate(6, activeMenu = ((_a = activeKeyerMenus[0]) == null ? void 0 : _a.id) || "summary");
         }
       }
     }
     if ($$self.$$.dirty[0] & /*activeMenu*/
-    32) {
-      $$invalidate(8, activeMenuId = (activeMenu || "").toLowerCase());
+    64) {
+      $$invalidate(9, activeMenuId = (activeMenu || "").toLowerCase());
     }
     if ($$self.$$.dirty[0] & /*activeTab, activeMenu*/
-    48) {
+    96) {
       updateHash();
     }
     if ($$self.$$.dirty[0] & /*activeTab, activeMenuId, activeKeyerMenus*/
-    33554704) {
+    33554976) {
       $$invalidate(27, activeMenuMeta = activeTab === "daemon" ? daemonMenus.find((m) => m.id === activeMenuId) || null : activeTab.startsWith("keyer:") ? activeKeyerMenus.find((m) => m.id === activeMenuId) || null : null);
     }
     if ($$self.$$.dirty[0] & /*activeTab, activeKeyer, activeSerial*/
-    208) {
+    416) {
       $$invalidate(26, activeTabLabel = activeTab === "daemon" ? "Daemon" : activeTab.startsWith("keyer:") ? (activeKeyer == null ? void 0 : activeKeyer.name) || activeSerial || "Keyer" : "");
     }
     if ($$self.$$.dirty[0] & /*activeMenuMeta, activeTab*/
-    134217744) {
+    134217760) {
       $$invalidate(16, activePageTitle = (activeMenuMeta == null ? void 0 : activeMenuMeta.title) || (activeTab.startsWith("keyer:") ? "Keyer" : ""));
     }
     if ($$self.$$.dirty[0] & /*activeTabLabel, activeMenuMeta*/
@@ -34116,7 +34374,7 @@ function instance($$self, $$props, $$invalidate) {
       $$invalidate(15, breadcrumb = activeTabLabel ? (activeMenuMeta == null ? void 0 : activeMenuMeta.label) ? `${activeTabLabel} >> ${activeMenuMeta.label}` : activeTabLabel : "");
     }
     if ($$self.$$.dirty[0] & /*activeTab, activeKeyerMenus*/
-    33554448) {
+    33554464) {
       $$invalidate(14, sideMenuItems = activeTab === "daemon" ? daemonMenus : activeTab.startsWith("keyer:") ? activeKeyerMenus : []);
     }
   };
@@ -34125,6 +34383,7 @@ function instance($$self, $$props, $$invalidate) {
     configDevices,
     metadata,
     keyers,
+    loading,
     activeTab,
     activeMenu,
     activeSerial,
@@ -34133,7 +34392,6 @@ function instance($$self, $$props, $$invalidate) {
     runtime,
     daemonCfg,
     connectors,
-    loading,
     error,
     sideMenuItems,
     breadcrumb,

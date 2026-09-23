@@ -1,5 +1,9 @@
 #### Sample RestAPI calls
 
+## Keyer
+  # Remove a keyer together with its ports. Refused with 409 while the keyer is plugged in.
+curl -X DELETE http://localhost:5052/api/v1/config/devices/SM_DEMO_SM_1
+
 ## SM / SMD
   # Add an item to Antenna List
 

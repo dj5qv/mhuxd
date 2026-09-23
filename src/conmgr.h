@@ -77,6 +77,7 @@ int conmgr_create_con(struct app_ctx *ctx, struct cfg *cfg, int id);
 int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, int id);
 int conmgr_destroy_con(struct conmgr *, int id);
 void conmgr_destroy_all(struct conmgr *);
+void conmgr_destroy_device_cons(struct conmgr *conmgr, const struct device *dev);
 void conmgr_foreach(struct conmgr *conmgr, conmgr_iter_cb cb, void *user_data);
 int conmgr_exists(struct conmgr *conmgr, int id);
 

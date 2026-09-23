@@ -335,6 +335,17 @@ h1 {
   justify-self: center;
 }
 
+.keyers-grid .table-header,
+.keyers-grid .table-row {
+  grid-template-columns: 1.875rem 2fr 2fr 1fr 2fr;
+  column-gap: 0.75rem;
+}
+
+.keyers-grid .table-header > div:first-child,
+.keyers-grid .table-row > div:first-child {
+  justify-self: center;
+}
+
 /* ─── Table rows ─────────────────────────────────────────────────────────── */
 .table-header {
   background: var(--color-bg-th);

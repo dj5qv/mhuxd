@@ -7,6 +7,7 @@
  *  See the file COPYING
  */
 
+#include <errno.h>
 #include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -597,6 +598,23 @@ static int send_json_payload(struct http_connection *hcon, json_t *root) {
 	return 0;
 }
 
+static void send_json_error(struct http_connection *hcon, int code, const char *message) {
+	json_t *rsp = json_object();
+	char *payload = NULL;
+	if(rsp) {
+		json_object_set_new(rsp, "error", json_string(message));
+		payload = json_dumps(rsp, JSON_COMPACT);
+		json_decref(rsp);
+	}
+	if(!payload) {
+		hs_send_response(hcon, code, "application/json", "{}", 2, NULL, 0);
+		return;
+	}
+	hs_add_rsp_header(hcon, "Cache-Control", "no-store");
+	hs_send_response(hcon, code, "application/json", payload, strlen(payload), NULL, 0);
+	free(payload);
+}
+
 static int cb_config_connectors(struct http_connection *hcon, const char *path, const char *query,
 		 const char *body, uint32_t body_len, void *data) {
 	(void)path; (void)query;
@@ -783,6 +801,41 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 	return 0;
 }
 
+static int delete_config_device(struct restapi *api, struct http_connection *hcon, const char *serial) {
+	switch(cfgmgrj_remove_device(api->cfgmgrj, serial)) {
+	case 0:
+		break;
+	case -ENOENT:
+		send_json_error(hcon, 404, "Keyer not found.");
+		return 0;
+	case -EBUSY:
+		send_json_error(hcon, 409, "Keyer is connected. Unplug it before removing it.");
+		return 0;
+	case -EAGAIN:
+		send_json_error(hcon, 409, "Configuration update in progress, try again.");
+		return 0;
+	default:
+		send_json_error(hcon, 500, "Could not remove keyer.");
+		return 0;
+	}
+
+	json_t *event = json_object();
+	if(event) {
+		json_object_set_new(event, "type", json_string("device_removed"));
+		json_object_set_new(event, "serial", json_string(serial));
+		broadcast_event(api, event);
+		json_decref(event);
+	}
+
+	if(cfgmgrj_save_cfg(api->cfgmgrj) != 0) {
+		send_json_error(hcon, 500, "Keyer removed, but the configuration could not be saved.");
+		return 0;
+	}
+
+	hs_send_response(hcon, 200, "application/json", "{}", 2, NULL, 0);
+	return 0;
+}
+
 static int cb_config_device(struct http_connection *hcon, const char *path, const char *query,
 		 const char *body, uint32_t body_len, void *data) {
 	(void)query;
@@ -820,6 +873,9 @@ static int cb_config_device(struct http_connection *hcon, const char *path, cons
 		json_decref(rsp);
 		return 0;
 	}
+
+	if(method == HS_HTTP_DELETE)
+		return delete_config_device(api, hcon, serial);
 
 	if(method != HS_HTTP_POST && method != HS_HTTP_PUT && method != HS_HTTP_PATCH) {
 		hs_send_response(hcon, 400, "application/json", "{}", 2, NULL, 0);

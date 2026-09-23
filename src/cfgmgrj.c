@@ -39,6 +39,8 @@ struct cfgmgrj {
     json_t *connectors;
     json_t *rig_mode_sync;
     struct PGList rig_clients;
+    // > 0 while waiting in a nested ev_run() for a keyer, see cfgmgrj_remove_device().
+    int busy;
  };
 
 struct rig_client_binding {
@@ -1077,7 +1079,10 @@ static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
 }
 
 int cfgmgrj_apply_json(struct cfgmgrj *cfgmgrj, json_t *root) {
-    return apply_config_json(cfgmgrj, root);
+    cfgmgrj->busy++;
+    int rc = apply_config_json(cfgmgrj, root);
+    cfgmgrj->busy--;
+    return rc;
 }
 
 static json_t *build_sm_json(struct device *dev) {
@@ -1313,7 +1318,10 @@ int cfgmgrj_sm_load(struct cfgmgrj *cfgmgrj, const char *serial) {
         return -1;
     }
 
-    if(0 != sm_get_antsw(sm)) {
+    cfgmgrj->busy++;
+    int rc = sm_get_antsw(sm);
+    cfgmgrj->busy--;
+    if(0 != rc) {
         err("%s could not load antsw settings!", serial);
         return -1;
     }
@@ -1337,7 +1345,10 @@ int cfgmgrj_sm_store(struct cfgmgrj *cfgmgrj, const char *serial) {
         return -1;
     }
 
-    if(0 != sm_antsw_store(sm)) {
+    cfgmgrj->busy++;
+    int rc = sm_antsw_store(sm);
+    cfgmgrj->busy--;
+    if(0 != rc) {
         err("%s could not store antsw settings!", serial);
         return -1;
     }
@@ -1400,7 +1411,9 @@ int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
         return -1;
     }
 
+    cfgmgrj->busy++;
     int rc = apply_config_json(cfgmgrj, root);
+    cfgmgrj->busy--;
     json_decref(root);
     return rc;
 }
@@ -1460,6 +1473,47 @@ int cfgmgrj_remove_conn(struct cfgmgrj *cfgmgrj, int id) {
         }
     }
     return 0;
+}
+
+int cfgmgrj_remove_device(struct cfgmgrj *cfgmgrj, const char *serial) {
+    if(!cfgmgrj || !serial || !*serial)
+        return -EINVAL;
+
+    // Applying a config or loading/storing antenna switching settings waits for the keyer in a
+    // nested ev_run(), which also serves the request that got us here. The waiting code still
+    // holds the device.
+    if(cfgmgrj->busy)
+        return -EAGAIN;
+
+    struct device *dev = app_ctx_get_device(cfgmgrj->ctx, serial);
+    if(!dev)
+        return -ENOENT;
+
+    // Checked here as well, so nothing gets torn down if the device manager refuses.
+    if(mhc_is_connected(dev->ctl))
+        return -EBUSY;
+
+    remove_rig_client_bindings(cfgmgrj, serial, 0);
+    json_object_del(cfgmgrj->rig_mode_sync, serial);
+
+    conmgr_destroy_device_cons(cfgmgrj->conmgr, dev);
+
+    // Registry of Intent: drop the keyer's connectors, including those that failed to start.
+    if(cfgmgrj->connectors) {
+        size_t j = 0;
+        while(j < json_array_size(cfgmgrj->connectors)) {
+            json_t *s = json_object_get(json_array_get(cfgmgrj->connectors, j), "serial");
+            if(s && json_is_string(s) && !strcmp(json_string_value(s), serial))
+                json_array_remove(cfgmgrj->connectors, j);
+            else
+                j++;
+        }
+    }
+
+    int rc = app_ctx_remove_device(cfgmgrj->ctx, serial);
+    if(rc == 0)
+        info("%s removed", serial);
+    return rc;
 }
 
 static void sync_con_cb(const struct con_info *info, void *user_data) {

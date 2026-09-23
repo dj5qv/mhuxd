@@ -148,6 +148,12 @@
       d.serial === data.serial ? { ...d, status: data.status } : d
     );
   });
+  // A keyer got removed, possibly by another client.
+  const unsubRemoved = onWsEvent('device_removed', (data) => {
+    devices = devices.filter((d) => d.serial !== data.serial);
+    configDevices = configDevices.filter((d) => d.serial !== data.serial);
+    connectors = connectors.filter((c) => c.serial !== data.serial);
+  });
   const unsubUsb = onWsEvent('usb_connection', (data) => {
     console.log('USB Event:', data);
   });
@@ -182,6 +188,7 @@
   onDestroy(() => {
     disconnectWs();
     unsubStatus();
+    unsubRemoved();
     unsubUsb();
   });
 
@@ -230,6 +237,9 @@
   $: activeKeyer = activeSerial ? keyers.find((k) => k.serial === activeSerial) : null;
   $: activeKeyerFlags = activeSerial && keyers && metadata ? keyerFlagsForSerial(activeSerial) : [];
   $: activeKeyerMenus = activeSerial && keyers && metadata ? visibleKeyerMenus(activeSerial) : [];
+
+  // Leave the tab of a keyer that is gone.
+  $: if (!loading && activeSerial && !activeKeyer) setTab('daemon');
 
   $: activeMenuId = (activeMenu || '').toLowerCase();
 
@@ -292,7 +302,7 @@
         <div class="error">{error}</div>
       {:else}
         {#if activeTab === 'daemon' && activeMenu === 'summary'}
-          <HomeSummary {runtime} {daemonCfg} {devices} {fwString} />
+          <HomeSummary {runtime} {daemonCfg} {devices} {fwString} {reloadData} />
         {:else if activeTab === 'daemon' && activeMenu === 'ports'}
           <DaemonPorts {connectors} {keyers} {devices} {metadata} {reloadData} />
         {:else if activeTab === 'daemon' && activeMenu === 'settings'}

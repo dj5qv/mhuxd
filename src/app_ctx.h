@@ -46,6 +46,7 @@ struct PGList *app_ctx_get_device_list(app_ctx *ctx);
 eventbus_t *app_ctx_get_eventbus(app_ctx *ctx);
 
 int8_t app_ctx_add_device(struct app_ctx *ctx, const char *serial);
+int app_ctx_remove_device(struct app_ctx *ctx, const char *serial);
 
 
 
