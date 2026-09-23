@@ -225,6 +225,7 @@ static void submit_cmd_simple(struct mh_control *ctl, int cmd, mhc_cmd_completio
 static void submit_speed_cmd(struct mh_control *ctl, int channel, mhc_cmd_completion_cb_fn cb, void *user_data);
 static void submit_speed_cmd_params(struct mh_control *ctl, int channel, const struct mhc_speed_cfg *cfg,
 		mhc_cmd_completion_cb_fn cb, void *user_data);
+static void initializer_step(struct mh_control *ctl, unsigned const char *reply, int len);
 static void initializer_cb(unsigned const char *reply, int len, int result, void *user_data);
 static int push_cmds(struct mh_control *ctl);
 static uint8_t set_force_keyer_mode(struct mh_control *ctl, uint8_t radio, uint8_t enable);
@@ -352,7 +353,7 @@ static void heartbeat_completed_cb(unsigned const char *reply, int len, int resu
 		dbg0("%s heartbeat pong", ctl->serial);
 
 		if(ctl->state == CTL_STATE_DEVICE_OFF) {
-			initializer_cb(NULL, 0, CMD_RESULT_ERROR, ctl);
+			initializer_step(ctl, NULL, 0);
 		}
 		return;
 	}
@@ -574,7 +575,7 @@ static void control_channel_cb(struct mh_router *router, unsigned const char *da
 		if(ctl->state == CTL_STATE_OK) {
 			info("%s has just been restarted, initializing", ctl->serial);
 			set_state(ctl, CTL_STATE_SET_CHANNELS);
-			initializer_cb(NULL, 0, CMD_RESULT_ERROR, ctl);
+			initializer_step(ctl, NULL, 0);
 		} else
 			info("%s has just been restarted", ctl->serial);
 		break;
@@ -589,40 +590,23 @@ static void control_channel_cb(struct mh_router *router, unsigned const char *da
 
 out:
 	if(ctl->state == CTL_STATE_DEVICE_OFF) {
-		initializer_cb(NULL, 0, CMD_RESULT_ERROR, ctl);
+		initializer_step(ctl, NULL, 0);
 	}
 
 	push_cmds(ctl);
 }
 
-static void initializer_cb(unsigned const char *reply, int len, int result, void *user_data) {
-	struct mh_control *ctl = user_data;
-
-	// Completion of a command that was still pending when the keyer got disconnected.
-	// Must not change the state, otherwise we'd go from DISCONNECTED to OFFLINE with fd == -1.
-	if(ctl->state == CTL_STATE_DEVICE_DISC)
-		return;
-
-	// previous step failed?
-	if(result != CMD_RESULT_OK && result != CMD_RESULT_ERROR) {
-		if(result == CMD_RESULT_TIMEOUT) {
-			dbg0("%s initializer timed out", ctl->serial);
-		}
-		if(result == CMD_RESULT_NOT_SUPPORTED) {
-			dbg0("%s cmd not supported!", ctl->serial);
-
-		}
-		set_state(ctl, CTL_STATE_DEVICE_OFF);
-		info("%s OFFLINE", ctl->serial);
-		return;
-	}
-
-
+// Run the initialization step for the current state. Called directly to kick off the initialization
+// (CTL_STATE_DEVICE_OFF) or to resume it (CTL_STATE_SET_CHANNELS), otherwise via initializer_cb() once
+// the command of the previous step has completed successfully.
+static void initializer_step(struct mh_control *ctl, unsigned const char *reply, int len) {
 	switch(ctl->state) {
 	case CTL_STATE_DEVICE_OFF:
 		// reset freq sent state.
 		ctl->radio_info_freq_sent_success[0] = 0;
 		ctl->radio_info_freq_sent_success[1] = 0;
+		// a previous attempt may have failed half way through the channels.
+		ctl->speed_idx = 0;
 
 		// kick off the state machine
 		info("%s INITIALIZING", ctl->serial);
@@ -650,9 +634,6 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 		// fall through
 	case CTL_STATE_SET_CHANNELS:
 		// speeds
-		if(ctl->state == CTL_STATE_SET_CHANNELS)
-			dbg0("%s set channel %d ok", ctl->serial, ctl->speed_idx - 1);
-
 		while(ctl->speed_idx < MH_NUM_CHANNELS) {
 			// old config logic speed_idx, new speed_params_valid.
 			// FIXME: old logic to be removed.
@@ -709,6 +690,36 @@ static void initializer_cb(unsigned const char *reply, int len, int result, void
 	}
 }
 
+// Completion callback for the commands sent by initializer_step().
+static void initializer_cb(unsigned const char *reply, int len, int result, void *user_data) {
+	struct mh_control *ctl = user_data;
+
+	// Completion of a command that was still pending when the keyer got disconnected.
+	// Must not change the state, otherwise we'd go from DISCONNECTED to OFFLINE with fd == -1.
+	if(ctl->state == CTL_STATE_DEVICE_DISC)
+		return;
+
+	if(result != CMD_RESULT_OK) {
+		if(result == CMD_RESULT_ERROR && ctl->state == CTL_STATE_SET_CHANNELS) {
+			// Channel settings could not be sent, e.g. invalid baud rate, the reason has been logged
+			// already. Skip the channel, giving up would only restart the initialization with the same result.
+			warn("%s could not set channel %d, skipping", ctl->serial, ctl->speed_idx - 1);
+			initializer_step(ctl, NULL, 0);
+			return;
+		}
+
+		dbg0("%s initializer failed: %s", ctl->serial, mhc_cmd_err_string(result));
+		set_state(ctl, CTL_STATE_DEVICE_OFF);
+		info("%s OFFLINE", ctl->serial);
+		return;
+	}
+
+	if(ctl->state == CTL_STATE_SET_CHANNELS)
+		dbg0("%s set channel %d ok", ctl->serial, ctl->speed_idx - 1);
+
+	initializer_step(ctl, reply, len);
+}
+
 static void flags_cb(struct mh_router *router, const uint8_t *data ,int len, int channel, void *user_data) {
 	(void)router; (void)(channel);
 	struct mh_control *ctl = user_data;
@@ -759,7 +770,7 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 			// kick off state machine
 			dbg0("%s initializing", ctl->serial);
 			set_state(ctl, CTL_STATE_DEVICE_OFF);
-			initializer_cb(NULL, 0, CMD_RESULT_ERROR, ctl);
+			initializer_step(ctl, NULL, 0);
 			break;
 
 		}
