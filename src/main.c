@@ -15,14 +15,8 @@
 #include "util.h"
 #include "logger.h"
 #include "app_ctx.h"
-#include "devmgr.h"
-#include "conmgr.h"
-#include "cfgmgr.h"
 #include "opts.h"
 #include "daemon.h"
-#include "http_server.h"
-#include "restapi.h"
-#include "cfgmgrj.h"
 
 #define MOD_ID "main"
 
