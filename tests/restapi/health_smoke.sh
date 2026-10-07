@@ -4,7 +4,7 @@ set -euo pipefail
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-5052}"
 
-url="http://${HOST}:${PORT}/api/v1/health"
+url="http://${HOST}:${PORT}/api/v1/runtime"
 
 if command -v curl >/dev/null 2>&1; then
   body=$(curl -fsS "$url")
@@ -17,13 +17,18 @@ fi
 
 # Basic sanity checks without jq dependency
 case "$body" in
-  *"\"status\""*"\"ok\""*) ;;
-  *) echo "Health check failed: missing status ok" >&2; exit 1;;
+  *"\"name\":\"mhuxd\""*) ;;
+  *) echo "Health check failed: missing daemon name" >&2; exit 1;;
 esac
 
 case "$body" in
   *"\"version\""* ) ;;
   *) echo "Health check failed: missing version" >&2; exit 1;;
+esac
+
+case "$body" in
+  *"\"uptimeSec\""* ) ;;
+  *) echo "Health check failed: missing uptimeSec" >&2; exit 1;;
 esac
 
 echo "OK: $body"
