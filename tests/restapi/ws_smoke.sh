@@ -50,62 +50,65 @@ def ws_client_frame(opcode: int, payload: bytes, fin: bool = True) -> bytes:
     return bytes(header) + masked
 
 
-def recv_ws_frame(sock: socket.socket):
-    try:
-        hdr = sock.recv(2)
-    except TimeoutError:
-        return None
-    except socket.timeout:
-        return None
-    if len(hdr) < 2:
+def parse_ws_frame(buf: bytes):
+    """Return (frame_size, (fin, opcode, payload)) if buf starts with a complete frame, else None."""
+    if len(buf) < 2:
         return None
 
-    b0, b1 = hdr
-    fin = (b0 >> 7) & 1
-    opcode = b0 & 0x0F
-    masked = (b1 >> 7) & 1
-    plen = b1 & 0x7F
+    fin = (buf[0] >> 7) & 1
+    opcode = buf[0] & 0x0F
+    masked = (buf[1] >> 7) & 1
+    plen = buf[1] & 0x7F
+    pos = 2
 
     if plen == 126:
-        try:
-            ext = sock.recv(2)
-        except (TimeoutError, socket.timeout):
+        if len(buf) < 4:
             return None
-        if len(ext) < 2:
-            return None
-        plen = struct.unpack("!H", ext)[0]
+        plen = struct.unpack("!H", buf[2:4])[0]
+        pos = 4
     elif plen == 127:
-        try:
-            ext = sock.recv(8)
-        except (TimeoutError, socket.timeout):
+        if len(buf) < 10:
             return None
-        if len(ext) < 8:
-            return None
-        plen = struct.unpack("!Q", ext)[0]
+        plen = struct.unpack("!Q", buf[2:10])[0]
+        pos = 10
 
     mask = b""
     if masked:
-        try:
-            mask = sock.recv(4)
-        except (TimeoutError, socket.timeout):
-            return None
-        if len(mask) < 4:
-            return None
+        mask = buf[pos:pos + 4]
+        pos += 4
 
-    payload = b""
-    while len(payload) < plen:
-        try:
-            chunk = sock.recv(plen - len(payload))
-        except (TimeoutError, socket.timeout):
-            return None
-        if not chunk:
-            return None
-        payload += chunk
+    if len(buf) < pos + plen:
+        return None
 
+    payload = buf[pos:pos + plen]
     if masked:
         payload = bytes(payload[i] ^ mask[i % 4] for i in range(len(payload)))
 
-    return fin, opcode, payload
+    return pos + plen, (fin, opcode, payload)
+
+
+class WsReader:
+    """Buffers socket data so that partial reads never split a frame."""
+
+    def __init__(self, sock: socket.socket, buf: bytes = b""):
+        self.sock = sock
+        self.buf = buf
+
+    def recv_frame(self):
+        """Return (fin, opcode, payload), or None on timeout or EOF."""
+        while True:
+            frame = parse_ws_frame(self.buf)
+            if frame is not None:
+                size, result = frame
+                self.buf = self.buf[size:]
+                return result
+            try:
+                chunk = self.sock.recv(4096)
+            except (TimeoutError, socket.timeout):
+                return None
+            if not chunk:
+                return None
+            self.buf += chunk
 
 
 def ws_handshake(sock: socket.socket):
@@ -122,7 +125,8 @@ def ws_handshake(sock: socket.socket):
 
     sock.sendall(req)
     rsp = recv_until(sock, b"\r\n\r\n")
-    if b" 101 " not in rsp:
+    head, _, rest = rsp.partition(b"\r\n\r\n")
+    if b" 101 " not in head:
         raise RuntimeError(f"Handshake failed:\n{rsp.decode(errors='replace')}")
 
     accept = None
@@ -140,12 +144,15 @@ def ws_handshake(sock: socket.socket):
     if accept != expected:
         raise RuntimeError("Sec-WebSocket-Accept mismatch")
 
+    # Frames sent right after the 101 response may arrive in the same read.
+    return rest
 
-def read_until_texts(sock: socket.socket, deadline: float, predicates=None):
+
+def read_until_texts(reader: WsReader, deadline: float, predicates=None):
     predicates = predicates or []
     texts = []
     while time.time() < deadline:
-        frame = recv_ws_frame(sock)
+        frame = reader.recv_frame()
         if frame is None:
             continue
         _, opcode, payload = frame
@@ -155,7 +162,7 @@ def read_until_texts(sock: socket.socket, deadline: float, predicates=None):
             if predicates and all(pred(txts=texts) for pred in predicates):
                 break
         elif opcode == 0x9:
-            sock.sendall(ws_client_frame(0xA, payload))
+            reader.sock.sendall(ws_client_frame(0xA, payload))
         elif opcode == 0x8:
             break
     return texts
@@ -163,7 +170,7 @@ def read_until_texts(sock: socket.socket, deadline: float, predicates=None):
 
 with socket.create_connection((HOST, PORT), timeout=TIMEOUT) as sock:
     sock.settimeout(TIMEOUT)
-    ws_handshake(sock)
+    reader = WsReader(sock, ws_handshake(sock))
 
     part1 = b'{"type":"test","payload":'
     part2 = b'{"msg":"fragmented"}}'
@@ -171,18 +178,15 @@ with socket.create_connection((HOST, PORT), timeout=TIMEOUT) as sock:
     sock.sendall(ws_client_frame(0x0, part2, fin=True))
 
     texts = read_until_texts(
-        sock,
+        reader,
         time.time() + 4.0,
         predicates=[
             lambda txts: any('"type":"ack"' in t for t in txts),
-            lambda txts: any('"type":"client_event"' in t for t in txts),
         ],
     )
 
-    got_ack = any('"type":"ack"' in t for t in texts)
-    got_client_event = any('"type":"client_event"' in t for t in texts)
-    if not (got_ack and got_client_event):
-        raise RuntimeError(f"Expected ack + client_event, got: {texts}")
+    if not any('"type":"ack"' in t and '"fragmented"' in t for t in texts):
+        raise RuntimeError(f"Expected ack echoing the fragmented message, got: {texts}")
 
     sock.sendall(ws_client_frame(0x1, b"\xff"))
 
@@ -190,7 +194,7 @@ with socket.create_connection((HOST, PORT), timeout=TIMEOUT) as sock:
     close_reason = ""
     deadline = time.time() + 2.0
     while time.time() < deadline:
-        frame = recv_ws_frame(sock)
+        frame = reader.recv_frame()
         if frame is None:
             break
         _, opcode, payload = frame

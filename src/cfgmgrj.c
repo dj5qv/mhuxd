@@ -1468,11 +1468,11 @@ int cfgmgrj_remove_conn(struct cfgmgrj *cfgmgrj, int id) {
         json_array_foreach(cfgmgrj->connectors, j, c) {
             if(json_get_int(c, "id", 0) == id) {
                 json_array_remove(cfgmgrj->connectors, j);
-                break;
+                return 0;
             }
         }
     }
-    return 0;
+    return -ENOENT;
 }
 
 int cfgmgrj_remove_device(struct cfgmgrj *cfgmgrj, const char *serial) {

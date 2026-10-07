@@ -9,6 +9,7 @@
 
 #include <errno.h>
 #include <jansson.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -635,7 +636,9 @@ static int cb_config_connectors(struct http_connection *hcon, const char *path, 
 			return 0;
 		}
 		json_t *connectors = json_object_get(root, "connectors");
-		send_json_payload(hcon, connectors ? connectors : json_array());
+		json_t *rsp = connectors ? json_incref(connectors) : json_array();
+		send_json_payload(hcon, rsp);
+		json_decref(rsp);
 		json_decref(root);
 		return 0;
 	}
@@ -670,16 +673,26 @@ static int cb_config_connectors(struct http_connection *hcon, const char *path, 
 	return 0;
 }
 
+/* Connector ids are positive integers; returns -1 for anything else. */
+static int parse_connector_id(const char *s) {
+	char *end;
+	errno = 0;
+	long id = strtol(s, &end, 10);
+	if(errno || end == s || *end || id <= 0 || id > INT_MAX)
+		return -1;
+	return (int)id;
+}
+
 static int cb_config_connector(struct http_connection *hcon, const char *path, const char *query,
 		 const char *body, uint32_t body_len, void *data) {
 	(void)query; (void)body; (void)body_len;
 	struct restapi *api = data;
 	int16_t method = hs_get_method(hcon);
-	const char *id_str = (path && *path) ? path : NULL;
+	int id = path ? parse_connector_id(path) : -1;
 
-	dbg1("%s %s id: %s", __func__, hs_method_str(method), id_str ? id_str : "NULL");
+	dbg1("%s %s id: %s", __func__, hs_method_str(method), path ? path : "NULL");
 
-	if(!api || !api->cfgmgrj || !id_str) {
+	if(!api || !api->cfgmgrj || id < 0) {
 		hs_send_response(hcon, 404, "application/json", "{}", 2, NULL, 0);
 		return 0;
 	}
@@ -691,7 +704,7 @@ static int cb_config_connector(struct http_connection *hcon, const char *path, c
 			return 0;
 		}
 		json_t *connectors = json_object_get(root, "connectors");
-		json_t *connector = find_connector_in_connectors(connectors, atoi(id_str));
+		json_t *connector = find_connector_in_connectors(connectors, id);
 		if(!connector) {
 			json_decref(root);
 			hs_send_response(hcon, 404, "application/json", "{}", 2, NULL, 0);
@@ -713,8 +726,12 @@ static int cb_config_connector(struct http_connection *hcon, const char *path, c
 		return 0;
 	}
 
-	int id = atoi(id_str);
-	if(cfgmgrj_remove_conn(api->cfgmgrj, id) != 0 || cfgmgrj_save_cfg(api->cfgmgrj) != 0) {
+	int rc = cfgmgrj_remove_conn(api->cfgmgrj, id);
+	if(rc == -ENOENT) {
+		hs_send_response(hcon, 404, "application/json", "{}", 2, NULL, 0);
+		return 0;
+	}
+	if(rc != 0 || cfgmgrj_save_cfg(api->cfgmgrj) != 0) {
 		hs_send_response(hcon, 500, "application/json", "{}", 2, NULL, 0);
 		return 0;
 	}
@@ -980,14 +997,12 @@ static int cb_device_actions(struct http_connection *hcon, const char *path, con
 	}
 
 	if(method != HS_HTTP_POST) {
-		hs_send_response(hcon, 405, "application/json",
-			"{\"error\":\"Method not allowed\"}", 30, NULL, 0);
+		send_json_error(hcon, 405, "Method not allowed");
 		return 0;
 	}
 
 	if(!body || !body_len) {
-		hs_send_response(hcon, 400, "application/json",
-			"{\"error\":\"Missing request body\"}", 32, NULL, 0);
+		send_json_error(hcon, 400, "Missing request body");
 		return 0;
 	}
 
@@ -996,16 +1011,14 @@ static int cb_device_actions(struct http_connection *hcon, const char *path, con
 	if(!root || !json_is_object(root)) {
 		if(root)
 			json_decref(root);
-		hs_send_response(hcon, 400, "application/json",
-			"{\"error\":\"Invalid JSON\"}", 23, NULL, 0);
+		send_json_error(hcon, 400, "Invalid JSON");
 		return 0;
 	}
 
 	json_t *action = json_object_get(root, "action");
 	if(!action || !json_is_string(action)) {
 		json_decref(root);
-		hs_send_response(hcon, 400, "application/json",
-			"{\"error\":\"Missing action field\"}", 32, NULL, 0);
+		send_json_error(hcon, 400, "Missing action field");
 		return 0;
 	}
 
@@ -1024,8 +1037,7 @@ static int cb_device_actions(struct http_connection *hcon, const char *path, con
 		err_msg = "Could not store antenna switching settings to device.";
 	} else {
 		json_decref(root);
-		hs_send_response(hcon, 400, "application/json",
-			"{\"error\":\"Unknown action\"}", 25, NULL, 0);
+		send_json_error(hcon, 400, "Unknown action");
 		return 0;
 	}
 

@@ -22,6 +22,7 @@ void cfgmgrj_destroy(struct cfgmgrj *cfgmgrj);
 int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj);
 int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj);
 int cfgmgrj_add_conn(struct cfgmgrj *cfgmgrj, json_t *conn_obj);
+// Returns 0 on success, -ENOENT if no connector has this id.
 int cfgmgrj_remove_conn(struct cfgmgrj *cfgmgrj, int id);
 // Forget a disconnected keyer along with its connectors and rig mode sync settings.
 // Returns 0 on success, -ENOENT if not known, -EBUSY if still connected,
