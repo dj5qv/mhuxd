@@ -42,9 +42,7 @@ struct restapi {
 	eventbus_sub_t *keyer_state_sub;
 	eventbus_sub_t *keyer_mode_sub;
 	struct PGList ws_subscribers;
-	json_t *rigtypes;
-	json_t *devicetypes;
-	json_t *displayoptions;
+	char *metadata_json;	/* never changes, serialized once by restapi_create() */
 	time_t start_time;
 };
 
@@ -197,14 +195,58 @@ static json_t *build_devicetypes_array(json_t *displayoptions) {
 	return devicetypes;
 }
 
+/* Serialize the rig types and device types served by cb_metadata(). NULL on failure. */
+static char *build_metadata_json(void) {
+	const char *rigtypes_path = JSONDIR "/mh_rigtypes.json";
+	const char *displayoptions_path = JSONDIR "/mh_displayoptions.json";
+	json_error_t jerr;
+	json_t *displayoptions = NULL;
+	json_t *devicetypes = NULL;
+	json_t *root = NULL;
+	char *payload = NULL;
+
+	json_t *rigtypes = json_load_file(rigtypes_path, 0, &jerr);
+	if(!json_is_array(rigtypes)) {
+		err("%s() failed to load %s: %s", __func__, rigtypes_path,
+			jerr.text[0] ? jerr.text : "invalid or empty file");
+		goto out;
+	}
+
+	displayoptions = json_load_file(displayoptions_path, 0, &jerr);
+	if(!json_is_object(displayoptions)) {
+		err("%s() failed to load %s: %s", __func__, displayoptions_path,
+			jerr.text[0] ? jerr.text : "invalid or empty file");
+		goto out;
+	}
+
+	devicetypes = build_devicetypes_array(displayoptions);
+	if(!devicetypes) {
+		err("%s() failed to build devicetypes array", __func__);
+		goto out;
+	}
+
+	root = json_object();
+	json_object_set(root, "rigtypes", rigtypes);
+	json_object_set(root, "devicetypes", devicetypes);
+	payload = json_dumps(root, JSON_COMPACT);
+	if(!payload)
+		err("%s() failed to serialize metadata", __func__);
+
+out:
+	json_decref(root);
+	json_decref(devicetypes);
+	json_decref(displayoptions);
+	json_decref(rigtypes);
+	return payload;
+}
+
 static int cb_metadata(struct http_connection *hcon, const char *path, const char *query,
 		 const char *body, uint32_t body_len, void *data) {
 	struct restapi *api = data;
 
-	json_t *root = json_object();
-	json_object_set(root, "rigtypes", api->rigtypes);
-	json_object_set(root, "devicetypes", api->devicetypes);
-	return send_json(hcon, 200, root);
+	hs_add_rsp_header(hcon, "Cache-Control", "no-store");
+	hs_send_response(hcon, 200, "application/json", api->metadata_json, strlen(api->metadata_json), NULL, 0);
+	return 0;
 }
 
 static void broadcast_event(struct restapi *api, const json_t *event) {
@@ -256,33 +298,30 @@ static void on_ws_sub_closed(struct http_connection *hcon, void *data) {
 	free(sub);
 }
 
-static void ws_send_ack_ok(struct http_connection *hcon, json_t *echo) {
-	json_t *ack = json_object();
-	if(!ack) return;
-	json_object_set_new(ack, "type", json_string("ack"));
-	json_object_set_new(ack, "status", json_string("ok"));
-	if(echo)
-		json_object_set(ack, "echo", echo);
-	char *dump = json_dumps(ack, JSON_COMPACT);
+/* Send msg as a websocket text frame and release it. */
+static void ws_send_json(struct http_connection *hcon, json_t *msg) {
+	char *dump = json_dumps(msg, JSON_COMPACT);
+	json_decref(msg);
 	if(dump) {
 		hs_ws_send_text(hcon, dump, strlen(dump));
 		free(dump);
 	}
-	json_decref(ack);
+}
+
+static void ws_send_ack_ok(struct http_connection *hcon, json_t *echo) {
+	json_t *ack = json_object();
+	json_object_set_new(ack, "type", json_string("ack"));
+	json_object_set_new(ack, "status", json_string("ok"));
+	json_object_set(ack, "echo", echo);
+	ws_send_json(hcon, ack);
 }
 
 static void ws_send_ack_error(struct http_connection *hcon, const char *error) {
 	json_t *ack = json_object();
-	if(!ack) return;
 	json_object_set_new(ack, "type", json_string("ack"));
 	json_object_set_new(ack, "status", json_string("error"));
 	json_object_set_new(ack, "error", json_string(error));
-	char *dump = json_dumps(ack, JSON_COMPACT);
-	if(dump) {
-		hs_ws_send_text(hcon, dump, strlen(dump));
-		free(dump);
-	}
-	json_decref(ack);
+	ws_send_json(hcon, ack);
 }
 
 /* Command handlers: return NULL on success, error string on failure */
@@ -381,17 +420,9 @@ static int cb_events_ws(struct http_connection *hcon, const char *path, const ch
 	hs_set_close_cb(hcon, on_ws_sub_closed, sub);
 
 	json_t *hello = json_object();
-	if(hello) {
-		json_object_set_new(hello, "type", json_string("hello"));
-		json_object_set_new(hello, "channel", json_string("/api/v1/ws"));
-		char *dump = json_dumps(hello, JSON_COMPACT);
-		if(dump) {
-			hs_ws_send_text(hcon, dump, strlen(dump));
-			free(dump);
-		}
-		json_decref(hello);
-	}
-
+	json_object_set_new(hello, "type", json_string("hello"));
+	json_object_set_new(hello, "channel", json_string("/api/v1/ws"));
+	ws_send_json(hcon, hello);
 	return 0;
 }
 
@@ -793,9 +824,6 @@ _Static_assert(ARRAY_SIZE(routes) == NUM_ROUTES, "NUM_ROUTES must match routes[]
 // FIXME: pass ctx alone.
 struct restapi *restapi_create(struct app_ctx *ctx, struct http_server *hs, struct cfgmgrj *cfgmgrj) {
 	struct restapi *api;
-	json_error_t jerr;
-	const char *rigtypes_path = JSONDIR "/mh_rigtypes.json";
-	const char *displayoptions_path = JSONDIR "/mh_displayoptions.json";
 
 	if(!hs || !cfgmgrj) {
 		err("%s() missing http server or config manager", __func__);
@@ -809,25 +837,9 @@ struct restapi *restapi_create(struct app_ctx *ctx, struct http_server *hs, stru
 	api->start_time = time(NULL);
 	PG_NewList(&api->ws_subscribers);
 
-	api->rigtypes = json_load_file(rigtypes_path, 0, &jerr);
-	if(!json_is_array(api->rigtypes)) {
-		err("%s() failed to load %s: %s", __func__, rigtypes_path,
-			jerr.text[0] ? jerr.text : "invalid or empty file");
+	api->metadata_json = build_metadata_json();
+	if(!api->metadata_json)
 		goto fail;
-	}
-
-	api->displayoptions = json_load_file(displayoptions_path, 0, &jerr);
-	if(!json_is_object(api->displayoptions)) {
-		err("%s() failed to load %s: %s", __func__, displayoptions_path,
-			jerr.text[0] ? jerr.text : "invalid or empty file");
-		goto fail;
-	}
-
-	api->devicetypes = build_devicetypes_array(api->displayoptions);
-	if(!api->devicetypes) {
-		err("%s() failed to build devicetypes array", __func__);
-		goto fail;
-	}
 
 	for(size_t i = 0; i < ARRAY_SIZE(routes); i++) {
 		api->handlers[i] = hs_register_handler(hs, routes[i].path, routes[i].func, api);
@@ -880,8 +892,6 @@ void restapi_destroy(struct restapi *api) {
 	if(!api)
 		return;
 	restapi_shutdown(api);
-	json_decref(api->rigtypes);
-	json_decref(api->devicetypes);
-	json_decref(api->displayoptions);
+	free(api->metadata_json);
 	free(api);
 }
