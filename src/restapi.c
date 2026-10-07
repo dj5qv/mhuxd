@@ -350,7 +350,7 @@ static int on_ws_message(struct http_connection *hcon, int opcode, const char *d
 		}
 
 		if(cmd_err) {
-			err("%s: %s", cmd_str ? cmd_str : "command", cmd_err);
+			warn("%s: %s", cmd_str ? cmd_str : "command", cmd_err);
 			ws_send_ack_error(hcon, cmd_err);
 			json_decref(in);
 			return 0;
@@ -455,7 +455,7 @@ static int cb_config_daemon(struct http_connection *hcon, const char *path, cons
 	dbg1("%s %s", __func__, hs_method_str(method));
 
 	if(method != HS_HTTP_GET && method != HS_HTTP_POST && method != HS_HTTP_PUT && method != HS_HTTP_PATCH)
-		return send_empty(hcon, 400);
+		return send_empty(hcon, 405);
 
 	if(method != HS_HTTP_GET && body && body_len) {
 		json_t *root = load_json_object(body, body_len);
@@ -544,9 +544,13 @@ static int cb_config_connectors(struct http_connection *hcon, const char *path, 
 	if(!root)
 		return send_empty(hcon, 400);
 
-	int failed = cfgmgrj_add_conn(api->cfgmgrj, root) != 0 || cfgmgrj_save_cfg(api->cfgmgrj) != 0;
+	/* cfgmgrj_add_conn() only fails on invalid connector settings. */
+	int rc = cfgmgrj_add_conn(api->cfgmgrj, root);
 	json_decref(root);
-	return send_empty(hcon, failed ? 500 : 201);
+	if(rc != 0)
+		return send_empty(hcon, 400);
+
+	return send_empty(hcon, cfgmgrj_save_cfg(api->cfgmgrj) == 0 ? 201 : 500);
 }
 
 /* Connector ids are positive integers; returns -1 for anything else. */
@@ -608,7 +612,7 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 		return send_config_devices(api, hcon);
 
 	if(method != HS_HTTP_POST && method != HS_HTTP_PUT && method != HS_HTTP_PATCH)
-		return send_empty(hcon, 400);
+		return send_empty(hcon, 405);
 
 	json_t *root = load_json_object(body, body_len);
 	if(!root)
@@ -669,7 +673,7 @@ static int cb_config_device(struct http_connection *hcon, const char *path, cons
 		return delete_config_device(api, hcon, serial);
 
 	if(method != HS_HTTP_POST && method != HS_HTTP_PUT && method != HS_HTTP_PATCH)
-		return send_empty(hcon, 400);
+		return send_empty(hcon, 405);
 
 	json_t *device = load_json_object(body, body_len);
 	if(!device)
@@ -739,18 +743,22 @@ static int cb_device_actions(struct http_connection *hcon, const char *path, con
 	}
 
 	const char *action_str = json_string_value(action);
-	int rc = -1;
-	const char *ok_msg = NULL;
-	const char *err_msg = NULL;
+	uint16_t code;
+	const char *msg;
 
-	if(strcmp(action_str, "sm_load") == 0) {
-		rc = cfgmgrj_sm_load(api->cfgmgrj, serial);
-		ok_msg = "Antenna switching settings loaded from device.";
-		err_msg = "Could not load antenna switching settings from device.";
+	if(!app_ctx_get_device(api->ctx, serial)) {
+		code = 404;
+		msg = "Keyer not found.";
+	} else if(strcmp(action_str, "sm_load") == 0) {
+		int rc = cfgmgrj_sm_load(api->cfgmgrj, serial);
+		code = rc == 0 ? 200 : 500;
+		msg = rc == 0 ? "Antenna switching settings loaded from device."
+			      : "Could not load antenna switching settings from device.";
 	} else if(strcmp(action_str, "sm_store") == 0) {
-		rc = cfgmgrj_sm_store(api->cfgmgrj, serial);
-		ok_msg = "Antenna switching settings stored to device.";
-		err_msg = "Could not store antenna switching settings to device.";
+		int rc = cfgmgrj_sm_store(api->cfgmgrj, serial);
+		code = rc == 0 ? 200 : 500;
+		msg = rc == 0 ? "Antenna switching settings stored to device."
+			      : "Could not store antenna switching settings to device.";
 	} else {
 		json_decref(root);
 		return send_json_error(hcon, 400, "Unknown action");
@@ -759,9 +767,9 @@ static int cb_device_actions(struct http_connection *hcon, const char *path, con
 	json_decref(root);
 
 	json_t *rsp = json_object();
-	json_object_set_new(rsp, "status", json_string(rc == 0 ? "ok" : "error"));
-	json_object_set_new(rsp, "message", json_string(rc == 0 ? ok_msg : err_msg));
-	return send_json(hcon, rc == 0 ? 200 : 500, rsp);
+	json_object_set_new(rsp, "status", json_string(code == 200 ? "ok" : "error"));
+	json_object_set_new(rsp, "message", json_string(msg));
+	return send_json(hcon, code, rsp);
 }
 
 /* Registration order matters: the http server dispatches to the first matching path. */
