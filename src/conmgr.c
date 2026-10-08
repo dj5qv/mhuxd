@@ -230,7 +230,7 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 		ctr->instance = vsp_create(&cspec);
 		break;
 	case CON_TCP:
-		ctr->instance = ctcp_create(&cspec);
+		ctr->instance = ctcp_create(&cspec, ch_is_ptt_channel(ctr->channel));
 		break;
 	default:
 		err("create connector, invalid type %d!", ctr->type);

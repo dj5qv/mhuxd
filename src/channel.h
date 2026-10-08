@@ -1,3 +1,11 @@
+/*
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
+ *
+ *  This program can be distributed under the terms of the GNU GPLv2.
+ *  See the file COPYING
+ */
+
 #ifndef CHANNEL_H
 #define CHANNEL_H
 
@@ -27,5 +35,9 @@ const char *ch_channel2str(int channel);
 const char *ch_channel2str_new(int channel, const struct mh_info *mhi);
 int ch_str2channel(const char *str);
 int ch_ptt_channel(int channel);
+
+static inline int ch_is_ptt_channel(int channel) {
+	return (channel == CH_PTT1 || channel == CH_PTT2 || channel == CH_PTT_FOCUS);
+}
 
 #endif /* CHANNEL_H */

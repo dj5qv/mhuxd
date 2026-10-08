@@ -196,10 +196,6 @@ static void switch_producer_events(struct mh_router *router, int active) {
 	}
 }
 
-static int is_ptt_channel(int channel) {
-	return (channel == CH_PTT1 || channel == CH_PTT2 || channel == CH_PTT_FOCUS);
-}
-
 #ifdef MHUXD_SEND_STATUS_VIA_PTT_CONNECTOR
 static void process_in_flags(struct mh_router *router, int c) {
 	struct Consumer *cns;
@@ -334,7 +330,7 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 			ev_timer_start(router->loop, &router->lb[prd->channel].timer);
 		}
 
-		if(is_ptt_channel(prd->channel))
+		if(ch_is_ptt_channel(prd->channel))
 			process_ptt_producer(prd, b);
 
 		PG_SCANLIST(&router->processor_cb_list[prd->channel], prc) {

@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2017  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -17,6 +17,7 @@
 #include "pglist.h"
 #include "conmgr.h"
 #include "net.h"
+#include "ptt_byte.h"
 
 #define MOD_ID "tcp"
 
@@ -46,6 +47,7 @@ struct ctcp {
 
 	struct ev_loop *loop;
 	char *devname;
+	unsigned int is_ptt_channel : 1;
 };
 
 struct ctcp_session {
@@ -57,6 +59,7 @@ struct ctcp_session {
 	ev_io w_out;
 	struct buffer buf_out;
 	struct buffer buf_in;
+	unsigned int ptt_status : 1;
 };
 
 static int ctcp_set_state(struct ctcp *ctcp, enum mhuxd_io_state to) {
@@ -106,6 +109,15 @@ static void ctcp_fail(struct ctcp *ctcp) {
 
 static void rem_session(struct ctcp_session *cs) {
 	struct ctcp *ctcp = cs->ctcp;
+
+	if(ctcp->is_ptt_channel && cs->ptt_status) {
+		uint8_t state = PTT_OFF_BYTE;
+		ssize_t res;
+		int errsv = 0;
+		enum mhuxd_io_rw_result io_res = io_write_nonblock(ctcp->fd_data, &state, 1, &res, &errsv);
+		if(io_res != MHUXD_IO_RW_PROGRESS || res != 1)
+			err("%s() Could not send PTT off after connection drop", __func__);
+	}
 
 	ctcp_watch_stop(ctcp, &cs->w_in);
 	ctcp_watch_stop(ctcp, &cs->w_out);
@@ -185,6 +197,13 @@ static void data_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 		if(io_res == MHUXD_IO_RW_EOF) {
 			ctcp_fail(ctcp);
 			return;
+		}
+
+		if(ctcp->is_ptt_channel && size > 0) {
+			// If PTT channel, track PTT status
+			for(int i = b->rpos; i < b->rpos + size; i++)
+				if(b->data[i] == PTT_ON_BYTE || b->data[i] == PTT_OFF_BYTE)
+					cs->ptt_status = b->data[i] == PTT_ON_BYTE ? 1 : 0;
 		}
 
 		buf_consume(b, size);
@@ -311,7 +330,7 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 }
 
 
-struct ctcp *ctcp_create(const struct connector_spec *cpsec) {
+struct ctcp *ctcp_create(const struct connector_spec *cpsec, uint8_t is_ptt_channel) {
 	struct ctcp *ctcp;
 
 	dbg1("%s()", __func__);
@@ -375,6 +394,7 @@ struct ctcp *ctcp_create(const struct connector_spec *cpsec) {
 
 	ctcp = w_calloc(1, sizeof(*ctcp));
 	PG_NewList(&ctcp->session_list);
+	ctcp->is_ptt_channel = is_ptt_channel;
 	ctcp->loop = cpsec->loop;
 	ctcp->devname = w_strdup(devname);
 	ctcp->lsnr_v6 = lsnr_v6;
