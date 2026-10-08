@@ -939,6 +939,15 @@ const struct mh_info *mhc_get_mhinfo(struct mh_control *ctl)  {
 	return &ctl->mhi;
 }
 
+void mhc_set_cached_fw_version(struct mh_control *ctl, uint16_t major, uint16_t minor, int beta, uint16_t winkey) {
+	if(ctl->mhi.ver_fw_major || ctl->mhi.ver_fw_minor)
+		return;
+	ctl->mhi.ver_fw_major = major;
+	ctl->mhi.ver_fw_minor = minor;
+	ctl->mhi.ver_fw_beta = beta ? 1 : 0;
+	ctl->mhi.ver_winkey = winkey;
+}
+
 const int mhc_get_keyer_mode(struct mh_control *ctl) {
 	return ctl->tracked_keyer_mode;
 }

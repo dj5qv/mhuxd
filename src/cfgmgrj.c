@@ -1149,6 +1149,19 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
             json_object_set_new(device, "serial", json_string(dev->serial ? dev->serial : ""));
             json_object_set_new(device, "type", json_integer(mhc_get_type(dev->ctl)));
 
+            // Not a setting, remembered to show the firmware version while the keyer is offline.
+            const struct mh_info *mhi = mhc_get_mhinfo(dev->ctl);
+            if(mhi->ver_fw_major || mhi->ver_fw_minor) {
+                json_t *fw = json_object();
+                if(fw) {
+                    json_object_set_new(fw, "major", json_integer(mhi->ver_fw_major));
+                    json_object_set_new(fw, "minor", json_integer(mhi->ver_fw_minor));
+                    json_object_set_new(fw, "beta", json_boolean(mhi->ver_fw_beta));
+                    json_object_set_new(fw, "winkey", json_integer(mhi->ver_winkey));
+                    json_object_set_new(device, "firmware", fw);
+                }
+            }
+
             if(cfgmgrj && cfgmgrj->rig_mode_sync && dev->serial) {
                 json_t *rig_mode_sync_obj = json_object_get(cfgmgrj->rig_mode_sync, dev->serial);
                 if(rig_mode_sync_obj && json_is_object(rig_mode_sync_obj)) {
@@ -1264,6 +1277,12 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
 json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj) {
     json_t *root = build_config_json(cfgmgrj);
     if(!root) return NULL;
+
+    // The remembered firmware versions are for the config file only, /api/v1/devices reports them.
+    size_t didx;
+    json_t *d;
+    json_array_foreach(json_object_get(root, "devices"), didx, d)
+        json_object_del(d, "firmware");
 
     // Decorate connectors with runtime status for the UI.
     // We deep copy the connectors list so we don't save runtime status to the config file.
@@ -1419,6 +1438,23 @@ struct cfgmgrj *cfgmgrj_create(struct app_ctx *app_ctx) {
     return;
 }
 
+// The firmware versions in the config file are no settings, they are remembered to show them
+// while a keyer is offline. So they are only read from the file, not from the REST API.
+static void load_fw_versions(struct cfgmgrj *cfgmgrj, json_t *root) {
+    json_t *devices = json_object_get(root, "devices");
+    size_t idx;
+    json_t *device;
+    json_array_foreach(devices, idx, device) {
+        json_t *fw = json_object_get(device, "firmware");
+        const char *serial = json_string_value(json_object_get(device, "serial"));
+        struct device *dev = serial ? app_ctx_get_device(cfgmgrj->ctx, serial) : NULL;
+        if(!json_is_object(fw) || !dev)
+            continue;
+        mhc_set_cached_fw_version(dev->ctl, json_get_int(fw, "major", 0), json_get_int(fw, "minor", 0),
+                                  json_get_boolish(fw, "beta", 0), json_get_int(fw, "winkey", 0));
+    }
+}
+
 int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
     dbg0("%s Loading config from %s", __func__, CFGFILE);
 
@@ -1440,6 +1476,7 @@ int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
     cfgmgrj->busy++;
     int rc = apply_config_json(cfgmgrj, root, 1);
     cfgmgrj->busy--;
+    load_fw_versions(cfgmgrj, root);
     json_decref(root);
     return rc;
 }

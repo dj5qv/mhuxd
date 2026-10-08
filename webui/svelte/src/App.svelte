@@ -136,10 +136,9 @@
       return;
     }
 
-    // Known keyer came ONLINE but we still lack its firmware version: the first
-    // state event arrived before the handshake populated it. Reload once to pick it up.
-    const fwUnknown = !known.verFwMajor && !known.verFwMinor;
-    if (data.status === 'ONLINE' && fwUnknown) {
+    // Known keyer came ONLINE: the firmware version we show is either missing or
+    // remembered from a previous run. Reload to pick up what the handshake reported.
+    if (data.status === 'ONLINE' && known.status !== 'ONLINE') {
       reloadData().catch(() => { /* keep current state on failure */ });
       return;
     }

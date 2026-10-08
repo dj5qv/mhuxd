@@ -34204,8 +34204,7 @@ function instance($$self, $$props, $$invalidate) {
       });
       return;
     }
-    const fwUnknown = !known.verFwMajor && !known.verFwMinor;
-    if (data.status === "ONLINE" && fwUnknown) {
+    if (data.status === "ONLINE" && known.status !== "ONLINE") {
       reloadData().catch(() => {
       });
       return;

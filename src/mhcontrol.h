@@ -62,6 +62,9 @@ int mhc_is_connected(struct mh_control *ctl);
 int mhc_is_online(struct mh_control *ctl);
 const char *mhc_get_serial(struct mh_control *ctl);
 const struct mh_info *mhc_get_mhinfo(struct mh_control *ctl);
+// Firmware version remembered from a previous run, shown until the keyer reports its own.
+// Ignored if a version is known already.
+void mhc_set_cached_fw_version(struct mh_control *ctl, uint16_t major, uint16_t minor, int beta, uint16_t winkey);
 uint16_t mhc_get_type(struct mh_control *);
 const struct cfg *mhc_get_speed_cfg(struct mh_control *ctl, int channel);
 
