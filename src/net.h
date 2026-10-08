@@ -21,5 +21,6 @@ struct netlsnr *net_create_listener_ex(const char *host_port_str, int flags);
 void net_destroy_lsnr(struct netlsnr *lsnr);
 int net_listener_get_fd(struct netlsnr *lsnr);
 int net_accept(int fd);
+int net_set_keepalive(int fd, int idle_s, int intvl_s, int cnt);
 
 #endif /* NET_H */

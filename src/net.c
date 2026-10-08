@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -184,3 +185,25 @@ int net_accept(int fd) {
 	return con_fd;
 }
 
+/*
+ * Make the kernel give up on a peer that vanished without FIN/RST. Keepalive
+ * probes catch an idle connection, TCP_USER_TIMEOUT caps the retransmissions
+ * while data is unacknowledged (default tcp_retries2 would take ~15 min).
+ * Either way the socket then fails with ETIMEDOUT.
+ */
+int net_set_keepalive(int fd, int idle_s, int intvl_s, int cnt) {
+	int on = 1;
+	unsigned int user_timeout_ms = (unsigned int)(idle_s + intvl_s * cnt) * 1000;
+
+	if(-1 == setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)))
+		return -1;
+	if(-1 == setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &idle_s, sizeof(idle_s)))
+		return -1;
+	if(-1 == setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &intvl_s, sizeof(intvl_s)))
+		return -1;
+	if(-1 == setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &cnt, sizeof(cnt)))
+		return -1;
+	if(-1 == setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &user_timeout_ms, sizeof(user_timeout_ms)))
+		return -1;
+	return 0;
+}

@@ -20,6 +20,13 @@
 
 #define MOD_ID "tcp"
 
+/* Drop a client that vanished without closing (cable, WiFi, sleep) after
+ * ~30 s: first probe after 10 s of silence, then every 5 s, give up after 4.
+ * Otherwise the stale session keeps holding a maxcon slot for a long time. */
+#define CTCP_KEEPIDLE	10
+#define CTCP_KEEPINTVL	5
+#define CTCP_KEEPCNT	4
+
 struct ctcp {
 	/* Connector-owned endpoint from socketpair (connector side). */
 	int fd_data;
@@ -210,7 +217,13 @@ static void client_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	if(io_res == MHUXD_IO_RW_WOULD_BLOCK)
 		return;
 
-	if(io_res == MHUXD_IO_RW_ERROR || io_res == MHUXD_IO_RW_EOF) {
+	if(io_res == MHUXD_IO_RW_ERROR) {
+		info_e(errsv, "connection on %s closed", ctcp->devname);
+		rem_session(cs);
+		return;
+	}
+
+	if(io_res == MHUXD_IO_RW_EOF) {
 		info("connection on %s closed", ctcp->devname);
 		rem_session(cs);
 		return;
@@ -238,7 +251,13 @@ static void client_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	if(io_res == MHUXD_IO_RW_WOULD_BLOCK)
 		return;
 
-	if(io_res == MHUXD_IO_RW_ERROR || io_res == MHUXD_IO_RW_EOF) {
+	if(io_res == MHUXD_IO_RW_ERROR) {
+		info_e(errsv, "connection on %s closed", ctcp->devname);
+		rem_session(cs);
+		return;
+	}
+
+	if(io_res == MHUXD_IO_RW_EOF) {
 		info("connection on %s closed", ctcp->devname);
 		rem_session(cs);
 		return;
@@ -271,6 +290,9 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 		fd_close(&fd);
 		return;
 	}
+
+	if(-1 == net_set_keepalive(fd, CTCP_KEEPIDLE, CTCP_KEEPINTVL, CTCP_KEEPCNT))
+		warn_e(errno, "could not enable keepalive on %s", ctcp->devname);
 
 	struct ctcp_session *cs = w_calloc(1, sizeof(*cs));
 	cs->ctcp = ctcp;
