@@ -1,0 +1,36 @@
+[#port_permissions]
+== Port Permissions
+
+=== When installed from Ubuntu/Debian package
+
+If you have installed mhuxd from the Debian/Ubuntu binary package you will see the VSP ports are owned by the user “root” and group “mhuxd”:
+
+`# ls -la /dev/mhuxd/ +
+drwxr-xr-x 2 root root 120 Oct 28 14:54 . +
+drwxr-xr-x 20 root root 4620 Oct 28 14:54 .. +
+crw-rw---- 1 root [red]#mhuxd# 246, 0 Oct 28 14:54 cat1 +
+crw-rw---- 1 root [red]#mhuxd# 248, 0 Oct 28 14:54 fsk1 +
+crw-rw---- 1 root [red]#mhuxd# 247, 0 Oct 28 14:54 ptt1 +
+crw-rw---- 1 root [red]#mhuxd# 249, 0 Oct 28 14:54 wk`
+
+To make these ports accessible from your account you just need to make yourself member of the “mhuxd” group. Let’s say your user id is “johndoe” you can add yourself by this command:
+
+`sudo usermod -a -G mhuxd johndoe`
+
+You may need to re-login for the change to take effect.
+
+=== When installed from compiled source code
+
+Here you would have to create user and group “mhuxd” yourself. You will also need to install the proper udev rule file. This will ensure that the virtual serial ports in /dev/mhuxd/ are owned by group “mhuxd”.
+
+* Create a group “mhuxd”. Create a user “mhuxd” with primary group “mhuxd”.
+* Find out where the udev rules are located. On Ubuntu/Debian this is typically in +
+`/lib/udev/rules.d/`
+
+* From the mhuxd source distribution copy below file to the udev rules directory +
+`debian/mhuxd.udev`
+
+* In the udev rules directory rename the file +
+`mhuxd.udev` +
+to +
+`59-mhuxd.rules`

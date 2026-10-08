@@ -7,6 +7,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
@@ -15,12 +16,15 @@
 #include <ev.h>
 #include "clearsilver/util/neo_hdf.h"
 #include "wkman.h"
+#include "app_ctx.h"
 #include "util.h"
 #include "citem.h"
 #include "devmgr.h"
 #include "channel.h"
 #include "mhrouter.h"
 #include "mhcontrol.h"
+#include "eventbus.h"
+#include "events.h"
 #include "cfgnod.h"
 #include "logger.h"
 
@@ -46,7 +50,7 @@ struct wkman {
 	struct device *dev;
 	struct ev_loop *loop;
 	ev_timer timeout_timer;
-	struct mhc_keyer_state_callback *kscb;
+	eventbus_sub_t *kscb;
 	uint8_t cfg[WK_CFG_SIZE];
 	uint8_t read_size;
 	uint8_t state;
@@ -90,6 +94,19 @@ int wkm_set_value(struct wkman *wkman, const char *key, uint8_t val) {
 	return r;
 }
 
+int wkm_foreach(struct wkman *wkman, int (*cb)(const char *key, int val, void *user_data), void *user_data) {
+	if(!wkman || !cb)
+		return -1;
+	for(size_t i = 0; i < ARRAY_SIZE(citems); i++) {
+		int val = citem_get_value(citems, ARRAY_SIZE(citems), wkman->cfg, sizeof(wkman->cfg), citems[i].key);
+		if(val < 0)
+			continue;
+		if(cb(citems[i].key, val, user_data) != 0)
+			return -1;
+	}
+	return 0;
+}
+
 void read_cb(struct mh_router *router, unsigned const char *data , int len, int channel, void *user_data) {
 	(void)router; (void)channel;
 	struct wkman *wkman = user_data;
@@ -131,14 +148,20 @@ static void timeout_cb (struct ev_loop *loop,  struct ev_timer *w, int revents) 
 	}
 }
 
-static void keyer_state_changed_cb(const char *serial, int state, void *user_data) {
-	(void)state; (void)serial;
+static void keyer_state_changed_cb(enum app_event_type type, const void *data, void *user_data) {
 	struct wkman *wkman = user_data;
+	const struct ev_keyer_state *ev = data;
 
-	dbg1("%s %s() %s", wkman->dev->serial, __func__, mhc_state_str(state));
+	if(type != EV_KEYER_STATE || !ev)
+		return;
+
+	if(ev->serial && strcmp(ev->serial, wkman->dev->serial))
+		return;
+
+	dbg1("%s %s() %s", wkman->dev->serial, __func__, mhc_state_str(ev->state));
 
 
-	if(state == MHC_KEYER_STATE_ONLINE) {
+	if(ev->state == MHC_KEYER_STATE_ONLINE) {
 		int err;
 		wkman->state = WKM_STATE_HOST_CLOSED;
 
@@ -167,14 +190,14 @@ static void keyer_state_changed_cb(const char *serial, int state, void *user_dat
 	}
 }
 
-struct wkman *wkm_create(struct ev_loop *loop, struct device *dev) {
+struct wkman *wkm_create(struct app_ctx *ctx, struct device *dev) {
 	struct wkman *wkman = w_calloc(1, sizeof(*wkman));
 	uint16_t i;
 
 	dbg1("%s %s()", dev->serial, __func__);
 
 	wkman->dev = dev;
-	wkman->loop = loop;
+	wkman->loop = app_ctx_get_loop(ctx);
 
 
 	for(i = 0; i < ARRAY_SIZE(citems); i++) {
@@ -186,7 +209,7 @@ struct wkman *wkm_create(struct ev_loop *loop, struct device *dev) {
 
 	wkman->state = mhc_is_online(wkman->dev->ctl) ? WKM_STATE_HOST_CLOSED : WKM_STATE_OFFLINE;
 
-	wkman->kscb = mhc_add_keyer_state_changed_cb(dev->ctl, keyer_state_changed_cb, wkman);
+	wkman->kscb = eventbus_subscribe(app_ctx_get_eventbus(ctx), EV_KEYER_STATE, keyer_state_changed_cb, wkman);
 
 	mhr_add_consumer_cb(wkman->dev->router, read_cb, MH_CHANNEL_WINKEY, wkman);
 
@@ -198,7 +221,7 @@ void wkm_destroy(struct wkman *wkman) {
 		return;
 	ev_timer_stop(wkman->loop, &wkman->timeout_timer);
 	mhr_rem_consumer_cb(wkman->dev->router, read_cb, MH_CHANNEL_WINKEY);
-	mhc_rem_keyer_state_changed_cb(wkman->dev->ctl, wkman->kscb);
+	eventbus_unsubscribe(wkman->kscb);
 	free(wkman);
 }
 

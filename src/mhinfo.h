@@ -52,6 +52,7 @@ enum {
 
 	MHF_HAS_PFSK = (1<<25),
 	MHF_HAS_PCW = (1<<26),
+	MHF_HAS_CAT_CMD = (1<<27),  	// Support for CAT R1/R2 control command
 
 	MHF_MHUXD_SUPPORTED = (1<<31)
 
@@ -72,6 +73,9 @@ struct mh_info_map {
 	uint32_t    flags;
 	uint16_t    type;
 };
+
+extern const struct mh_info_map mh_info_map[];
+extern const int mh_info_map_size;
 
 void mhi_init(struct mh_info *mhi, int type);
 int mhi_parse_version(struct mh_info *mhi, const uint8_t *data, uint16_t len);

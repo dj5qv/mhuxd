@@ -1,0 +1,64 @@
+[#the_webui]
+== The WebUI
+
+The WebUI provides a graphical interface to mhuxd. By default it is bound to the local machine only, that means it is reachable from the computer where mhuxd is running.
+
+To access the WebUI make sure that mhuxd is running and open the following address in a browser:
+
+http://localhost:5052
+
+The port (5052 by default) can be changed with the `-w` command line option.
+
+=== New and classic WebUI
+
+Starting with version 0.90 mhuxd ships a new web interface written in JavaScript (Svelte). It is served as the default at the address above and updates automatically as keyers appear, disappear or change state — no manual page refresh is required.
+
+The previous ("classic") interface is still available at:
+
+http://localhost:5052/classic
+
+NOTE: The classic interface is no longer maintained and may be removed in a future release. New features are only added to the default interface.
+
+=== Layout
+
+.WebUI home page
+image::mhuxd_home.png[]
+
+NOTE: The screenshots in this manual were taken with an earlier version of the interface and may differ from the current layout.
+
+The window is divided into three areas:
+
+* a *top bar* showing the host name and the running mhuxd version,
+* a row of *tabs* – a *Daemon* tab plus one tab for every detected keyer, and
+* a *side menu* on the left whose entries depend on the selected tab (and, for keyers, on the keyer type).
+
+image::mhuxd_all_tabs.png[]
+
+=== Daemon tab
+
+The Daemon tab groups settings that are not specific to a single keyer:
+
+* *Summary* – mhuxd version, host name, process id, log file and current log level, plus a list of detected keyers with their status.
+* *Ports* – create and route virtual serial ports and TCP network ports (see <<port_routing>>).
+* *Settings* – set the log level (CRIT, ERROR, WARN, INFO, DEBUG0, DEBUG1).
+
+=== Keyer tabs
+
+Each detected keyer has its own tab allowing keyer specific configuration. The available side menu entries depend on the keyer type; see <<keyer_config>>.
+
+=== Keyer status
+
+The status of each keyer is shown by a colored indicator:
+
+image::mhuxd_led_green.png[float="left",align="left"]
+Keyer is connected and online
+
+image::mhuxd_led_yellow.png[float="left",align="left"]
+Keyer is connected but not online (powered off)
+
+image::mhuxd_led_red.png[float="left",align="left"]
+Keyer is not connected
+
+{empty} +
+
+The status is updated automatically; no page refresh is necessary.

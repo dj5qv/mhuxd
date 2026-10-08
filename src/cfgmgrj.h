@@ -1,0 +1,42 @@
+/*
+ *  mhuxd - mircoHam device mutliplexer/demultiplexer
+ *  Copyright (C) 2026
+ *
+ *  This program can be distributed under the terms of the GNU GPLv2.
+ *  See the file COPYING
+ */
+
+#ifndef CFGMGRJ_H
+#define CFGMGRJ_H 1
+
+typedef struct json_t json_t;
+
+struct app_ctx;
+struct ev_loop;
+struct conmgr;
+struct cfgmgrj;
+
+
+struct cfgmgrj *cfgmgrj_create(struct app_ctx *app_ctx);
+void cfgmgrj_destroy(struct cfgmgrj *cfgmgrj);
+// Returns -2 if there is no config file. Otherwise applies all settings it can and returns -1 if
+// the file can't be read or any setting failed. Connectors with invalid settings are kept.
+int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj);
+int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj);
+int cfgmgrj_add_conn(struct cfgmgrj *cfgmgrj, json_t *conn_obj);
+// Returns 0 on success, -ENOENT if no connector has this id.
+int cfgmgrj_remove_conn(struct cfgmgrj *cfgmgrj, int id);
+// Forget a disconnected keyer along with its connectors and rig mode sync settings.
+// Returns 0 on success, -ENOENT if not known, -EBUSY if still connected,
+// -EAGAIN if a config operation is in progress.
+int cfgmgrj_remove_device(struct cfgmgrj *cfgmgrj, const char *serial);
+// Applies all settings it can, returns -1 if any of them failed.
+int cfgmgrj_apply_json(struct cfgmgrj *cfgmgrj, json_t *root);
+json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj);
+int cfgmgrj_sync_from_conmgr(struct cfgmgrj *cfgmgrj);
+
+int cfgmgrj_sm_load(struct cfgmgrj *cfgmgrj, const char *serial);
+int cfgmgrj_sm_store(struct cfgmgrj *cfgmgrj, const char *serial);
+const char *cfgmgrj_get_cfg_path(void);
+
+#endif // CFGMGRJ_H

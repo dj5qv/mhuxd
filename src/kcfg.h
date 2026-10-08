@@ -24,11 +24,13 @@ struct kcfg *kcfg_create(const struct mh_info *mhi);
 void kcfg_destroy(struct kcfg *kcfg);
 struct buffer *kcfg_get_buffer(struct kcfg *kcfg);
 int kcfg_set_val(struct kcfg *kcfg, const char *key, int val);
+int kcfg_get_val(struct kcfg *kcfg, const char *key, int def);
 
 void kcfg_iter_begin(struct kcfg *kcfg, struct kcfg_iterator *iter);
 int kcfg_iter_next(struct kcfg_iterator *iter);
 int kcfg_iter_get(struct kcfg_iterator *iter, const char **keyp, int *valp);
 
 void kcfg_update_keyer_mode(struct kcfg *kcfg, uint8_t cur, uint8_t r1, uint8_t r2);
+void kcfg_update_mk1_frbase(struct kcfg *kcfg, int8_t mode);
 
 #endif // KCFG_H

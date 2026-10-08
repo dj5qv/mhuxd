@@ -11,25 +11,30 @@
 #define DEVMGR_H
 
 #include <stdint.h>
+#include "device.h"
 #include "pglist.h"
+#include "mhinfo.h"
 
-struct device {
-	struct PGNode node;
-	struct mh_router *router;
-	struct mh_control *ctl;
-	struct wkman *wkman;
-	char *serial;
-};
+typedef struct on_device_connect_cb t_on_device_connect_cb_handle;
 
 struct ev_loop;
-struct cfgmgr;
+typedef struct eventbus eventbus_t;
 
-void *dmgr_create(struct ev_loop *loop, struct cfgmgr *cfgmgr);
-void dmgr_enable_monitor();
-struct device *dmgr_add_device(const char *serial, uint16_t type);
-void dmgr_destroy();
-struct device *dmgr_get_device(const char *serial);
-struct PGList *dmgr_get_device_list();
-struct cfgmgr *dmgr_get_cfgmgr();
+struct device_manager *dmgr_create(struct ev_loop *loop, eventbus_t *ebus);
+void dmgr_enable_monitor(struct device_manager *dmgr);
+void dmgr_disable_monitor(struct device_manager *dmgr);
+struct device *dmgr_add_device(struct device_manager *dmgr, const char *serial);
+// Remove a keyer, which must be disconnected. Anything else referencing it (connectors, winkey manager
+// users, rigctld clients) must have been destroyed before.
+// Returns 0 on success, -ENOENT if not known, -EBUSY if still connected.
+int dmgr_remove_device(struct device_manager *dmgr, const char *serial);
+void dmgr_destroy(struct device_manager *dmgr);
+struct device *dmgr_get_device(struct device_manager *dmgr, const char *serial);
+struct PGList *dmgr_get_device_list(struct device_manager *dmgr);
+
+typedef void (*dmgr_device_cb)(struct device *dev, void *user_data);
+t_on_device_connect_cb_handle *dmgr_add_on_device_connect_cb(struct device_manager *dmgr, dmgr_device_cb cb, void *user_data);
+void dmgr_rem_on_device_connect_cb(struct device_manager *dmgr, t_on_device_connect_cb_handle *handle);
+
 
 #endif // DEVMGR_H

@@ -1,0 +1,8 @@
+### Websocket commands client -> mhuxd
+
+## send FSK/CW message 1
+{"type":"command","command":"play_message","serial":"M32VFFGJ","message":1}
+
+## abort message
+{"type":"command","command":"abort_message","serial":"M32VFFGJ"}
+

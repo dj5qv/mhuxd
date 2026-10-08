@@ -1,0 +1,38 @@
+= mhuxd - Daemon for microHam Keyers
+:doctype: book
+:encoding: utf-8
+:lang: en
+:toc: left
+:toclevels: 2
+:numbered:
+:showtitle:
+//https://github.com/asciidocfx/AsciidocFX/issues/130
+//https://github.com/asciidocfx/AsciidocFX/issues/114
+//FRONT COVER PAGE
+//PURE IMAGE PAGE ONLY, BEFORE TITLE PAGE
+:front-cover-image: image:front-cover.png[]
+//TITLE PAGE
+:title-page:
+//ADD IMAGE IN TITLE PAGE 
+:title-page-background-image: image:title-bg.png[]
+//:title-logo-image: image:logo.png[top=25%,align=center,pdfwidth=0.5in]
+
+[.text-center]
+©DJ5QV +
+Doc version 0.90
+
+
+include::about.adoc[]
+
+include::installation.adoc[]
+
+include::the_webui.adoc[]
+
+include::port_routing.adoc[]
+
+include::port_permissions.adoc[]
+
+include::keyer_config.adoc[]
+
+include::index.adoc[]
+

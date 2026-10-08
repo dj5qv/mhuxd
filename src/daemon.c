@@ -49,7 +49,7 @@ void dmn_daemonize(void) {
 		exit(EXIT_SUCCESS);
 	}
 
-	umask(0);
+	umask(022);
 
 	sid = setsid();
 	if (sid < 0) {
@@ -82,7 +82,7 @@ FILE *dmn_pidfile_lock(const char *name) {
         int pid;
         FILE *f;
 
-        fd = open(name, O_RDWR | O_CREAT, 0644);
+fd = open(name, O_RDWR | O_CREAT | O_CLOEXEC, 0644);
 
         if(fd == -1) {
                 err_e(errno, "Could not open or create pidfile %s!", name);

@@ -13,7 +13,7 @@
 
 #define MOD_ID "cfg"
 
-struct cfg *cfg_create() {
+struct cfg *cfg_create(void) {
 	NEOERR *err;
 	HDF *hdf;
 	err = hdf_init(&hdf);
@@ -76,6 +76,19 @@ int cfg_set_int_value(struct cfg *cfg, const char *key, int val) {
 		return -1;
 	}
 	return 0;
+}
+
+int cfg_set_int_val(struct cfg *cfg, const char *key, int val) {
+	return cfg_set_int_value(cfg, key, val);
+}
+
+int cfg_set_float_val(struct cfg *cfg, const char *key, float val) {
+	char buf[64];
+	snprintf(buf, sizeof(buf), "%g", val);
+	char *dot = strchr(buf, '.');
+	if(dot)
+		*dot = '_';
+	return cfg_set_value(cfg, key, buf);
 }
 
 

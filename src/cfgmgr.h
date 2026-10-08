@@ -29,7 +29,9 @@ enum CFGMGR_APPLY_MODE {
 
 };
 
-struct cfgmgr *cfgmgr_create(struct conmgr *, struct ev_loop *loop);
+struct app_ctx;
+
+struct cfgmgr *cfgmgr_create(struct app_ctx *app_ctx);
 void cfgmgr_destroy(struct cfgmgr *cfgmgr);
 int cfgmgr_init(struct cfgmgr *cfgmgr);
 //int cfgmgr_update_hdf_all(struct cfgmgr *cfgmgr);
@@ -39,10 +41,14 @@ int cfgmgr_merge_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg);
 int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode);
 int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg);
 int cfgmgr_remove(struct cfgmgr *cfgmgr, struct cfg *cfg);
+#if 0
 int cfgmgr_save_cfg(struct cfgmgr *cfgmgr);
-int cfgmgr_sm_load(const char *serial);
-int cfgmgr_sm_store(const char *serial);
+#endif
+int cfgmgr_sm_load(struct cfgmgr *cfgmgr, const char *serial);
+int cfgmgr_sm_store(struct cfgmgr *cfgmgr, const char *serial);
 
 void cfgmr_state_changed_cb(const char *serial, int state, void *user_data);
+int cfgmgr_has_cfg_file(struct cfgmgr *cfgmgr);
+const char *cfgmgr_get_cfg_path(void);
 
 #endif // CFGMGR_H

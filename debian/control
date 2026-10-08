@@ -1,13 +1,23 @@
 Source: mhuxd
 Section: hamradio
-Priority: extra
+Priority: optional
 Maintainer: Matthias Moeller <dj5qv@maxec.de>
-Build-Depends: debhelper (>= 10), autotools-dev, dh-autoreconf, libev-dev (>= 1), libfuse-dev (>= 2.8.0), libudev-dev (>= 151), pkg-config (>= 0.22)
+Build-Depends: debhelper-compat (= 12),
+               autoconf,
+               automake,
+               libtool,
+               libev-dev,
+               libudev-dev,
+               libfuse-dev,
+               libjansson-dev,
+               adduser
 Standards-Version: 3.9.2
 Homepage: http://mhuxd.dj5qv.de
 
 Package: mhuxd
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Pre-Depends: ${misc:Pre-Depends}
+Depends: acl, adduser, ${shlibs:Depends}, ${misc:Depends}
+Suggests: libhamlib-utils
 Description: Device Router for microHam keyers.
  Mhuxd is a device router daemon for microHam keyers.

@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2017  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -9,9 +9,11 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <ctype.h>
+#include <strings.h>
 #include <ev.h>
 #include "clearsilver/util/neo_hdf.h"
 #include "cfgmgr.h"
+#include "app_ctx.h"
 #include "logger.h"
 #include "util.h"
 #include "cfgnod.h"
@@ -38,13 +40,46 @@
 #define CFGFILE STATEDIR "/mhuxd-state.hdf"
 #define MAX_HDF_PATH_LEN (128)
 
-extern const char *log_file_name;
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 255
+#endif
 
 struct cfgmgr {
-	struct ev_loop *loop;
-	struct conmgr *conmgr;
+	struct app_ctx *app_ctx;
 	struct cfg *runtime_cfg;
 };
+
+// Wrapper during HDF/JSON transition
+int conmgr_create_con(struct app_ctx *ctx, struct cfg *cfg, int id) {
+	struct con_cfg ccfg = { 0 };
+	const char *serial = cfg_get_val(cfg, "serial", NULL);
+	const char *channel_str = cfg_get_val(cfg, "channel", NULL);
+	const char *type_str = cfg_get_val(cfg, "type", NULL);
+
+	ccfg.serial = serial;
+	ccfg.channel = channel_str ? ch_str2channel(channel_str) : -1;
+	ccfg.type = CON_INVALID;
+
+	if(type_str) {
+		if(!strcasecmp(type_str, "VSP"))
+			ccfg.type = CON_VSP;
+		else if(!strcasecmp(type_str, "TCP"))
+			ccfg.type = CON_TCP;
+	}
+
+	if(ccfg.type == CON_VSP) {
+		ccfg.vsp.devname = cfg_get_val(cfg, "devname", NULL);
+		ccfg.vsp.maxcon = cfg_get_int_val(cfg, "maxcon", 1);
+		ccfg.vsp.ptt_rts = cfg_get_int_val(cfg, "ptt_rts", 0);
+		ccfg.vsp.ptt_dtr = cfg_get_int_val(cfg, "ptt_dtr", 0);
+	} else if(ccfg.type == CON_TCP) {
+		ccfg.tcp.port = cfg_get_val(cfg, "devname", NULL);
+		ccfg.tcp.maxcon = cfg_get_int_val(cfg, "maxcon", 1);
+		ccfg.tcp.remote_access = cfg_get_int_val(cfg, "remote_access", 0);
+	}
+
+	return conmgr_create_con_cfg(ctx, &ccfg, id);
+}
 
 static void log_neoerr(NEOERR *err, const char *what) {
 	STRING str;
@@ -65,7 +100,7 @@ static int merge_runtime_cfg(struct cfg *cfg) {
 	rval |= cfg_set_value(cfg, "mhuxd.run.program.name", _package);
 	rval |= cfg_set_value(cfg, "mhuxd.run.program.version", _package_version);
 	rval |= cfg_set_value(cfg, "mhuxd.run.hostname", buf);
-	rval |= cfg_set_value(cfg, "mhuxd.run.logfile", log_file_name);
+	rval |= cfg_set_value(cfg, "mhuxd.run.logfile", log_get_file_name());
 	rval |= cfg_set_int_value(cfg, "mhuxd.run.pid", getpid());
 
 	int i;
@@ -78,13 +113,6 @@ static int merge_runtime_cfg(struct cfg *cfg) {
 	}
 	return rval;
 }
-
-enum {
-        MOD_CW,
-        MOD_VOICE,
-	MOD_FSK,
-        MOD_DIGITAL,
-};
 
 static int mk1_set_frbase(struct device *dev, struct cfg *param_cfg) {
 	int rval = 0;
@@ -137,14 +165,6 @@ static int mk1_set_frbase(struct device *dev, struct cfg *param_cfg) {
 	}
 
 	return rval;
-}
-
-//FIXME: remove this
-void cfgmr_state_changed_cb(const char *serial, int state, void *user_data) {
-	(void)state; (void)serial; (void)user_data;
-	//struct cfgmgr *cfgmgr = user_data;
-	dbg1("%s() %s", __func__, mhc_state_str(state));
-	//cfgmgr_update_hdf_dev(cfgmgr, serial);
 }
 
 // Merge device configuration into cfg
@@ -329,7 +349,7 @@ int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg)
 
 		for(i = 0; i < MH_NUM_CHANNELS; i++) {
 			if((speed_cfg = mhc_get_speed_cfg(dev->ctl, i))) {
-				strncpy(name, ch_channel2str(i), sizeof(name) - 1);
+				strncpy(name, ch_channel2str_new(i, mhc_get_mhinfo(dev->ctl)), sizeof(name) - 1);
 				for (p = name ; *p; ++p) *p = tolower(*p);
 
 				snprintf(buf, sizeof(buf)-1, "channel.%s", name);
@@ -383,7 +403,7 @@ int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg)
 	// Winkey config
 	if((mhi->flags & MHF_HAS_WINKEY)) {
 		if(!dev->wkman) {
-			dev->wkman = wkm_create(cfgmgr->loop, dev);
+			dev->wkman = wkm_create(cfgmgr->app_ctx, dev);
 		}
 		err = hdf_get_node(knod, "winkey", &winkey_nod);
 		if(err != STATUS_OK) goto failed;
@@ -431,7 +451,7 @@ int cfgmgr_merge_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	rval |= cfg_set_value(cfg, "mhuxd.daemon.loglevel", log_get_level_str());
 	rval |= cfg_merge(cfg, cfgmgr->runtime_cfg);
 
-	PG_SCANLIST(dmgr_get_device_list(), dev) {
+	PG_SCANLIST(app_ctx_get_device_list(cfgmgr->app_ctx), dev) {
 		rval |= merge_device_cfg(cfgmgr, dev, cfg);
 	}
 
@@ -449,6 +469,15 @@ static void completion_cb(unsigned const char *reply_buf, int len, int result, v
         (void)reply_buf; (void)len;
         int *notify = user_data;
         *notify = result;
+}
+
+int cfgmgr_has_cfg_file(struct cfgmgr *cfgmgr) {
+	(void)cfgmgr;
+	return access(CFGFILE, F_OK) == 0 ? 1 : 0;
+}
+
+const char *cfgmgr_get_cfg_path(void) {
+	return CFGFILE;
 }
 
 int cfgmgr_init(struct cfgmgr *cfgmgr) {
@@ -590,10 +619,10 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 		HDF *chan_hdf, *winkey_hdf;
 		int result;
 
-		struct device *dev = dmgr_get_device(serial);
+		struct device *dev = app_ctx_get_device(cfgmgr->app_ctx, serial);
 		if(!dev) {
-			uint16_t type = hdf_get_int_value(hdf, "type", MHT_UNKNOWN);
-			dev = dmgr_add_device(serial, type);
+			app_ctx_add_device(cfgmgr->app_ctx, serial);
+			dev = app_ctx_get_device(cfgmgr->app_ctx, serial);
 		}
 
 		if(!dev)
@@ -614,14 +643,11 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 			check_icom_address(chan_hdf);
 
 			result = -1;
-			if(mhc_set_speed(dev->ctl, channel, (struct cfg *)chan_hdf, completion_cb, &result)) {
-				err("could not set channel speed for %s!", chan_name);
-				rval++;
-				continue;
-			}
+
+			mhc_set_speed(dev->ctl, channel, (struct cfg *)chan_hdf, completion_cb, &result);
 
 			while(result == -1) {
-				ev_loop(cfgmgr->loop, EVRUN_ONCE);
+				ev_run(app_ctx_get_loop(cfgmgr->app_ctx), EVRUN_ONCE);
 			} 
 
 			if(result != CMD_RESULT_OK) {
@@ -637,17 +663,13 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 
 		if(mhc_is_online(dev->ctl)) {
 			result = -1;
-			if(mhc_load_kopts(dev->ctl, completion_cb, &result)) {
-				err("could not write config to keyer %s!", serial);
+			mhc_load_kopts(dev->ctl, completion_cb, &result);
+			while(result == -1) {
+				ev_run( app_ctx_get_loop(cfgmgr->app_ctx), EVRUN_ONCE);
+			}
+			if(result != CMD_RESULT_OK) {
+				err("error writing config to keyer %s", serial);
 				rval++;
-			} else {
-				while(result == -1) {
-					ev_loop(cfgmgr->loop, EVRUN_ONCE);
-				}
-				if(result != CMD_RESULT_OK) {
-					err("error writing config to keyer %s", serial);
-					rval++;
-				}
 			}
 		}
 
@@ -665,17 +687,13 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 				continue;
 			}
 
-			if(mhc_store_cw_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result)) {
-				err("%s could not store cw message on index %d", serial, idx);
+			mhc_store_cw_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result);
+			while(result == -1) {
+				ev_run( app_ctx_get_loop(cfgmgr->app_ctx), EVRUN_ONCE);
+			}
+			if(result != CMD_RESULT_OK) {
+				err("%s error store cw message %d", serial, idx);
 				rval++;
-			} else {
-				while(result == -1) {
-					ev_loop(cfgmgr->loop, EVRUN_ONCE);
-				}
-				if(result != CMD_RESULT_OK) {
-					err("%s error store cw message %d", serial, idx);
-					rval++;
-				}
 			}
 		}
 
@@ -691,17 +709,13 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 				continue;
 			}
 
-			if(mhc_store_fsk_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result)) {
-				err("%s could not store fsk message on index %d", serial, idx);
+			mhc_store_fsk_message(dev->ctl, idx, text, 0xff, 0, completion_cb, &result);
+			while(result == -1) {
+				ev_run(app_ctx_get_loop(cfgmgr->app_ctx), EVRUN_ONCE);
+			}
+			if(result != CMD_RESULT_OK) {
+				err("%s error store fsk message %d", serial, idx);
 				rval++;
-			} else {
-				while(result == -1) {
-					ev_loop(cfgmgr->loop, EVRUN_ONCE);
-				}
-				if(result != CMD_RESULT_OK) {
-					err("%s error store fsk message %d", serial, idx);
-					rval++;
-				}
 			}
 		}
 
@@ -710,7 +724,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 		mhi = mhc_get_mhinfo(dev->ctl);
 
 		if((mhi->flags & MHF_HAS_WINKEY) && !dev->wkman)
-			dev->wkman = wkm_create(cfgmgr->loop, dev);
+			dev->wkman = wkm_create(cfgmgr->app_ctx, dev);
 		
 		if(dev->wkman) {
 			int werr,val;
@@ -773,7 +787,7 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 			continue;
 		}
 		int id, requested_id = atoi(id_str);
-		id = conmgr_create_con(cfgmgr->conmgr, cfgmgr->loop, pcfg, requested_id);
+		id = conmgr_create_con(cfgmgr->app_ctx, pcfg, requested_id);
 		if(!id) {
 			err("failed to create connector!");
 			rval++;
@@ -842,14 +856,14 @@ int cfgmgr_remove(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 			rval++;
 			continue;
 		}
-		conmgr_destroy_con(cfgmgr->conmgr, id);
+		conmgr_destroy_con(app_ctx_get_conmgr(cfgmgr->app_ctx), id);
 		cfg_remove_child_i(cfgmgr->runtime_cfg, "mhuxd.run.connector", id);
 	}
 
 	// SM
 	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.keyer")); pcfg; pcfg = cfg_next_child(pcfg)) {
 		const char *serial = cfg_name(pcfg);
-		struct device *dev = dmgr_get_device(serial);
+		struct device *dev = app_ctx_get_device(cfgmgr->app_ctx, serial);
 		struct cfg *smcfg;
 		if(!dev) {
 			err("%s() could not find device %s in device list!", __func__, serial);
@@ -896,7 +910,7 @@ int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	// SM
 	for(pcfg = cfg_first_child( cfg_get_child(cfg, "mhuxd.keyer")); pcfg; pcfg = cfg_next_child(pcfg)) {
 		const char *serial = cfg_name(pcfg);
-		struct device *dev = dmgr_get_device(serial);
+		struct device *dev =  app_ctx_get_device(cfgmgr->app_ctx, serial);
 		struct cfg *smcfg;
 		if(!dev) {
 			err("%s() could not find device %s in device list!", __func__, serial);
@@ -918,9 +932,9 @@ int cfgmgr_modify(struct cfgmgr *cfgmgr, struct cfg *cfg) {
 	return rval;
 }
 
-int cfgmgr_sm_load(const char *serial) {
+int cfgmgr_sm_load(struct cfgmgr *cfgmgr, const char *serial) {
 	dbg1("%s()", __func__);
-	struct device *dev = dmgr_get_device(serial);
+	struct device *dev = app_ctx_get_device(cfgmgr->app_ctx, serial);
 	struct sm *sm;
 
 	if(!dev) {
@@ -942,9 +956,9 @@ int cfgmgr_sm_load(const char *serial) {
 	return 0;
 }
 
-int cfgmgr_sm_store(const char *serial) {
+int cfgmgr_sm_store(struct cfgmgr *cfgmgr, const char *serial) {
 	dbg1("%s()", __func__);
-	struct device *dev = dmgr_get_device(serial);
+	struct device *dev = app_ctx_get_device(cfgmgr->app_ctx, serial);
 	struct sm *sm;
 
 	if(!dev) {
@@ -968,20 +982,20 @@ int cfgmgr_sm_store(const char *serial) {
 }
 
 
-struct cfgmgr *cfgmgr_create(struct conmgr *conmgr, struct ev_loop *loop) {
+struct cfgmgr *cfgmgr_create(struct app_ctx *ctx) {
 	dbg1("%s()", __func__);
 	struct cfg *runtime_cfg = cfg_create();
 	if(!runtime_cfg)
 		return NULL;
 
 	struct cfgmgr *cfgmgr = w_calloc(1, sizeof(*cfgmgr));
-	cfgmgr->loop = loop;
-	cfgmgr->conmgr = conmgr;
+	cfgmgr->app_ctx = ctx;
 	cfgmgr->runtime_cfg = runtime_cfg;
 	merge_runtime_cfg(cfgmgr->runtime_cfg);
 	return cfgmgr;
 }
 
+#if 0
 int cfgmgr_save_cfg(struct cfgmgr *cfgmgr) {
 	NEOERR *err;
 	HDF *save_hdf;
@@ -1013,6 +1027,7 @@ int cfgmgr_save_cfg(struct cfgmgr *cfgmgr) {
 	hdf_destroy(&save_hdf);
 	return rval;
 }
+#endif
 
 void cfgmgr_destroy(struct cfgmgr *cfgmgr) {
 	dbg1("%s()", __func__);

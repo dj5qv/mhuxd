@@ -1,0 +1,44 @@
+[#about]
+== About
+
+Mhuxd is a device router for microHam keyers. It runs on the Linux operating system only. Supported microHam keyers are:
+
+* micro KEYER
+* micro KEYER II
+* micro KEYER III
+* DIGI KEYER
+* DIGI KEYER II
+* MK2R & MK2R+
+* CW KEYER
+* Station Master / Station Master DeLuxe ([red]#experimental#)
+
+
+=== Features
+
+* Designed to run permanantly in the background
+* Automatically detects any supported microHam keyer, once switched on or connected to the computer
+* Supports multiple keyers simultaneously
+* Build-in webserver to perform configuration changes via a browser
+* Provides configurable virtual serial ports (VSP) and routes those to specific keyer channels (e.g. CAT, K1EL Winkey, PTT, FSK etc.)
+* Provide TCP/IP network ports (IPv4 and IPv6) if desired
+* Configuration of the K1EL Winkey chip, including CW/FSK message memories via browser
+* Supports configuration of the microKEYER II / III displays
+* Optionally supports hamlib rigctld to sync the rig with the keyer (mode, frequency display)
+* antenna switching configuration for Station Master ([red]#experimental#)
+* REST API with a server-sent event stream, used by the web interface
+
+=== License
+
+Mhuxd is available under the GNU General Public License, version 2.
+
+ClearSilver is licensed under the New BSD license.
+
+=== Acknowledgements
+
+
+* microHam – For providing the protocol specification and support
+* Marc Lehmann and Emanuele Giaquinta – For libev
+* Brandon Long – For the ClearSilver template system
+* Igor Sysoev, Joyent Inc. et al. – For http_parser
+* Google Inc., Filipe Almeida – For streamhtmlparser
+* Petri Lehtinen - For libjansson

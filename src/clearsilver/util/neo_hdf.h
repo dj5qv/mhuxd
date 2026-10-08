@@ -56,6 +56,16 @@
 #ifndef __NEO_HDF_H_
 #define __NEO_HDF_H_ 1
 
+#ifndef __BEGIN_DECLS  // for non-glibc like musl
+#  ifdef __cplusplus
+#    define __BEGIN_DECLS extern "C" {
+#    define __END_DECLS   }
+#  else
+#    define __BEGIN_DECLS
+#    define __END_DECLS
+#  endif
+#endif
+
 __BEGIN_DECLS
 
 #include <stdio.h>

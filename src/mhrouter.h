@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2017  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2016  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -33,11 +33,13 @@ void mhr_set_bps_limit(struct mh_router *router, int channel, float bps);
 
 
 // consumer / producer interface
-void mhr_add_consumer(struct mh_router *router, int fd, int channel);
-void mhr_add_producer(struct mh_router *router, int fd, int channel);
+void mhr_add_consumer(struct mh_router *router, int fd, int channel, const char *owner_tag);
+void mhr_add_producer(struct mh_router *router, int fd, int channel, const char *owner_tag);
+void mhr_add_endpoint_fd(struct mh_router *router, int fd, int channel, const char *owner_tag);
 void mhr_add_consumer_cb(struct mh_router *router, MHRConsumerCallback, int channel, void *user_data);
 void mhr_rem_consumer(struct mh_router *router, int fd, int channel);
 void mhr_rem_producer(struct mh_router *router, int fd, int channel);
+void mhr_rem_endpoint_fd(struct mh_router *router, int fd, int channel);
 void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback, int channel);
 
 // processor interface (deprecated)
@@ -49,5 +51,7 @@ void mhr_send_out(struct mh_router *router, const uint8_t *data, unsigned int le
 void mhr_add_status_cb(struct mh_router *router, MHRStatusCallback callback, void *user_data);
 void mhr_rem_status_cb(struct mh_router *router, MHRStatusCallback callback);
 
+// Some state for Winkey PTT routing.
+void mhr_set_wk_tx_focus(struct mh_router *router, uint8_t focus);
 
 #endif // MHROUTER_H

@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2017  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -183,7 +183,7 @@ static int cmd_am(struct proc_mcp *mcp) {
 		acc_outputs[offset] = acc_int >> 8;
 		acc_outputs[offset + 1] = acc_int & 0xff;
 
-		return mhc_mk2r_set_acc_outputs(mcp->ctl, acc_outputs, completion_cb, mcp);
+		mhc_mk2r_set_acc_outputs(mcp->ctl, acc_outputs, completion_cb, mcp);
 	}
 
 	err("%s Invalid parameter!", mcp->cmd);
@@ -312,7 +312,8 @@ static int process_cmd(struct proc_mcp *mcp) {
 		arg[1] = 0;
 		if(arg[0] >= '0' && arg[0] <= '7') {
 			mcp->action_name = "APPLY SCENARIO";
-			return mhc_mk2r_set_scenario(mcp->ctl, atoi(arg), completion_cb, mcp);
+			mhc_mk2r_set_scenario(mcp->ctl, atoi(arg), completion_cb, mcp);
+			return 0;
 		}
 	}
 
@@ -322,7 +323,8 @@ static int process_cmd(struct proc_mcp *mcp) {
 		arg[1] = 0;
 		if(arg[0] >= '1' && arg[0] <= '9') {
 			mcp->action_name = "RECORD MESSAGE";
-			return mhc_record_message(mcp->ctl, atoi(arg), completion_cb, mcp);
+			mhc_record_message(mcp->ctl, atoi(arg), completion_cb, mcp);
+			return 0;
 		}
 	}
 
@@ -332,21 +334,22 @@ static int process_cmd(struct proc_mcp *mcp) {
 		arg[1] = 0;
 		if(arg[0] >= '1' && arg[0] <= '9') {
 			mcp->action_name = "PLAY MESSAGE";
-			return mhc_play_message(mcp->ctl, atoi(arg), completion_cb, mcp);
+			mhc_play_message(mcp->ctl, atoi(arg), completion_cb, mcp);
+			return 0;
 		}
 	}
 
 	if(!strcmp(mcp->cmd, "MRS")) {
 		mcp->action_name = "STOP RECORDING";
-		return mhc_stop_recording(mcp->ctl, completion_cb, mcp);
+		mhc_stop_recording(mcp->ctl, completion_cb, mcp);
+		return 0;
 	}
 
 	if(!strcmp(mcp->cmd, "MA")) {
 		mcp->action_name = "ABORT MESSAGE";
-		return mhc_abort_message(mcp->ctl, completion_cb, mcp);
+		mhc_abort_message(mcp->ctl, completion_cb, mcp);
+		return 0;
 	}
-
-
 
 	err("invalid command: %s", mcp->cmd);
 
@@ -354,8 +357,8 @@ static int process_cmd(struct proc_mcp *mcp) {
 
 set_hfocus:
 	mcp->action_name = "HOST FOCUS";
-	return mhc_mk2r_set_hfocus(mcp->ctl, hfocus, completion_cb, mcp);
-
+	mhc_mk2r_set_hfocus(mcp->ctl, hfocus, completion_cb, mcp);
+	return 0;
 }
 
 void mcp_cb(struct mh_router *router, struct buffer *b, void *user_data) {

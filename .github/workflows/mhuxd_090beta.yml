@@ -1,0 +1,39 @@
+name: mhuxd_090beta
+
+on:
+  push:
+    branches: [ "v0.90beta" ]
+  pull_request:
+    branches: [ "v0.90beta" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install deps
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential debhelper-compat pkg-config devscripts libev-dev libudev-dev libfuse-dev libjansson-dev
+    - name: autogen
+      run: ./autogen.sh
+    - name: configure
+      run: ./configure
+    - name: make
+      run: make
+    - name: make check
+      run: make check
+    - name: make distcheck
+      run: make distcheck
+    - name: Build Debian Package
+      run: |
+        make deb
+        mkdir -p output
+        mv ../mhuxd*.deb output/
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: mhuxd-debian-package
+        path: output/mhuxd*.deb

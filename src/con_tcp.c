@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2017  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -17,14 +17,27 @@
 #include "pglist.h"
 #include "conmgr.h"
 #include "net.h"
-#include "cfgnod.h"
+#include "ptt_byte.h"
 
 #define MOD_ID "tcp"
 
+/* Drop a client that vanished without closing (cable, WiFi, sleep) after
+ * ~30 s: first probe after 10 s of silence, then every 5 s, give up after 4.
+ * Otherwise the stale session keeps holding a maxcon slot for a long time. */
+#define CTCP_KEEPIDLE	10
+#define CTCP_KEEPINTVL	5
+#define CTCP_KEEPCNT	4
+
 struct ctcp {
+	/* Connector-owned endpoint from socketpair (connector side). */
 	int fd_data;
-	struct netlsnr *lsnr;
-	ev_io w_lsnr;;
+	enum mhuxd_io_state state;
+	unsigned int dbg_cb_after_terminal;
+	unsigned int dbg_watch_invalid_fd;
+	struct netlsnr *lsnr_v4;
+	struct netlsnr *lsnr_v6;
+	ev_io w_lsnr_v4;
+	ev_io w_lsnr_v6;
 	ev_io w_data_in;
 	ev_io w_data_out;
 
@@ -34,25 +47,82 @@ struct ctcp {
 
 	struct ev_loop *loop;
 	char *devname;
+	unsigned int is_ptt_channel : 1;
 };
 
 struct ctcp_session {
 	struct PGNode node;
 	struct ctcp *ctcp;
+	/* Connector-owned accepted client socket. */
 	int fd;
 	ev_io w_in;
 	ev_io w_out;
 	struct buffer buf_out;
 	struct buffer buf_in;
+	unsigned int ptt_status : 1;
 };
+
+static int ctcp_set_state(struct ctcp *ctcp, enum mhuxd_io_state to) {
+	enum mhuxd_io_state from = ctcp->state;
+	if(io_state_transition(&ctcp->state, to))
+		return 1;
+	dbg0("%s illegal state transition %s -> %s", ctcp->devname,
+	     io_state_to_str(from), io_state_to_str(to));
+	return 0;
+}
+
+static int ctcp_is_terminal(const struct ctcp *ctcp) {
+	return (ctcp->state == MHUXD_IO_FAILED || ctcp->state == MHUXD_IO_CLOSED);
+}
+
+static void ctcp_dbg_terminal_cb(struct ctcp *ctcp, const char *cb_name) {
+	ctcp->dbg_cb_after_terminal++;
+	dbg0("%s callback %s after terminal state %s (count=%u)",
+	     ctcp->devname, cb_name, io_state_to_str(ctcp->state), ctcp->dbg_cb_after_terminal);
+}
+
+static void ctcp_watch_stop(struct ctcp *ctcp, ev_io *w) {
+	ev_io_stop(ctcp->loop, w);
+}
+
+static void ctcp_watch_start(struct ctcp *ctcp, ev_io *w) {
+	if(ctcp->state != MHUXD_IO_OPEN)
+		return;
+	if(w->fd < 0) {
+		ctcp->dbg_watch_invalid_fd++;
+		dbg0("%s refusing watcher start with invalid fd=%d (count=%u)",
+		     ctcp->devname, w->fd, ctcp->dbg_watch_invalid_fd);
+		return;
+	}
+	ev_io_start(ctcp->loop, w);
+}
+
+static void ctcp_fail(struct ctcp *ctcp) {
+	ctcp_set_state(ctcp, MHUXD_IO_FAILED);
+	ctcp_watch_stop(ctcp, &ctcp->w_data_in);
+	ctcp_watch_stop(ctcp, &ctcp->w_data_out);
+	if(ctcp->lsnr_v4)
+		ctcp_watch_stop(ctcp, &ctcp->w_lsnr_v4);
+	if(ctcp->lsnr_v6)
+		ctcp_watch_stop(ctcp, &ctcp->w_lsnr_v6);
+}
 
 static void rem_session(struct ctcp_session *cs) {
 	struct ctcp *ctcp = cs->ctcp;
 
-	ev_io_stop(ctcp->loop, &cs->w_in);
-	ev_io_stop(ctcp->loop, &cs->w_out);
+	if(ctcp->is_ptt_channel && cs->ptt_status) {
+		uint8_t state = PTT_OFF_BYTE;
+		ssize_t res;
+		int errsv = 0;
+		enum mhuxd_io_rw_result io_res = io_write_nonblock(ctcp->fd_data, &state, 1, &res, &errsv);
+		if(io_res != MHUXD_IO_RW_PROGRESS || res != 1)
+			err("%s() Could not send PTT off after connection drop", __func__);
+	}
 
-	close(cs->fd);
+	ctcp_watch_stop(ctcp, &cs->w_in);
+	ctcp_watch_stop(ctcp, &cs->w_out);
+
+	fd_close(&cs->fd);
 	ctcp->open_cnt--;
 	PG_Remove(&cs->node);
 	free(cs);
@@ -61,17 +131,29 @@ static void rem_session(struct ctcp_session *cs) {
 static void data_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)revents;
 	struct ctcp *ctcp = w->data;
-	int r;
+	ssize_t r;
+	int errsv = 0;
+	enum mhuxd_io_rw_result io_res;
 	uint8_t buf[1024];
+	(void)loop;
 
-	r = read(w->fd, buf, sizeof(buf));
-	if(r <= 0) {
-		err_e(errno, "error reading from data socket!");
-		ev_io_stop(loop, &ctcp->w_data_in);
-		// FIXME: better error handling needed.
+	if(ctcp_is_terminal(ctcp)) {
+		ctcp_dbg_terminal_cb(ctcp, __func__);
+		return;
 	}
 
-	if(r == 0) {
+	io_res = io_read_nonblock(w->fd, buf, sizeof(buf), &r, &errsv);
+	if(io_res == MHUXD_IO_RW_WOULD_BLOCK)
+		return;
+
+	if(io_res == MHUXD_IO_RW_ERROR) {
+		err_e(errsv, "error reading from data socket!");
+		ctcp_fail(ctcp);
+		return;
+	}
+
+	if(io_res == MHUXD_IO_RW_EOF) {
+		ctcp_fail(ctcp);
 		return;
 	}
 
@@ -79,7 +161,7 @@ static void data_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	PG_SCANLIST(&ctcp->session_list, cs) {
 		if(r != buf_append(&cs->buf_out, buf, r))
 				warn("buffer overflow writing to client!");
-		ev_io_start(loop, &cs->w_out);
+		ctcp_watch_start(ctcp, &cs->w_out);
 	}
 }
 
@@ -87,18 +169,41 @@ static void data_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)revents;
 	struct ctcp *ctcp = w->data;
 	struct ctcp_session *cs;
-	int size;
+	ssize_t size;
+	int errsv = 0;
+	enum mhuxd_io_rw_result io_res;
 	int need_to_write = 0;
+	(void)loop;
+
+	if(ctcp_is_terminal(ctcp)) {
+		ctcp_dbg_terminal_cb(ctcp, __func__);
+		return;
+	}
 
 	PG_SCANLIST(&ctcp->session_list, cs) {
 		struct buffer *b = &cs->buf_in;
 		if(b->rpos == b->size)
 			continue;
-		size = write(ctcp->fd_data, b->data + b->rpos, b->size - b->rpos);
-		if(size < 0 || (size == 0 && errno != EAGAIN)) {
-			err_e(errno, "error reading from data socket!");
-			ev_io_stop(loop, &ctcp->w_data_out);
-			// FIXME: better error handling needed.
+		io_res = io_write_nonblock(ctcp->fd_data, b->data + b->rpos, b->size - b->rpos, &size, &errsv);
+		if(io_res == MHUXD_IO_RW_WOULD_BLOCK) {
+			need_to_write = 1;
+			continue;
+		}
+		if(io_res == MHUXD_IO_RW_ERROR) {
+			err_e(errsv, "error writing to data socket!");
+			ctcp_fail(ctcp);
+			return;
+		}
+		if(io_res == MHUXD_IO_RW_EOF) {
+			ctcp_fail(ctcp);
+			return;
+		}
+
+		if(ctcp->is_ptt_channel && size > 0) {
+			// If PTT channel, track PTT status
+			for(int i = b->rpos; i < b->rpos + size; i++)
+				if(b->data[i] == PTT_ON_BYTE || b->data[i] == PTT_OFF_BYTE)
+					cs->ptt_status = b->data[i] == PTT_ON_BYTE ? 1 : 0;
 		}
 
 		buf_consume(b, size);
@@ -108,7 +213,7 @@ static void data_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	}
 
 	if(!need_to_write)
-		ev_io_stop(loop, &ctcp->w_data_out);
+		ctcp_watch_stop(ctcp, &ctcp->w_data_out);
 }
 
 static void client_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
@@ -116,28 +221,62 @@ static void client_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct ctcp_session *cs = w->data;
 	struct ctcp *ctcp = cs->ctcp;
 	int avail;
-	int r;
+	ssize_t r;
+	int errsv = 0;
+	enum mhuxd_io_rw_result io_res;
+	(void)loop;
+
+	if(ctcp_is_terminal(ctcp)) {
+		ctcp_dbg_terminal_cb(ctcp, __func__);
+		return;
+	}
 
 	avail = buf_size_avail(&cs->buf_in);
-	r = read(cs->fd, cs->buf_in.data + cs->buf_in.size, avail);
-	if(r <= 0) {
+	io_res = io_read_nonblock(cs->fd, cs->buf_in.data + cs->buf_in.size, avail, &r, &errsv);
+	if(io_res == MHUXD_IO_RW_WOULD_BLOCK)
+		return;
+
+	if(io_res == MHUXD_IO_RW_ERROR) {
+		info_e(errsv, "connection on %s closed", ctcp->devname);
+		rem_session(cs);
+		return;
+	}
+
+	if(io_res == MHUXD_IO_RW_EOF) {
 		info("connection on %s closed", ctcp->devname);
 		rem_session(cs);
 		return;
 	}
 
 	buf_add_size(&cs->buf_in, r);
-	ev_io_start(loop, &ctcp->w_data_out);
+	ctcp_watch_start(ctcp, &ctcp->w_data_out);
 }
 
 static void client_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)revents;
 	struct ctcp_session *cs = w->data;
 	struct ctcp *ctcp = cs->ctcp;
-	int r;
+	ssize_t r;
+	int errsv = 0;
+	enum mhuxd_io_rw_result io_res;
+	(void)loop;
 
-	r = write(cs->fd, cs->buf_out.data + cs->buf_out.rpos, cs->buf_out.size - cs->buf_out.rpos);
-	if(r < 0 || (r == 0 && errno != EAGAIN)) {
+	if(ctcp_is_terminal(ctcp)) {
+		ctcp_dbg_terminal_cb(ctcp, __func__);
+		return;
+	}
+
+	io_res = io_write_nonblock(cs->fd, cs->buf_out.data + cs->buf_out.rpos, cs->buf_out.size - cs->buf_out.rpos, &r, &errsv);
+	if(io_res == MHUXD_IO_RW_WOULD_BLOCK)
+		return;
+
+	if(io_res == MHUXD_IO_RW_ERROR) {
+		info_e(errsv, "connection on %s closed", ctcp->devname);
+		rem_session(cs);
+		return;
+	}
+
+	if(io_res == MHUXD_IO_RW_EOF) {
 		info("connection on %s closed", ctcp->devname);
 		rem_session(cs);
 		return;
@@ -146,13 +285,18 @@ static void client_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	buf_consume(&cs->buf_out, r);
 
 	if(!cs->buf_out.size)
-		ev_io_stop(loop, &cs->w_out);
+		ctcp_watch_stop(ctcp, &cs->w_out);
 }
 
 static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)loop; (void)revents;
 	struct ctcp *ctcp = w->data;
 	int fd;
+
+	if(ctcp_is_terminal(ctcp)) {
+		ctcp_dbg_terminal_cb(ctcp, __func__);
+		return;
+	}
 
 	fd = net_accept(w->fd);
 	if(fd == -1) {
@@ -162,16 +306,19 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	if(ctcp->open_cnt >= ctcp->max_con) {
 		info("rejecting connect, maximum connections reached for %s", ctcp->devname);
-		close(fd);
+		fd_close(&fd);
 		return;
 	}
+
+	if(-1 == net_set_keepalive(fd, CTCP_KEEPIDLE, CTCP_KEEPINTVL, CTCP_KEEPCNT))
+		warn_e(errno, "could not enable keepalive on %s", ctcp->devname);
 
 	struct ctcp_session *cs = w_calloc(1, sizeof(*cs));
 	cs->ctcp = ctcp;
 	cs->fd = fd;
 	ev_io_init(&cs->w_in, client_in_cb, fd, EV_READ);
 	ev_io_init(&cs->w_out, client_out_cb, fd, EV_WRITE);
-	ev_io_start(ctcp->loop, &cs->w_in);
+	ctcp_watch_start(ctcp, &cs->w_in);
 	cs->w_in.data = cs;
 	cs->w_out.data = cs;
 
@@ -183,48 +330,103 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 }
 
 
-struct ctcp *ctcp_create(struct connector_spec *cpsec) {
+struct ctcp *ctcp_create(const struct connector_spec *cpsec, uint8_t is_ptt_channel) {
 	struct ctcp *ctcp;
 
 	dbg1("%s()", __func__);
 
-	const char *port = cfg_get_val(cpsec->cfg, "devname", NULL);
-	if(port == NULL || !isdigit(*port)) {
+	const char *port = cpsec->tcp.port;
+	if(port == NULL || !isdigit((unsigned char)*port)) {
 		err("could not create tcp connector: no or invalid port specified!");
 		return NULL;
 	}
 
-	int8_t remote_access = cfg_get_int_val(cpsec->cfg, "remote_access", 0);
+	const char *p;
+	for(p = port; *p; ++p) {
+		if(!isdigit((unsigned char)*p)) {
+			err("could not create tcp connector: no or invalid port specified!");
+			return NULL;
+		}
+	}
+
+	int8_t remote_access = (int8_t)(cpsec->tcp.remote_access ? 1 : 0);
 
 	char devname[128];
-	if(128 <= snprintf(devname, 128, "%s:%s", remote_access ? "0.0.0.0" : "127.0.0.1", port)) {
+	char v4_name[128];
+	char v6_name[128];
+	const char *host_v6 = remote_access ? "[::]" : "[::1]";
+	const char *host_v4 = remote_access ? "0.0.0.0" : "127.0.0.1";
+	struct netlsnr *lsnr_v6 = NULL;
+	struct netlsnr *lsnr_v4 = NULL;
+	int err_v6 = 0;
+	int err_v4 = 0;
+
+	if(128 <= snprintf(v6_name, sizeof(v6_name), "%s:%s", host_v6, port)) {
 		err("could not create tcp connector: no or invalid parameter!");
 		return NULL;
 	}
 
-	struct netlsnr *lsnr = net_create_listener(devname);
-	if(lsnr == NULL) {
-		err_e(errno, "could not create listener %s!", devname);
+	if(128 <= snprintf(v4_name, sizeof(v4_name), "%s:%s", host_v4, port)) {
+		err("could not create tcp connector: no or invalid parameter!");
 		return NULL;
 	}
 
+	lsnr_v6 = net_create_listener_ex(v6_name, NET_LSNR_F_IPV6_V6ONLY);
+	if(lsnr_v6 == NULL)
+		err_v6 = errno;
+
+	lsnr_v4 = net_create_listener(v4_name);
+	if(lsnr_v4 == NULL)
+		err_v4 = errno;
+
+	if(lsnr_v6 == NULL && lsnr_v4 == NULL) {
+		errno = err_v6 ? err_v6 : err_v4;
+		err_e(errno, "could not create listeners %s and %s!", v6_name, v4_name);
+		return NULL;
+	}
+
+	if(lsnr_v6 && lsnr_v4)
+		snprintf(devname, sizeof(devname), "%s:%s", remote_access ? "dual-stack" : "localhost-dual", port);
+	else if(lsnr_v6)
+		snprintf(devname, sizeof(devname), "%s", v6_name);
+	else
+		snprintf(devname, sizeof(devname), "%s", v4_name);
+
 	ctcp = w_calloc(1, sizeof(*ctcp));
 	PG_NewList(&ctcp->session_list);
+	ctcp->is_ptt_channel = is_ptt_channel;
 	ctcp->loop = cpsec->loop;
 	ctcp->devname = w_strdup(devname);
-	ctcp->lsnr = lsnr;
+	ctcp->lsnr_v6 = lsnr_v6;
+	ctcp->lsnr_v4 = lsnr_v4;
 	ctcp->fd_data = cpsec->fd_data;
-	ctcp->max_con = cfg_get_int_val(cpsec->cfg, "maxcon", 1);
+	ctcp->state = MHUXD_IO_OPEN;
+	ctcp->max_con = (cpsec->tcp.maxcon > 0) ? cpsec->tcp.maxcon : 1;
 
 	ev_io_init(&ctcp->w_data_in, data_in_cb, ctcp->fd_data, EV_READ);
 	ev_io_init(&ctcp->w_data_out, data_out_cb, ctcp->fd_data, EV_WRITE);
-	ev_io_init(&ctcp->w_lsnr, lsnr_cb, net_listener_get_fd(lsnr), EV_READ);
 	ctcp->w_data_in.data = ctcp;
 	ctcp->w_data_out.data = ctcp;
-	ctcp->w_lsnr.data = ctcp;
 
-	ev_io_start(ctcp->loop, &ctcp->w_lsnr);
-	ev_io_start(ctcp->loop, &ctcp->w_data_in);
+	if(ctcp->lsnr_v6) {
+		ev_io_init(&ctcp->w_lsnr_v6, lsnr_cb, net_listener_get_fd(ctcp->lsnr_v6), EV_READ);
+		ctcp->w_lsnr_v6.data = ctcp;
+	}
+
+	if(ctcp->lsnr_v4) {
+		ev_io_init(&ctcp->w_lsnr_v4, lsnr_cb, net_listener_get_fd(ctcp->lsnr_v4), EV_READ);
+		ctcp->w_lsnr_v4.data = ctcp;
+	}
+
+	if(ctcp->lsnr_v6)
+		ctcp_watch_start(ctcp, &ctcp->w_lsnr_v6);
+	if(ctcp->lsnr_v4)
+		ctcp_watch_start(ctcp, &ctcp->w_lsnr_v4);
+	ctcp_watch_start(ctcp, &ctcp->w_data_in);
+
+	if(ctcp->lsnr_v4 && ctcp->lsnr_v6)
+		dbg0("%s dual-stack listeners active (IPv4+IPv6)", ctcp->devname);
+
 	info("tcp connector %s created", ctcp->devname);
 
 	return ctcp;
@@ -233,15 +435,21 @@ struct ctcp *ctcp_create(struct connector_spec *cpsec) {
 void ctcp_destroy(struct ctcp *ctcp) {
 	struct ctcp_session *cs;
 
-	ev_io_stop(ctcp->loop, &ctcp->w_data_in);
-	ev_io_stop(ctcp->loop, &ctcp->w_data_out);
-	ev_io_stop(ctcp->loop, &ctcp->w_lsnr);
+	ctcp_set_state(ctcp, MHUXD_IO_CLOSED);
+
+	ctcp_watch_stop(ctcp, &ctcp->w_data_in);
+	ctcp_watch_stop(ctcp, &ctcp->w_data_out);
+	if(ctcp->lsnr_v4)
+		ctcp_watch_stop(ctcp, &ctcp->w_lsnr_v4);
+	if(ctcp->lsnr_v6)
+		ctcp_watch_stop(ctcp, &ctcp->w_lsnr_v6);
 
 	while((cs = (void*)PG_FIRSTENTRY(&ctcp->session_list)))
 			rem_session(cs);
 
-	close(ctcp->fd_data);
-	net_destroy_lsnr(ctcp->lsnr);
+	fd_close(&ctcp->fd_data);
+	net_destroy_lsnr(ctcp->lsnr_v4);
+	net_destroy_lsnr(ctcp->lsnr_v6);
 
 	info("tcp connector %s closed", ctcp->devname);
 

@@ -1,0 +1,41 @@
+[#port_routing]
+== Port Routing
+
+=== About Ports
+Similar to the virtual COM ports of the microHam Windows Device Router mhuxd can provide virtual serial ports (VSP). VSPs are implemented using the Linux CUSE driver, hence the cuse kernel module must be loaded and the device /dev/cuse must exist.
+
+Alternatively mhuxd also offers TCP/IP network ports (IPv4 and IPv6).
+
+=== Port Page
+To access the port page select tab “Daemon”, menu “Ports”. The first section, “Port List”, shows the active ports. With a new mhuxd installation this list is empty. Ports can be removed here by selecting them and pushing the “Remove” button.
+
+image::mhuxd_portlist.png[]
+
+NOTE: The screenshots in this chapter were taken with an earlier version of the
+interface and may differ from the current layout.
+
+To create a port press the “Add” button. A dialog opens in which you choose the port type, the keyer to route to, the destination channel and the type-specific options described below. There are 2 types of ports available:
+
+* VSP – virtual serial port
+* TCP – TCP/IP network port
+
+Press “Create” to add the port, or “Cancel” to discard.
+
+The *Max Connections* field (both port types) limits how many applications may open the port at the same time.
+
+=== Add a VSP Port
+Select the *VSP* port type, the keyer the port should be routed to and the *Destination Channel* – the keyer channel the port is connected to.
+
+image::mhuxd_addport1.png[]
+
+Specify the device name. VSP devices are always located in `/dev/mhuxd/`. Optionally you may select “PTT via RTS” and/or “PTT via DTR”. With this option set an application can key the PTT using the RTS and/or DTR signals.
+
+image::mhuxd_addport3.png[]
+It is not suggested to use PTT/RTS or PTT/DTR on the CAT channel. Better use a dedicated PTT VSP device and route it to the PTT channel:
+
+image::mhuxd_addport_ptt.png[]
+
+=== Add a TCP Port
+Select the *TCP* port type, the keyer to route to and the destination channel, then enter a TCP port number. You may select “Remote Accessible”. This would allow other computers to connect to this port. [red]#Don’t do this if your computer is directly connected to the internet or in an insecure network!#
+
+image::mhuxd_addport_tcp.png[]

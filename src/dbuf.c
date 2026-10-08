@@ -15,7 +15,7 @@
 
 #define DEFAULT_SIZE_INC (64)
 
-struct dbuf *dbuf_create() {
+struct dbuf *dbuf_create(void) {
 	struct dbuf *dbuf = w_calloc(1, sizeof(*dbuf));
 	dbuf->size_inc = DEFAULT_SIZE_INC;
 	return dbuf;

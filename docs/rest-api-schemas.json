@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mhuxd.local/api/v1/schemas",
+  "title": "mhuxd REST API Schemas",
+  "type": "object",
+  "definitions": {
+    "Metadata": {
+      "$id": "https://mhuxd.local/api/v1/schemas/metadata",
+      "type": "object",
+      "required": ["rigtypes", "devicetypes"],
+      "properties": {
+        "rigtypes": {
+          "type": "array",
+          "description": "Microham rig/id mapping.",
+          "items": {"$ref": "#/$defs/RigType"}
+        },
+        "devicetypes": {
+          "type": "array",
+          "description": "List of supported device types.",
+          "items": {"$ref": "#/$defs/DeviceType"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "Runtime": {
+      "$id": "https://mhuxd.local/api/v1/schemas/runtime",
+      "type": "object",
+      "required": ["daemon", "hostname"],
+      "properties": {
+        "daemon": {
+          "type": "object",
+          "required": ["name", "version", "logfile", "pid", "uptimeSec"],
+          "properties": {
+            "name": {"type": "string"},
+            "version": {"type": "string"},
+            "logfile": {"type": "string"},
+            "pid": {"type": "integer"},
+            "uptimeSec": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "hostname": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "Devices": {
+      "$id": "https://mhuxd.local/api/v1/schemas/devices",
+      "type": "object",
+      "required": ["devices"],
+      "properties": {
+        "devices": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/Device"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConfigDaemon": {
+      "$id": "https://mhuxd.local/api/v1/schemas/config/daemon",
+      "type": "object",
+      "required": ["loglevel"],
+      "properties": {
+        "loglevel": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "ConfigDevices": {
+      "$id": "https://mhuxd.local/api/v1/schemas/config/devices",
+      "type": "object",
+      "required": ["devices"],
+      "properties": {
+        "devices": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/DeviceConfig"}
+        },
+        "connectors": {"$ref": "#/definitions/ConfigConnectors"}
+      },
+      "additionalProperties": false
+    },
+    "ConfigDevice": {
+      "$id": "https://mhuxd.local/api/v1/schemas/config/device",
+      "type": "object",
+      "allOf": [
+        {"$ref": "#/$defs/DeviceConfig"}
+      ]
+    },
+    "ConfigConnectors": {
+      "$id": "https://mhuxd.local/api/v1/schemas/config/connectors",
+      "type": "array",
+      "items": {"$ref": "#/$defs/ConnectorConfig"}
+    },
+    "ConfigConnector": {
+      "$id": "https://mhuxd.local/api/v1/schemas/config/connector",
+      "type": "object",
+      "allOf": [
+        {"$ref": "#/$defs/ConnectorConfig"}
+      ]
+    }
+  },
+  "$defs": {
+    "RigType": {
+      "type": "object",
+      "required": ["id", "name", "icomAddr"],
+      "properties": {
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+        "icomAddr": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "Device": {
+      "type": "object",
+      "required": ["serial", "name"],
+      "properties": {
+        "serial": {"type": "string"},
+        "name": {"type": "string"},
+        "status": {"type": "string"},
+        "verFwMajor": {"type": "integer"},
+        "verFwMinor": {"type": "integer"},
+        "verFwBeta": {"type": "boolean"},
+        "verWinkey": {"type": "integer"}
+      },
+      "additionalProperties": false
+    },
+    "DeviceConfig": {
+      "type": "object",
+      "required": ["serial", "type"],
+      "properties": {
+        "serial": {"type": "string"},
+        "type": {"type": "integer"},
+        "channel": {"type": "object"},
+        "param": {"type": "object"},
+        "ptt": {"$ref": "#/$defs/PttConfig"},
+        "rig_mode_sync": {"$ref": "#/$defs/RigModeSyncConfig"},
+        "winkey": {"type": "object"},
+        "cwMessages": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/Message"}
+        },
+        "fskMessages": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/Message"}
+        },
+        "sm": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "RigModeSyncRadioConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        },
+        "host": {"type": "string", "minLength": 1},
+        "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+        "connect_timeout_ms": {"type": "integer", "minimum": 100},
+        "io_timeout_ms": {"type": "integer", "minimum": 100},
+        "poll_ms": {"type": "integer", "minimum": 100}
+      },
+      "additionalProperties": false
+    },
+    "RigModeSyncConfig": {
+      "type": "object",
+      "properties": {
+        "backend": {
+          "type": "string",
+          "enum": ["rigctld"]
+        },
+        "enabled": {
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        },
+        "radios": {
+          "type": "object",
+          "properties": {
+            "r1": {"$ref": "#/$defs/RigModeSyncRadioConfig"},
+            "r2": {"$ref": "#/$defs/RigModeSyncRadioConfig"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "Message": {
+      "type": "object",
+      "required": ["index", "text"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 1},
+        "text": {"type": "string"},
+        "nextIdx": {"type": "integer", "minimum": 0},
+        "delay": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "DisplayOption": {
+      "type": "object",
+      "required": ["value", "display"],
+      "properties": {
+        "value": {
+          "oneOf": [
+            {"type": "integer"},
+            {"type": "string"}
+          ]
+        },
+        "display": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "PttMode": {
+      "type": "object",
+      "properties": {
+        "cw": {"type": "string"},
+        "voice": {"type": "string"},
+        "digital": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "PttConfig": {
+      "type": "object",
+      "properties": {
+        "r1": {"$ref": "#/$defs/PttMode"},
+        "r2": {"$ref": "#/$defs/PttMode"}
+      },
+      "additionalProperties": false
+    },
+    "DeviceType": {
+      "type": "object",
+      "required": ["type", "name", "flags"],
+      "properties": {
+        "type": {"type": "integer"},
+        "name": {"type": "string"},
+        "flags": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "displaybackground": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/DisplayOption"}
+        },
+        "displayevent": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/DisplayOption"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConnectorConfig": {
+      "type": "object",
+      "required": ["serial", "channel", "type", "devname"],
+      "properties": {
+        "id": {"type": "integer", "minimum": 1},
+        "serial": {"type": "string"},
+        "channel": {"type": "string"},
+        "type": {"type": "string"},
+        "devname": {"type": "string"},
+        "status": {
+          "type": "string",
+          "enum": ["ok", "failed"]
+        },
+        "maxcon": {"type": "integer", "minimum": 1},
+        "ptt_rts": {
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        },
+        "ptt_dtr": {
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        },
+        "remote_access": {
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

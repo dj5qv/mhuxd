@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2017  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -21,13 +21,13 @@
 #define INVALID_BEARING (UINT16_MAX)
 
 struct proc_rotator {
-        struct mh_control *ctl;
+	struct mh_control *ctl;
 	int channel;
 	char cmd[ROT_MAX_CMD_SIZE + 1];
-        uint8_t cmd_len;
-        unsigned cmd_overflow;
+	uint8_t cmd_len;
+	unsigned cmd_overflow;
 	uint16_t bearing;
-        const char *action_name;
+	const char *action_name;
 };
 
 struct proc_rotator *rot_create(struct mh_control *ctl, int channel){
@@ -84,7 +84,8 @@ static int process_cmd(struct proc_rotator *rot) {
 			return -1;
 		}
 		rot->action_name = "TURN TO AZIMUTH";
-		return mhc_sm_turn_to_azimuth(rot->ctl, rot->bearing, completion_cb, rot);
+		mhc_sm_turn_to_azimuth(rot->ctl, rot->bearing, completion_cb, rot);
+		return 0;
 	}
 
 

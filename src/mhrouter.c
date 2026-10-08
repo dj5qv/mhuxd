@@ -1,9 +1,14 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2017  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
+ */
+
+/* This module does the routing via the microHam protocol. It is not aware
+ * of any specific device types (features), and should not have to be. 
+ * Except for has_flags_channel.
  */
 
 #include <stdint.h>
@@ -20,6 +25,8 @@
 #include "channel.h"
 #include "mux.h"
 #include "demux.h"
+#include "tty.h"
+#include "ptt_byte.h"
 
 #define MOD_ID "mhr"
 
@@ -29,7 +36,10 @@
 struct Producer {
 	struct PGNode node;
 	struct mh_router *router;
+	/* Router-owned endpoint fd. */
 	int fd;
+	const char *owner_tag;
+	int owner_router;
 	ev_io w;
 	int channel;
 };
@@ -37,7 +47,10 @@ struct Producer {
 struct Consumer {
 	struct PGNode node;
 	struct mh_router *router;
+	/* Router-owned endpoint fd. */
 	int fd;
+	const char *owner_tag;
+	int owner_router;
 	ev_io w;
 	struct buffer buf;
 	int channel;
@@ -91,10 +104,31 @@ struct mh_router {
 	ev_io w_in, w_out;
 	struct dmx *dmx;
 	char *serial;
+#ifdef MHUXD_SEND_STATUS_VIA_PTT_CONNECTOR
 	uint8_t rflag[2];
+#endif
 	uint8_t wflag;
 	uint8_t has_flags_channel;
+	uint8_t wk_tx_focus;
 };
+
+static int has_consumer_fd(struct mh_router *router, int fd, int channel) {
+	struct Consumer *cns;
+	PG_SCANLIST(&router->consumer_list[channel], cns) {
+		if(cns->fd == fd)
+			return 1;
+	}
+	return 0;
+}
+
+static int has_producer_fd(struct mh_router *router, int fd, int channel) {
+	struct Producer *prd;
+	PG_SCANLIST(&router->producer_list[channel], prd) {
+		if(prd->fd == fd)
+			return 1;
+	}
+	return 0;
+}
 
 static void lb_cb(struct ev_loop *loop,  struct ev_timer *w, int revents) {
 	(void)loop; (void)revents;
@@ -162,10 +196,7 @@ static void switch_producer_events(struct mh_router *router, int active) {
 	}
 }
 
-static int is_ptt_channel(int channel) {
-	return (channel == CH_PTT1 || channel == CH_PTT2);
-}
-
+#ifdef MHUXD_SEND_STATUS_VIA_PTT_CONNECTOR
 static void process_in_flags(struct mh_router *router, int c) {
 	struct Consumer *cns;
 	struct ConsumerCb *cnc;
@@ -176,43 +207,74 @@ static void process_in_flags(struct mh_router *router, int c) {
 		PG_SCANLIST(&router->consumer_list[ptt_ch], cns) {
 			// no need to keep outdated values
 			buf_reset(&cns->buf);
-			buf_append_c(&cns->buf, (c & MHD2CFL_ANY_PTT) ? '1' : '0');
+			buf_append_c(&cns->buf, (c & MHD2CFL_ANY_PTT) ? PTT_ON_BYTE : PTT_OFF_BYTE);
 			ev_io_start(router->loop, &cns->w);
 		}
 
 		PG_SCANLIST(&router->consumer_cb_list[ptt_ch], cnc) {
-			uint8_t b = (c & MHD2CFL_ANY_PTT) ? '1' : '0';
+			uint8_t b = (c & MHD2CFL_ANY_PTT) ? PTT_ON_BYTE : PTT_OFF_BYTE;
 			cnc->callback(router, &b, 1, ptt_ch, cnc->user_data);
 		}
+		router->rflag[idx] = c & MHD2CFL_ANY_PTT;
 	}
 }
+#endif
 
 static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 	struct mh_router *router = prd->router;
 	uint8_t newflag = router->wflag;
+	uint8_t push = 0;
+	uint8_t mask;
 	int r;
 	int c;
-	int16_t push = 0;
 
-	dbg1("%s %s()", router->serial, __func__);
+
+	dbg0("%s() %s", __func__, router->serial);
 
 	if(!b->size)
 		return;
 
 	while(-1 != (c = buf_get_c(b))) {
+		if(c != PTT_ON_BYTE && c != PTT_OFF_BYTE) {
+			dbg0("%s() %s ignoring invalid ptt state %d", __func__, router->serial, c);
+			continue;
+		}
 
-		if( c == '1' ) {
-			dbg1("%s %s() ptt on", router->serial, __func__);
-			newflag |= (prd->channel == CH_PTT1) ? MHC2DFL_PTT_R1 : MHC2DFL_PTT_R2;
+		switch(prd->channel) {
+			case  CH_PTT1:
+				dbg0("%s() %s r1 ptt %d", __func__, router->serial, c);
+				mask = MHC2DFL_PTT_R1;
+				break;
+			case  CH_PTT2:
+				dbg0("%s() %s r2 ptt %d", __func__, router->serial, c);
+				mask = MHC2DFL_PTT_R2;
+				break;
+			case CH_PTT_FOCUS:
+				if(router->wk_tx_focus == 1) {  // set when focus on r2
+					dbg0("%s() %s focused r2 ptt %d", __func__, router->serial, c);
+					mask = MHC2DFL_PTT_R2;
+				} else {
+					dbg0("%s() %s focused r1 ptt %d", __func__, router->serial, c);
+					mask = MHC2DFL_PTT_R1;
+				}
+				break;
+			default:
+				dbg0("%s() %s unknown ptt channel %d", __func__, router->serial, prd->channel);
+				continue;
+		}
+
+		if( c == PTT_ON_BYTE ) {
+			newflag |= mask;
 			push = 1;
 		}
 
-		if( c == '0' ) {
-			dbg1("%s %s() ptt off", router->serial, __func__);
-			newflag &= (prd->channel == CH_PTT1) ? ~MHC2DFL_PTT_R1 : ~MHC2DFL_PTT_R2;
+		if( c == PTT_OFF_BYTE ) {
+			newflag &= ~mask;
 			push = 1;
 		}
 	}	      
+
+	router->wflag = newflag;
 
 	if(push) {
 		r = mhr_send_in(router, &newflag, 1, MH_CHANNEL_FLAGS);
@@ -235,8 +297,14 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	if(!(revents & EV_READ))
 		return;
 
-	if(router->fd == -1)
+	if(router->fd == -1) {
+		// nothing to route to, discard..
+		char b[1024];
+		do {
+			r = read(prd->fd, b, sizeof(b));
+		} while(r > 0 || (r < 0 && errno == EINTR));
 		return;
+	}
 
 	b = &router->channel_buf_out[prd->channel];
 
@@ -262,7 +330,7 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 			ev_timer_start(router->loop, &router->lb[prd->channel].timer);
 		}
 
-		if(is_ptt_channel(prd->channel))
+		if(ch_is_ptt_channel(prd->channel))
 			process_ptt_producer(prd, b);
 
 		PG_SCANLIST(&router->processor_cb_list[prd->channel], prc) {
@@ -276,12 +344,15 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	}
 
 	if(r == 0) {
-		dbg1("%s connection %d closed by remote", router->serial, w->fd);
+		info("%s connection %d closed by remote", router->serial, w->fd);
+		mhr_rem_consumer(router, prd->fd, prd->channel);
 		mhr_rem_producer(router, prd->fd, prd->channel);
+		return;
 	}
 
 	if(r < 0 && errno != EAGAIN) {
 		err_e(errno, "(mhr) Error reading from producer %d, channel %d!", prd->fd, prd->channel);
+		mhr_rem_consumer(router, prd->fd, prd->channel);
 		mhr_rem_producer(router, prd->fd, prd->channel);
 		return;
 	}
@@ -305,6 +376,7 @@ static void consumer_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	if(r < 0 && errno != EAGAIN) {
 		err_e(errno, "(mhr) Error writing to fd %d, channel %d!", cns->fd, cns->channel);
+		mhr_rem_producer(router, cns->fd, cns->channel);
 		mhr_rem_consumer(router, cns->fd, cns->channel);
 		return;
 	}
@@ -333,7 +405,11 @@ static void keyer_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		buf_add_size(&router->buf_in, r);
 	}
 
-	if((r < 0 && errno != EAGAIN) || r == 0) {
+	if(r == 0) {
+		// EOF, e.g. USB unplugged. errno is not set in this case.
+		err("(mhr) Connection to keyer closed!");
+		mhr_set_keyer_fd(router, -1);
+	} else if(r < 0 && errno != EAGAIN) {
 		err_e(errno, "(mhr) Error reading from keyer!");
 		mhr_set_keyer_fd(router, -1);
 	}
@@ -346,8 +422,10 @@ static void keyer_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 		if(channel < 0 || channel >= MH_NUM_CHANNELS)
 			continue;
 
+#ifdef MHUXD_SEND_STATUS_VIA_PTT_CONNECTOR
 		if(channel == MH_CHANNEL_FLAGS && router->has_flags_channel)
 			process_in_flags(router, router->dmx->result_byte);
+#endif
 
 		PG_SCANLIST(&router->consumer_list[channel], cns) {
 			if(channel == MH_CHANNEL_CONTROL) {
@@ -496,7 +574,7 @@ void mhr_set_keyer_fd(struct mh_router *router, int fd) {
 	if(router->fd != -1) {
 		ev_io_stop(router->loop, &router->w_in);
 		ev_io_stop(router->loop, &router->w_out);
-		close(router->fd);
+		tty_close(router->fd);
 	}
 
 	router->fd = fd;
@@ -516,7 +594,7 @@ void mhr_set_keyer_fd(struct mh_router *router, int fd) {
 	}
 }
 
-void mhr_add_consumer(struct mh_router *router, int fd, int channel) {
+void mhr_add_consumer(struct mh_router *router, int fd, int channel, const char *owner_tag) {
 	struct Consumer *cns;
 
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
@@ -532,6 +610,8 @@ void mhr_add_consumer(struct mh_router *router, int fd, int channel) {
 
 	cns = w_calloc(1, sizeof(*cns));
 	cns->fd = fd;
+	cns->owner_tag = owner_tag;
+	cns->owner_router = 1;
 	ev_io_init(&cns->w, consumer_cb, cns->fd, EV_WRITE);
 	cns->w.data = cns;
 	cns->router = router;
@@ -539,7 +619,7 @@ void mhr_add_consumer(struct mh_router *router, int fd, int channel) {
 	PG_AddTail(&router->consumer_list[channel], &cns->node);
 }
 
-void mhr_add_producer(struct mh_router *router, int fd, int channel) {
+void mhr_add_producer(struct mh_router *router, int fd, int channel, const char *owner_tag) {
 	struct Producer *prd;
 
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
@@ -555,6 +635,8 @@ void mhr_add_producer(struct mh_router *router, int fd, int channel) {
 
 	prd = w_calloc(1, sizeof(*prd));
 	prd->fd = fd;
+	prd->owner_tag = owner_tag;
+	prd->owner_router = 1;
 	ev_io_init(&prd->w, producer_cb, prd->fd, EV_READ);
 	prd->w.data = prd;
 	prd->router = router;
@@ -563,6 +645,11 @@ void mhr_add_producer(struct mh_router *router, int fd, int channel) {
 	if(router->fd != -1) {
 		ev_io_start(router->loop, &prd->w);
 	}
+}
+
+void mhr_add_endpoint_fd(struct mh_router *router, int fd, int channel, const char *owner_tag) {
+	mhr_add_consumer(router, fd, channel, owner_tag);
+	mhr_add_producer(router, fd, channel, owner_tag);
 }
 
 void mhr_add_consumer_cb(struct mh_router *router, MHRConsumerCallback callback, int channel,
@@ -629,13 +716,21 @@ void mhr_rem_consumer(struct mh_router *router, int fd, int channel) {
 		if(cns->fd == fd) {
 			PG_Remove(&cns->node);
 			ev_io_stop(router->loop, &cns->w);
-			close(cns->fd);
+			if(!has_producer_fd(router, cns->fd, channel)) {
+				if(!cns->owner_router) {
+					dbg0("(mhr) ownership violation: close denied for consumer fd %d tag %s", cns->fd,
+					     cns->owner_tag ? cns->owner_tag : "<unknown>");
+				} else {
+				fd_close(&cns->fd);
+				}
+			}
 			free(cns);
 			return;
 		}
 	}
 
-	warn("(mhr) %s() fd not found", __func__);
+	dbg0("(mhr) %s() fd not found (fd=%d channel=%s)",
+	     __func__, fd, ch_channel2str(channel));
 }
 
 void mhr_rem_producer(struct mh_router *router, int fd, int channel) {
@@ -650,13 +745,26 @@ void mhr_rem_producer(struct mh_router *router, int fd, int channel) {
 		if(prd->fd == fd) {
 			PG_Remove(&prd->node);
 			ev_io_stop(router->loop, &prd->w);
-			close(prd->fd);
+			if(!has_consumer_fd(router, prd->fd, channel)) {
+				if(!prd->owner_router) {
+					dbg0("(mhr) ownership violation: close denied for producer fd %d tag %s", prd->fd,
+					     prd->owner_tag ? prd->owner_tag : "<unknown>");
+				} else {
+				fd_close(&prd->fd);
+				}
+			}
 			free(prd);
 			return;
 		}
 	}
 
-	warn("(mhr) %s() fd not found", __func__);
+	dbg0("(mhr) %s() fd not found (fd=%d channel=%s)",
+	     __func__, fd, ch_channel2str(channel));
+}
+
+void mhr_rem_endpoint_fd(struct mh_router *router, int fd, int channel) {
+	mhr_rem_producer(router, fd, channel);
+	mhr_rem_consumer(router, fd, channel);
 }
 
 void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback callback, int channel) {
@@ -720,10 +828,15 @@ int mhr_send_in(struct mh_router *router, const uint8_t *data, unsigned int len,
 		return -1;
 	}
 
-	if(len > BUFFER_CAPACITY)
+	if(len > BUFFER_CAPACITY) {
+		err("%s() %s chan %s: too much data, likely a bug! len: %u, max: %d", __func__, router->serial, ch_channel2str(channel), len, BUFFER_CAPACITY);
 		return -1;
-	if(router->fd == -1)
+	}
+	if(router->fd == -1) {
+		warn("%s() %s Attempt to send data but keyer/SM not online, fd == -1!", __func__, router->serial);
+		warn("%s() %s Can happen if we just lost the connection to keyer/SM, otherwise: bug!", __func__, router->serial);
 		return -1;
+	}
 
 	if(len > buf_size_avail(&router->channel_buf_out[channel])) {
 		err("%s() insufficient buffer space for %d bytes!", __func__, len);
@@ -758,4 +871,8 @@ void mhr_send_out(struct mh_router *router, const uint8_t *data, unsigned int le
 
 const char *mhr_get_serial(struct mh_router *router) {
 	return router->serial;
+}
+
+void mhr_set_wk_tx_focus(struct mh_router *router, uint8_t focus) {
+	router->wk_tx_focus = focus;
 }

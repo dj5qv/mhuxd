@@ -28,8 +28,9 @@ struct fd_node {
 	struct termios termios;
 };
 
+// Globals. If we should ever go for multi-threading, these would need to be protected.
 static int is_initialized = 0;
-struct PGList fd_list;
+static struct PGList fd_list;
 
 int tty_open(const char *name) {
 	int fd;
@@ -43,7 +44,7 @@ int tty_open(const char *name) {
 		is_initialized = 1;
 	}
 
-	fd = open(name, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	fd = open(name, O_RDWR | O_NOCTTY | O_NONBLOCK | O_CLOEXEC);
 
 	if(fd == -1)
 		return -1;
@@ -55,9 +56,13 @@ int tty_open(const char *name) {
 	ioctl(fd, TIOCEXCL, NULL);
 
 	struct termios newtio;
-	bzero(&newtio, sizeof(newtio));
-	newtio.c_cflag = B230400 | CS8 | CLOCAL | CREAD | CRTSCTS;
-	//cfmakeraw(&newtio);
+	memset(&newtio, 0, sizeof(newtio));
+	cfmakeraw(&newtio);
+	cfsetispeed(&newtio, B230400);
+	cfsetospeed(&newtio, B230400);
+	newtio.c_cflag |= CS8 | CLOCAL | CREAD;
+	// microham ignores RTS, CTS is undefined.
+	newtio.c_cflag &= ~CRTSCTS;
 	int err = tcsetattr(fd, TCSANOW, &newtio);
 
 	if(err) {

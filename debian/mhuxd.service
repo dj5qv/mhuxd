@@ -1,0 +1,26 @@
+[Unit]
+Description=mhuxd protocol multiplexer for microHam keyers
+Documentation=man:mhuxd(8)
+After=network.target
+
+[Service]
+Type=forking
+User=mhuxd
+Group=mhuxd
+# Load cuse unconditionally, presence of /dev/cuse doesn't guarantee that
+# cuse is loaded. The module load triggers the udev rule that grants the
+# mhuxd user access to /dev/cuse. The "+" runs this as root despite User=.
+ExecStartPre=+/sbin/modprobe cuse
+ExecStart=/usr/sbin/mhuxd -b
+# logrotate's postrotate calls force-reload. Without ExecReload systemd
+# degrades that to a full restart, tearing down all VSPs and the rigctld
+# child once a week. mhuxd reopens its log file on SIGHUP instead.
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=/run/mhuxd/mhuxd.pid
+RuntimeDirectory=mhuxd
+Restart=on-failure
+# Would default to 100ms
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

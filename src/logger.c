@@ -1,6 +1,6 @@
 /*
  *  mhuxd - mircoHam device mutliplexer/demultiplexer
- *  Copyright (C) 2012-2015  Matthias Moeller, DJ5QV
+ *  Copyright (C) 2012-2026  Matthias Moeller, DJ5QV
  *
  *  This program can be distributed under the terms of the GNU GPLv2.
  *  See the file COPYING
@@ -13,14 +13,19 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <jansson.h>
 #include "logger.h"
 
 #define MOD_ID "log"
+
+#define LOGFILE LOGDIR "/mhuxd.log"
 
 struct level {
 	const char *name;
 	int level;
 };
+
+static const char *log_file_name = LOGFILE;
 
 static struct level level_map[] = {
 	{ "MUTE", LOGSV_MUTE },
@@ -56,14 +61,52 @@ static int current_time(char buf[32]) {
 	return r<=0;
 }
 
-void log_init(FILE *f) {
-	file = f;
+void log_set_file_name(const char *name) {
+	log_file_name = name;
+}
+
+const char *log_get_file_name(void) {
+	return log_file_name;
+}
+
+int8_t log_reopen(void) {
+	if(file && file != stdout) {
+		fclose(file);
+		file = fopen(log_file_name, "ae");
+		if(file == NULL) {
+			fprintf(stderr, "could not re-open logfile %s (%s)!\n", log_file_name, strerror(errno));
+			return -1;
+		}
+		info("*** logfile reopened");
+	}
+	return 0;
+}	
+
+int8_t log_open(uint8_t use_stdout) {
+	if(use_stdout) {
+		file = stdout;
+	} else {
+		file = fopen(log_file_name, "ae");
+		printf("Logfile is: %s\n", log_file_name);
+	}
+
+	if(file == NULL) {
+		fprintf(stderr, "could not open logfile %s (%s)!\n", log_file_name, strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+void log_close(void) {
+	if(file && file != stdout)
+		fclose(file);
+	file = NULL;
 }
 
 void log_set_level(int level) {
 	if(level >= 0 && level <= LOGSV_MAX) {
 		log_level = level;
-		info("log level changed to %s", level_map[level].name);
+		info("log level set to %s", level_map[level].name);
 	}
 }
 
@@ -80,7 +123,7 @@ int log_set_level_by_str(const char *s) {
 	return -1;
 }
 
-const char *log_get_level_str() {
+const char *log_get_level_str(void) {
 	uint16_t i;
 	for(i = 0; i < sizeof(level_map) / sizeof(struct level); i++) {
 		if(level_map[i].level == log_level)
@@ -91,7 +134,7 @@ const char *log_get_level_str() {
 
 static const char *severity_strs[] = {
         [LOGSV_CRIT]         = "CRIT",
-	[LOGSV_ERR]          = "ERR ",
+		[LOGSV_ERR]          = "ERR ",
         [LOGSV_WARN]         = "WARN",
         [LOGSV_INFO]         = "INFO",
         [LOGSV_DBG0]         = "DBG0",
@@ -130,6 +173,29 @@ void log_hex(int severity, const char *msg1, const char *msg2, const char *msg3,
 
 	fflush(file);
 
+}
+
+void log_json(int severity, const char *msg1, const char *msg2, const char *msg3, const json_t *obj) {
+	char *json_str;
+
+	if(severity > log_level)
+		return;
+
+	if(msg1 == NULL)
+		msg1 = "";
+	if(msg2 == NULL)
+		msg2 = "";
+	if(msg3 == NULL)
+		msg3 = "";
+
+	if(file == NULL || severity < 0 || severity > LOGSV_MAX || !obj)
+		return;
+
+	json_str = json_dumps(obj, JSON_COMPACT);
+	if(json_str) {
+		log_msg(severity, msg1, " %s %s %s\n", msg2, msg3, json_str);
+		free(json_str);
+	}
 }
 
 void log_msg(int severity, const char *header, const char *fmt, ...) {

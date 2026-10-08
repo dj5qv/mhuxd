@@ -1,6 +1,11 @@
 AC_PREREQ([2.69])
-AC_INIT([mhuxd], [0.56], [mhuxd@maxec.de])
+AC_INIT([mhuxd], [0.90beta], [mhuxd@maxec.de])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
+
+# pkg.m4 (from pkg-config/pkgconf) must be present when running autogen.sh,
+# otherwise autoconf fails with a misleading "undefined macro: AC_MSG_ERROR".
+m4_ifndef([PKG_CHECK_MODULES],
+  [m4_fatal([PKG_CHECK_MODULES macro not found. Install pkg-config (Debian/Ubuntu: pkgconf) and re-run ./autogen.sh])])
 
 AC_PROG_CC
 AC_CONFIG_HEADERS([config.h])
@@ -61,6 +66,15 @@ UDEV_CFLAGS="$UDEV_CFLAGS"
 AC_SUBST(UDEV_CFLAGS)
 AC_SUBST(UDEV_LIBS) 
 LIBS="${UDEV_LIBS} ${LIBS}"
+
+#JANSSON
+PKG_CHECK_MODULES(JANSSON,jansson,[ have_jansson=true ],[
+  AC_MSG_ERROR([JANSSON: no jansson pkg-config(1) module was found. Install 'libjansson-dev' package.])
+])
+
+AC_SUBST(JANSSON_CFLAGS)
+AC_SUBST(JANSSON_LIBS)
+LIBS="${JANSSON_LIBS} ${LIBS}"
 
 #EV
 AC_CHECK_HEADERS([ev.h], [], [AC_MSG_ERROR("ev.h not found. Install 'libev-dev'.")])
@@ -128,17 +142,17 @@ if test ! -z "$WEBUIDIR"; then
 fi
 AC_SUBST(WEBUIDIR)
 
-# Add hdfdir option
-HDFDIR='${datadir}/mhuxd/hdf'
-AC_ARG_WITH([hdfdir],
-        [  --with-hdfdir=DIR       hdf files [[DATADIR/mhuxd/hdf]]],
-        HDFDIR=$withval)
-if test ! -z "$HDFDIR"; then
-  if test "$HDFDIR" = "yes" -o "$HDFDIR" = "no"; then
-    AC_MSG_ERROR([--with-hdfdir must specify a path])
+# Add jsondir option
+JSONDIR='${datadir}/mhuxd/json'
+AC_ARG_WITH([jsondir],
+        [  --with-jsondir=DIR      json files [[DATADIR/mhuxd/json]]],
+        JSONDIR=$withval)
+if test ! -z "$JSONDIR"; then
+  if test "$JSONDIR" = "yes" -o "$JSONDIR" = "no"; then
+    AC_MSG_ERROR([--with-jsondir must specify a path])
   fi
 fi
-AC_SUBST(HDFDIR)
+AC_SUBST(JSONDIR)
 
 # finish
 AC_OUTPUT
