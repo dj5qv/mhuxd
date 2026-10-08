@@ -685,27 +685,41 @@ static int apply_messages_from_json(struct cfgmgrj *cfgmgrj, struct mh_control *
 }
 
 static int apply_winkey_from_json(struct cfgmgrj *cfgmgrj, struct device *dev, json_t *winkey_obj) {
-    if(!json_is_object(winkey_obj))
-        return 0;
-    if(!dev->wkman)
-        dev->wkman = wkm_create(cfgmgrj->ctx, dev);
-    if(!dev->wkman)
+    // The winkey manager talks to the keyer's WinKey channel, so only a keyer with a WinKey gets one.
+    if(!(mhc_get_mhinfo(dev->ctl)->flags & MHF_HAS_WINKEY)) {
+        if(!json_is_object(winkey_obj))
+            return 0;
+        err("%s has no WinKey, can't apply winkey settings!", dev->serial);
         return 1;
-
-    int errors = 0;
-    const char *key;
-    json_t *val;
-    json_object_foreach(winkey_obj, key, val) {
-        if(!json_is_integer(val) && !json_is_boolean(val) && !json_is_real(val))
-            continue;
-        int ival = json_is_real(val) ? (int)json_real_value(val) : (int)json_integer_value(val);
-        if(json_is_boolean(val))
-            ival = json_is_true(val) ? 1 : 0;
-        if(wkm_set_value(dev->wkman, key, (uint8_t)ival))
-            errors++;
     }
 
-    if(mhc_is_online(dev->ctl)) {
+    // Like the old cfgmgr, every WinKey keyer in the configuration gets a winkey manager, even
+    // without winkey settings. It writes the WinKey settings whenever the keyer comes online.
+    int created = 0;
+    if(!dev->wkman) {
+        dev->wkman = wkm_create(cfgmgrj->ctx, dev);
+        if(!dev->wkman)
+            return 1;
+        created = 1;
+    }
+
+    int errors = 0;
+    if(json_is_object(winkey_obj)) {
+        const char *key;
+        json_t *val;
+        json_object_foreach(winkey_obj, key, val) {
+            if(!json_is_integer(val) && !json_is_boolean(val) && !json_is_real(val))
+                continue;
+            int ival = json_is_real(val) ? (int)json_real_value(val) : (int)json_integer_value(val);
+            if(json_is_boolean(val))
+                ival = json_is_true(val) ? 1 : 0;
+            if(wkm_set_value(dev->wkman, key, (uint8_t)ival))
+                errors++;
+        }
+    }
+
+    // A manager created now has missed the keyer coming online, so it writes its settings too.
+    if((created || json_is_object(winkey_obj)) && mhc_is_online(dev->ctl)) {
         int werr = wkm_write_cfg(dev->wkman);
         if(WKM_RESULT_OK != werr) {
             err("could not write config to winkey (%s)!", wkm_err_string(werr));
