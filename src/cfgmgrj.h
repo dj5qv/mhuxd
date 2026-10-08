@@ -19,6 +19,8 @@ struct cfgmgrj;
 
 struct cfgmgrj *cfgmgrj_create(struct app_ctx *app_ctx);
 void cfgmgrj_destroy(struct cfgmgrj *cfgmgrj);
+// Returns -2 if there is no config file. Otherwise applies all settings it can and returns -1 if
+// the file can't be read or any setting failed. Connectors with invalid settings are kept.
 int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj);
 int cfgmgrj_save_cfg(struct cfgmgrj *cfgmgrj);
 int cfgmgrj_add_conn(struct cfgmgrj *cfgmgrj, json_t *conn_obj);
@@ -28,6 +30,7 @@ int cfgmgrj_remove_conn(struct cfgmgrj *cfgmgrj, int id);
 // Returns 0 on success, -ENOENT if not known, -EBUSY if still connected,
 // -EAGAIN if a config operation is in progress.
 int cfgmgrj_remove_device(struct cfgmgrj *cfgmgrj, const char *serial);
+// Applies all settings it can, returns -1 if any of them failed.
 int cfgmgrj_apply_json(struct cfgmgrj *cfgmgrj, json_t *root);
 json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj);
 int cfgmgrj_sync_from_conmgr(struct cfgmgrj *cfgmgrj);

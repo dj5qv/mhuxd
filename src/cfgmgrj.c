@@ -474,35 +474,34 @@ static int apply_ptt_channel_from_json(struct mh_control *ctl, int type, const c
     if(!chan_obj || !json_is_object(chan_obj))
         return 0;
 
+    int errors = 0;
     const char *modes[] = { "cw", "voice", "digital" };
     for(size_t i = 0; i < ARRAY_SIZE(modes); i++) {
         json_t *val = json_object_get(chan_obj, modes[i]);
         if(!val)
             continue;
-        if(!json_is_string(val))
-            return -1;
-        if(apply_ptt_value(ctl, type, chan, modes[i], json_string_value(val)) != 0)
-            return -1;
+        if(!json_is_string(val)) {
+            warn("cfgmgrj: ptt.%s.%s must be string", chan, modes[i]);
+            errors++;
+            continue;
+        }
+        if(apply_ptt_value(ctl, type, chan, modes[i], json_string_value(val)) != 0) {
+            errors++;
+            continue;
+        }
         if(changed)
             *changed = 1;
     }
 
-    return 0;
+    return errors;
 }
 
 static int apply_ptt_from_json(struct mh_control *ctl, int type, json_t *ptt_obj, int *changed) {
     if(!ptt_obj || !json_is_object(ptt_obj))
         return 0;
 
-    json_t *r1 = json_object_get(ptt_obj, "r1");
-    if(apply_ptt_channel_from_json(ctl, type, "r1", r1, changed) != 0)
-        return -1;
-
-    json_t *r2 = json_object_get(ptt_obj, "r2");
-    if(apply_ptt_channel_from_json(ctl, type, "r2", r2, changed) != 0)
-        return -1;
-
-    return 0;
+    return apply_ptt_channel_from_json(ctl, type, "r1", json_object_get(ptt_obj, "r1"), changed) +
+           apply_ptt_channel_from_json(ctl, type, "r2", json_object_get(ptt_obj, "r2"), changed);
 }
 
 static int param_get_int(json_t *param, const char *key, int defval) {
@@ -588,6 +587,7 @@ static double json_get_double(json_t *obj, const char *key, double defval) {
 }
 
 static int apply_kopts_from_json(struct mh_control *ctl, json_t *param_obj, const char *prefix) {
+    int errors = 0;
     const char *key;
     json_t *val;
     json_object_foreach(param_obj, key, val) {
@@ -598,8 +598,7 @@ static int apply_kopts_from_json(struct mh_control *ctl, json_t *param_obj, cons
             snprintf(full_key, sizeof(full_key), "%s", key);
 
         if(json_is_object(val)) {
-            if(apply_kopts_from_json(ctl, val, full_key))
-                return -1;
+            errors += apply_kopts_from_json(ctl, val, full_key);
             continue;
         }
 
@@ -609,12 +608,13 @@ static int apply_kopts_from_json(struct mh_control *ctl, json_t *param_obj, cons
         if(json_is_boolean(val))
             ival = json_is_true(val) ? 1 : 0;
         if(mhc_set_kopt(ctl, full_key, ival))
-            return -1;
+            errors++;
     }
-    return 0;
+    return errors;
 }
 
 static int apply_speed_from_json(struct cfgmgrj *cfgmgrj, struct mh_control *ctl, json_t *channel_obj) {
+    int errors = 0;
     const char *chan_name;
     json_t *chan_cfg;
     json_object_foreach(channel_obj, chan_name, chan_cfg) {
@@ -623,7 +623,8 @@ static int apply_speed_from_json(struct cfgmgrj *cfgmgrj, struct mh_control *ctl
         int channel = ch_str2channel(chan_name);
         if(channel < 0 || channel >= MH_NUM_CHANNELS) {
             err("invalid channel '%s' in JSON config", chan_name);
-            return -1;
+            errors++;
+            continue;
         }
 
         struct mhc_speed_cfg cfg;
@@ -642,15 +643,18 @@ static int apply_speed_from_json(struct cfgmgrj *cfgmgrj, struct mh_control *ctl
         mhc_set_speed_params(ctl, channel, &cfg, completion_cb, &result);
         while(result == -1)
             ev_run(cfgmgrj->loop, EVRUN_ONCE);
-        if(result != CMD_RESULT_OK)
-            return -1;
+        if(result != CMD_RESULT_OK) {
+            err("%s error setting channel speed for %s!", mhc_get_serial(ctl), chan_name);
+            errors++;
+        }
     }
-    return 0;
+    return errors;
 }
 
 static int apply_messages_from_json(struct cfgmgrj *cfgmgrj, struct mh_control *ctl, json_t *arr, int is_cw) {
     if(!json_is_array(arr))
         return 0;
+    int errors = 0;
     size_t idx;
     json_t *msg;
     json_array_foreach(arr, idx, msg) {
@@ -672,10 +676,12 @@ static int apply_messages_from_json(struct cfgmgrj *cfgmgrj, struct mh_control *
         }
         while(result == -1)
             ev_run(cfgmgrj->loop, EVRUN_ONCE);
-        if(result != CMD_RESULT_OK)
-            return -1;
+        if(result != CMD_RESULT_OK) {
+            err("%s error storing %s message %d!", mhc_get_serial(ctl), is_cw ? "cw" : "fsk", index);
+            errors++;
+        }
     }
-    return 0;
+    return errors;
 }
 
 static int apply_winkey_from_json(struct cfgmgrj *cfgmgrj, struct device *dev, json_t *winkey_obj) {
@@ -684,8 +690,9 @@ static int apply_winkey_from_json(struct cfgmgrj *cfgmgrj, struct device *dev, j
     if(!dev->wkman)
         dev->wkman = wkm_create(cfgmgrj->ctx, dev);
     if(!dev->wkman)
-        return -1;
+        return 1;
 
+    int errors = 0;
     const char *key;
     json_t *val;
     json_object_foreach(winkey_obj, key, val) {
@@ -695,30 +702,34 @@ static int apply_winkey_from_json(struct cfgmgrj *cfgmgrj, struct device *dev, j
         if(json_is_boolean(val))
             ival = json_is_true(val) ? 1 : 0;
         if(wkm_set_value(dev->wkman, key, (uint8_t)ival))
-            return -1;
+            errors++;
     }
 
     if(mhc_is_online(dev->ctl)) {
         int werr = wkm_write_cfg(dev->wkman);
         if(WKM_RESULT_OK != werr) {
             err("could not write config to winkey (%s)!", wkm_err_string(werr));
-            return -1;
+            errors++;
         }
     }
-    return 0;
+    return errors;
 }
 
 /* Recursively apply sm fixed options from a JSON object, building dotted key paths
  * for nested objects (e.g. { "sequencer": { "lead": { "B6": 100 } } }
  * becomes sm_antsw_set_opt(sm, "sequencer.lead.B6", 100) */
 static int apply_sm_fixed_recursive(struct sm *sm, json_t *obj, char *prefix, size_t prefix_len, size_t prefix_cap) {
+    int errors = 0;
     const char *key;
     json_t *val;
     json_object_foreach(obj, key, val) {
         size_t key_len = strlen(key);
         size_t new_len = prefix_len + (prefix_len ? 1 : 0) + key_len;
-        if(new_len >= prefix_cap)
+        if(new_len >= prefix_cap) {
+            err("sm.fixed key '%s' too long", key);
+            errors++;
             continue;
+        }
 
         char *p = prefix + prefix_len;
         if(prefix_len) {
@@ -727,20 +738,19 @@ static int apply_sm_fixed_recursive(struct sm *sm, json_t *obj, char *prefix, si
         memcpy(p, key, key_len + 1);
 
         if(json_is_object(val)) {
-            if(apply_sm_fixed_recursive(sm, val, prefix, new_len, prefix_cap))
-                return -1;
+            errors += apply_sm_fixed_recursive(sm, val, prefix, new_len, prefix_cap);
         } else if(json_is_integer(val) || json_is_boolean(val) || json_is_real(val)) {
             int ival = json_is_real(val) ? (int)json_real_value(val) : (int)json_integer_value(val);
             if(json_is_boolean(val))
                 ival = json_is_true(val) ? 1 : 0;
             if(sm_antsw_set_opt(sm, prefix, (uint32_t)ival))
-                return -1;
+                errors++;
         }
 
         /* restore prefix */
         prefix[prefix_len] = '\0';
     }
-    return 0;
+    return errors;
 }
 
 static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
@@ -750,11 +760,11 @@ static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
     if(!sm)
         return 0;
 
+    int errors = 0;
     json_t *fixed = json_object_get(sm_obj, "fixed");
     if(json_is_object(fixed)) {
         char prefix[256] = "";
-        if(apply_sm_fixed_recursive(sm, fixed, prefix, 0, sizeof(prefix)))
-            return -1;
+        errors += apply_sm_fixed_recursive(sm, fixed, prefix, 0, sizeof(prefix));
     }
 
     json_t *output = json_object_get(sm_obj, "output");
@@ -768,7 +778,7 @@ static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
             if(json_is_boolean(val))
                 ival = json_is_true(val) ? 1 : 0;
             if(sm_antsw_set_output(sm, key, (uint8_t)ival))
-                return -1;
+                errors++;
         }
     }
 
@@ -783,7 +793,7 @@ static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
                 if(!json_is_object(item))
                     continue;
                 if(sm_antsw_add_obj_json(sm, item))
-                    return -1;
+                    errors++;
             }
         } else if(json_is_object(obj_val)) {
             /* Single object operation: { "action": "add|mod|rem", ... } */
@@ -796,10 +806,10 @@ static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
                 warn("sm.obj missing action field");
             } else if(strcmp(act, "add") == 0) {
                 if(sm_antsw_add_obj_json(sm, obj_val))
-                    return -1;
+                    errors++;
             } else if(strcmp(act, "mod") == 0) {
                 if(sm_antsw_mod_obj_json(sm, obj_val))
-                    return -1;
+                    errors++;
             } else if(strcmp(act, "rem") == 0) {
                 int id = -1;
                 json_t *jid = json_object_get(obj_val, "id");
@@ -807,10 +817,10 @@ static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
                     id = (int)json_integer_value(jid);
                 if(id < 0) {
                     warn("sm.obj rem: missing id");
-                    return -1;
+                    errors++;
+                } else if(sm_antsw_rem_obj(sm, id)) {
+                    errors++;
                 }
-                if(sm_antsw_rem_obj(sm, id))
-                    return -1;
             } else if(strcmp(act, "rem_ref") == 0) {
                 int obj_id = -1, ref_id = -1;
                 json_t *joid = json_object_get(obj_val, "obj_id");
@@ -819,29 +829,33 @@ static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
                 if(jrid && json_is_integer(jrid)) ref_id = (int)json_integer_value(jrid);
                 if(obj_id < 0 || ref_id < 0) {
                     warn("sm.obj rem_ref: missing obj_id or ref_id");
-                    return -1;
+                    errors++;
+                } else if(sm_antsw_rem_obj_ref(sm, obj_id, ref_id)) {
+                    errors++;
                 }
-                if(sm_antsw_rem_obj_ref(sm, obj_id, ref_id))
-                    return -1;
             } else {
                 warn("sm.obj unknown action '%s'", act);
             }
         }
     }
 
-    return 0;
+    return errors;
 }
 
+// Like the old cfgmgr, a setting that can't be applied doesn't keep the remaining settings
+// from being applied. Returns the number of settings that failed.
 static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
     dbg1("%s", __func__);
     dbg1_j("device object", "", device_obj);
 
     if(!json_is_object(device_obj))
-        return -1;
+        return 1;
 
     json_t *serial_val = json_object_get(device_obj, "serial");
-    if(!serial_val || !json_is_string(serial_val))
-        return -1;
+    if(!serial_val || !json_is_string(serial_val)) {
+        err("cfgmgrj: device without serial number");
+        return 1;
+    }
     const char *serial = json_string_value(serial_val);
 
     int type = json_get_int(device_obj, "type", 0);
@@ -852,7 +866,7 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
 
     dev = app_ctx_get_device(cfgmgrj->ctx, serial);
     if(!dev)
-        return -1; 
+        return 1;
 
     dbg1_j("apply device ", serial, device_obj);
 
@@ -860,196 +874,194 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
     if(type == 0)
         type = mhc_get_type(ctl);
 
+    int errors = 0;
+
     if(json_has_key(device_obj, "rig_mode_sync")) {
         json_t *rig_mode_sync_obj = json_object_get(device_obj, "rig_mode_sync");
         if(!rig_mode_sync_obj || json_is_null(rig_mode_sync_obj)) {
             json_object_del(cfgmgrj->rig_mode_sync, serial);
             remove_rig_client_bindings(cfgmgrj, serial, 0);
+        } else if(apply_rig_mode_sync_from_json(cfgmgrj, serial, ctl, rig_mode_sync_obj)) {
+            errors++;
         } else {
-            if(apply_rig_mode_sync_from_json(cfgmgrj, serial, ctl, rig_mode_sync_obj))
-                return -1;
             start_rig_mode_sync_clients(cfgmgrj, ctl, rig_mode_sync_obj);
         }
     }
 
     int ptt_changed = 0;
-    json_t *ptt = json_object_get(device_obj, "ptt");
-    if(ptt) {
-        if(apply_ptt_from_json(ctl, type, ptt, &ptt_changed))
-            return -1;
-    }
+    errors += apply_ptt_from_json(ctl, type, json_object_get(device_obj, "ptt"), &ptt_changed);
 
     json_t *param = json_object_get(device_obj, "param");
-    if(json_is_object(param)) {
-        if(apply_kopts_from_json(ctl, param, ""))
-            return -1;
-        if(mhc_is_online(ctl)) {
-            int result = -1;
-            mhc_load_kopts(ctl, completion_cb, &result);
-            while(result == -1)
-                ev_run(cfgmgrj->loop, EVRUN_ONCE);
-            if(result != CMD_RESULT_OK)
-                return -1;
-        }
-    }
+    if(json_is_object(param))
+        errors += apply_kopts_from_json(ctl, param, "");
 
-    if(ptt_changed && (!param || !json_is_object(param))) {
-        if(mhc_is_online(ctl)) {
-            int result = -1;
-            mhc_load_kopts(ctl, completion_cb, &result);
-            while(result == -1)
-                ev_run(cfgmgrj->loop, EVRUN_ONCE);
-            if(result != CMD_RESULT_OK)
-                return -1;
+    if((json_is_object(param) || ptt_changed) && mhc_is_online(ctl)) {
+        int result = -1;
+        mhc_load_kopts(ctl, completion_cb, &result);
+        while(result == -1)
+            ev_run(cfgmgrj->loop, EVRUN_ONCE);
+        if(result != CMD_RESULT_OK) {
+            err("%s error writing settings to keyer!", serial);
+            errors++;
         }
     }
 
     json_t *channel = json_object_get(device_obj, "channel");
-    if(json_is_object(channel)) {
-        if(apply_speed_from_json(cfgmgrj, ctl, channel))
-            return -1;
-    }
+    if(json_is_object(channel))
+        errors += apply_speed_from_json(cfgmgrj, ctl, channel);
 
-    json_t *cw = json_object_get(device_obj, "cwMessages");
-    if(cw) {
-        if(apply_messages_from_json(cfgmgrj, ctl, cw, 1))
-            return -1;
-    }
-
-    json_t *fsk = json_object_get(device_obj, "fskMessages");
-    if(fsk) {
-        if(apply_messages_from_json(cfgmgrj, ctl, fsk, 0))
-            return -1;
-    }
-
-    json_t *winkey = json_object_get(device_obj, "winkey");
-    if(winkey) {
-        if(apply_winkey_from_json(cfgmgrj, dev, winkey))
-            return -1;
-    }
-
-    json_t *sm = json_object_get(device_obj, "sm");
-    if(sm) {
-        if(apply_sm_from_json(dev, sm))
-            return -1;
-    }
+    errors += apply_messages_from_json(cfgmgrj, ctl, json_object_get(device_obj, "cwMessages"), 1);
+    errors += apply_messages_from_json(cfgmgrj, ctl, json_object_get(device_obj, "fskMessages"), 0);
+    errors += apply_winkey_from_json(cfgmgrj, dev, json_object_get(device_obj, "winkey"));
+    errors += apply_sm_from_json(dev, json_object_get(device_obj, "sm"));
 
     dbg1("%s done", __func__);
-    return 0;
+    return errors;
 }
 
-static int apply_connector_from_json(struct cfgmgrj *cfgmgrj, json_t *conn_obj) {
-    if(!cfgmgrj || !cfgmgrj->conmgr || !json_is_object(conn_obj))
-        return -1;
-
+// Fill ccfg from conn_obj, the strings in ccfg point into conn_obj.
+static int con_cfg_from_json(json_t *conn_obj, struct con_cfg *ccfg) {
     json_t *serial_val = json_object_get(conn_obj, "serial");
     json_t *channel_val = json_object_get(conn_obj, "channel");
     json_t *type_val = json_object_get(conn_obj, "type");
     if(!serial_val || !json_is_string(serial_val) || !channel_val || !json_is_string(channel_val) ||
-       !type_val || !json_is_string(type_val))
+       !type_val || !json_is_string(type_val)) {
+        err("connector needs serial, channel and type!");
         return -1;
+    }
 
     const char *serial = json_string_value(serial_val);
     const char *channel_str = json_string_value(channel_val);
     const char *type_str = json_string_value(type_val);
     int channel = ch_str2channel(channel_str);
-    if(channel < 0)
-        return -1;
-
-    struct con_cfg ccfg = { 0 };
-    ccfg.serial = serial;
-    ccfg.channel = channel;
-    ccfg.type = CON_INVALID;
-
-    if(!strcasecmp(type_str, "VSP"))
-        ccfg.type = CON_VSP;
-    else if(!strcasecmp(type_str, "TCP"))
-        ccfg.type = CON_TCP;
-
-    if(ccfg.type == CON_VSP) {
-        json_t *devname_val = json_object_get(conn_obj, "devname");
-        if(!devname_val || !json_is_string(devname_val))
-            return -1;
-        ccfg.vsp.devname = json_string_value(devname_val);
-        // Reject here as well as in conmgr, so that a bad name is not written to the
-        // config file and the caller sees the request fail.
-        if(!vsp_devname_is_valid(ccfg.vsp.devname)) {
-            err("invalid VSP devname '%s', expected up to %d characters from [A-Za-z0-9._-], "
-                "starting with a letter or digit!", ccfg.vsp.devname, VSP_DEVNAME_MAX);
-            return -1;
-        }
-        ccfg.vsp.maxcon = json_get_int(conn_obj, "maxcon", 1);
-        ccfg.vsp.ptt_rts = json_get_int(conn_obj, "ptt_rts", 0);
-        ccfg.vsp.ptt_dtr = json_get_int(conn_obj, "ptt_dtr", 0);
-    } else if(ccfg.type == CON_TCP) {
-        json_t *devname_val = json_object_get(conn_obj, "devname");
-        if(!devname_val || !json_is_string(devname_val))
-            return -1;
-        ccfg.tcp.port = json_string_value(devname_val);
-        ccfg.tcp.maxcon = json_get_int(conn_obj, "maxcon", 1);
-        ccfg.tcp.remote_access = json_get_int(conn_obj, "remote_access", 0);
-    } else {
+    if(channel < 0) {
+        err("invalid connector channel '%s'!", channel_str);
         return -1;
     }
 
-    int id = json_get_int(conn_obj, "id", 0);
-    int run_id = conmgr_create_con_cfg(cfgmgrj->ctx, &ccfg, id);
+    memset(ccfg, 0, sizeof(*ccfg));
+    ccfg->serial = serial;
+    ccfg->channel = channel;
+    ccfg->type = CON_INVALID;
 
-    // Registry of Intent: update our internal list regardless of creation success
-    if(cfgmgrj->connectors) {
-        // If we don't have an ID yet but conmgr produced one (even if it failed, 
-        // conmgr_create_con_cfg should ideally give us the ID it tried to use).
-        // Since it returns 0 on failure, we'll use a fallback if id was 0.
-        if (id <= 0 && run_id > 0) id = run_id;
-        
-        // If it still is 0 (failed and no ID provided), we need to find a unique one
-        // to keep it in the intent list.
-        if (id <= 0) {
-            // This is a bit of a corner case for a new port that fails immediately.
-            // Let's just find the max ID in our list and increment.
-            int max_id = 0;
-            size_t j;
-            json_t *tmp;
-            json_array_foreach(cfgmgrj->connectors, j, tmp) {
-                int tid = json_get_int(tmp, "id", 0);
-                if (tid > max_id) max_id = tid;
-            }
-            id = max_id + 1;
-        }
+    if(!strcasecmp(type_str, "VSP"))
+        ccfg->type = CON_VSP;
+    else if(!strcasecmp(type_str, "TCP"))
+        ccfg->type = CON_TCP;
 
-        json_t *match = NULL;
-        size_t idx;
-        json_t *c;
-        json_array_foreach(cfgmgrj->connectors, idx, c) {
-            if(json_get_int(c, "id", 0) == id) {
-                match = c;
-                break;
-            }
+    if(ccfg->type == CON_VSP) {
+        json_t *devname_val = json_object_get(conn_obj, "devname");
+        if(!devname_val || !json_is_string(devname_val)) {
+            err("VSP connector needs devname!");
+            return -1;
         }
-        if(match) {
-            json_array_set(cfgmgrj->connectors, idx, conn_obj);
-            json_object_set_new(conn_obj, "id", json_integer(id));
-        } else {
-            json_t *new_obj = json_deep_copy(conn_obj);
-            json_object_set_new(new_obj, "id", json_integer(id));
-            json_array_append_new(cfgmgrj->connectors, new_obj);
+        ccfg->vsp.devname = json_string_value(devname_val);
+        // Reject here as well as in conmgr, so that a request with a bad name fails
+        // and the name is not written to the config file.
+        if(!vsp_devname_is_valid(ccfg->vsp.devname)) {
+            err("invalid VSP devname '%s', expected up to %d characters from [A-Za-z0-9._-], "
+                "starting with a letter or digit!", ccfg->vsp.devname, VSP_DEVNAME_MAX);
+            return -1;
         }
+        ccfg->vsp.maxcon = json_get_int(conn_obj, "maxcon", 1);
+        ccfg->vsp.ptt_rts = json_get_int(conn_obj, "ptt_rts", 0);
+        ccfg->vsp.ptt_dtr = json_get_int(conn_obj, "ptt_dtr", 0);
+    } else if(ccfg->type == CON_TCP) {
+        json_t *devname_val = json_object_get(conn_obj, "devname");
+        if(!devname_val || !json_is_string(devname_val)) {
+            err("TCP connector needs devname!");
+            return -1;
+        }
+        ccfg->tcp.port = json_string_value(devname_val);
+        ccfg->tcp.maxcon = json_get_int(conn_obj, "maxcon", 1);
+        ccfg->tcp.remote_access = json_get_int(conn_obj, "remote_access", 0);
+    } else {
+        err("invalid connector type '%s'!", type_str);
+        return -1;
     }
 
     return 0;
 }
 
-static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
+// Registry of Intent: store conn_obj under id, replacing an entry with the same id.
+static void registry_set_connector(struct cfgmgrj *cfgmgrj, json_t *conn_obj, int id) {
+    if(!cfgmgrj->connectors)
+        return;
+
+    size_t idx;
+    json_t *c;
+    json_array_foreach(cfgmgrj->connectors, idx, c) {
+        if(json_get_int(c, "id", 0) == id) {
+            json_array_set(cfgmgrj->connectors, idx, conn_obj);
+            json_object_set_new(conn_obj, "id", json_integer(id));
+            return;
+        }
+    }
+
+    json_t *new_obj = json_deep_copy(conn_obj);
+    json_object_set_new(new_obj, "id", json_integer(id));
+    json_array_append_new(cfgmgrj->connectors, new_obj);
+}
+
+// keep_invalid: register a connector with invalid settings anyway if it has an id, so that
+// loading the config file doesn't drop it. It is reported as failed and kept on saving.
+static int apply_connector_from_json(struct cfgmgrj *cfgmgrj, json_t *conn_obj, int keep_invalid) {
+    if(!cfgmgrj || !cfgmgrj->conmgr || !json_is_object(conn_obj))
+        return -1;
+
+    int id = json_get_int(conn_obj, "id", 0);
+
+    struct con_cfg ccfg;
+    if(con_cfg_from_json(conn_obj, &ccfg)) {
+        if(!keep_invalid || id <= 0)
+            return -1;
+        err("connector %d has invalid settings, keeping it in the configuration without starting it!", id);
+        conmgr_reserve_id(cfgmgrj->conmgr, id);
+        registry_set_connector(cfgmgrj, conn_obj, id);
+        return -1;
+    }
+
+    int run_id = conmgr_create_con_cfg(cfgmgrj->ctx, &ccfg, id);
+
+    // Registry of Intent: update our internal list regardless of creation success
+    if(id <= 0)
+        id = run_id;
+    if(id <= 0) {
+        // A new connector that failed to start. Give it the id after the highest one in our
+        // list, and keep conmgr from handing out the same id to the next new connector.
+        int max_id = 0;
+        size_t j;
+        json_t *tmp;
+        json_array_foreach(cfgmgrj->connectors, j, tmp) {
+            int tid = json_get_int(tmp, "id", 0);
+            if(tid > max_id)
+                max_id = tid;
+        }
+        id = max_id + 1;
+        conmgr_reserve_id(cfgmgrj->conmgr, id);
+    }
+    registry_set_connector(cfgmgrj, conn_obj, id);
+
+    return 0;
+}
+
+// Applies as much of root as possible, like the old cfgmgr did, so one bad setting doesn't
+// keep the rest of the configuration from loading. keep_invalid: see apply_connector_from_json().
+static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root, int keep_invalid) {
     if(!json_is_object(root))
         return -1;
+
+    int errors = 0;
 
     dbg1("%s daemon", __func__);
     json_t *daemon = json_object_get(root, "daemon");
     if(json_is_object(daemon)) {
         json_t *loglevel = json_object_get(daemon, "loglevel");
         if(loglevel && json_is_string(loglevel)) {
-            if(log_set_level_by_str(json_string_value(loglevel)) == -1)
-                return -1;
+            if(log_set_level_by_str(json_string_value(loglevel)) == -1) {
+                err("invalid log level '%s'!", json_string_value(loglevel));
+                errors++;
+            }
         }
     }
 
@@ -1058,10 +1070,8 @@ static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
     if(devices && json_is_array(devices)) {
         size_t idx;
         json_t *device;
-        json_array_foreach(devices, idx, device) {
-            if(apply_device_from_json(cfgmgrj, device))
-                return -1;
-        }
+        json_array_foreach(devices, idx, device)
+            errors += apply_device_from_json(cfgmgrj, device);
     }
 
     dbg1("%s connectors", __func__);
@@ -1070,17 +1080,19 @@ static int apply_config_json(struct cfgmgrj *cfgmgrj, json_t *root) {
         size_t idx;
         json_t *connector;
         json_array_foreach(connectors, idx, connector) {
-            if(apply_connector_from_json(cfgmgrj, connector))
-                return -1;
+            if(apply_connector_from_json(cfgmgrj, connector, keep_invalid))
+                errors++;
         }
     }
 
-    return 0;
+    if(errors)
+        err("%d configuration setting(s) could not be applied!", errors);
+    return errors ? -1 : 0;
 }
 
 int cfgmgrj_apply_json(struct cfgmgrj *cfgmgrj, json_t *root) {
     cfgmgrj->busy++;
-    int rc = apply_config_json(cfgmgrj, root);
+    int rc = apply_config_json(cfgmgrj, root, 0);
     cfgmgrj->busy--;
     return rc;
 }
@@ -1412,7 +1424,7 @@ int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
     }
 
     cfgmgrj->busy++;
-    int rc = apply_config_json(cfgmgrj, root);
+    int rc = apply_config_json(cfgmgrj, root, 1);
     cfgmgrj->busy--;
     json_decref(root);
     return rc;
@@ -1452,7 +1464,7 @@ int cfgmgrj_add_conn(struct cfgmgrj *cfgmgrj, json_t *conn_obj) {
     if(!cfgmgrj || !conn_obj)
         return -1;
     dbg1("%s", __func__);
-    return apply_connector_from_json(cfgmgrj, conn_obj);
+    return apply_connector_from_json(cfgmgrj, conn_obj, 0);
 }
 
 int cfgmgrj_remove_conn(struct cfgmgrj *cfgmgrj, int id) {

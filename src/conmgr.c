@@ -100,8 +100,7 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 	}
 
 	// Always "allocate" the id if it is != 0 even if the connector creation fails.
-	if(id && id > conmgr->id_cnt)
-		conmgr->id_cnt = id;
+	conmgr_reserve_id(conmgr, id);
 
 	ctr = w_calloc(1, sizeof(*ctr));
 	ctr->s_fd_data = -1;
@@ -382,6 +381,11 @@ void conmgr_foreach(struct conmgr *conmgr, conmgr_iter_cb cb, void *user_data) {
 		info.remote_access = ctr->remote_access;
 		cb(&info, user_data);
 	}
+}
+
+void conmgr_reserve_id(struct conmgr *conmgr, int id) {
+	if(conmgr && id > conmgr->id_cnt)
+		conmgr->id_cnt = id;
 }
 
 int conmgr_exists(struct conmgr *conmgr, int id) {

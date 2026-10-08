@@ -80,5 +80,7 @@ void conmgr_destroy_all(struct conmgr *);
 void conmgr_destroy_device_cons(struct conmgr *conmgr, const struct device *dev);
 void conmgr_foreach(struct conmgr *conmgr, conmgr_iter_cb cb, void *user_data);
 int conmgr_exists(struct conmgr *conmgr, int id);
+// Keep a new connector from getting this id, e.g. for a configured connector that has not been created.
+void conmgr_reserve_id(struct conmgr *conmgr, int id);
 
 #endif // CONMGR_H
