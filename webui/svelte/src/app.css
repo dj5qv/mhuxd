@@ -400,6 +400,19 @@ h1 {
   color: var(--color-text-muted);
 }
 
+/* Native CAT monitor (rig mode sync), trace lines */
+.cat-monitor {
+  font-family: monospace;
+  font-size: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  padding: 0.375rem;
+  margin: 0 0 0.375rem;
+  height: 16rem;
+  overflow: auto;
+  white-space: pre;
+}
+
 /* ─── Buttons ────────────────────────────────────────────────────────────── */
 .button-row {
   display: flex;

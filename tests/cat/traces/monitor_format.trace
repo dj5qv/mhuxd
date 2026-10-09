@@ -1,0 +1,13 @@
+# CAT monitor files: wall clock times, the configuration line repeated
+# whenever mhuxd's decoder starts over.
+@civ addr=94
+23:59:59.900 H1 fe fe 94 e0 03 fd  # cmd
+23:59:59.915 R fe fe 94 e0 03 fd  # echo
+00:00:00.010 R fe fe e0 94 03 00 40 07 14 00 fd  # reply, applied: rx=14074000 ...
+= rx=14074000
+
+# keyer went offline and online again: decoder and state start over
+@civ addr=94
+= rx=? frames=0
+00:00:01.000 R fe fe 00 94 00 00 00 08 14 00 fd  # unsolicited
+= rx=14080000 frames=1

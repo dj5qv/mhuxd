@@ -535,6 +535,7 @@ static void rigcl_parse_response(struct rigctld_client *client) {
 			char token[32];
 			if(parse_mode_token(line + 6, token, sizeof(token)) == 0) {
 				int m = mode_from_rigctld_token(token);
+				snprintf(info.mode_str, sizeof(info.mode_str), "%s", token);
 				if(m >= 0)
 					info.mode = m;
 				else
@@ -574,7 +575,7 @@ static void rigcl_parse_response(struct rigctld_client *client) {
 	     info.vfoAFreq, info.vfoBFreq, split, elapsed_ms, radio_str(client->radio));
 
 	client->last_info = info;
-	mhc_update_radio_info(client->ctl, MOD_ID, &info);
+	mhc_update_radio_info(client->ctl, "rigctld", &info);
 
 	/* A successful poll means rigctld is alive and talking -- reset the
 	 * respawn backoff so the next crash starts fresh. */

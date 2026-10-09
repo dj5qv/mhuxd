@@ -193,6 +193,7 @@ static int start_rig_mode_sync_clients(struct cfgmgrj *cfgmgrj, struct mh_contro
                 .radio = defs[i].radio,
                 .protocol = cat_native_protocol_from_str(json_get_str_or(defs[i].obj, "protocol", "auto")),
                 .civ_address = json_get_int(defs[i].obj, "civ_address", 0),
+                .monitor = json_get_boolish(defs[i].obj, "monitor", 0),
             };
             struct cat_native *native = cat_native_create(cfgmgrj->ctx, dev, &ncfg);
             if(!native) {
@@ -324,6 +325,12 @@ static int validate_rig_mode_sync_radio(const char *radio_name, json_t *radio_ob
             warn("cfgmgrj: rig_mode_sync.%s.civ_address must be integer 0..0xdf (0 = channel's icomaddress)", radio_name);
             return -1;
         }
+    }
+
+    json_t *monitor = json_object_get(radio_obj, "monitor");
+    if(monitor && !json_is_boolean(monitor) && !json_is_integer(monitor)) {
+        warn("cfgmgrj: rig_mode_sync.%s.monitor must be bool/int", radio_name);
+        return -1;
     }
 
     return 0;

@@ -91,6 +91,7 @@ struct mhc_radio_info {
 	uint32_t vfoBFreq;
 	uint32_t subRxFreq;
 	uint32_t subTxFreq;
+	char mode_str[8];	// radio mode as rigctld names it (USB, PKTUSB, ...), "" if unknown
 };
 
 // async functions, will always call the callback even if the async operation could be started.
@@ -144,6 +145,8 @@ const char *mhc_state_str(int state);
 const char *mhc_cmd_err_string(int result);
 
 void mhc_update_radio_info(struct mh_control *ctl, const char *source, const struct mhc_radio_info *info);
+// Last radio info of radio 1 or 2 and who sent it. Returns 1 if valid (not timed out), 0 if not.
+int mhc_get_radio_info(struct mh_control *ctl, uint8_t radio, struct mhc_radio_info *out, const char **source);
 
 
 

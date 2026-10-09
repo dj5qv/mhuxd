@@ -26,7 +26,7 @@
 #include <strings.h>
 #include "cat_civ.h"
 #include "cat_state.h"
-#include "mhcontrol.h"
+#include "cat_trace.h"
 
 #define MAX_PAYLOAD 4096
 
@@ -40,18 +40,9 @@ struct replay {
 	struct cat_civ *civ;
 	struct cat_state st;
 	uint64_t t_ms;
+	uint64_t day_ms;	// added to HH:MM:SS times after midnight
 	char tag[8];
 };
-
-static const char *keyer_str(int m) {
-	switch(m) {
-	case MOD_CW:      return "CW";
-	case MOD_VOICE:   return "VOICE";
-	case MOD_FSK:     return "FSK";
-	case MOD_DIGITAL: return "DIGITAL";
-	default:          return "?";
-	}
-}
 
 static void fmt_freq(char *buf, size_t sz, const struct cat_item *it) {
 	if(it->valid)
@@ -60,38 +51,16 @@ static void fmt_freq(char *buf, size_t sz, const struct cat_item *it) {
 		snprintf(buf, sz, "?");
 }
 
-static void state_str(const struct replay *rp, char *buf, size_t sz) {
-	const struct cat_state *st = &rp->st;
-	char sel[16], unsel[16];
-	fmt_freq(sel, sizeof(sel), &st->vfo[CAT_VFO_SEL].freq);
-	fmt_freq(unsel, sizeof(unsel), &st->vfo[CAT_VFO_UNSEL].freq);
-	enum cat_mode m = cat_state_mode(st, CAT_VFO_SEL);
-	snprintf(buf, sz, "rx=%s unsel=%s mode=%s split=%s keyer=%s",
-		 sel, unsel, m ? cat_mode_token(m) : "?",
-		 st->split.valid ? (st->split.val ? "1" : "0") : "?",
-		 keyer_str(cat_mode_to_keyer(m)));
-}
-
-static void print_time(uint64_t t_ms) {
-	printf("%llu.%03llu", (unsigned long long)(t_ms / 1000), (unsigned long long)(t_ms % 1000));
-}
-
 static void frame_cb(const struct cat_civ_frame *f, void *user_data) {
 	struct replay *rp = user_data;
+	char time[32], line[CAT_TRACE_LINE_MAX];
 	if(!rp->verbose)
 		return;
 
-	print_time(f->t_ms);
-	printf(" %s", f->dir == CAT_DIR_RADIO ? "R" : rp->tag);
-	for(size_t i = 0; i < f->len; i++)
-		printf(" %02x", f->buf[i]);
-	printf("  # %s", cat_civ_kind_str(f->kind));
-	if(f->applied) {
-		char s[160];
-		state_str(rp, s, sizeof(s));
-		printf(", applied: %s", s);
-	}
-	printf("\n");
+	snprintf(time, sizeof(time), "%llu.%03llu", (unsigned long long)(f->t_ms / 1000),
+		 (unsigned long long)(f->t_ms % 1000));
+	cat_trace_civ_frame(line, sizeof(line), time, rp->tag, f, &rp->st);
+	printf("%s\n", line);
 }
 
 static void fail(struct replay *rp, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
@@ -242,6 +211,12 @@ static void data_line(struct replay *rp, char *line) {
 
 	tok = strsep(&p, " \t");
 	if(parse_time(tok, &t) == 0) {
+		t += rp->day_ms;
+		if(t + 12 * 3600 * 1000ULL < rp->t_ms) {
+			// HH:MM:SS from the CAT monitor, past midnight
+			rp->day_ms += 24 * 3600 * 1000ULL;
+			t += 24 * 3600 * 1000ULL;
+		}
 		if(t < rp->t_ms) {
 			fail(rp, "time goes backwards");
 			return;
@@ -274,9 +249,12 @@ static void config_line(struct replay *rp, char *line) {
 		return;
 	}
 	if(rp->civ) {
-		fail(rp, "configuration after the first data line");
-		return;
+		// The CAT monitor writes the configuration whenever the decoder starts over.
+		cat_civ_destroy(rp->civ);
+		rp->civ = NULL;
+		cat_state_init(&rp->st);
 	}
+	memset(&rp->civ_cfg, 0, sizeof(rp->civ_cfg));
 	while((tok = strsep(&p, " \t"))) {
 		unsigned v;
 		if(!*tok)
@@ -287,6 +265,11 @@ static void config_line(struct replay *rp, char *line) {
 			rp->civ_cfg.freq_len = v;
 		else
 			fail(rp, "bad civ option '%s'", tok);
+	}
+	if(rp->verbose) {
+		char buf[64];
+		cat_trace_civ_config(buf, sizeof(buf), &rp->civ_cfg);
+		printf("%s\n", buf);
 	}
 }
 
@@ -345,7 +328,7 @@ static void assert_line(struct replay *rp, char *line) {
 		} else if(!strcmp(tok, "data")) {
 			check_item(rp, tok, val, &st->vfo[CAT_VFO_SEL].data);
 		} else if(!strcmp(tok, "keyer")) {
-			check(rp, tok, val, keyer_str(cat_mode_to_keyer(cat_state_mode(st, CAT_VFO_SEL))));
+			check(rp, tok, val, cat_trace_keyer_str(cat_mode_to_keyer(cat_state_mode(st, CAT_VFO_SEL))));
 		} else if(!strcmp(tok, "split")) {
 			check_item(rp, tok, val, &st->split);
 		} else if(!strcmp(tok, "vfo")) {

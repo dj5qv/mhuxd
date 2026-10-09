@@ -41,6 +41,8 @@ struct restapi {
 	struct http_handler *handlers[NUM_ROUTES];
 	eventbus_sub_t *keyer_state_sub;
 	eventbus_sub_t *keyer_mode_sub;
+	eventbus_sub_t *radio_info_sub;
+	eventbus_sub_t *cat_monitor_sub;
 	struct PGList ws_subscribers;
 	char *metadata_json;	/* never changes, serialized once by restapi_create() */
 	time_t start_time;
@@ -291,6 +293,58 @@ static void ev_keyer_mode_cb(enum app_event_type type, const void *data, void *u
 	json_decref(event);
 }
 
+static const char *keyer_mode_str(int mode) {
+	switch(mode) {
+	case MOD_CW:      return "CW";
+	case MOD_VOICE:   return "VOICE";
+	case MOD_FSK:     return "FSK";
+	case MOD_DIGITAL: return "DIGITAL";
+	default:          return NULL;
+	}
+}
+
+/* Radio info from rig mode sync (rigctld or native CAT) into obj. */
+static void set_radio_info_json(json_t *obj, uint8_t radio, int valid, const char *source,
+				const struct mhc_radio_info *info) {
+	const char *km = keyer_mode_str(info->mode);
+	json_object_set_new(obj, "radio", json_integer(radio));
+	json_object_set_new(obj, "valid", json_boolean(valid));
+	json_object_set_new(obj, "source", source && *source ? json_string(source) : json_null());
+	json_object_set_new(obj, "rxFreq", json_integer((json_int_t)info->rxFreq));
+	json_object_set_new(obj, "txFreq", json_integer((json_int_t)info->txFreq));
+	json_object_set_new(obj, "vfoAFreq", json_integer((json_int_t)info->vfoAFreq));
+	json_object_set_new(obj, "vfoBFreq", json_integer((json_int_t)info->vfoBFreq));
+	json_object_set_new(obj, "mode", info->mode_str[0] ? json_stringn(info->mode_str, strnlen(info->mode_str, sizeof(info->mode_str))) : json_null());
+	json_object_set_new(obj, "keyerMode", km ? json_string(km) : json_null());
+}
+
+static void ev_radio_info_cb(enum app_event_type type, const void *data, void *user_data) {
+	struct restapi *api = user_data;
+	const struct ev_radio_info *ev = data;
+	if(type != EV_RADIO_INFO || !ev || !ev->info)
+		return;
+	json_t *event = json_object();
+	json_object_set_new(event, "type", json_string("radio_info"));
+	json_object_set_new(event, "serial", json_string(ev->serial));
+	set_radio_info_json(event, ev->radio, ev->valid, ev->source, ev->info);
+	broadcast_event(api, event);
+	json_decref(event);
+}
+
+static void ev_cat_monitor_cb(enum app_event_type type, const void *data, void *user_data) {
+	struct restapi *api = user_data;
+	const struct ev_cat_monitor *ev = data;
+	if(type != EV_CAT_MONITOR || !ev || !ev->line)
+		return;
+	json_t *event = json_object();
+	json_object_set_new(event, "type", json_string("cat_monitor"));
+	json_object_set_new(event, "serial", json_string(ev->serial));
+	json_object_set_new(event, "radio", json_integer(ev->radio));
+	json_object_set_new(event, "line", json_string(ev->line));
+	broadcast_event(api, event);
+	json_decref(event);
+}
+
 static void on_ws_sub_closed(struct http_connection *hcon, void *data) {
 	(void)hcon;
 	struct ws_subscriber *sub = data;
@@ -470,6 +524,17 @@ static int cb_devices(struct http_connection *hcon, const char *path, const char
 			json_object_set_new(device, "verFwMinor", json_integer((json_int_t)mhi->ver_fw_minor));
 			json_object_set_new(device, "verFwBeta", json_boolean(mhi->ver_fw_beta));
 			json_object_set_new(device, "verWinkey", json_integer((json_int_t)mhi->ver_winkey));
+
+			json_t *radios = json_array();
+			for(uint8_t r = 1; r <= ((mhi->flags & MHF_HAS_R2) ? 2 : 1); r++) {
+				struct mhc_radio_info info;
+				const char *source;
+				int valid = mhc_get_radio_info(dev->ctl, r, &info, &source);
+				json_t *radio = json_object();
+				set_radio_info_json(radio, r, valid, source, &info);
+				json_array_append_new(radios, radio);
+			}
+			json_object_set_new(device, "radios", radios);
 			json_array_append_new(devices, device);
 		}
 	}
@@ -851,6 +916,8 @@ struct restapi *restapi_create(struct app_ctx *ctx, struct http_server *hs, stru
 
 	api->keyer_state_sub = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_STATE, ev_keyer_state_cb, api);
 	api->keyer_mode_sub  = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_MODE,  ev_keyer_mode_cb, api);
+	api->radio_info_sub  = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_RADIO_INFO,  ev_radio_info_cb, api);
+	api->cat_monitor_sub = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_CAT_MONITOR, ev_cat_monitor_cb, api);
 
 	return api;
 
@@ -870,6 +937,14 @@ void restapi_shutdown(struct restapi *api) {
 	if(api->keyer_mode_sub) {
 		eventbus_unsubscribe(api->keyer_mode_sub);
 		api->keyer_mode_sub = NULL;
+	}
+	if(api->radio_info_sub) {
+		eventbus_unsubscribe(api->radio_info_sub);
+		api->radio_info_sub = NULL;
+	}
+	if(api->cat_monitor_sub) {
+		eventbus_unsubscribe(api->cat_monitor_sub);
+		api->cat_monitor_sub = NULL;
 	}
 
 	struct ws_subscriber *wsub;

@@ -1,6 +1,7 @@
 <script>
+  import { onDestroy } from 'svelte';
   import { apiGet } from './api.js';
-  import { wsSend } from './ws.js';
+  import { wsSend, onWsEvent } from './ws.js';
 
   const playMessage = (serial, messageNum) => {
     wsSend({ type: 'command', command: 'play_message', serial, message: messageNum });
@@ -27,6 +28,8 @@
   let rigModeSyncFormGen = 0;
   let rigModeSyncStatus = {};
   let rigModeSyncStatusTimer = {};
+  let radioInfoLive = {};   // `${serial}:${radio}` -> latest radio_info event
+  let catMonitor = {};      // `${serial}:${radio}` -> last CAT monitor lines
   let pttForm = {};
   let pttFormGen = 0;
   let pttStatus = {};
@@ -254,6 +257,22 @@
   
   const boolish = (v) => !!Number(v || 0) || v === true;
   
+  const defaultRigModeSyncRadio = (r, defPort) => ({
+    enabled: boolish(r?.enabled),
+    // backend rigctld
+    host: r?.host ?? '127.0.0.1',
+    port: Number(r?.port ?? defPort),
+    connect_timeout_ms: Number(r?.connect_timeout_ms ?? 1500),
+    io_timeout_ms: Number(r?.io_timeout_ms ?? 1500),
+    poll_ms: Number(r?.poll_ms ?? 500),
+    auto_start: boolish(r?.auto_start),
+    rigctld_options: r?.rigctld_options ?? '',
+    // backend native
+    protocol: r?.protocol ?? 'auto',
+    civ_address: r?.civ_address ? Number(r.civ_address).toString(16).toUpperCase() : '',
+    monitor: boolish(r?.monitor)
+  });
+
   const defaultRigModeSyncForm = (serial) => {
     const cfg = keyerConfigForSerial(serial);
     const src = cfg?.rig_mode_sync || {};
@@ -261,26 +280,8 @@
     return {
       backend: src.backend ?? 'rigctld',
       enabled: boolish(src.enabled),
-      r1: {
-        enabled: boolish(radios?.r1?.enabled),
-        host: radios?.r1?.host ?? '127.0.0.1',
-        port: Number(radios?.r1?.port ?? 4532),
-        connect_timeout_ms: Number(radios?.r1?.connect_timeout_ms ?? 1500),
-        io_timeout_ms: Number(radios?.r1?.io_timeout_ms ?? 1500),
-        poll_ms: Number(radios?.r1?.poll_ms ?? 500),
-        auto_start: boolish(radios?.r1?.auto_start),
-        rigctld_options: radios?.r1?.rigctld_options ?? ''
-      },
-      r2: {
-        enabled: boolish(radios?.r2?.enabled),
-        host: radios?.r2?.host ?? '127.0.0.1',
-        port: Number(radios?.r2?.port ?? 4533),
-        connect_timeout_ms: Number(radios?.r2?.connect_timeout_ms ?? 1500),
-        io_timeout_ms: Number(radios?.r2?.io_timeout_ms ?? 1500),
-        poll_ms: Number(radios?.r2?.poll_ms ?? 500),
-        auto_start: boolish(radios?.r2?.auto_start),
-        rigctld_options: radios?.r2?.rigctld_options ?? ''
-      }
+      r1: defaultRigModeSyncRadio(radios.r1, 4532),
+      r2: defaultRigModeSyncRadio(radios.r2, 4533)
     };
   };
   
@@ -319,38 +320,40 @@
     }, 3000);
   };
   
+  // Both backends' settings are sent, so switching the backend keeps the other one's.
+  const rigModeSyncRadioPayload = (f, defPort) => {
+    const civText = String(f?.civ_address ?? '').trim().replace(/^0x/i, '');
+    const civ = civText === '' ? 0 : parseInt(civText, 16);
+    if (!/^[0-9a-f]*$/i.test(civText) || !(civ >= 0 && civ <= 0xdf)) return null;
+    return {
+      enabled: f?.enabled ? 1 : 0,
+      host: String(f?.host || '127.0.0.1').trim() || '127.0.0.1',
+      port: Number(f?.port || defPort),
+      connect_timeout_ms: Number(f?.connect_timeout_ms || 1500),
+      io_timeout_ms: Number(f?.io_timeout_ms || 1500),
+      poll_ms: Number(f?.poll_ms || 500),
+      auto_start: f?.auto_start ? 1 : 0,
+      rigctld_options: String(f?.rigctld_options || ''),
+      protocol: f?.protocol === 'civ' ? 'civ' : 'auto',
+      civ_address: civ,
+      monitor: f?.monitor ? 1 : 0
+    };
+  };
+
   const applyRigModeSync = async (serial) => {
     const form = rigModeSyncForm[serial] || defaultRigModeSyncForm(serial);
+    const r1 = rigModeSyncRadioPayload(form.r1, 4532);
+    const r2 = hasR2 ? rigModeSyncRadioPayload(form.r2, 4533) : undefined;
+    if (!r1 || r2 === null) {
+      setRigModeSyncStatusMsg(serial, 'CI-V address must be a hex number 01..DF, or empty.', 'error');
+      return;
+    }
     const payload = {
       backend: form.backend || 'rigctld',
       enabled: form.enabled ? 1 : 0,
-      radios: {
-        r1: {
-          enabled: form.r1?.enabled ? 1 : 0,
-          host: String(form.r1?.host || '127.0.0.1').trim() || '127.0.0.1',
-          port: Number(form.r1?.port || 4532),
-          connect_timeout_ms: Number(form.r1?.connect_timeout_ms || 1500),
-          io_timeout_ms: Number(form.r1?.io_timeout_ms || 1500),
-          poll_ms: Number(form.r1?.poll_ms || 500),
-          auto_start: form.r1?.auto_start ? 1 : 0,
-          rigctld_options: String(form.r1?.rigctld_options || '')
-        }
-      }
+      radios: r2 ? { r1, r2 } : { r1 }
     };
-  
-    if (hasR2) {
-      payload.radios.r2 = {
-        enabled: form.r2?.enabled ? 1 : 0,
-        host: String(form.r2?.host || '127.0.0.1').trim() || '127.0.0.1',
-        port: Number(form.r2?.port || 4533),
-        connect_timeout_ms: Number(form.r2?.connect_timeout_ms || 1500),
-        io_timeout_ms: Number(form.r2?.io_timeout_ms || 1500),
-        poll_ms: Number(form.r2?.poll_ms || 500),
-        auto_start: form.r2?.auto_start ? 1 : 0,
-        rigctld_options: String(form.r2?.rigctld_options || '')
-      };
-    }
-  
+
     try {
       const res = await fetch(`/api/v1/config/devices/${serial}`, {
         method: 'PATCH',
@@ -367,6 +370,42 @@
       await refreshDeviceConfig(serial);
     }
   };
+
+  // Live radio state (rig mode sync, any backend) and the native CAT monitor.
+  const CAT_MONITOR_LINES = 300;
+  const unsubRadioInfo = onWsEvent('radio_info', (ev) => {
+    radioInfoLive = { ...radioInfoLive, [`${ev.serial}:${ev.radio}`]: ev };
+  });
+  const unsubCatMonitor = onWsEvent('cat_monitor', (ev) => {
+    const key = `${ev.serial}:${ev.radio}`;
+    catMonitor = { ...catMonitor, [key]: [...(catMonitor[key] || []), ev.line].slice(-CAT_MONITOR_LINES) };
+  });
+  onDestroy(() => {
+    unsubRadioInfo();
+    unsubCatMonitor();
+  });
+
+  const clearCatMonitor = (serial, radioNum) => {
+    catMonitor = { ...catMonitor, [`${serial}:${radioNum}`]: [] };
+  };
+
+  const fmtFreq = (hz) => String(hz).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  const radioInfoText = (ri) => {
+    if (!ri || !ri.source) return 'no data yet';
+    const parts = [];
+    if (ri.rxFreq) parts.push(`${fmtFreq(ri.rxFreq)} Hz`);
+    if (ri.txFreq && ri.txFreq !== ri.rxFreq) parts.push(`(TX ${fmtFreq(ri.txFreq)} Hz)`);
+    parts.push(ri.mode || '?');
+    if (ri.keyerMode) parts.push(`→ keyer ${ri.keyerMode}`);
+    const age = ri.valid ? '' : ', outdated: no update for 10 s';
+    return `${parts.join(' ')} — via ${ri.source}${age}`;
+  };
+
+  // Keeps the monitor scrolled to the newest line.
+  const scrollToEnd = (node) => ({
+    update() { node.scrollTop = node.scrollHeight; }
+  });
   
   const messageConfig = (serial, kind) => {
     const cfg = keyerConfigForSerial(serial);
@@ -1568,6 +1607,10 @@
   $: activeFsk1 = activeSerial ? (radioForm[activeSerial]?.fsk1 || defaultRadioForm(activeSerial, 'fsk1')) : null;
   $: activeFsk2 = activeSerial ? (radioForm[activeSerial]?.fsk2 || defaultRadioForm(activeSerial, 'fsk2')) : null;
   $: activeRigModeSync = activeSerial ? (rigModeSyncForm[activeSerial] || defaultRigModeSyncForm(activeSerial)) : null;
+  $: rigRadios = hasR2 ? ['r1', 'r2'] : ['r1'];
+  $: activeRadioInfo = [1, 2].map((n) =>
+    radioInfoLive[`${activeSerial}:${n}`] || (activeKeyer?.radios || []).find((r) => r.radio === n) || null);
+  $: activeCatMonitor = [1, 2].map((n) => catMonitor[`${activeSerial}:${n}`] || []);
   $: activePttR1 = activeSerial ? (pttForm[activeSerial]?.r1 || defaultPttForm(activeSerial, 'r1')) : null;
   $: activePttR2 = activeSerial ? (pttForm[activeSerial]?.r2 || defaultPttForm(activeSerial, 'r2')) : null;
 
@@ -1892,7 +1935,7 @@
   {/if}
 
   <section class="section">
-    <div class="section-title">RIG Mode Sync (rigctld)</div>
+    <div class="section-title">RIG Mode Sync</div>
     <div class="panel">
       <div class="row">
         <div class="label">Enabled:</div>
@@ -1912,207 +1955,184 @@
             value={activeRigModeSync?.backend || 'rigctld'}
             on:change={(e) => updateRigModeSyncTop(activeSerial, 'backend', e.target.value)}
           >
+            <option value="native">native (decode CAT traffic)</option>
             <option value="rigctld">rigctld</option>
           </select>
         </div>
       </div>
+      <div class="row">
+        <div class="label"></div>
+        <div class="value placeholder">
+          {#if activeRigModeSync?.backend === 'native'}
+            mhuxd reads the CAT traffic between your applications and the radio and sets the
+            keyer mode from it. Applications keep using the keyer's CAT port (e.g. /dev/mhuxd/cat1),
+            no rigctld needed. Icom CI-V radios for now. mhuxd doesn't query the radio itself yet:
+            changes are seen while an application polls, or through CI-V transceive. Keep the
+            keyer option "Use decoder if connected" off.
+          {:else}
+            mhuxd polls hamlib's rigctld for frequency and mode. Applications connect to rigctld
+            instead of the keyer's CAT port.
+          {/if}
+        </div>
+      </div>
     </div>
 
-    <div class="panel" style="margin-top: 12px;">
-      <div class="section-subtitle">Radio 1 Endpoint</div>
-      <div class="row">
-        <div class="label">Enabled:</div>
-        <div class="value">
-          <input
-            type="checkbox"
-            checked={!!activeRigModeSync?.r1?.enabled}
-            on:change={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'enabled', e.target.checked)}
-          />
-        </div>
-      </div>
-      <div class="row">
-        <div class="label">Host:</div>
-        <div class="value">
-          <input
-            class="input"
-            type="text"
-            value={activeRigModeSync?.r1?.host ?? '127.0.0.1'}
-            on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'host', e.target.value)}
-          />
-        </div>
-      </div>
-      <div class="row">
-        <div class="label">Port:</div>
-        <div class="value">
-          <input
-            class="input"
-            type="number"
-            min="1"
-            value={activeRigModeSync?.r1?.port ?? 4532}
-            on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'port', Number(e.target.value))}
-          />
-        </div>
-      </div>
-      <div class="row">
-        <div class="label">Connect Timeout (ms):</div>
-        <div class="value">
-          <input
-            class="input"
-            type="number"
-            min="100"
-            value={activeRigModeSync?.r1?.connect_timeout_ms ?? 1500}
-            on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'connect_timeout_ms', Number(e.target.value))}
-          />
-        </div>
-      </div>
-      <div class="row">
-        <div class="label">I/O Timeout (ms):</div>
-        <div class="value">
-          <input
-            class="input"
-            type="number"
-            min="100"
-            value={activeRigModeSync?.r1?.io_timeout_ms ?? 1500}
-            on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'io_timeout_ms', Number(e.target.value))}
-          />
-        </div>
-      </div>
-      <div class="row">
-        <div class="label">Poll Interval (ms):</div>
-        <div class="value">
-          <input
-            class="input"
-            type="number"
-            min="100"
-            value={activeRigModeSync?.r1?.poll_ms ?? 500}
-            on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'poll_ms', Number(e.target.value))}
-          />
-        </div>
-      </div>
-      <div class="row">
-        <div class="label">Auto-start rigctld:</div>
-        <div class="value">
-          <input
-            type="checkbox"
-            checked={!!activeRigModeSync?.r1?.auto_start}
-            on:change={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'auto_start', e.target.checked)}
-          />
-        </div>
-      </div>
-      {#if activeRigModeSync?.r1?.auto_start}
-      <div class="row">
-        <div class="label">rigctld options:</div>
-        <div class="value">
-          <input
-            class="input"
-            type="text"
-            placeholder="-m 361 -r /dev/ttyUSB0"
-            value={activeRigModeSync?.r1?.rigctld_options ?? ''}
-            on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r1', 'rigctld_options', e.target.value)}
-          />
-        </div>
-      </div>
-      {/if}
-    </div>
-
-    {#if hasR2}
+    {#each rigRadios as rk, i (rk)}
+      {@const rs = activeRigModeSync?.[rk]}
+      {@const defPort = rk === 'r2' ? 4533 : 4532}
       <div class="panel" style="margin-top: 12px;">
-        <div class="section-subtitle">Radio 2 Endpoint</div>
+        <div class="section-subtitle">
+          Radio {i + 1}{activeRigModeSync?.backend === 'native' ? '' : ' Endpoint'}
+        </div>
         <div class="row">
           <div class="label">Enabled:</div>
           <div class="value">
             <input
               type="checkbox"
-              checked={!!activeRigModeSync?.r2?.enabled}
-              on:change={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'enabled', e.target.checked)}
+              checked={!!rs?.enabled}
+              on:change={(e) => updateRigModeSyncRadio(activeSerial, rk, 'enabled', e.target.checked)}
             />
           </div>
         </div>
         <div class="row">
-          <div class="label">Host:</div>
-          <div class="value">
-            <input
-              class="input"
-              type="text"
-              value={activeRigModeSync?.r2?.host ?? '127.0.0.1'}
-              on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'host', e.target.value)}
-            />
-          </div>
+          <div class="label">Radio state:</div>
+          <div class="value">{radioInfoText(activeRadioInfo[i])}</div>
         </div>
-        <div class="row">
-          <div class="label">Port:</div>
-          <div class="value">
-            <input
-              class="input"
-              type="number"
-              min="1"
-              value={activeRigModeSync?.r2?.port ?? 4533}
-              on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'port', Number(e.target.value))}
-            />
+        {#if activeRigModeSync?.backend === 'native'}
+          <div class="row">
+            <div class="label">Protocol:</div>
+            <div class="value">
+              <select
+                class="select"
+                value={rs?.protocol ?? 'auto'}
+                on:change={(e) => updateRigModeSyncRadio(activeSerial, rk, 'protocol', e.target.value)}
+              >
+                <option value="auto">auto (from the CAT channel's radio type)</option>
+                <option value="civ">Icom CI-V</option>
+              </select>
+            </div>
           </div>
-        </div>
-        <div class="row">
-          <div class="label">Connect Timeout (ms):</div>
-          <div class="value">
-            <input
-              class="input"
-              type="number"
-              min="100"
-              value={activeRigModeSync?.r2?.connect_timeout_ms ?? 1500}
-              on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'connect_timeout_ms', Number(e.target.value))}
-            />
+          <div class="row">
+            <div class="label">CI-V address (hex):</div>
+            <div class="value">
+              <input
+                class="input"
+                type="text"
+                placeholder="from CAT channel"
+                value={rs?.civ_address ?? ''}
+                on:input={(e) => updateRigModeSyncRadio(activeSerial, rk, 'civ_address', e.target.value)}
+              />
+            </div>
           </div>
-        </div>
-        <div class="row">
-          <div class="label">I/O Timeout (ms):</div>
-          <div class="value">
-            <input
-              class="input"
-              type="number"
-              min="100"
-              value={activeRigModeSync?.r2?.io_timeout_ms ?? 1500}
-              on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'io_timeout_ms', Number(e.target.value))}
-            />
+          <div class="row">
+            <div class="label">CAT monitor:</div>
+            <div class="value">
+              <input
+                type="checkbox"
+                checked={!!rs?.monitor}
+                on:change={(e) => updateRigModeSyncRadio(activeSerial, rk, 'monitor', e.target.checked)}
+              />
+              <span class="placeholder">
+                also written to cat-{activeSerial}-{rk}.trace in mhuxd's log directory
+              </span>
+            </div>
           </div>
-        </div>
-        <div class="row">
-          <div class="label">Poll Interval (ms):</div>
-          <div class="value">
-            <input
-              class="input"
-              type="number"
-              min="100"
-              value={activeRigModeSync?.r2?.poll_ms ?? 500}
-              on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'poll_ms', Number(e.target.value))}
-            />
+          {#if rs?.monitor || activeCatMonitor[i].length}
+            <div class="row">
+              <div class="label"></div>
+              <div class="value">
+                <pre class="cat-monitor" use:scrollToEnd={activeCatMonitor[i].length}>{activeCatMonitor[i].join('\n') || 'waiting for CAT traffic …'}</pre>
+                <button class="btn" type="button" on:click={() => clearCatMonitor(activeSerial, i + 1)}>Clear</button>
+              </div>
+            </div>
+          {/if}
+        {:else}
+          <div class="row">
+            <div class="label">Host:</div>
+            <div class="value">
+              <input
+                class="input"
+                type="text"
+                value={rs?.host ?? '127.0.0.1'}
+                on:input={(e) => updateRigModeSyncRadio(activeSerial, rk, 'host', e.target.value)}
+              />
+            </div>
           </div>
-        </div>
-        <div class="row">
-          <div class="label">Auto-start rigctld:</div>
-          <div class="value">
-            <input
-              type="checkbox"
-              checked={!!activeRigModeSync?.r2?.auto_start}
-              on:change={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'auto_start', e.target.checked)}
-            />
+          <div class="row">
+            <div class="label">Port:</div>
+            <div class="value">
+              <input
+                class="input"
+                type="number"
+                min="1"
+                value={rs?.port ?? defPort}
+                on:input={(e) => updateRigModeSyncRadio(activeSerial, rk, 'port', Number(e.target.value))}
+              />
+            </div>
           </div>
-        </div>
-        {#if activeRigModeSync?.r2?.auto_start}
-        <div class="row">
-          <div class="label">rigctld options:</div>
-          <div class="value">
-            <input
-              class="input"
-              type="text"
-              placeholder="-m 361 -r /dev/ttyUSB0"
-              value={activeRigModeSync?.r2?.rigctld_options ?? ''}
-              on:input={(e) => updateRigModeSyncRadio(activeSerial, 'r2', 'rigctld_options', e.target.value)}
-            />
+          <div class="row">
+            <div class="label">Connect Timeout (ms):</div>
+            <div class="value">
+              <input
+                class="input"
+                type="number"
+                min="100"
+                value={rs?.connect_timeout_ms ?? 1500}
+                on:input={(e) => updateRigModeSyncRadio(activeSerial, rk, 'connect_timeout_ms', Number(e.target.value))}
+              />
+            </div>
           </div>
-        </div>
+          <div class="row">
+            <div class="label">I/O Timeout (ms):</div>
+            <div class="value">
+              <input
+                class="input"
+                type="number"
+                min="100"
+                value={rs?.io_timeout_ms ?? 1500}
+                on:input={(e) => updateRigModeSyncRadio(activeSerial, rk, 'io_timeout_ms', Number(e.target.value))}
+              />
+            </div>
+          </div>
+          <div class="row">
+            <div class="label">Poll Interval (ms):</div>
+            <div class="value">
+              <input
+                class="input"
+                type="number"
+                min="100"
+                value={rs?.poll_ms ?? 500}
+                on:input={(e) => updateRigModeSyncRadio(activeSerial, rk, 'poll_ms', Number(e.target.value))}
+              />
+            </div>
+          </div>
+          <div class="row">
+            <div class="label">Auto-start rigctld:</div>
+            <div class="value">
+              <input
+                type="checkbox"
+                checked={!!rs?.auto_start}
+                on:change={(e) => updateRigModeSyncRadio(activeSerial, rk, 'auto_start', e.target.checked)}
+              />
+            </div>
+          </div>
+          {#if rs?.auto_start}
+            <div class="row">
+              <div class="label">rigctld options:</div>
+              <div class="value">
+                <input
+                  class="input"
+                  type="text"
+                  placeholder="-m 361 -r /dev/ttyUSB0"
+                  value={rs?.rigctld_options ?? ''}
+                  on:input={(e) => updateRigModeSyncRadio(activeSerial, rk, 'rigctld_options', e.target.value)}
+                />
+              </div>
+            </div>
+          {/if}
         {/if}
       </div>
-    {/if}
+    {/each}
 
     <div class="button-row">
       <button class="btn" type="button" on:click={() => applyRigModeSync(activeSerial)}>Apply</button>

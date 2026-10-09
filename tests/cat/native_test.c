@@ -9,7 +9,11 @@
 /*
  * Tests the glue between the CI-V decoder and mhcontrol (src/cat_native.c):
  * publish delay, waiting for the data flag, keepalive, rig type changes, keyer
- * state. Built with CATN_KEEPALIVE=0.5 (see Makefile).
+ * state, CAT monitor. Built with CATN_KEEPALIVE=0.5 (see Makefile).
+ *
+ *   native_test <dir>
+ *
+ * writes the CAT monitor file to <dir>, the Makefile replays it.
  * Router, mhcontrol, event bus and logging are stubs; the libev loop is real,
  * so the test takes a few seconds.
  */
@@ -49,6 +53,13 @@ void log_msg(int severity, const char *header, const char *fmt, ...) {
 	va_end(ap);
 }
 
+void *w_malloc(size_t size) {
+	void *p = malloc(size);
+	if(!p)
+		abort();
+	return p;
+}
+
 void *w_calloc(size_t nmemb, size_t size) {
 	void *p = calloc(nmemb, size);
 	if(!p)
@@ -75,6 +86,21 @@ eventbus_t *app_ctx_get_eventbus(app_ctx *ctx) {
 
 static event_cb_fn keyer_state_cb;
 static void *keyer_state_data;
+static int mon_lines;
+static char mon_last[256];
+
+void eventbus_publish(eventbus_t *bus, enum app_event_type type, const void *data) {
+	(void)bus;
+	if(type == EV_CAT_MONITOR) {
+		const struct ev_cat_monitor *ev = data;
+		mon_lines++;
+		snprintf(mon_last, sizeof(mon_last), "%s", ev->line);
+	}
+}
+
+const char *mhc_state_str(int state) {
+	return state == MHC_KEYER_STATE_ONLINE ? "ONLINE" : "OFFLINE";
+}
 
 eventbus_sub_t *eventbus_subscribe(eventbus_t *bus, enum app_event_type type, event_cb_fn cb, void *user_data) {
 	(void)bus;
@@ -216,7 +242,20 @@ static const struct mhc_radio_info *last_pub(void) {
  * Tests
  */
 
-int main(void) {
+static int file_contains(const char *path, const char *needle) {
+	char line[512];
+	int n = 0;
+	FILE *f = fopen(path, "r");
+	if(!f)
+		return -1;
+	while(fgets(line, sizeof(line), f))
+		if(strstr(line, needle))
+			n++;
+	fclose(f);
+	return n;
+}
+
+int main(int argc, char **argv) {
 	struct device dev = {
 		.router = (struct mh_router *)&dev,	// only compared, never dereferenced
 		.ctl = (struct mh_control *)&dev,
@@ -357,7 +396,37 @@ int main(void) {
 	run_for(0.3);
 	p = last_pub();
 	CHECK(p && p->radio == 2 && p->rxFreq == 14080000, "protocol civ, address 98 on a K3 channel");
+	CHECK(mon_lines == 0, "no monitor output unless enabled, got %d", mon_lines);
 	cat_native_destroy(cn);
+
+	// CAT monitor: trace lines to the event bus and to <dir>/cat-<serial>-r1.trace.
+	if(argc > 1) {
+		char path[512];
+		snprintf(path, sizeof(path), "%s/cat-TEST0001-r1.trace", argv[1]);
+		cfg = (struct cat_native_cfg){ .radio = 1, .monitor = 1, .monitor_dir = argv[1] };
+		speed.rigtype = RIG_IC7300;
+		cn = cat_native_create((app_ctx *)&dev, &dev, &cfg);
+		cmd("fe fe 94 e0 25 00 fd");
+		radio("fe fe e0 94 25 00 00 40 07 14 00 fd");
+		cmd("fe fe 94 e0 26 00 fd");
+		radio("fe fe e0 94 26 00 01 01 01 fd");
+		radio("fc");
+		keyer_state(MHC_KEYER_STATE_OFFLINE);
+		keyer_state(MHC_KEYER_STATE_ONLINE);
+		radio("fe fe 00 94 00 00 00 08 14 00 fd");
+		run_for(0.3);
+		CHECK(strstr(mon_last, " R fe fe 00 94 00 00 00 08 14 00 fd  # unsolicited, applied: rx=14080000"),
+		      "last monitor line: '%s'", mon_last);
+		cat_native_destroy(cn);
+		CHECK(mon_lines >= 12, "monitor lines published: %d", mon_lines);
+		CHECK(file_contains(path, "@civ addr=94") == 2, "config line at start and after the reset");
+		CHECK(file_contains(path, " H1 fe fe 94 e0 25 00 fd  # cmd") == 1, "host data tagged H1");
+		CHECK(file_contains(path, " R fe fe 94 e0 25 00 fd  # echo") == 1, "echo classified");
+		CHECK(file_contains(path, "# reply, applied: rx=14074000 unsel=? mode=PKTUSB") == 1, "reply with state");
+		CHECK(file_contains(path, " R fc  # jam") == 1, "collision");
+		CHECK(file_contains(path, "# keyer OFFLINE, decoder starts over") == 1, "keyer state comment");
+		CHECK(file_contains(path, "# monitor stopped") == 1, "closing comment");
+	}
 
 	printf("%s native_test\n", failures ? "FAIL" : "ok  ");
 	return failures ? 1 : 0;

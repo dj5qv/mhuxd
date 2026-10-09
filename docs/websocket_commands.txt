@@ -6,3 +6,12 @@
 ## abort message
 {"type":"command","command":"abort_message","serial":"M32VFFGJ"}
 
+
+
+### Websocket events mhuxd -> client (besides status, mode_change, device_removed)
+
+## radio info from rig mode sync (rigctld or native) changed, or timed out (valid false)
+{"type":"radio_info","serial":"D2UL4ED0","radio":1,"valid":true,"source":"native","rxFreq":14074000,"txFreq":14074000,"vfoAFreq":14074000,"vfoBFreq":28153130,"mode":"PKTUSB","keyerMode":"DIGITAL"}
+
+## native CAT monitor, one trace line (rig_mode_sync.radios.r1.monitor on), format: tests/cat/README.md
+{"type":"cat_monitor","serial":"D2UL4ED0","radio":1,"line":"19:38:56.479 R fe fe e0 94 25 00 00 40 07 14 00 fd  # reply, applied: rx=14074000 unsel=? mode=? split=? keyer=?"}

@@ -31,6 +31,8 @@ struct cat_native_cfg {
 	uint8_t radio;		// 1 or 2
 	int protocol;		// CAT_NATIVE_PROTO_*
 	int civ_address;	// 0 = the channel's icomaddress
+	int monitor;		// CAT monitor: trace file + EV_CAT_MONITOR events
+	const char *monitor_dir;	// NULL = LOGDIR
 };
 
 // Protocol name from the configuration ("auto", "civ"), -1 if unknown.

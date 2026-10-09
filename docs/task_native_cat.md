@@ -1,10 +1,11 @@
 ### Native CAT support: decode, own polls, multi-client CAT port
 
-Status: phase 1 in progress (2026-10-09). CI-V decoder, radio state, trace tests and the
-listen-only backend (`rig_mode_sync.backend: "native"`) are in: `src/cat_civ.c`,
-`src/cat_state.c`, `src/cat_native.c`, `tests/cat/`. Tested with IC-7300 + DK2 and WSJT-X
-(keyer mode follows the radio, keepalive holds it after WSJT-X exits). No CAT monitor, REST
-state or UI yet.
+Status: phase 1 done for CI-V (2026-10-09): decoder, radio state, trace tests, the
+listen-only backend (`rig_mode_sync.backend: "native"`), CAT monitor, radio state in REST and
+WebSocket, web UI. `src/cat_civ.c`, `src/cat_state.c`, `src/cat_native.c`, `src/cat_trace.c`,
+`tests/cat/`. Backend tested with IC-7300 + DK2 and WSJT-X (keyer mode follows the radio,
+keepalive holds it after WSJT-X exits), monitor and UI as well.
+`cat_ascii.c` (Kenwood-style) is still open.
 Related: `docs/task_rigctld_support.md` (the current rig mode sync via rigctld).
 
 ## Reason
@@ -410,10 +411,21 @@ Only an IC-7300 is available, so most coverage must come from traces and simulat
      fallback still works then. Without polling, front panel changes are only seen through
      CI-V transceive (IC-7300 default: on); phase 2's own queries close that gap.
 4. CAT monitor: log + WebSocket stream in the trace format, fed from the same two taps.
+   Done: per radio option `monitor`. Every frame of the decoder as one trace line
+   (`src/cat_trace.c`, shared with `cat_replay -v`), with classification and the decoded state
+   as comment, plus `@civ` and comment lines when the decoder starts over. Lines go to
+   `LOGDIR/cat-<serial>-r<n>.trace` (stops at 20 MB, restarted when larger at open) and as
+   WebSocket events `cat_monitor`. Client data is tagged `H1`: the router tap doesn't tell the
+   connectors apart (phase 3).
 5. Config: `backend: "native"` (device level, so per keyer either rigctld or native), per
    radio `enabled`, `protocol` (`auto` from the rig type, or `civ`) and `civ_address` (0 = the
    channel's `icomaddress`). Done in `src/cfgmgrj.c` and `docs/rest-api-schemas.json`.
-   Pending: REST state, UI (backend selector, decoded state), README.
+   REST and WebSocket, for both backends: mhcontrol publishes `EV_RADIO_INFO` when the radio
+   info it gets changes or times out; `/api/v1/devices` lists `radios` (frequencies, mode name,
+   keyer mode, source, valid), WebSocket event `radio_info`. `struct mhc_radio_info` got the
+   mode name (`mode_str`), the source is the backend name (`rigctld`, `native`).
+   Web UI: backend selector with native, per radio protocol / CI-V address / monitor, live
+   "Radio state", monitor view. README section.
 
 Result: no rigctld needed whenever an application polls (WSJT-X, fldigi, loggers), and the
 application keeps `/dev/mhuxd/cat1`.

@@ -200,7 +200,8 @@
           serial: cfg.serial,
           type: cfg.type,
           name: dev.name || cfg.serial,
-          status: dev.status || ''
+          status: dev.status || '',
+          radios: dev.radios || []
         };
       });
     }
@@ -208,7 +209,8 @@
       serial: dev.serial,
       type: null,
       name: dev.name || dev.serial,
-      status: dev.status || ''
+      status: dev.status || '',
+      radios: dev.radios || []
     }));
   };
 

@@ -6,6 +6,7 @@
  *  See the file COPYING
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <strings.h>
 #include "cat_state.h"
@@ -196,9 +197,12 @@ int cat_state_to_radio_info(const struct cat_state *st, uint8_t radio, struct mh
 	uint32_t sel_hz = sel->valid ? sel->val : 0;
 	uint32_t unsel_hz = unsel->valid ? unsel->val : 0;
 
+	enum cat_mode mode = cat_state_mode(st, CAT_VFO_SEL);
+
 	memset(info, 0, sizeof(*info));
 	info->radio = radio;
-	info->mode = cat_mode_to_keyer(cat_state_mode(st, CAT_VFO_SEL));
+	info->mode = cat_mode_to_keyer(mode);
+	snprintf(info->mode_str, sizeof(info->mode_str), "%s", cat_mode_token(mode));
 	info->rxFreq = sel_hz;
 	info->operFreq = sel_hz;
 	info->txFreq = cat_state_tx_freq(st);

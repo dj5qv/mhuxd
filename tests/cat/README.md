@@ -38,11 +38,15 @@ One item per line. `#` starts a comment, also at the end of a line.
   ASCII protocols later.
 - **Options** for `@civ`: `addr=<hex>` radio address (`0` = learn from the
   traffic), `freq_len=<n>` BCD frequency bytes (default 5, 4 on IC-731/IC-735).
+  A later `@civ` line starts the decoder over (state and counters), as mhuxd
+  does when the keyer reconnects or the rig type changes.
+- **Time** stamps `HH:MM:SS.mmm` may wrap past midnight.
 
 `cat_replay -v` prints every frame in this format with the classification and
 the decoded state as a trailing comment, so its output replays as a trace.
-The CAT monitor will use the same format, so user traces become test fixtures
-without conversion.
+The CAT monitor (rig mode sync backend native, option `monitor`) writes the
+same format to `LOGDIR/cat-<serial>-r<n>.trace`, so user traces become test
+fixtures without conversion: add `=` lines and put the file in `traces/`.
 
 ## Assertions
 

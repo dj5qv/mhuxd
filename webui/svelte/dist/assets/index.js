@@ -74,6 +74,9 @@ function component_subscribe(component, store, callback) {
 function null_to_empty(value) {
   return value == null ? "" : value;
 }
+function action_destroyer(action_result) {
+  return action_result && is_function(action_result.destroy) ? action_result.destroy : noop;
+}
 function append(target, node) {
   target.appendChild(node);
 }
@@ -4361,53 +4364,53 @@ async function loadAllData() {
     metadata
   };
 }
-function get_each_context_90(ctx, list, i) {
+function get_each_context_91(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[705] = list[i];
-  return child_ctx;
-}
-function get_each_context_76(ctx, list, i) {
-  const child_ctx = ctx.slice();
-  child_ctx[672] = list[i];
+  child_ctx[719] = list[i];
   return child_ctx;
 }
 function get_each_context_77(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[644] = list[i];
+  child_ctx[686] = list[i];
   return child_ctx;
 }
 function get_each_context_78(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[647] = list[i];
+  child_ctx[658] = list[i];
+  return child_ctx;
+}
+function get_each_context_79(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[661] = list[i];
   const constants_0 = (
     /*activeAllObjs*/
-    child_ctx[49].find(function func(...args) {
+    child_ctx[52].find(function func(...args) {
       return (
         /*func*/
-        ctx[417](
+        ctx[421](
           /*ref*/
-          child_ctx[647],
+          child_ctx[661],
           ...args
         )
       );
     })
   );
-  child_ctx[677] = constants_0;
-  return child_ctx;
-}
-function get_each_context_79(ctx, list, i) {
-  const child_ctx = ctx.slice();
-  child_ctx[680] = list[i];
+  child_ctx[691] = constants_0;
   return child_ctx;
 }
 function get_each_context_80(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[680] = list[i];
+  child_ctx[694] = list[i];
   return child_ctx;
 }
 function get_each_context_81(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[644] = list[i];
+  child_ctx[694] = list[i];
+  return child_ctx;
+}
+function get_each_context_82(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[658] = list[i];
   return child_ctx;
 }
 function get_if_ctx_9(ctx) {
@@ -4420,53 +4423,53 @@ function get_if_ctx_9(ctx) {
       child_ctx[0]
     ]) == null ? void 0 : _a[
       /*bnd*/
-      child_ctx[672].id
+      child_ctx[686].id
     ]) == null ? void 0 : _b.refs) == null ? void 0 : _c[
       /*ref*/
-      child_ctx[647].id
+      child_ctx[661].id
     ]) || {}
   );
-  child_ctx[650] = constants_0;
-  return child_ctx;
-}
-function get_each_context_86(ctx, list, i) {
-  const child_ctx = ctx.slice();
-  child_ctx[687] = list[i];
+  child_ctx[664] = constants_0;
   return child_ctx;
 }
 function get_each_context_87(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[687] = list[i];
+  child_ctx[701] = list[i];
   return child_ctx;
 }
 function get_each_context_88(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[692] = list[i];
+  child_ctx[701] = list[i];
   return child_ctx;
 }
 function get_each_context_89(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[692] = list[i];
+  child_ctx[706] = list[i];
   return child_ctx;
 }
-function get_each_context_82(ctx, list, i) {
+function get_each_context_90(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[687] = list[i];
+  child_ctx[706] = list[i];
   return child_ctx;
 }
 function get_each_context_83(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[687] = list[i];
+  child_ctx[701] = list[i];
   return child_ctx;
 }
 function get_each_context_84(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[692] = list[i];
+  child_ctx[701] = list[i];
   return child_ctx;
 }
 function get_each_context_85(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[692] = list[i];
+  child_ctx[706] = list[i];
+  return child_ctx;
+}
+function get_each_context_86(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[706] = list[i];
   return child_ctx;
 }
 function get_if_ctx_10(ctx) {
@@ -4479,30 +4482,30 @@ function get_if_ctx_10(ctx) {
       child_ctx[0]
     ]) == null ? void 0 : _a[
       /*bnd*/
-      child_ctx[672].id
+      child_ctx[686].id
     ]) || {}
   );
-  child_ctx[630] = constants_0;
-  return child_ctx;
-}
-function get_each_context_72(ctx, list, i) {
-  const child_ctx = ctx.slice();
-  child_ctx[656] = list[i];
+  child_ctx[644] = constants_0;
   return child_ctx;
 }
 function get_each_context_73(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[644] = list[i];
+  child_ctx[670] = list[i];
   return child_ctx;
 }
 function get_each_context_74(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[647] = list[i];
+  child_ctx[658] = list[i];
   return child_ctx;
 }
 function get_each_context_75(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[644] = list[i];
+  child_ctx[661] = list[i];
+  return child_ctx;
+}
+function get_each_context_76(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[658] = list[i];
   return child_ctx;
 }
 function get_if_ctx_6(ctx) {
@@ -4515,13 +4518,13 @@ function get_if_ctx_6(ctx) {
       child_ctx[0]
     ]) == null ? void 0 : _a[
       /*grp*/
-      child_ctx[656].id
+      child_ctx[670].id
     ]) == null ? void 0 : _b.refs) == null ? void 0 : _c[
       /*ref*/
-      child_ctx[647].id
+      child_ctx[661].id
     ]) || {}
   );
-  child_ctx[650] = constants_0;
+  child_ctx[664] = constants_0;
   return child_ctx;
 }
 function get_if_ctx_7(ctx) {
@@ -4534,30 +4537,30 @@ function get_if_ctx_7(ctx) {
       child_ctx[0]
     ]) == null ? void 0 : _a[
       /*grp*/
-      child_ctx[656].id
+      child_ctx[670].id
     ]) || {}
   );
-  child_ctx[630] = constants_0;
-  return child_ctx;
-}
-function get_each_context_68(ctx, list, i) {
-  const child_ctx = ctx.slice();
-  child_ctx[641] = list[i];
+  child_ctx[644] = constants_0;
   return child_ctx;
 }
 function get_each_context_69(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[644] = list[i];
+  child_ctx[655] = list[i];
   return child_ctx;
 }
 function get_each_context_70(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[647] = list[i];
+  child_ctx[658] = list[i];
   return child_ctx;
 }
 function get_each_context_71(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[644] = list[i];
+  child_ctx[661] = list[i];
+  return child_ctx;
+}
+function get_each_context_72(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[658] = list[i];
   return child_ctx;
 }
 function get_if_ctx_3(ctx) {
@@ -4570,13 +4573,13 @@ function get_if_ctx_3(ctx) {
       child_ctx[0]
     ]) == null ? void 0 : _a[
       /*vr*/
-      child_ctx[641].id
+      child_ctx[655].id
     ]) == null ? void 0 : _b.refs) == null ? void 0 : _c[
       /*ref*/
-      child_ctx[647].id
+      child_ctx[661].id
     ]) || {}
   );
-  child_ctx[650] = constants_0;
+  child_ctx[664] = constants_0;
   return child_ctx;
 }
 function get_if_ctx_4(ctx) {
@@ -4589,17 +4592,17 @@ function get_if_ctx_4(ctx) {
       child_ctx[0]
     ]) == null ? void 0 : _a[
       /*vr*/
-      child_ctx[641].id
+      child_ctx[655].id
     ]) || {}
   );
-  child_ctx[630] = constants_0;
+  child_ctx[644] = constants_0;
   return child_ctx;
 }
-function get_each_context_63(ctx, list, i) {
+function get_each_context_64(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[624] = list[i];
-  child_ctx[625] = list;
-  child_ctx[626] = i;
+  child_ctx[638] = list[i];
+  child_ctx[639] = list;
+  child_ctx[640] = i;
   return child_ctx;
 }
 function get_if_ctx(ctx) {
@@ -4610,24 +4613,24 @@ function get_if_ctx(ctx) {
       /*activeSerial*/
       child_ctx[0]
     ] || /*smAntNewForm*/
-    child_ctx[118]()
+    child_ctx[124]()
   );
-  child_ctx[623] = constants_0;
-  return child_ctx;
-}
-function get_each_context_64(ctx, list, i) {
-  const child_ctx = ctx.slice();
-  child_ctx[627] = list[i];
-  return child_ctx;
-}
-function get_each_context_66(ctx, list, i) {
-  const child_ctx = ctx.slice();
-  child_ctx[624] = list[i];
+  child_ctx[637] = constants_0;
   return child_ctx;
 }
 function get_each_context_65(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[624] = list[i];
+  child_ctx[641] = list[i];
+  return child_ctx;
+}
+function get_each_context_67(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[638] = list[i];
+  return child_ctx;
+}
+function get_each_context_66(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[638] = list[i];
   return child_ctx;
 }
 function get_if_ctx_1(ctx) {
@@ -4640,339 +4643,359 @@ function get_if_ctx_1(ctx) {
       child_ctx[0]
     ]) == null ? void 0 : _a[
       /*ant*/
-      child_ctx[627].id
+      child_ctx[641].id
     ]) || {}
   );
-  child_ctx[630] = constants_0;
+  child_ctx[644] = constants_0;
   return child_ctx;
 }
-function get_each_context_67(ctx, list, i) {
+function get_each_context_68(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[624] = list[i];
-  return child_ctx;
-}
-function get_each_context_61(ctx, list, i) {
-  const child_ctx = ctx.slice();
-  child_ctx[606] = list[i];
+  child_ctx[638] = list[i];
   return child_ctx;
 }
 function get_each_context_62(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[620] = list[i];
   return child_ctx;
 }
-function get_each_context_56(ctx, list, i) {
+function get_each_context_63(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[606] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_57(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[620] = list[i];
   return child_ctx;
 }
 function get_each_context_58(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_59(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_60(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
-function get_each_context_54(ctx, list, i) {
+function get_each_context_61(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[601] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_55(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[601] = list[i];
+  child_ctx[615] = list[i];
   return child_ctx;
 }
-function get_each_context_51(ctx, list, i) {
+function get_each_context_56(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[615] = list[i];
   return child_ctx;
 }
 function get_each_context_52(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_53(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
-function get_each_context_47(ctx, list, i) {
+function get_each_context_54(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_48(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[588] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_49(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[602] = list[i];
   return child_ctx;
 }
 function get_each_context_50(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
-function get_each_context_37(ctx, list, i) {
+function get_each_context_51(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[547] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_38(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[561] = list[i];
   return child_ctx;
 }
 function get_each_context_39(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_40(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_41(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_42(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[547] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_43(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[561] = list[i];
   return child_ctx;
 }
 function get_each_context_44(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_45(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_46(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
-function get_each_context_32(ctx, list, i) {
+function get_each_context_47(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[547] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_33(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[561] = list[i];
   return child_ctx;
 }
 function get_each_context_34(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_35(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_36(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
-function get_each_context_27(ctx, list, i) {
+function get_each_context_37(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_28(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[547] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_29(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[561] = list[i];
   return child_ctx;
 }
 function get_each_context_30(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_31(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
-function get_each_context_21(ctx, list, i) {
+function get_each_context_32(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_22(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_23(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_24(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_25(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_26(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
-function get_each_context_15(ctx, list, i) {
+function get_each_context_27(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_16(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_17(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_18(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_19(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_20(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
-function get_each_context_12(ctx, list, i) {
+function get_each_context_21(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_13(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_14(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
+  return child_ctx;
+}
+function get_each_context_15(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_2(ctx, list, i) {
+  var _a;
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[503] = list[i];
+  child_ctx[507] = i;
+  const constants_0 = (
+    /*activeRigModeSync*/
+    (_a = child_ctx[41]) == null ? void 0 : _a[
+      /*rk*/
+      child_ctx[503]
+    ]
+  );
+  child_ctx[504] = constants_0;
+  const constants_1 = (
+    /*rk*/
+    child_ctx[503] === "r2" ? 4533 : 4532
+  );
+  child_ctx[505] = constants_1;
   return child_ctx;
 }
 function get_each_context_3(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[496] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_4(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[510] = list[i];
   return child_ctx;
 }
 function get_each_context_5(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_6(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_7(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_8(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[496] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_9(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[510] = list[i];
   return child_ctx;
 }
 function get_each_context_10(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_11(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
+  return child_ctx;
+}
+function get_each_context_12(ctx, list, i) {
+  const child_ctx = ctx.slice();
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_each_context_1(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[489] = list[i];
+  child_ctx[498] = list[i];
   return child_ctx;
 }
 function get_if_ctx_11(ctx) {
   const child_ctx = ctx.slice();
   const constants_0 = (
     /*activeBnds*/
-    child_ctx[48]
+    child_ctx[51]
   );
-  child_ctx[665] = constants_0;
+  child_ctx[679] = constants_0;
   const constants_1 = (
     /*smBndMode*/
     child_ctx[31][
@@ -4980,7 +5003,7 @@ function get_if_ctx_11(ctx) {
       child_ctx[0]
     ]
   );
-  child_ctx[666] = constants_1;
+  child_ctx[680] = constants_1;
   const constants_2 = (
     /*smBndAddRef*/
     child_ctx[35][
@@ -4988,36 +5011,36 @@ function get_if_ctx_11(ctx) {
       child_ctx[0]
     ]
   );
-  child_ctx[667] = constants_2;
+  child_ctx[681] = constants_2;
   const constants_3 = (
     /*activeBpfOutputs*/
-    child_ctx[47]
+    child_ctx[50]
   );
-  child_ctx[668] = constants_3;
+  child_ctx[682] = constants_3;
   const constants_4 = (
     /*activeSeqOutputs*/
-    child_ctx[46]
+    child_ctx[49]
   );
-  child_ctx[669] = constants_4;
+  child_ctx[683] = constants_4;
   const constants_5 = (
     /*activeAntOutputs*/
-    child_ctx[45]
+    child_ctx[48]
   );
-  child_ctx[670] = constants_5;
+  child_ctx[684] = constants_5;
   const constants_6 = (
     /*activeAntsAndGroups*/
-    child_ctx[44]
+    child_ctx[47]
   );
-  child_ctx[671] = constants_6;
+  child_ctx[685] = constants_6;
   return child_ctx;
 }
 function get_if_ctx_8(ctx) {
   const child_ctx = ctx.slice();
   const constants_0 = (
     /*activeGrps*/
-    child_ctx[50]
+    child_ctx[53]
   );
-  child_ctx[653] = constants_0;
+  child_ctx[667] = constants_0;
   const constants_1 = (
     /*smGrpMode*/
     child_ctx[26][
@@ -5025,7 +5048,7 @@ function get_if_ctx_8(ctx) {
       child_ctx[0]
     ]
   );
-  child_ctx[654] = constants_1;
+  child_ctx[668] = constants_1;
   const constants_2 = (
     /*smGrpAddAnt*/
     child_ctx[30][
@@ -5033,21 +5056,21 @@ function get_if_ctx_8(ctx) {
       child_ctx[0]
     ]
   );
-  child_ctx[655] = constants_2;
+  child_ctx[669] = constants_2;
   const constants_3 = (
     /*activeAllObjs*/
-    child_ctx[49]
+    child_ctx[52]
   );
-  child_ctx[640] = constants_3;
+  child_ctx[654] = constants_3;
   return child_ctx;
 }
 function get_if_ctx_5(ctx) {
   const child_ctx = ctx.slice();
   const constants_0 = (
     /*activeVrs*/
-    child_ctx[51]
+    child_ctx[54]
   );
-  child_ctx[637] = constants_0;
+  child_ctx[651] = constants_0;
   const constants_1 = (
     /*smVrMode*/
     child_ctx[21][
@@ -5055,7 +5078,7 @@ function get_if_ctx_5(ctx) {
       child_ctx[0]
     ]
   );
-  child_ctx[638] = constants_1;
+  child_ctx[652] = constants_1;
   const constants_2 = (
     /*smVrAddAnt*/
     child_ctx[25][
@@ -5063,26 +5086,26 @@ function get_if_ctx_5(ctx) {
       child_ctx[0]
     ]
   );
-  child_ctx[639] = constants_2;
+  child_ctx[653] = constants_2;
   const constants_3 = (
     /*activeAllObjs*/
-    child_ctx[49]
+    child_ctx[52]
   );
-  child_ctx[640] = constants_3;
+  child_ctx[654] = constants_3;
   return child_ctx;
 }
 function get_if_ctx_2(ctx) {
   const child_ctx = ctx.slice();
   const constants_0 = (
     /*activeAnts*/
-    child_ctx[53]
+    child_ctx[56]
   );
-  child_ctx[621] = constants_0;
+  child_ctx[635] = constants_0;
   const constants_1 = (
     /*activeAntOutCols*/
-    child_ctx[52]
+    child_ctx[55]
   );
-  child_ctx[622] = constants_1;
+  child_ctx[636] = constants_1;
   const constants_2 = (
     /*smAntMode*/
     child_ctx[17][
@@ -5090,10 +5113,10 @@ function get_if_ctx_2(ctx) {
       child_ctx[0]
     ]
   );
-  child_ctx[547] = constants_2;
+  child_ctx[561] = constants_2;
   return child_ctx;
 }
-function create_else_block_22(ctx) {
+function create_else_block_24(ctx) {
   let section;
   let div0;
   let t1;
@@ -5103,7 +5126,7 @@ function create_else_block_22(ctx) {
       section = element("section");
       div0 = element("div");
       div0.textContent = `${/*activeKeyerMenuTitle*/
-      ctx[159]()}`;
+      ctx[165]()}`;
       t1 = space();
       div2 = element("div");
       div2.innerHTML = `<div class="placeholder">Keyer page placeholder.</div>`;
@@ -5125,7 +5148,7 @@ function create_else_block_22(ctx) {
     }
   };
 }
-function create_if_block_119(ctx) {
+function create_if_block_120(ctx) {
   let section;
   let div0;
   let t1;
@@ -5136,7 +5159,7 @@ function create_if_block_119(ctx) {
   let t4;
   let mounted;
   let dispose;
-  let each_value_90 = ensure_array_like(Object.entries(
+  let each_value_91 = ensure_array_like(Object.entries(
     /*allParamForm*/
     ctx[13][
       /*activeSerial*/
@@ -5144,15 +5167,15 @@ function create_if_block_119(ctx) {
     ] || {}
   ));
   let each_blocks = [];
-  for (let i = 0; i < each_value_90.length; i += 1) {
-    each_blocks[i] = create_each_block_90(get_each_context_90(ctx, each_value_90, i));
+  for (let i = 0; i < each_value_91.length; i += 1) {
+    each_blocks[i] = create_each_block_91(get_each_context_91(ctx, each_value_91, i));
   }
   let if_block = (
     /*allParamStatus*/
     ctx[14][
       /*activeSerial*/
       ctx[0]
-    ] && create_if_block_120(ctx)
+    ] && create_if_block_121(ctx)
   );
   return {
     c() {
@@ -5196,17 +5219,17 @@ function create_if_block_119(ctx) {
         dispose = listen(
           button,
           "click",
-          /*click_handler_49*/
-          ctx[436]
+          /*click_handler_50*/
+          ctx[440]
         );
         mounted = true;
       }
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*allParamForm, activeSerial*/
-      8193 | dirty[2] & /*updateAllParamForm*/
-      1073741824) {
-        each_value_90 = ensure_array_like(Object.entries(
+      8193 | dirty[3] & /*updateAllParamForm*/
+      32) {
+        each_value_91 = ensure_array_like(Object.entries(
           /*allParamForm*/
           ctx2[13][
             /*activeSerial*/
@@ -5214,12 +5237,12 @@ function create_if_block_119(ctx) {
           ] || {}
         ));
         let i;
-        for (i = 0; i < each_value_90.length; i += 1) {
-          const child_ctx = get_each_context_90(ctx2, each_value_90, i);
+        for (i = 0; i < each_value_91.length; i += 1) {
+          const child_ctx = get_each_context_91(ctx2, each_value_91, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_90(child_ctx);
+            each_blocks[i] = create_each_block_91(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(div2, t2);
           }
@@ -5227,7 +5250,7 @@ function create_if_block_119(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_90.length;
+        each_blocks.length = each_value_91.length;
       }
       if (
         /*allParamStatus*/
@@ -5239,7 +5262,7 @@ function create_if_block_119(ctx) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_120(ctx2);
+          if_block = create_if_block_121(ctx2);
           if_block.c();
           if_block.m(div2, null);
         }
@@ -5259,7 +5282,7 @@ function create_if_block_119(ctx) {
     }
   };
 }
-function create_if_block_93(ctx) {
+function create_if_block_94(ctx) {
   let section;
   let div0;
   let t1;
@@ -5294,52 +5317,52 @@ function create_if_block_93(ctx) {
   let t21;
   let if_block0 = (
     /*bpfOuts*/
-    ctx[668].length > 0 && create_if_block_118()
+    ctx[682].length > 0 && create_if_block_119()
   );
   let if_block1 = (
     /*seqOuts*/
-    ctx[669].length > 0 && create_if_block_117()
+    ctx[683].length > 0 && create_if_block_118()
   );
-  let each_value_76 = ensure_array_like(
+  let each_value_77 = ensure_array_like(
     /*bnds*/
-    ctx[665]
+    ctx[679]
   );
   const get_key = (ctx2) => (
     /*bnd*/
-    ctx2[672].id
+    ctx2[686].id
   );
-  for (let i = 0; i < each_value_76.length; i += 1) {
-    let child_ctx = get_each_context_76(ctx, each_value_76, i);
+  for (let i = 0; i < each_value_77.length; i += 1) {
+    let child_ctx = get_each_context_77(ctx, each_value_77, i);
     let key = get_key(child_ctx);
-    each_1_lookup.set(key, each_blocks[i] = create_each_block_76(key, child_ctx));
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_77(key, child_ctx));
   }
   let if_block2 = (
     /*bndMode*/
-    ctx[666] === "add" && create_if_block_98(ctx)
+    ctx[680] === "add" && create_if_block_99(ctx)
   );
-  function select_block_type_22(ctx2, dirty) {
+  function select_block_type_24(ctx2, dirty) {
     if (
       /*bndAddRefState*/
-      ctx2[667]
-    ) return create_if_block_95;
-    if (
-      /*bndMode*/
-      ctx2[666] === "add"
+      ctx2[681]
     ) return create_if_block_96;
     if (
       /*bndMode*/
-      ctx2[666] === "edit"
+      ctx2[680] === "add"
     ) return create_if_block_97;
-    return create_else_block_16;
+    if (
+      /*bndMode*/
+      ctx2[680] === "edit"
+    ) return create_if_block_98;
+    return create_else_block_18;
   }
-  let current_block_type = select_block_type_22(ctx);
+  let current_block_type = select_block_type_24(ctx);
   let if_block3 = current_block_type(ctx);
   let if_block4 = (
     /*keyerStatus*/
     ctx[7][
       /*activeSerial*/
       ctx[0]
-    ] && create_if_block_94(ctx)
+    ] && create_if_block_95(ctx)
   );
   return {
     c() {
@@ -5443,11 +5466,11 @@ function create_if_block_93(ctx) {
     p(ctx2, dirty) {
       if (
         /*bpfOuts*/
-        ctx2[668].length > 0
+        ctx2[682].length > 0
       ) {
         if (if_block0) ;
         else {
-          if_block0 = create_if_block_118();
+          if_block0 = create_if_block_119();
           if_block0.c();
           if_block0.m(tr, t17);
         }
@@ -5457,11 +5480,11 @@ function create_if_block_93(ctx) {
       }
       if (
         /*seqOuts*/
-        ctx2[669].length > 0
+        ctx2[683].length > 0
       ) {
         if (if_block1) ;
         else {
-          if_block1 = create_if_block_117();
+          if_block1 = create_if_block_118();
           if_block1.c();
           if_block1.m(tr, null);
         }
@@ -5471,23 +5494,23 @@ function create_if_block_93(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeSeqOutputs, smBndAddRef, activeAntsAndGroups, activeBnds, smBndMode, activeBpfOutputs, activeAntOutputs, activeAllObjs, smBndEditForms, smBndSelected*/
-      516125 | dirty[4] & /*smObjTypedDisplay*/
-      16777216 | dirty[5] & /*smBndCancelAddRef, smBndSaveAddRef, smBndStartAddRef, smBndToggleSelect*/
-      15) {
-        each_value_76 = ensure_array_like(
+      4128797 | dirty[4] & /*smObjTypedDisplay*/
+      1073741824 | dirty[5] & /*smBndCancelAddRef, smBndSaveAddRef, smBndStartAddRef, smBndToggleSelect*/
+      960) {
+        each_value_77 = ensure_array_like(
           /*bnds*/
-          ctx2[665]
+          ctx2[679]
         );
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_76, each_1_lookup, tbody, destroy_block, create_each_block_76, t19, get_each_context_76);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_77, each_1_lookup, tbody, destroy_block, create_each_block_77, t19, get_each_context_77);
       }
       if (
         /*bndMode*/
-        ctx2[666] === "add"
+        ctx2[680] === "add"
       ) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_98(ctx2);
+          if_block2 = create_if_block_99(ctx2);
           if_block2.c();
           if_block2.m(tbody, null);
         }
@@ -5495,7 +5518,7 @@ function create_if_block_93(ctx) {
         if_block2.d(1);
         if_block2 = null;
       }
-      if (current_block_type === (current_block_type = select_block_type_22(ctx2)) && if_block3) {
+      if (current_block_type === (current_block_type = select_block_type_24(ctx2)) && if_block3) {
         if_block3.p(ctx2, dirty);
       } else {
         if_block3.d(1);
@@ -5515,7 +5538,7 @@ function create_if_block_93(ctx) {
         if (if_block4) {
           if_block4.p(ctx2, dirty);
         } else {
-          if_block4 = create_if_block_94(ctx2);
+          if_block4 = create_if_block_95(ctx2);
           if_block4.c();
           if_block4.m(div2, null);
         }
@@ -5539,7 +5562,7 @@ function create_if_block_93(ctx) {
     }
   };
 }
-function create_if_block_81(ctx) {
+function create_if_block_82(ctx) {
   let section;
   let div0;
   let t1;
@@ -5554,46 +5577,46 @@ function create_if_block_81(ctx) {
   let t14;
   let div1;
   let t15;
-  let each_value_72 = ensure_array_like(
+  let each_value_73 = ensure_array_like(
     /*grps*/
-    ctx[653]
+    ctx[667]
   );
   const get_key = (ctx2) => (
     /*grp*/
-    ctx2[656].id
+    ctx2[670].id
   );
-  for (let i = 0; i < each_value_72.length; i += 1) {
-    let child_ctx = get_each_context_72(ctx, each_value_72, i);
+  for (let i = 0; i < each_value_73.length; i += 1) {
+    let child_ctx = get_each_context_73(ctx, each_value_73, i);
     let key = get_key(child_ctx);
-    each_1_lookup.set(key, each_blocks[i] = create_each_block_72(key, child_ctx));
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_73(key, child_ctx));
   }
   let if_block0 = (
     /*grpMode*/
-    ctx[654] === "add" && create_if_block_86(ctx)
+    ctx[668] === "add" && create_if_block_87(ctx)
   );
-  function select_block_type_16(ctx2, dirty) {
+  function select_block_type_18(ctx2, dirty) {
     if (
       /*grpAddAntState*/
-      ctx2[655]
-    ) return create_if_block_83;
-    if (
-      /*grpMode*/
-      ctx2[654] === "add"
+      ctx2[669]
     ) return create_if_block_84;
     if (
       /*grpMode*/
-      ctx2[654] === "edit"
+      ctx2[668] === "add"
     ) return create_if_block_85;
-    return create_else_block_11;
+    if (
+      /*grpMode*/
+      ctx2[668] === "edit"
+    ) return create_if_block_86;
+    return create_else_block_13;
   }
-  let current_block_type = select_block_type_16(ctx);
+  let current_block_type = select_block_type_18(ctx);
   let if_block1 = current_block_type(ctx);
   let if_block2 = (
     /*keyerStatus*/
     ctx[7][
       /*activeSerial*/
       ctx[0]
-    ] && create_if_block_82(ctx)
+    ] && create_if_block_83(ctx)
   );
   return {
     c() {
@@ -5650,22 +5673,22 @@ function create_if_block_81(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*smGrpAddAnt, activeSerial, smGrpEditForms, smGrpMode, smGrpSelected*/
       1946157057 | dirty[1] & /*activeAllObjs, activeGrps*/
-      786432 | dirty[4] & /*smObjDisplay, smObjRxOnly, smGrpToggleSelect, smGrpStartAddAnt*/
-      3145740) {
-        each_value_72 = ensure_array_like(
+      6291456 | dirty[4] & /*smObjDisplay, smObjRxOnly, smGrpToggleSelect, smGrpStartAddAnt*/
+      201327360) {
+        each_value_73 = ensure_array_like(
           /*grps*/
-          ctx2[653]
+          ctx2[667]
         );
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_72, each_1_lookup, tbody, destroy_block, create_each_block_72, t13, get_each_context_72);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_73, each_1_lookup, tbody, destroy_block, create_each_block_73, t13, get_each_context_73);
       }
       if (
         /*grpMode*/
-        ctx2[654] === "add"
+        ctx2[668] === "add"
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_86(ctx2);
+          if_block0 = create_if_block_87(ctx2);
           if_block0.c();
           if_block0.m(tbody, null);
         }
@@ -5673,7 +5696,7 @@ function create_if_block_81(ctx) {
         if_block0.d(1);
         if_block0 = null;
       }
-      if (current_block_type === (current_block_type = select_block_type_16(ctx2)) && if_block1) {
+      if (current_block_type === (current_block_type = select_block_type_18(ctx2)) && if_block1) {
         if_block1.p(ctx2, dirty);
       } else {
         if_block1.d(1);
@@ -5693,7 +5716,7 @@ function create_if_block_81(ctx) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_82(ctx2);
+          if_block2 = create_if_block_83(ctx2);
           if_block2.c();
           if_block2.m(div2, null);
         }
@@ -5715,7 +5738,7 @@ function create_if_block_81(ctx) {
     }
   };
 }
-function create_if_block_69(ctx) {
+function create_if_block_70(ctx) {
   let section;
   let div0;
   let t1;
@@ -5730,46 +5753,46 @@ function create_if_block_69(ctx) {
   let t18;
   let div1;
   let t19;
-  let each_value_68 = ensure_array_like(
+  let each_value_69 = ensure_array_like(
     /*vrs*/
-    ctx[637]
+    ctx[651]
   );
   const get_key = (ctx2) => (
     /*vr*/
-    ctx2[641].id
+    ctx2[655].id
   );
-  for (let i = 0; i < each_value_68.length; i += 1) {
-    let child_ctx = get_each_context_68(ctx, each_value_68, i);
+  for (let i = 0; i < each_value_69.length; i += 1) {
+    let child_ctx = get_each_context_69(ctx, each_value_69, i);
     let key = get_key(child_ctx);
-    each_1_lookup.set(key, each_blocks[i] = create_each_block_68(key, child_ctx));
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_69(key, child_ctx));
   }
   let if_block0 = (
     /*vrMode*/
-    ctx[638] === "add" && create_if_block_74(ctx)
+    ctx[652] === "add" && create_if_block_75(ctx)
   );
-  function select_block_type_11(ctx2, dirty) {
+  function select_block_type_13(ctx2, dirty) {
     if (
       /*vrAddAntState*/
-      ctx2[639]
-    ) return create_if_block_71;
-    if (
-      /*vrMode*/
-      ctx2[638] === "add"
+      ctx2[653]
     ) return create_if_block_72;
     if (
       /*vrMode*/
-      ctx2[638] === "edit"
+      ctx2[652] === "add"
     ) return create_if_block_73;
-    return create_else_block_6;
+    if (
+      /*vrMode*/
+      ctx2[652] === "edit"
+    ) return create_if_block_74;
+    return create_else_block_8;
   }
-  let current_block_type = select_block_type_11(ctx);
+  let current_block_type = select_block_type_13(ctx);
   let if_block1 = current_block_type(ctx);
   let if_block2 = (
     /*keyerStatus*/
     ctx[7][
       /*activeSerial*/
       ctx[0]
-    ] && create_if_block_70(ctx)
+    ] && create_if_block_71(ctx)
   );
   return {
     c() {
@@ -5826,22 +5849,22 @@ function create_if_block_69(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*smVrAddAnt, activeSerial, smVrEditForms, smVrMode, smVrSelected*/
       60817409 | dirty[1] & /*activeAllObjs, activeVrs*/
-      1310720 | dirty[4] & /*smObjDisplay, smObjRxOnly, smVrToggleSelect, smVrStartAddAnt*/
-      3084) {
-        each_value_68 = ensure_array_like(
+      10485760 | dirty[4] & /*smObjDisplay, smObjRxOnly, smVrToggleSelect, smVrStartAddAnt*/
+      197376) {
+        each_value_69 = ensure_array_like(
           /*vrs*/
-          ctx2[637]
+          ctx2[651]
         );
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_68, each_1_lookup, tbody, destroy_block, create_each_block_68, t17, get_each_context_68);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_69, each_1_lookup, tbody, destroy_block, create_each_block_69, t17, get_each_context_69);
       }
       if (
         /*vrMode*/
-        ctx2[638] === "add"
+        ctx2[652] === "add"
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_74(ctx2);
+          if_block0 = create_if_block_75(ctx2);
           if_block0.c();
           if_block0.m(tbody, null);
         }
@@ -5849,7 +5872,7 @@ function create_if_block_69(ctx) {
         if_block0.d(1);
         if_block0 = null;
       }
-      if (current_block_type === (current_block_type = select_block_type_11(ctx2)) && if_block1) {
+      if (current_block_type === (current_block_type = select_block_type_13(ctx2)) && if_block1) {
         if_block1.p(ctx2, dirty);
       } else {
         if_block1.d(1);
@@ -5869,7 +5892,7 @@ function create_if_block_69(ctx) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_70(ctx2);
+          if_block2 = create_if_block_71(ctx2);
           if_block2.c();
           if_block2.m(div2, null);
         }
@@ -5891,7 +5914,7 @@ function create_if_block_69(ctx) {
     }
   };
 }
-function create_if_block_62(ctx) {
+function create_if_block_63(ctx) {
   let section;
   let div0;
   let t1;
@@ -5925,50 +5948,50 @@ function create_if_block_62(ctx) {
   let t21;
   let div1;
   let t22;
-  let each_value_67 = ensure_array_like(
+  let each_value_68 = ensure_array_like(
     /*antOutCols*/
-    ctx[622]
+    ctx[636]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_67.length; i += 1) {
-    each_blocks_1[i] = create_each_block_67(get_each_context_67(ctx, each_value_67, i));
+  for (let i = 0; i < each_value_68.length; i += 1) {
+    each_blocks_1[i] = create_each_block_68(get_each_context_68(ctx, each_value_68, i));
   }
-  let each_value_64 = ensure_array_like(
+  let each_value_65 = ensure_array_like(
     /*ants*/
-    ctx[621]
+    ctx[635]
   );
   const get_key = (ctx2) => (
     /*ant*/
-    ctx2[627].id
+    ctx2[641].id
   );
-  for (let i = 0; i < each_value_64.length; i += 1) {
-    let child_ctx = get_each_context_64(ctx, each_value_64, i);
+  for (let i = 0; i < each_value_65.length; i += 1) {
+    let child_ctx = get_each_context_65(ctx, each_value_65, i);
     let key = get_key(child_ctx);
-    each1_lookup.set(key, each_blocks[i] = create_each_block_64(key, child_ctx));
+    each1_lookup.set(key, each_blocks[i] = create_each_block_65(key, child_ctx));
   }
   let if_block0 = (
     /*mode*/
-    ctx[547] === "add" && create_if_block_66(get_if_ctx(ctx))
+    ctx[561] === "add" && create_if_block_67(get_if_ctx(ctx))
   );
-  function select_block_type_6(ctx2, dirty) {
+  function select_block_type_8(ctx2, dirty) {
     if (
       /*mode*/
-      ctx2[547] === "add"
-    ) return create_if_block_64;
-    if (
-      /*mode*/
-      ctx2[547] === "edit"
+      ctx2[561] === "add"
     ) return create_if_block_65;
-    return create_else_block_3;
+    if (
+      /*mode*/
+      ctx2[561] === "edit"
+    ) return create_if_block_66;
+    return create_else_block_5;
   }
-  let current_block_type = select_block_type_6(ctx);
+  let current_block_type = select_block_type_8(ctx);
   let if_block1 = current_block_type(ctx);
   let if_block2 = (
     /*keyerStatus*/
     ctx[7][
       /*activeSerial*/
       ctx[0]
-    ] && create_if_block_63(ctx)
+    ] && create_if_block_64(ctx)
   );
   return {
     c() {
@@ -6077,18 +6100,18 @@ function create_if_block_62(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAntOutCols*/
-      2097152) {
-        each_value_67 = ensure_array_like(
+      16777216) {
+        each_value_68 = ensure_array_like(
           /*antOutCols*/
-          ctx2[622]
+          ctx2[636]
         );
         let i;
-        for (i = 0; i < each_value_67.length; i += 1) {
-          const child_ctx = get_each_context_67(ctx2, each_value_67, i);
+        for (i = 0; i < each_value_68.length; i += 1) {
+          const child_ctx = get_each_context_68(ctx2, each_value_68, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_67(child_ctx);
+            each_blocks_1[i] = create_each_block_68(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(tr, null);
           }
@@ -6096,26 +6119,26 @@ function create_if_block_62(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_67.length;
+        each_blocks_1.length = each_value_68.length;
       }
       if (dirty[0] & /*smAntEditForms, activeSerial, smAntMode, smAntSelected*/
       1441793 | dirty[1] & /*activeAntOutCols, activeAnts*/
-      6291456 | dirty[4] & /*smAntToggleSelect*/
-      2) {
-        each_value_64 = ensure_array_like(
+      50331648 | dirty[4] & /*smAntToggleSelect*/
+      128) {
+        each_value_65 = ensure_array_like(
           /*ants*/
-          ctx2[621]
+          ctx2[635]
         );
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_64, each1_lookup, tbody, destroy_block, create_each_block_64, t20, get_each_context_64);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_65, each1_lookup, tbody, destroy_block, create_each_block_65, t20, get_each_context_65);
       }
       if (
         /*mode*/
-        ctx2[547] === "add"
+        ctx2[561] === "add"
       ) {
         if (if_block0) {
           if_block0.p(get_if_ctx(ctx2), dirty);
         } else {
-          if_block0 = create_if_block_66(get_if_ctx(ctx2));
+          if_block0 = create_if_block_67(get_if_ctx(ctx2));
           if_block0.c();
           if_block0.m(tbody, null);
         }
@@ -6123,7 +6146,7 @@ function create_if_block_62(ctx) {
         if_block0.d(1);
         if_block0 = null;
       }
-      if (current_block_type === (current_block_type = select_block_type_6(ctx2)) && if_block1) {
+      if (current_block_type === (current_block_type = select_block_type_8(ctx2)) && if_block1) {
         if_block1.p(ctx2, dirty);
       } else {
         if_block1.d(1);
@@ -6143,7 +6166,7 @@ function create_if_block_62(ctx) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_63(ctx2);
+          if_block2 = create_if_block_64(ctx2);
           if_block2.c();
           if_block2.m(div2, null);
         }
@@ -6166,26 +6189,26 @@ function create_if_block_62(ctx) {
     }
   };
 }
-function create_if_block_60(ctx) {
+function create_if_block_61(ctx) {
   let section;
   let div0;
   let t1;
   let div1;
   let t2;
-  let each_value_61 = ensure_array_like(
+  let each_value_62 = ensure_array_like(
     /*smOutputNames*/
-    ctx[85]
+    ctx[88]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_61.length; i += 1) {
-    each_blocks[i] = create_each_block_61(get_each_context_61(ctx, each_value_61, i));
+  for (let i = 0; i < each_value_62.length; i += 1) {
+    each_blocks[i] = create_each_block_62(get_each_context_62(ctx, each_value_62, i));
   }
   let if_block = (
     /*keyerStatus*/
     ctx[7][
       /*activeSerial*/
       ctx[0]
-    ] && create_if_block_61(ctx)
+    ] && create_if_block_62(ctx)
   );
   return {
     c() {
@@ -6219,19 +6242,19 @@ function create_if_block_60(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[2] & /*smOutputNames, smOutputClassOptions*/
-      12582912 | dirty[3] & /*smOutputVal, applySmOutput*/
-      17825792) {
-        each_value_61 = ensure_array_like(
+      100663296 | dirty[3] & /*smOutputVal, applySmOutput*/
+      1140850688) {
+        each_value_62 = ensure_array_like(
           /*smOutputNames*/
-          ctx2[85]
+          ctx2[88]
         );
         let i;
-        for (i = 0; i < each_value_61.length; i += 1) {
-          const child_ctx = get_each_context_61(ctx2, each_value_61, i);
+        for (i = 0; i < each_value_62.length; i += 1) {
+          const child_ctx = get_each_context_62(ctx2, each_value_62, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_61(child_ctx);
+            each_blocks[i] = create_each_block_62(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(div1, t2);
           }
@@ -6239,7 +6262,7 @@ function create_if_block_60(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_61.length;
+        each_blocks.length = each_value_62.length;
       }
       if (
         /*keyerStatus*/
@@ -6251,7 +6274,7 @@ function create_if_block_60(ctx) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_61(ctx2);
+          if_block = create_if_block_62(ctx2);
           if_block.c();
           if_block.m(div1, null);
         }
@@ -6269,7 +6292,7 @@ function create_if_block_60(ctx) {
     }
   };
 }
-function create_if_block_57(ctx) {
+function create_if_block_58(ctx) {
   let section;
   let div0;
   let t1;
@@ -6347,7 +6370,7 @@ function create_if_block_57(ctx) {
   let t32;
   let show_if = (
     /*smSequencerOutputs*/
-    ctx[114](
+    ctx[120](
       /*activeSerial*/
       ctx[0]
     ).length > 0
@@ -6355,46 +6378,46 @@ function create_if_block_57(ctx) {
   let if_block1_anchor;
   let mounted;
   let dispose;
-  let each_value_60 = ensure_array_like(
+  let each_value_61 = ensure_array_like(
     /*smCivFuncOptions*/
-    ctx[81]
+    ctx[84]
   );
   let each_blocks_3 = [];
-  for (let i = 0; i < each_value_60.length; i += 1) {
-    each_blocks_3[i] = create_each_block_60(get_each_context_60(ctx, each_value_60, i));
+  for (let i = 0; i < each_value_61.length; i += 1) {
+    each_blocks_3[i] = create_each_block_61(get_each_context_61(ctx, each_value_61, i));
   }
-  let each_value_59 = ensure_array_like(
+  let each_value_60 = ensure_array_like(
     /*smCivBaudOptions*/
-    ctx[82]
+    ctx[85]
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_59.length; i += 1) {
-    each_blocks_2[i] = create_each_block_59(get_each_context_59(ctx, each_value_59, i));
+  for (let i = 0; i < each_value_60.length; i += 1) {
+    each_blocks_2[i] = create_each_block_60(get_each_context_60(ctx, each_value_60, i));
   }
-  let each_value_58 = ensure_array_like(
+  let each_value_59 = ensure_array_like(
     /*smExtSerFuncOptions*/
-    ctx[83]
+    ctx[86]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_58.length; i += 1) {
-    each_blocks_1[i] = create_each_block_58(get_each_context_58(ctx, each_value_58, i));
+  for (let i = 0; i < each_value_59.length; i += 1) {
+    each_blocks_1[i] = create_each_block_59(get_each_context_59(ctx, each_value_59, i));
   }
-  let each_value_57 = ensure_array_like(
+  let each_value_58 = ensure_array_like(
     /*smCivBaudOptions*/
-    ctx[82]
+    ctx[85]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_57.length; i += 1) {
-    each_blocks[i] = create_each_block_57(get_each_context_57(ctx, each_value_57, i));
+  for (let i = 0; i < each_value_58.length; i += 1) {
+    each_blocks[i] = create_each_block_58(get_each_context_58(ctx, each_value_58, i));
   }
   let if_block0 = (
     /*keyerStatus*/
     ctx[7][
       /*activeSerial*/
       ctx[0]
-    ] && create_if_block_59(ctx)
+    ] && create_if_block_60(ctx)
   );
-  let if_block1 = show_if && create_if_block_58(ctx);
+  let if_block1 = show_if && create_if_block_59(ctx);
   return {
     c() {
       section = element("section");
@@ -6503,7 +6526,7 @@ function create_if_block_57(ctx) {
       attr(input0, "min", "0");
       attr(input0, "max", "255");
       input0.value = input0_value_value = /*smFixed*/
-      ctx[111](
+      ctx[117](
         /*activeSerial*/
         ctx[0],
         "civAddress"
@@ -6523,7 +6546,7 @@ function create_if_block_57(ctx) {
       attr(input1, "type", "number");
       attr(input1, "min", "0");
       input1.value = input1_value_value = /*smFixed*/
-      ctx[111](
+      ctx[117](
         /*activeSerial*/
         ctx[0],
         "antSwDelay"
@@ -6535,7 +6558,7 @@ function create_if_block_57(ctx) {
       attr(input2, "type", "number");
       attr(input2, "min", "0");
       input2.value = input2_value_value = /*smFixed*/
-      ctx[111](
+      ctx[117](
         /*activeSerial*/
         ctx[0],
         "bbmDelay"
@@ -6547,7 +6570,7 @@ function create_if_block_57(ctx) {
       attr(input3, "type", "number");
       attr(input3, "min", "0");
       input3.value = input3_value_value = /*smFixed*/
-      ctx[111](
+      ctx[117](
         /*activeSerial*/
         ctx[0],
         "inhibitLead"
@@ -6557,7 +6580,7 @@ function create_if_block_57(ctx) {
       attr(div25, "class", "label");
       attr(input4, "type", "checkbox");
       input4.checked = input4_checked_value = /*smFixed*/
-      ctx[111](
+      ctx[117](
         /*activeSerial*/
         ctx[0],
         "useKeyIn"
@@ -6567,7 +6590,7 @@ function create_if_block_57(ctx) {
       attr(div28, "class", "label");
       attr(input5, "type", "checkbox");
       input5.checked = input5_checked_value = /*smFixed*/
-      ctx[111](
+      ctx[117](
         /*activeSerial*/
         ctx[0],
         "invertKeyIn"
@@ -6595,7 +6618,7 @@ function create_if_block_57(ctx) {
       select_option(
         select0,
         /*smFixed*/
-        ctx[111](
+        ctx[117](
           /*activeSerial*/
           ctx[0],
           "civFunc"
@@ -6615,7 +6638,7 @@ function create_if_block_57(ctx) {
       select_option(
         select1,
         /*smFixed*/
-        ctx[111](
+        ctx[117](
           /*activeSerial*/
           ctx[0],
           "civBaudRate"
@@ -6641,7 +6664,7 @@ function create_if_block_57(ctx) {
       select_option(
         select2,
         /*smFixed*/
-        ctx[111](
+        ctx[117](
           /*activeSerial*/
           ctx[0],
           "extSerFunc"
@@ -6661,7 +6684,7 @@ function create_if_block_57(ctx) {
       select_option(
         select3,
         /*smFixed*/
-        ctx[111](
+        ctx[117](
           /*activeSerial*/
           ctx[0],
           "extSerBaudRate"
@@ -6708,61 +6731,61 @@ function create_if_block_57(ctx) {
             select0,
             "change",
             /*change_handler_107*/
-            ctx[328]
+            ctx[332]
           ),
           listen(
             select1,
             "change",
             /*change_handler_108*/
-            ctx[329]
+            ctx[333]
           ),
           listen(
             input0,
             "change",
             /*change_handler_109*/
-            ctx[330]
+            ctx[334]
           ),
           listen(
             select2,
             "change",
             /*change_handler_110*/
-            ctx[331]
+            ctx[335]
           ),
           listen(
             select3,
             "change",
             /*change_handler_111*/
-            ctx[332]
+            ctx[336]
           ),
           listen(
             input1,
             "change",
             /*change_handler_112*/
-            ctx[333]
+            ctx[337]
           ),
           listen(
             input2,
             "change",
             /*change_handler_113*/
-            ctx[334]
+            ctx[338]
           ),
           listen(
             input3,
             "change",
             /*change_handler_114*/
-            ctx[335]
+            ctx[339]
           ),
           listen(
             input4,
             "change",
             /*change_handler_115*/
-            ctx[336]
+            ctx[340]
           ),
           listen(
             input5,
             "change",
             /*change_handler_116*/
-            ctx[337]
+            ctx[341]
           )
         ];
         mounted = true;
@@ -6770,18 +6793,18 @@ function create_if_block_57(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[2] & /*smCivFuncOptions*/
-      524288) {
-        each_value_60 = ensure_array_like(
+      4194304) {
+        each_value_61 = ensure_array_like(
           /*smCivFuncOptions*/
-          ctx2[81]
+          ctx2[84]
         );
         let i;
-        for (i = 0; i < each_value_60.length; i += 1) {
-          const child_ctx = get_each_context_60(ctx2, each_value_60, i);
+        for (i = 0; i < each_value_61.length; i += 1) {
+          const child_ctx = get_each_context_61(ctx2, each_value_61, i);
           if (each_blocks_3[i]) {
             each_blocks_3[i].p(child_ctx, dirty);
           } else {
-            each_blocks_3[i] = create_each_block_60(child_ctx);
+            each_blocks_3[i] = create_each_block_61(child_ctx);
             each_blocks_3[i].c();
             each_blocks_3[i].m(select0, null);
           }
@@ -6789,12 +6812,12 @@ function create_if_block_57(ctx) {
         for (; i < each_blocks_3.length; i += 1) {
           each_blocks_3[i].d(1);
         }
-        each_blocks_3.length = each_value_60.length;
+        each_blocks_3.length = each_value_61.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select0_value_value !== (select0_value_value = /*smFixed*/
-      ctx2[111](
+      65536 && select0_value_value !== (select0_value_value = /*smFixed*/
+      ctx2[117](
         /*activeSerial*/
         ctx2[0],
         "civFunc"
@@ -6802,7 +6825,7 @@ function create_if_block_57(ctx) {
         select_option(
           select0,
           /*smFixed*/
-          ctx2[111](
+          ctx2[117](
             /*activeSerial*/
             ctx2[0],
             "civFunc"
@@ -6810,18 +6833,18 @@ function create_if_block_57(ctx) {
         );
       }
       if (dirty[2] & /*smCivBaudOptions*/
-      1048576) {
-        each_value_59 = ensure_array_like(
+      8388608) {
+        each_value_60 = ensure_array_like(
           /*smCivBaudOptions*/
-          ctx2[82]
+          ctx2[85]
         );
         let i;
-        for (i = 0; i < each_value_59.length; i += 1) {
-          const child_ctx = get_each_context_59(ctx2, each_value_59, i);
+        for (i = 0; i < each_value_60.length; i += 1) {
+          const child_ctx = get_each_context_60(ctx2, each_value_60, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_59(child_ctx);
+            each_blocks_2[i] = create_each_block_60(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select1, null);
           }
@@ -6829,12 +6852,12 @@ function create_if_block_57(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_59.length;
+        each_blocks_2.length = each_value_60.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select1_value_value !== (select1_value_value = /*smFixed*/
-      ctx2[111](
+      65536 && select1_value_value !== (select1_value_value = /*smFixed*/
+      ctx2[117](
         /*activeSerial*/
         ctx2[0],
         "civBaudRate"
@@ -6842,7 +6865,7 @@ function create_if_block_57(ctx) {
         select_option(
           select1,
           /*smFixed*/
-          ctx2[111](
+          ctx2[117](
             /*activeSerial*/
             ctx2[0],
             "civBaudRate"
@@ -6851,8 +6874,8 @@ function create_if_block_57(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_value_value !== (input0_value_value = /*smFixed*/
-      ctx2[111](
+      65536 && input0_value_value !== (input0_value_value = /*smFixed*/
+      ctx2[117](
         /*activeSerial*/
         ctx2[0],
         "civAddress"
@@ -6860,18 +6883,18 @@ function create_if_block_57(ctx) {
         input0.value = input0_value_value;
       }
       if (dirty[2] & /*smExtSerFuncOptions*/
-      2097152) {
-        each_value_58 = ensure_array_like(
+      16777216) {
+        each_value_59 = ensure_array_like(
           /*smExtSerFuncOptions*/
-          ctx2[83]
+          ctx2[86]
         );
         let i;
-        for (i = 0; i < each_value_58.length; i += 1) {
-          const child_ctx = get_each_context_58(ctx2, each_value_58, i);
+        for (i = 0; i < each_value_59.length; i += 1) {
+          const child_ctx = get_each_context_59(ctx2, each_value_59, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_58(child_ctx);
+            each_blocks_1[i] = create_each_block_59(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select2, null);
           }
@@ -6879,12 +6902,12 @@ function create_if_block_57(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_58.length;
+        each_blocks_1.length = each_value_59.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select2_value_value !== (select2_value_value = /*smFixed*/
-      ctx2[111](
+      65536 && select2_value_value !== (select2_value_value = /*smFixed*/
+      ctx2[117](
         /*activeSerial*/
         ctx2[0],
         "extSerFunc"
@@ -6892,7 +6915,7 @@ function create_if_block_57(ctx) {
         select_option(
           select2,
           /*smFixed*/
-          ctx2[111](
+          ctx2[117](
             /*activeSerial*/
             ctx2[0],
             "extSerFunc"
@@ -6900,18 +6923,18 @@ function create_if_block_57(ctx) {
         );
       }
       if (dirty[2] & /*smCivBaudOptions*/
-      1048576) {
-        each_value_57 = ensure_array_like(
+      8388608) {
+        each_value_58 = ensure_array_like(
           /*smCivBaudOptions*/
-          ctx2[82]
+          ctx2[85]
         );
         let i;
-        for (i = 0; i < each_value_57.length; i += 1) {
-          const child_ctx = get_each_context_57(ctx2, each_value_57, i);
+        for (i = 0; i < each_value_58.length; i += 1) {
+          const child_ctx = get_each_context_58(ctx2, each_value_58, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_57(child_ctx);
+            each_blocks[i] = create_each_block_58(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select3, null);
           }
@@ -6919,12 +6942,12 @@ function create_if_block_57(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_57.length;
+        each_blocks.length = each_value_58.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select3_value_value !== (select3_value_value = /*smFixed*/
-      ctx2[111](
+      65536 && select3_value_value !== (select3_value_value = /*smFixed*/
+      ctx2[117](
         /*activeSerial*/
         ctx2[0],
         "extSerBaudRate"
@@ -6932,7 +6955,7 @@ function create_if_block_57(ctx) {
         select_option(
           select3,
           /*smFixed*/
-          ctx2[111](
+          ctx2[117](
             /*activeSerial*/
             ctx2[0],
             "extSerBaudRate"
@@ -6941,8 +6964,8 @@ function create_if_block_57(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_value_value !== (input1_value_value = /*smFixed*/
-      ctx2[111](
+      65536 && input1_value_value !== (input1_value_value = /*smFixed*/
+      ctx2[117](
         /*activeSerial*/
         ctx2[0],
         "antSwDelay"
@@ -6951,8 +6974,8 @@ function create_if_block_57(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input2_value_value !== (input2_value_value = /*smFixed*/
-      ctx2[111](
+      65536 && input2_value_value !== (input2_value_value = /*smFixed*/
+      ctx2[117](
         /*activeSerial*/
         ctx2[0],
         "bbmDelay"
@@ -6961,8 +6984,8 @@ function create_if_block_57(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input3_value_value !== (input3_value_value = /*smFixed*/
-      ctx2[111](
+      65536 && input3_value_value !== (input3_value_value = /*smFixed*/
+      ctx2[117](
         /*activeSerial*/
         ctx2[0],
         "inhibitLead"
@@ -6971,8 +6994,8 @@ function create_if_block_57(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input4_checked_value !== (input4_checked_value = /*smFixed*/
-      ctx2[111](
+      65536 && input4_checked_value !== (input4_checked_value = /*smFixed*/
+      ctx2[117](
         /*activeSerial*/
         ctx2[0],
         "useKeyIn"
@@ -6981,8 +7004,8 @@ function create_if_block_57(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input5_checked_value !== (input5_checked_value = /*smFixed*/
-      ctx2[111](
+      65536 && input5_checked_value !== (input5_checked_value = /*smFixed*/
+      ctx2[117](
         /*activeSerial*/
         ctx2[0],
         "invertKeyIn"
@@ -6999,7 +7022,7 @@ function create_if_block_57(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_59(ctx2);
+          if_block0 = create_if_block_60(ctx2);
           if_block0.c();
           if_block0.m(div31, null);
         }
@@ -7009,7 +7032,7 @@ function create_if_block_57(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1) show_if = /*smSequencerOutputs*/
-      ctx2[114](
+      ctx2[120](
         /*activeSerial*/
         ctx2[0]
       ).length > 0;
@@ -7017,7 +7040,7 @@ function create_if_block_57(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_58(ctx2);
+          if_block1 = create_if_block_59(ctx2);
           if_block1.c();
           if_block1.m(if_block1_anchor.parentNode, if_block1_anchor);
         }
@@ -7043,7 +7066,7 @@ function create_if_block_57(ctx) {
     }
   };
 }
-function create_if_block_55(ctx) {
+function create_if_block_56(ctx) {
   let section;
   let div0;
   let t1;
@@ -7071,7 +7094,7 @@ function create_if_block_55(ctx) {
     ctx[15][
       /*activeSerial*/
       ctx[0]
-    ] && create_if_block_56(ctx)
+    ] && create_if_block_57(ctx)
   );
   return {
     c() {
@@ -7148,14 +7171,14 @@ function create_if_block_55(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_10*/
-            ctx[326]
+            /*click_handler_11*/
+            ctx[330]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_11*/
-            ctx[327]
+            /*click_handler_12*/
+            ctx[331]
           )
         ];
         mounted = true;
@@ -7164,7 +7187,7 @@ function create_if_block_55(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*smActionBusy, activeSerial*/
       65537 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && button0_disabled_value !== (button0_disabled_value = /*smActionBusy*/
+      65536 && button0_disabled_value !== (button0_disabled_value = /*smActionBusy*/
       ctx2[16][
         /*activeSerial*/
         ctx2[0]
@@ -7173,7 +7196,7 @@ function create_if_block_55(ctx) {
       }
       if (dirty[0] & /*smActionBusy, activeSerial*/
       65537 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && button1_disabled_value !== (button1_disabled_value = /*smActionBusy*/
+      65536 && button1_disabled_value !== (button1_disabled_value = /*smActionBusy*/
       ctx2[16][
         /*activeSerial*/
         ctx2[0]
@@ -7190,7 +7213,7 @@ function create_if_block_55(ctx) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_56(ctx2);
+          if_block = create_if_block_57(ctx2);
           if_block.c();
           if_block.m(div7, null);
         }
@@ -7209,7 +7232,7 @@ function create_if_block_55(ctx) {
     }
   };
 }
-function create_if_block_52(ctx) {
+function create_if_block_53(ctx) {
   let section0;
   let div0;
   let t1;
@@ -7229,31 +7252,31 @@ function create_if_block_52(ctx) {
   let t10;
   let mounted;
   let dispose;
-  let each_value_55 = ensure_array_like(
+  let each_value_56 = ensure_array_like(
     /*messageSlots*/
-    ctx[78]
+    ctx[81]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_55.length; i += 1) {
-    each_blocks_1[i] = create_each_block_55(get_each_context_55(ctx, each_value_55, i));
+  for (let i = 0; i < each_value_56.length; i += 1) {
+    each_blocks_1[i] = create_each_block_56(get_each_context_56(ctx, each_value_56, i));
   }
   let if_block0 = (
     /*messageStatus*/
     ctx[12][`${/*activeSerial*/
-    ctx[0]}:cw`] && create_if_block_54(ctx)
+    ctx[0]}:cw`] && create_if_block_55(ctx)
   );
-  let each_value_54 = ensure_array_like(
+  let each_value_55 = ensure_array_like(
     /*messageSlots*/
-    ctx[78]
+    ctx[81]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_54.length; i += 1) {
-    each_blocks[i] = create_each_block_54(get_each_context_54(ctx, each_value_54, i));
+  for (let i = 0; i < each_value_55.length; i += 1) {
+    each_blocks[i] = create_each_block_55(get_each_context_55(ctx, each_value_55, i));
   }
   let if_block1 = (
     /*messageStatus*/
     ctx[12][`${/*activeSerial*/
-    ctx[0]}:fsk`] && create_if_block_53(ctx)
+    ctx[0]}:fsk`] && create_if_block_54(ctx)
   );
   return {
     c() {
@@ -7334,14 +7357,14 @@ function create_if_block_52(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_7*/
-            ctx[322]
+            /*click_handler_8*/
+            ctx[326]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_9*/
-            ctx[325]
+            /*click_handler_10*/
+            ctx[329]
           )
         ];
         mounted = true;
@@ -7349,19 +7372,20 @@ function create_if_block_52(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial, messageForm*/
-      2049 | dirty[2] & /*playMessage, messageSlots, handleMessageInput*/
-      536936452) {
-        each_value_55 = ensure_array_like(
+      2049 | dirty[2] & /*playMessage, messageSlots*/
+      524320 | dirty[3] & /*handleMessageInput*/
+      16) {
+        each_value_56 = ensure_array_like(
           /*messageSlots*/
-          ctx2[78]
+          ctx2[81]
         );
         let i;
-        for (i = 0; i < each_value_55.length; i += 1) {
-          const child_ctx = get_each_context_55(ctx2, each_value_55, i);
+        for (i = 0; i < each_value_56.length; i += 1) {
+          const child_ctx = get_each_context_56(ctx2, each_value_56, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_55(child_ctx);
+            each_blocks_1[i] = create_each_block_56(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(div2, t2);
           }
@@ -7369,7 +7393,7 @@ function create_if_block_52(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_55.length;
+        each_blocks_1.length = each_value_56.length;
       }
       if (
         /*messageStatus*/
@@ -7379,7 +7403,7 @@ function create_if_block_52(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_54(ctx2);
+          if_block0 = create_if_block_55(ctx2);
           if_block0.c();
           if_block0.m(div2, null);
         }
@@ -7388,19 +7412,20 @@ function create_if_block_52(ctx) {
         if_block0 = null;
       }
       if (dirty[0] & /*activeSerial, messageForm*/
-      2049 | dirty[2] & /*playMessage, messageSlots, handleMessageInput*/
-      536936452) {
-        each_value_54 = ensure_array_like(
+      2049 | dirty[2] & /*playMessage, messageSlots*/
+      524320 | dirty[3] & /*handleMessageInput*/
+      16) {
+        each_value_55 = ensure_array_like(
           /*messageSlots*/
-          ctx2[78]
+          ctx2[81]
         );
         let i;
-        for (i = 0; i < each_value_54.length; i += 1) {
-          const child_ctx = get_each_context_54(ctx2, each_value_54, i);
+        for (i = 0; i < each_value_55.length; i += 1) {
+          const child_ctx = get_each_context_55(ctx2, each_value_55, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_54(child_ctx);
+            each_blocks[i] = create_each_block_55(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(div5, t8);
           }
@@ -7408,7 +7433,7 @@ function create_if_block_52(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_54.length;
+        each_blocks.length = each_value_55.length;
       }
       if (
         /*messageStatus*/
@@ -7418,7 +7443,7 @@ function create_if_block_52(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_53(ctx2);
+          if_block1 = create_if_block_54(ctx2);
           if_block1.c();
           if_block1.m(div5, null);
         }
@@ -7442,7 +7467,7 @@ function create_if_block_52(ctx) {
     }
   };
 }
-function create_if_block_49(ctx) {
+function create_if_block_50(ctx) {
   var _a, _b, _c, _d;
   let section0;
   let div0;
@@ -7584,36 +7609,36 @@ function create_if_block_49(ctx) {
   let if_block0 = (
     /*activeKeyer*/
     (((_a = ctx[2]) == null ? void 0 : _a.type) === 3 || /*activeKeyer*/
-    ((_b = ctx[2]) == null ? void 0 : _b.type) === 5) && create_if_block_51(ctx)
+    ((_b = ctx[2]) == null ? void 0 : _b.type) === 5) && create_if_block_52(ctx)
   );
-  let each_value_53 = ensure_array_like(
+  let each_value_54 = ensure_array_like(
     /*winkeyModeOptions*/
-    ctx[74]
+    ctx[77]
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_53.length; i += 1) {
-    each_blocks_2[i] = create_each_block_53(get_each_context_53(ctx, each_value_53, i));
+  for (let i = 0; i < each_value_54.length; i += 1) {
+    each_blocks_2[i] = create_each_block_54(get_each_context_54(ctx, each_value_54, i));
   }
-  let each_value_52 = ensure_array_like(
+  let each_value_53 = ensure_array_like(
     /*winkeyUltimaticOptions*/
-    ctx[75]
+    ctx[78]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_52.length; i += 1) {
-    each_blocks_1[i] = create_each_block_52(get_each_context_52(ctx, each_value_52, i));
+  for (let i = 0; i < each_value_53.length; i += 1) {
+    each_blocks_1[i] = create_each_block_53(get_each_context_53(ctx, each_value_53, i));
   }
-  let each_value_51 = ensure_array_like(
+  let each_value_52 = ensure_array_like(
     /*sideToneOptions*/
-    ctx[76]
+    ctx[79]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_51.length; i += 1) {
-    each_blocks[i] = create_each_block_51(get_each_context_51(ctx, each_value_51, i));
+  for (let i = 0; i < each_value_52.length; i += 1) {
+    each_blocks[i] = create_each_block_52(get_each_context_52(ctx, each_value_52, i));
   }
   let if_block1 = (
     /*activeKeyer*/
     (((_c = ctx[2]) == null ? void 0 : _c.type) === 3 || /*activeKeyer*/
-    ((_d = ctx[2]) == null ? void 0 : _d.type) === 5) && create_if_block_50(ctx)
+    ((_d = ctx[2]) == null ? void 0 : _d.type) === 5) && create_if_block_51(ctx)
   );
   return {
     c() {
@@ -7778,7 +7803,7 @@ function create_if_block_49(ctx) {
       attr(input0, "class", "input");
       attr(input0, "type", "number");
       input0.value = input0_value_value = /*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "leadInTime"
@@ -7789,7 +7814,7 @@ function create_if_block_49(ctx) {
       attr(input1, "class", "input");
       attr(input1, "type", "number");
       input1.value = input1_value_value = /*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "tailTime"
@@ -7800,7 +7825,7 @@ function create_if_block_49(ctx) {
       attr(input2, "class", "input");
       attr(input2, "type", "number");
       input2.value = input2_value_value = /*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "hangTime"
@@ -7810,7 +7835,7 @@ function create_if_block_49(ctx) {
       attr(div16, "class", "label");
       attr(input3, "type", "checkbox");
       input3.checked = input3_checked_value = !!/*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "paddleSwap"
@@ -7820,7 +7845,7 @@ function create_if_block_49(ctx) {
       attr(div19, "class", "label");
       attr(input4, "type", "checkbox");
       input4.checked = input4_checked_value = !!/*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "autoSpace"
@@ -7830,7 +7855,7 @@ function create_if_block_49(ctx) {
       attr(div22, "class", "label");
       attr(input5, "type", "checkbox");
       input5.checked = input5_checked_value = !!/*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "ctSpacing"
@@ -7840,7 +7865,7 @@ function create_if_block_49(ctx) {
       attr(div25, "class", "label");
       attr(input6, "type", "checkbox");
       input6.checked = input6_checked_value = !!/*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "disablePaddleWatchdog"
@@ -7851,7 +7876,7 @@ function create_if_block_49(ctx) {
       attr(input7, "class", "input");
       attr(input7, "type", "number");
       input7.value = input7_value_value = /*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "minWpm"
@@ -7862,7 +7887,7 @@ function create_if_block_49(ctx) {
       attr(input8, "class", "input");
       attr(input8, "type", "number");
       input8.value = input8_value_value = /*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "wpmRange"
@@ -7873,7 +7898,7 @@ function create_if_block_49(ctx) {
       attr(input9, "class", "input");
       attr(input9, "type", "number");
       input9.value = input9_value_value = /*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "farnsWpm"
@@ -7884,7 +7909,7 @@ function create_if_block_49(ctx) {
       attr(input10, "class", "input");
       attr(input10, "type", "number");
       input10.value = input10_value_value = /*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "ditDahRatio"
@@ -7895,7 +7920,7 @@ function create_if_block_49(ctx) {
       attr(input11, "class", "input");
       attr(input11, "type", "number");
       input11.value = input11_value_value = /*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "weight"
@@ -7906,7 +7931,7 @@ function create_if_block_49(ctx) {
       attr(input12, "class", "input");
       attr(input12, "type", "number");
       input12.value = input12_value_value = /*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "1stExtension"
@@ -7917,7 +7942,7 @@ function create_if_block_49(ctx) {
       attr(input13, "class", "input");
       attr(input13, "type", "number");
       input13.value = input13_value_value = /*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "keyComp"
@@ -7928,7 +7953,7 @@ function create_if_block_49(ctx) {
       attr(input14, "class", "input");
       attr(input14, "type", "number");
       input14.value = input14_value_value = /*winkeyValue*/
-      ctx[108](
+      ctx[114](
         /*activeSerial*/
         ctx[0],
         "paddleSetpoint"
@@ -7965,7 +7990,7 @@ function create_if_block_49(ctx) {
       select_option(
         select0,
         /*winkeyValue*/
-        ctx[108](
+        ctx[114](
           /*activeSerial*/
           ctx[0],
           "keyMode"
@@ -7985,7 +8010,7 @@ function create_if_block_49(ctx) {
       select_option(
         select1,
         /*winkeyValue*/
-        ctx[108](
+        ctx[114](
           /*activeSerial*/
           ctx[0],
           "ultimaticMode"
@@ -8099,7 +8124,7 @@ function create_if_block_49(ctx) {
       select_option(
         select2,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           "sideTone"
@@ -8113,109 +8138,109 @@ function create_if_block_49(ctx) {
             select0,
             "change",
             /*change_handler_99*/
-            ctx[301]
+            ctx[305]
           ),
           listen(
             select1,
             "change",
             /*change_handler_100*/
-            ctx[302]
+            ctx[306]
           ),
           listen(
             input0,
             "input",
-            /*input_handler_24*/
-            ctx[303]
+            /*input_handler_19*/
+            ctx[307]
           ),
           listen(
             input1,
             "input",
-            /*input_handler_25*/
-            ctx[304]
+            /*input_handler_20*/
+            ctx[308]
           ),
           listen(
             input2,
             "input",
-            /*input_handler_26*/
-            ctx[305]
+            /*input_handler_21*/
+            ctx[309]
           ),
           listen(
             input3,
             "change",
             /*change_handler_101*/
-            ctx[306]
+            ctx[310]
           ),
           listen(
             input4,
             "change",
             /*change_handler_102*/
-            ctx[307]
+            ctx[311]
           ),
           listen(
             input5,
             "change",
             /*change_handler_103*/
-            ctx[308]
+            ctx[312]
           ),
           listen(
             input6,
             "change",
             /*change_handler_104*/
-            ctx[309]
+            ctx[313]
           ),
           listen(
             input7,
             "input",
-            /*input_handler_27*/
-            ctx[310]
+            /*input_handler_22*/
+            ctx[314]
           ),
           listen(
             input8,
             "input",
-            /*input_handler_28*/
-            ctx[311]
+            /*input_handler_23*/
+            ctx[315]
           ),
           listen(
             input9,
             "input",
-            /*input_handler_29*/
-            ctx[312]
+            /*input_handler_24*/
+            ctx[316]
           ),
           listen(
             input10,
             "input",
-            /*input_handler_30*/
-            ctx[313]
+            /*input_handler_25*/
+            ctx[317]
           ),
           listen(
             input11,
             "input",
-            /*input_handler_31*/
-            ctx[314]
+            /*input_handler_26*/
+            ctx[318]
           ),
           listen(
             input12,
             "input",
-            /*input_handler_32*/
-            ctx[315]
+            /*input_handler_27*/
+            ctx[319]
           ),
           listen(
             input13,
             "input",
-            /*input_handler_33*/
-            ctx[316]
+            /*input_handler_28*/
+            ctx[320]
           ),
           listen(
             input14,
             "input",
-            /*input_handler_34*/
-            ctx[317]
+            /*input_handler_29*/
+            ctx[321]
           ),
           listen(
             select2,
             "change",
             /*change_handler_105*/
-            ctx[318]
+            ctx[322]
           )
         ];
         mounted = true;
@@ -8231,7 +8256,7 @@ function create_if_block_49(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_51(ctx2);
+          if_block0 = create_if_block_52(ctx2);
           if_block0.c();
           if_block0.m(div52, t2);
         }
@@ -8240,18 +8265,18 @@ function create_if_block_49(ctx) {
         if_block0 = null;
       }
       if (dirty[2] & /*winkeyModeOptions*/
-      4096) {
-        each_value_53 = ensure_array_like(
+      32768) {
+        each_value_54 = ensure_array_like(
           /*winkeyModeOptions*/
-          ctx2[74]
+          ctx2[77]
         );
         let i;
-        for (i = 0; i < each_value_53.length; i += 1) {
-          const child_ctx = get_each_context_53(ctx2, each_value_53, i);
+        for (i = 0; i < each_value_54.length; i += 1) {
+          const child_ctx = get_each_context_54(ctx2, each_value_54, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_53(child_ctx);
+            each_blocks_2[i] = create_each_block_54(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select0, null);
           }
@@ -8259,12 +8284,12 @@ function create_if_block_49(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_53.length;
+        each_blocks_2.length = each_value_54.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select0_value_value !== (select0_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && select0_value_value !== (select0_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "keyMode"
@@ -8272,7 +8297,7 @@ function create_if_block_49(ctx) {
         select_option(
           select0,
           /*winkeyValue*/
-          ctx2[108](
+          ctx2[114](
             /*activeSerial*/
             ctx2[0],
             "keyMode"
@@ -8280,18 +8305,18 @@ function create_if_block_49(ctx) {
         );
       }
       if (dirty[2] & /*winkeyUltimaticOptions*/
-      8192) {
-        each_value_52 = ensure_array_like(
+      65536) {
+        each_value_53 = ensure_array_like(
           /*winkeyUltimaticOptions*/
-          ctx2[75]
+          ctx2[78]
         );
         let i;
-        for (i = 0; i < each_value_52.length; i += 1) {
-          const child_ctx = get_each_context_52(ctx2, each_value_52, i);
+        for (i = 0; i < each_value_53.length; i += 1) {
+          const child_ctx = get_each_context_53(ctx2, each_value_53, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_52(child_ctx);
+            each_blocks_1[i] = create_each_block_53(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select1, null);
           }
@@ -8299,12 +8324,12 @@ function create_if_block_49(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_52.length;
+        each_blocks_1.length = each_value_53.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select1_value_value !== (select1_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && select1_value_value !== (select1_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "ultimaticMode"
@@ -8312,7 +8337,7 @@ function create_if_block_49(ctx) {
         select_option(
           select1,
           /*winkeyValue*/
-          ctx2[108](
+          ctx2[114](
             /*activeSerial*/
             ctx2[0],
             "ultimaticMode"
@@ -8321,8 +8346,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_value_value !== (input0_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && input0_value_value !== (input0_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "leadInTime"
@@ -8331,8 +8356,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_value_value !== (input1_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && input1_value_value !== (input1_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "tailTime"
@@ -8341,8 +8366,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input2_value_value !== (input2_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && input2_value_value !== (input2_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "hangTime"
@@ -8351,8 +8376,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input3_checked_value !== (input3_checked_value = !!/*winkeyValue*/
-      ctx2[108](
+      65536 && input3_checked_value !== (input3_checked_value = !!/*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "paddleSwap"
@@ -8361,8 +8386,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input4_checked_value !== (input4_checked_value = !!/*winkeyValue*/
-      ctx2[108](
+      65536 && input4_checked_value !== (input4_checked_value = !!/*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "autoSpace"
@@ -8371,8 +8396,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input5_checked_value !== (input5_checked_value = !!/*winkeyValue*/
-      ctx2[108](
+      65536 && input5_checked_value !== (input5_checked_value = !!/*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "ctSpacing"
@@ -8381,8 +8406,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input6_checked_value !== (input6_checked_value = !!/*winkeyValue*/
-      ctx2[108](
+      65536 && input6_checked_value !== (input6_checked_value = !!/*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "disablePaddleWatchdog"
@@ -8391,8 +8416,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input7_value_value !== (input7_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && input7_value_value !== (input7_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "minWpm"
@@ -8401,8 +8426,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input8_value_value !== (input8_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && input8_value_value !== (input8_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "wpmRange"
@@ -8411,8 +8436,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input9_value_value !== (input9_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && input9_value_value !== (input9_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "farnsWpm"
@@ -8421,8 +8446,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input10_value_value !== (input10_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && input10_value_value !== (input10_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "ditDahRatio"
@@ -8431,8 +8456,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input11_value_value !== (input11_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && input11_value_value !== (input11_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "weight"
@@ -8441,8 +8466,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input12_value_value !== (input12_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && input12_value_value !== (input12_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "1stExtension"
@@ -8451,8 +8476,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input13_value_value !== (input13_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && input13_value_value !== (input13_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "keyComp"
@@ -8461,8 +8486,8 @@ function create_if_block_49(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input14_value_value !== (input14_value_value = /*winkeyValue*/
-      ctx2[108](
+      65536 && input14_value_value !== (input14_value_value = /*winkeyValue*/
+      ctx2[114](
         /*activeSerial*/
         ctx2[0],
         "paddleSetpoint"
@@ -8470,18 +8495,18 @@ function create_if_block_49(ctx) {
         input14.value = input14_value_value;
       }
       if (dirty[2] & /*sideToneOptions*/
-      16384) {
-        each_value_51 = ensure_array_like(
+      131072) {
+        each_value_52 = ensure_array_like(
           /*sideToneOptions*/
-          ctx2[76]
+          ctx2[79]
         );
         let i;
-        for (i = 0; i < each_value_51.length; i += 1) {
-          const child_ctx = get_each_context_51(ctx2, each_value_51, i);
+        for (i = 0; i < each_value_52.length; i += 1) {
+          const child_ctx = get_each_context_52(ctx2, each_value_52, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_51(child_ctx);
+            each_blocks[i] = create_each_block_52(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select2, null);
           }
@@ -8489,12 +8514,12 @@ function create_if_block_49(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_51.length;
+        each_blocks.length = each_value_52.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select2_value_value !== (select2_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && select2_value_value !== (select2_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "sideTone"
@@ -8502,7 +8527,7 @@ function create_if_block_49(ctx) {
         select_option(
           select2,
           /*keyerParam*/
-          ctx2[105](
+          ctx2[111](
             /*activeSerial*/
             ctx2[0],
             "sideTone"
@@ -8517,7 +8542,7 @@ function create_if_block_49(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_50(ctx2);
+          if_block1 = create_if_block_51(ctx2);
           if_block1.c();
           if_block1.m(div57, null);
         }
@@ -8542,7 +8567,7 @@ function create_if_block_49(ctx) {
     }
   };
 }
-function create_if_block_48(ctx) {
+function create_if_block_49(ctx) {
   var _a, _b, _c;
   let section0;
   let div0;
@@ -8584,38 +8609,38 @@ function create_if_block_48(ctx) {
   let t21;
   let mounted;
   let dispose;
-  let each_value_50 = ensure_array_like(
+  let each_value_51 = ensure_array_like(
     /*displayBackgroundOptions*/
-    ctx[98](
+    ctx[104](
       /*activeKeyer*/
       ((_a = ctx[2]) == null ? void 0 : _a.type) ?? 0
     )
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_50.length; i += 1) {
-    each_blocks_2[i] = create_each_block_50(get_each_context_50(ctx, each_value_50, i));
+  for (let i = 0; i < each_value_51.length; i += 1) {
+    each_blocks_2[i] = create_each_block_51(get_each_context_51(ctx, each_value_51, i));
   }
-  let each_value_49 = ensure_array_like(
+  let each_value_50 = ensure_array_like(
     /*displayBackgroundOptions*/
-    ctx[98](
+    ctx[104](
       /*activeKeyer*/
       ((_b = ctx[2]) == null ? void 0 : _b.type) ?? 0
     )
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_49.length; i += 1) {
-    each_blocks_1[i] = create_each_block_49(get_each_context_49(ctx, each_value_49, i));
+  for (let i = 0; i < each_value_50.length; i += 1) {
+    each_blocks_1[i] = create_each_block_50(get_each_context_50(ctx, each_value_50, i));
   }
-  let each_value_47 = ensure_array_like(
+  let each_value_48 = ensure_array_like(
     /*displayEventOptions*/
-    ctx[99](
+    ctx[105](
       /*activeKeyer*/
       ((_c = ctx[2]) == null ? void 0 : _c.type) ?? 0
     )
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_47.length; i += 1) {
-    each_blocks[i] = create_each_block_47(get_each_context_47(ctx, each_value_47, i));
+  for (let i = 0; i < each_value_48.length; i += 1) {
+    each_blocks[i] = create_each_block_48(get_each_context_48(ctx, each_value_48, i));
   }
   return {
     c() {
@@ -8674,7 +8699,7 @@ function create_if_block_48(ctx) {
       attr(input0, "class", "input");
       attr(input0, "type", "number");
       input0.value = input0_value_value = /*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "pwmBlight"
@@ -8685,7 +8710,7 @@ function create_if_block_48(ctx) {
       attr(input1, "class", "input");
       attr(input1, "type", "number");
       input1.value = input1_value_value = /*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "pwmContrast"
@@ -8737,7 +8762,7 @@ function create_if_block_48(ctx) {
       select_option(
         select0,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           "dispBg0"
@@ -8757,7 +8782,7 @@ function create_if_block_48(ctx) {
       select_option(
         select1,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           "dispBg1"
@@ -8780,26 +8805,26 @@ function create_if_block_48(ctx) {
           listen(
             input0,
             "input",
-            /*input_handler_22*/
-            ctx[294]
+            /*input_handler_17*/
+            ctx[298]
           ),
           listen(
             input1,
             "input",
-            /*input_handler_23*/
-            ctx[295]
+            /*input_handler_18*/
+            ctx[299]
           ),
           listen(
             select0,
             "change",
             /*change_handler_94*/
-            ctx[296]
+            ctx[300]
           ),
           listen(
             select1,
             "change",
             /*change_handler_95*/
-            ctx[297]
+            ctx[301]
           )
         ];
         mounted = true;
@@ -8809,8 +8834,8 @@ function create_if_block_48(ctx) {
       var _a2, _b2, _c2;
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_value_value !== (input0_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && input0_value_value !== (input0_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "pwmBlight"
@@ -8819,8 +8844,8 @@ function create_if_block_48(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_value_value !== (input1_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && input1_value_value !== (input1_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "pwmContrast"
@@ -8829,21 +8854,21 @@ function create_if_block_48(ctx) {
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*displayBackgroundOptions*/
-      32) {
-        each_value_50 = ensure_array_like(
+      2048) {
+        each_value_51 = ensure_array_like(
           /*displayBackgroundOptions*/
-          ctx2[98](
+          ctx2[104](
             /*activeKeyer*/
             ((_a2 = ctx2[2]) == null ? void 0 : _a2.type) ?? 0
           )
         );
         let i;
-        for (i = 0; i < each_value_50.length; i += 1) {
-          const child_ctx = get_each_context_50(ctx2, each_value_50, i);
+        for (i = 0; i < each_value_51.length; i += 1) {
+          const child_ctx = get_each_context_51(ctx2, each_value_51, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_50(child_ctx);
+            each_blocks_2[i] = create_each_block_51(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select0, null);
           }
@@ -8851,12 +8876,12 @@ function create_if_block_48(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_50.length;
+        each_blocks_2.length = each_value_51.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select0_value_value !== (select0_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && select0_value_value !== (select0_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "dispBg0"
@@ -8864,7 +8889,7 @@ function create_if_block_48(ctx) {
         select_option(
           select0,
           /*keyerParam*/
-          ctx2[105](
+          ctx2[111](
             /*activeSerial*/
             ctx2[0],
             "dispBg0"
@@ -8873,21 +8898,21 @@ function create_if_block_48(ctx) {
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*displayBackgroundOptions*/
-      32) {
-        each_value_49 = ensure_array_like(
+      2048) {
+        each_value_50 = ensure_array_like(
           /*displayBackgroundOptions*/
-          ctx2[98](
+          ctx2[104](
             /*activeKeyer*/
             ((_b2 = ctx2[2]) == null ? void 0 : _b2.type) ?? 0
           )
         );
         let i;
-        for (i = 0; i < each_value_49.length; i += 1) {
-          const child_ctx = get_each_context_49(ctx2, each_value_49, i);
+        for (i = 0; i < each_value_50.length; i += 1) {
+          const child_ctx = get_each_context_50(ctx2, each_value_50, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_49(child_ctx);
+            each_blocks_1[i] = create_each_block_50(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select1, null);
           }
@@ -8895,12 +8920,12 @@ function create_if_block_48(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_49.length;
+        each_blocks_1.length = each_value_50.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select1_value_value !== (select1_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && select1_value_value !== (select1_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "dispBg1"
@@ -8908,7 +8933,7 @@ function create_if_block_48(ctx) {
         select_option(
           select1,
           /*keyerParam*/
-          ctx2[105](
+          ctx2[111](
             /*activeSerial*/
             ctx2[0],
             "dispBg1"
@@ -8917,22 +8942,22 @@ function create_if_block_48(ctx) {
       }
       if (dirty[0] & /*activeSerial, activeKeyer*/
       5 | dirty[2] & /*displayLineOptions*/
-      32768 | dirty[3] & /*keyerParam, displayEventOptions, updateKeyerParam*/
-      12352) {
-        each_value_47 = ensure_array_like(
+      262144 | dirty[3] & /*keyerParam, displayEventOptions, updateKeyerParam*/
+      790528) {
+        each_value_48 = ensure_array_like(
           /*displayEventOptions*/
-          ctx2[99](
+          ctx2[105](
             /*activeKeyer*/
             ((_c2 = ctx2[2]) == null ? void 0 : _c2.type) ?? 0
           )
         );
         let i;
-        for (i = 0; i < each_value_47.length; i += 1) {
-          const child_ctx = get_each_context_47(ctx2, each_value_47, i);
+        for (i = 0; i < each_value_48.length; i += 1) {
+          const child_ctx = get_each_context_48(ctx2, each_value_48, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_47(child_ctx);
+            each_blocks[i] = create_each_block_48(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(div19, null);
           }
@@ -8940,7 +8965,7 @@ function create_if_block_48(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_47.length;
+        each_blocks.length = each_value_48.length;
       }
     },
     d(detaching) {
@@ -8957,24 +8982,24 @@ function create_if_block_48(ctx) {
     }
   };
 }
-function create_if_block_44(ctx) {
+function create_if_block_45(ctx) {
   let if_block_anchor;
-  function select_block_type_3(ctx2, dirty) {
+  function select_block_type_5(ctx2, dirty) {
     if (
       /*isAudioMk2*/
-      ctx2[55]
-    ) return create_if_block_45;
-    if (
-      /*isAudioMk1*/
-      ctx2[56]
+      ctx2[58]
     ) return create_if_block_46;
     if (
-      /*isAudioMk2R*/
-      ctx2[54]
+      /*isAudioMk1*/
+      ctx2[59]
     ) return create_if_block_47;
-    return create_else_block_2;
+    if (
+      /*isAudioMk2R*/
+      ctx2[57]
+    ) return create_if_block_48;
+    return create_else_block_4;
   }
-  let current_block_type = select_block_type_3(ctx);
+  let current_block_type = select_block_type_5(ctx);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -8986,7 +9011,7 @@ function create_if_block_44(ctx) {
       insert(target, if_block_anchor, anchor);
     },
     p(ctx2, dirty) {
-      if (current_block_type === (current_block_type = select_block_type_3(ctx2)) && if_block) {
+      if (current_block_type === (current_block_type = select_block_type_5(ctx2)) && if_block) {
         if_block.p(ctx2, dirty);
       } else {
         if_block.d(1);
@@ -9005,7 +9030,7 @@ function create_if_block_44(ctx) {
     }
   };
 }
-function create_if_block_29(ctx) {
+function create_if_block_30(ctx) {
   var _a, _b, _c;
   let section0;
   let div0;
@@ -9020,7 +9045,7 @@ function create_if_block_29(ctx) {
   let t4;
   let show_if_1 = (
     /*pttOptionsFor*/
-    ctx[100](
+    ctx[106](
       /*activeKeyer*/
       ((_a = ctx[2]) == null ? void 0 : _a.type) ?? 0,
       "voice"
@@ -9029,7 +9054,7 @@ function create_if_block_29(ctx) {
   let t5;
   let show_if = (
     /*pttOptionsFor*/
-    ctx[100](
+    ctx[106](
       /*activeKeyer*/
       ((_b = ctx[2]) == null ? void 0 : _b.type) ?? 0,
       "digital"
@@ -9089,44 +9114,44 @@ function create_if_block_29(ctx) {
   let input5_checked_value;
   let mounted;
   let dispose;
-  let each_value_26 = ensure_array_like(
+  let each_value_27 = ensure_array_like(
     /*pttOptionsFor*/
-    ctx[100](
+    ctx[106](
       /*activeKeyer*/
       ((_c = ctx[2]) == null ? void 0 : _c.type) ?? 0,
       "cw"
     )
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_26.length; i += 1) {
-    each_blocks[i] = create_each_block_26(get_each_context_26(ctx, each_value_26, i));
+  for (let i = 0; i < each_value_27.length; i += 1) {
+    each_blocks[i] = create_each_block_27(get_each_context_27(ctx, each_value_27, i));
   }
-  let if_block0 = show_if_1 && create_if_block_43(ctx);
-  let if_block1 = show_if && create_if_block_42(ctx);
+  let if_block0 = show_if_1 && create_if_block_44(ctx);
+  let if_block1 = show_if && create_if_block_43(ctx);
   let if_block2 = (
     /*hasLnaPaPtt*/
-    ctx[60] && create_if_block_41(ctx)
+    ctx[63] && create_if_block_42(ctx)
   );
   let if_block3 = (
     /*hasLnaPaPttTail*/
-    ctx[59] && create_if_block_40(ctx)
+    ctx[62] && create_if_block_41(ctx)
   );
   let if_block4 = (
     /*hasCwInVoice*/
-    ctx[57] && create_if_block_39(ctx)
+    ctx[60] && create_if_block_40(ctx)
   );
   let if_block5 = (
     /*hasSoundcardPtt*/
-    ctx[58] && create_if_block_38(ctx)
+    ctx[61] && create_if_block_39(ctx)
   );
   let if_block6 = (
     /*pttStatus*/
     ctx[10][`${/*activeSerial*/
-    ctx[0]}:r1`] && create_if_block_37(ctx)
+    ctx[0]}:r1`] && create_if_block_38(ctx)
   );
   let if_block7 = (
     /*hasR2*/
-    ctx[3] && create_if_block_30(ctx)
+    ctx[3] && create_if_block_31(ctx)
   );
   return {
     c() {
@@ -9216,7 +9241,7 @@ function create_if_block_29(ctx) {
       attr(input0, "class", "input");
       attr(input0, "type", "number");
       input0.value = input0_value_value = /*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1PttDelay"
@@ -9229,7 +9254,7 @@ function create_if_block_29(ctx) {
       attr(div9, "class", "label");
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "muteCompCw"
@@ -9239,7 +9264,7 @@ function create_if_block_29(ctx) {
       attr(div12, "class", "label");
       attr(input2, "type", "checkbox");
       input2.checked = input2_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "muteCompFsk"
@@ -9249,7 +9274,7 @@ function create_if_block_29(ctx) {
       attr(div15, "class", "label");
       attr(input3, "type", "checkbox");
       input3.checked = input3_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "restorePtt"
@@ -9259,7 +9284,7 @@ function create_if_block_29(ctx) {
       attr(div18, "class", "label");
       attr(input4, "type", "checkbox");
       input4.checked = input4_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "restoreCompCw"
@@ -9269,7 +9294,7 @@ function create_if_block_29(ctx) {
       attr(div21, "class", "label");
       attr(input5, "type", "checkbox");
       input5.checked = input5_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "restoreCompFsk"
@@ -9362,43 +9387,43 @@ function create_if_block_29(ctx) {
             select,
             "change",
             /*change_handler_44*/
-            ctx[236]
+            ctx[240]
           ),
           listen(
             input0,
             "input",
-            /*input_handler_16*/
-            ctx[243]
+            /*input_handler_11*/
+            ctx[247]
           ),
           listen(
             input1,
             "change",
             /*change_handler_58*/
-            ctx[256]
+            ctx[260]
           ),
           listen(
             input2,
             "change",
             /*change_handler_59*/
-            ctx[257]
+            ctx[261]
           ),
           listen(
             input3,
             "change",
             /*change_handler_60*/
-            ctx[258]
+            ctx[262]
           ),
           listen(
             input4,
             "change",
             /*change_handler_61*/
-            ctx[259]
+            ctx[263]
           ),
           listen(
             input5,
             "change",
             /*change_handler_62*/
-            ctx[260]
+            ctx[264]
           )
         ];
         mounted = true;
@@ -9408,23 +9433,23 @@ function create_if_block_29(ctx) {
       var _a2, _b2, _c2, _d, _e;
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*pttOptionLabels*/
-      131072 | dirty[3] & /*pttOptionsFor*/
-      128) {
-        each_value_26 = ensure_array_like(
+      1048576 | dirty[3] & /*pttOptionsFor*/
+      8192) {
+        each_value_27 = ensure_array_like(
           /*pttOptionsFor*/
-          ctx2[100](
+          ctx2[106](
             /*activeKeyer*/
             ((_a2 = ctx2[2]) == null ? void 0 : _a2.type) ?? 0,
             "cw"
           )
         );
         let i;
-        for (i = 0; i < each_value_26.length; i += 1) {
-          const child_ctx = get_each_context_26(ctx2, each_value_26, i);
+        for (i = 0; i < each_value_27.length; i += 1) {
+          const child_ctx = get_each_context_27(ctx2, each_value_27, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_26(child_ctx);
+            each_blocks[i] = create_each_block_27(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -9432,12 +9457,12 @@ function create_if_block_29(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_26.length;
+        each_blocks.length = each_value_27.length;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[1] & /*activePttR1*/
       64 | dirty[3] & /*pttOptionsFor*/
-      128 && select_value_value !== (select_value_value = /*activePttR1*/
+      8192 && select_value_value !== (select_value_value = /*activePttR1*/
       (_b2 = ctx2[37]) == null ? void 0 : _b2.cw)) {
         select_option(
           select,
@@ -9447,7 +9472,7 @@ function create_if_block_29(ctx) {
       }
       if (dirty[0] & /*activeKeyer*/
       4) show_if_1 = /*pttOptionsFor*/
-      ctx2[100](
+      ctx2[106](
         /*activeKeyer*/
         ((_d = ctx2[2]) == null ? void 0 : _d.type) ?? 0,
         "voice"
@@ -9456,7 +9481,7 @@ function create_if_block_29(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_43(ctx2);
+          if_block0 = create_if_block_44(ctx2);
           if_block0.c();
           if_block0.m(div7, t5);
         }
@@ -9466,7 +9491,7 @@ function create_if_block_29(ctx) {
       }
       if (dirty[0] & /*activeKeyer*/
       4) show_if = /*pttOptionsFor*/
-      ctx2[100](
+      ctx2[106](
         /*activeKeyer*/
         ((_e = ctx2[2]) == null ? void 0 : _e.type) ?? 0,
         "digital"
@@ -9475,7 +9500,7 @@ function create_if_block_29(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_42(ctx2);
+          if_block1 = create_if_block_43(ctx2);
           if_block1.c();
           if_block1.m(div7, t6);
         }
@@ -9485,12 +9510,12 @@ function create_if_block_29(ctx) {
       }
       if (
         /*hasLnaPaPtt*/
-        ctx2[60]
+        ctx2[63]
       ) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_41(ctx2);
+          if_block2 = create_if_block_42(ctx2);
           if_block2.c();
           if_block2.m(div7, t7);
         }
@@ -9500,12 +9525,12 @@ function create_if_block_29(ctx) {
       }
       if (
         /*hasLnaPaPttTail*/
-        ctx2[59]
+        ctx2[62]
       ) {
         if (if_block3) {
           if_block3.p(ctx2, dirty);
         } else {
-          if_block3 = create_if_block_40(ctx2);
+          if_block3 = create_if_block_41(ctx2);
           if_block3.c();
           if_block3.m(div7, t8);
         }
@@ -9515,8 +9540,8 @@ function create_if_block_29(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_value_value !== (input0_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && input0_value_value !== (input0_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1PttDelay"
@@ -9525,12 +9550,12 @@ function create_if_block_29(ctx) {
       }
       if (
         /*hasCwInVoice*/
-        ctx2[57]
+        ctx2[60]
       ) {
         if (if_block4) {
           if_block4.p(ctx2, dirty);
         } else {
-          if_block4 = create_if_block_39(ctx2);
+          if_block4 = create_if_block_40(ctx2);
           if_block4.c();
           if_block4.m(div7, t12);
         }
@@ -9540,12 +9565,12 @@ function create_if_block_29(ctx) {
       }
       if (
         /*hasSoundcardPtt*/
-        ctx2[58]
+        ctx2[61]
       ) {
         if (if_block5) {
           if_block5.p(ctx2, dirty);
         } else {
-          if_block5 = create_if_block_38(ctx2);
+          if_block5 = create_if_block_39(ctx2);
           if_block5.c();
           if_block5.m(div7, null);
         }
@@ -9561,7 +9586,7 @@ function create_if_block_29(ctx) {
         if (if_block6) {
           if_block6.p(ctx2, dirty);
         } else {
-          if_block6 = create_if_block_37(ctx2);
+          if_block6 = create_if_block_38(ctx2);
           if_block6.c();
           if_block6.m(section0, null);
         }
@@ -9576,7 +9601,7 @@ function create_if_block_29(ctx) {
         if (if_block7) {
           if_block7.p(ctx2, dirty);
         } else {
-          if_block7 = create_if_block_30(ctx2);
+          if_block7 = create_if_block_31(ctx2);
           if_block7.c();
           if_block7.m(t15.parentNode, t15);
         }
@@ -9586,8 +9611,8 @@ function create_if_block_29(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "muteCompCw"
@@ -9596,8 +9621,8 @@ function create_if_block_29(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input2_checked_value !== (input2_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input2_checked_value !== (input2_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "muteCompFsk"
@@ -9606,8 +9631,8 @@ function create_if_block_29(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input3_checked_value !== (input3_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input3_checked_value !== (input3_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "restorePtt"
@@ -9616,8 +9641,8 @@ function create_if_block_29(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input4_checked_value !== (input4_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input4_checked_value !== (input4_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "restoreCompCw"
@@ -9626,8 +9651,8 @@ function create_if_block_29(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input5_checked_value !== (input5_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input5_checked_value !== (input5_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "restoreCompFsk"
@@ -9656,21 +9681,21 @@ function create_if_block_29(ctx) {
     }
   };
 }
-function create_if_block_21(ctx) {
+function create_if_block_22(ctx) {
   let t0;
   let t1;
   let if_block2_anchor;
   let if_block0 = (
     /*hasFsk1*/
-    ctx[5] && create_if_block_26(ctx)
+    ctx[5] && create_if_block_27(ctx)
   );
   let if_block1 = (
     /*hasFsk2*/
-    ctx[4] && create_if_block_23(ctx)
+    ctx[4] && create_if_block_24(ctx)
   );
   let if_block2 = !/*hasFsk1*/
   ctx[5] && !/*hasFsk2*/
-  ctx[4] && create_if_block_22();
+  ctx[4] && create_if_block_23();
   return {
     c() {
       if (if_block0) if_block0.c();
@@ -9696,7 +9721,7 @@ function create_if_block_21(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_26(ctx2);
+          if_block0 = create_if_block_27(ctx2);
           if_block0.c();
           if_block0.m(t0.parentNode, t0);
         }
@@ -9711,7 +9736,7 @@ function create_if_block_21(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_23(ctx2);
+          if_block1 = create_if_block_24(ctx2);
           if_block1.c();
           if_block1.m(t1.parentNode, t1);
         }
@@ -9724,7 +9749,7 @@ function create_if_block_21(ctx) {
       ctx2[4]) {
         if (if_block2) ;
         else {
-          if_block2 = create_if_block_22();
+          if_block2 = create_if_block_23();
           if_block2.c();
           if_block2.m(if_block2_anchor.parentNode, if_block2_anchor);
         }
@@ -9745,16 +9770,16 @@ function create_if_block_21(ctx) {
     }
   };
 }
-function create_if_block_18(ctx) {
+function create_if_block_19(ctx) {
   let if_block_anchor;
-  function select_block_type_2(ctx2, dirty) {
+  function select_block_type_4(ctx2, dirty) {
     if (
       /*hasAux*/
       ctx2[6]
-    ) return create_if_block_19;
-    return create_else_block_1;
+    ) return create_if_block_20;
+    return create_else_block_3;
   }
-  let current_block_type = select_block_type_2(ctx);
+  let current_block_type = select_block_type_4(ctx);
   let if_block = current_block_type(ctx);
   return {
     c() {
@@ -9766,7 +9791,7 @@ function create_if_block_18(ctx) {
       insert(target, if_block_anchor, anchor);
     },
     p(ctx2, dirty) {
-      if (current_block_type === (current_block_type = select_block_type_2(ctx2)) && if_block) {
+      if (current_block_type === (current_block_type = select_block_type_4(ctx2)) && if_block) {
         if_block.p(ctx2, dirty);
       } else {
         if_block.d(1);
@@ -9786,10 +9811,9 @@ function create_if_block_18(ctx) {
   };
 }
 function create_if_block_7(ctx) {
-  var _a, _b;
   let show_if = (
     /*hasFlag*/
-    ctx[86](
+    ctx[89](
       /*activeSerial*/
       ctx[0],
       "HAS_R1"
@@ -9800,95 +9824,65 @@ function create_if_block_7(ctx) {
   let section;
   let div0;
   let t3;
-  let div7;
+  let div10;
   let div3;
   let div1;
   let t5;
   let div2;
-  let input0;
-  let input0_checked_value;
+  let input;
+  let input_checked_value;
   let t6;
   let div6;
   let div4;
   let t8;
   let div5;
   let select;
-  let option;
+  let option0;
+  let option1;
   let select_value_value;
-  let t10;
-  let div30;
-  let div8;
-  let t12;
-  let div11;
+  let t11;
   let div9;
+  let div7;
+  let t12;
+  let div8;
+  let t13;
+  let each_blocks = [];
+  let each_1_lookup = /* @__PURE__ */ new Map();
   let t14;
-  let div10;
-  let input1;
-  let input1_checked_value;
-  let t15;
-  let div14;
-  let div12;
-  let t17;
-  let div13;
-  let input2;
-  let input2_value_value;
-  let t18;
-  let div17;
-  let div15;
-  let t20;
-  let div16;
-  let input3;
-  let input3_value_value;
-  let t21;
-  let div20;
-  let div18;
-  let t23;
-  let div19;
-  let input4;
-  let input4_value_value;
-  let t24;
-  let div23;
-  let div21;
-  let t26;
-  let div22;
-  let input5;
-  let input5_value_value;
-  let t27;
-  let div26;
-  let div24;
-  let t29;
-  let div25;
-  let input6;
-  let input6_value_value;
-  let t30;
-  let div29;
-  let div27;
-  let t32;
-  let div28;
-  let input7;
-  let input7_checked_value;
-  let t33;
-  let t34;
-  let t35;
-  let div31;
+  let div11;
   let button;
-  let t37;
+  let t16;
   let mounted;
   let dispose;
-  let if_block0 = show_if && create_if_block_15(ctx);
+  let if_block0 = show_if && create_if_block_16(ctx);
   let if_block1 = (
     /*hasR2*/
-    ctx[3] && create_if_block_12(ctx)
+    ctx[3] && create_if_block_13(ctx)
   );
-  let if_block2 = (
-    /*activeRigModeSync*/
-    ((_b = (_a = ctx[38]) == null ? void 0 : _a.r1) == null ? void 0 : _b.auto_start) && create_if_block_11(ctx)
+  function select_block_type_2(ctx2, dirty) {
+    var _a;
+    if (
+      /*activeRigModeSync*/
+      ((_a = ctx2[41]) == null ? void 0 : _a.backend) === "native"
+    ) return create_if_block_12;
+    return create_else_block_2;
+  }
+  let current_block_type = select_block_type_2(ctx);
+  let if_block2 = current_block_type(ctx);
+  let each_value_2 = ensure_array_like(
+    /*rigRadios*/
+    ctx[40]
   );
+  const get_key = (ctx2) => (
+    /*rk*/
+    ctx2[503]
+  );
+  for (let i = 0; i < each_value_2.length; i += 1) {
+    let child_ctx = get_each_context_2(ctx, each_value_2, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_2(key, child_ctx));
+  }
   let if_block3 = (
-    /*hasR2*/
-    ctx[3] && create_if_block_9(ctx)
-  );
-  let if_block4 = (
     /*rigModeSyncStatus*/
     ctx[9][
       /*activeSerial*/
@@ -9897,22 +9891,22 @@ function create_if_block_7(ctx) {
   );
   return {
     c() {
-      var _a2, _b2, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o;
+      var _a;
       if (if_block0) if_block0.c();
       t0 = space();
       if (if_block1) if_block1.c();
       t1 = space();
       section = element("section");
       div0 = element("div");
-      div0.textContent = "RIG Mode Sync (rigctld)";
+      div0.textContent = "RIG Mode Sync";
       t3 = space();
-      div7 = element("div");
+      div10 = element("div");
       div3 = element("div");
       div1 = element("div");
       div1.textContent = "Enabled:";
       t5 = space();
       div2 = element("div");
-      input0 = element("input");
+      input = element("input");
       t6 = space();
       div6 = element("div");
       div4 = element("div");
@@ -9920,146 +9914,52 @@ function create_if_block_7(ctx) {
       t8 = space();
       div5 = element("div");
       select = element("select");
-      option = element("option");
-      option.textContent = "rigctld";
-      t10 = space();
-      div30 = element("div");
-      div8 = element("div");
-      div8.textContent = "Radio 1 Endpoint";
-      t12 = space();
-      div11 = element("div");
+      option0 = element("option");
+      option0.textContent = "native (decode CAT traffic)";
+      option1 = element("option");
+      option1.textContent = "rigctld";
+      t11 = space();
       div9 = element("div");
-      div9.textContent = "Enabled:";
+      div7 = element("div");
+      t12 = space();
+      div8 = element("div");
+      if_block2.c();
+      t13 = space();
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
       t14 = space();
-      div10 = element("div");
-      input1 = element("input");
-      t15 = space();
-      div14 = element("div");
-      div12 = element("div");
-      div12.textContent = "Host:";
-      t17 = space();
-      div13 = element("div");
-      input2 = element("input");
-      t18 = space();
-      div17 = element("div");
-      div15 = element("div");
-      div15.textContent = "Port:";
-      t20 = space();
-      div16 = element("div");
-      input3 = element("input");
-      t21 = space();
-      div20 = element("div");
-      div18 = element("div");
-      div18.textContent = "Connect Timeout (ms):";
-      t23 = space();
-      div19 = element("div");
-      input4 = element("input");
-      t24 = space();
-      div23 = element("div");
-      div21 = element("div");
-      div21.textContent = "I/O Timeout (ms):";
-      t26 = space();
-      div22 = element("div");
-      input5 = element("input");
-      t27 = space();
-      div26 = element("div");
-      div24 = element("div");
-      div24.textContent = "Poll Interval (ms):";
-      t29 = space();
-      div25 = element("div");
-      input6 = element("input");
-      t30 = space();
-      div29 = element("div");
-      div27 = element("div");
-      div27.textContent = "Auto-start rigctld:";
-      t32 = space();
-      div28 = element("div");
-      input7 = element("input");
-      t33 = space();
-      if (if_block2) if_block2.c();
-      t34 = space();
-      if (if_block3) if_block3.c();
-      t35 = space();
-      div31 = element("div");
+      div11 = element("div");
       button = element("button");
       button.textContent = "Apply";
-      t37 = space();
-      if (if_block4) if_block4.c();
+      t16 = space();
+      if (if_block3) if_block3.c();
       attr(div0, "class", "section-title");
       attr(div1, "class", "label");
-      attr(input0, "type", "checkbox");
-      input0.checked = input0_checked_value = !!/*activeRigModeSync*/
-      ((_a2 = ctx[38]) == null ? void 0 : _a2.enabled);
+      attr(input, "type", "checkbox");
+      input.checked = input_checked_value = !!/*activeRigModeSync*/
+      ((_a = ctx[41]) == null ? void 0 : _a.enabled);
       attr(div2, "class", "value");
       attr(div3, "class", "row");
       attr(div4, "class", "label");
-      option.__value = "rigctld";
-      set_input_value(option, option.__value);
+      option0.__value = "native";
+      set_input_value(option0, option0.__value);
+      option1.__value = "rigctld";
+      set_input_value(option1, option1.__value);
       attr(select, "class", "select");
       attr(div5, "class", "value");
       attr(div6, "class", "row");
-      attr(div7, "class", "panel");
-      attr(div8, "class", "section-subtitle");
-      attr(div9, "class", "label");
-      attr(input1, "type", "checkbox");
-      input1.checked = input1_checked_value = !!/*activeRigModeSync*/
-      ((_c = (_b2 = ctx[38]) == null ? void 0 : _b2.r1) == null ? void 0 : _c.enabled);
-      attr(div10, "class", "value");
-      attr(div11, "class", "row");
-      attr(div12, "class", "label");
-      attr(input2, "class", "input");
-      attr(input2, "type", "text");
-      input2.value = input2_value_value = /*activeRigModeSync*/
-      ((_e = (_d = ctx[38]) == null ? void 0 : _d.r1) == null ? void 0 : _e.host) ?? "127.0.0.1";
-      attr(div13, "class", "value");
-      attr(div14, "class", "row");
-      attr(div15, "class", "label");
-      attr(input3, "class", "input");
-      attr(input3, "type", "number");
-      attr(input3, "min", "1");
-      input3.value = input3_value_value = /*activeRigModeSync*/
-      ((_g = (_f = ctx[38]) == null ? void 0 : _f.r1) == null ? void 0 : _g.port) ?? 4532;
-      attr(div16, "class", "value");
-      attr(div17, "class", "row");
-      attr(div18, "class", "label");
-      attr(input4, "class", "input");
-      attr(input4, "type", "number");
-      attr(input4, "min", "100");
-      input4.value = input4_value_value = /*activeRigModeSync*/
-      ((_i = (_h = ctx[38]) == null ? void 0 : _h.r1) == null ? void 0 : _i.connect_timeout_ms) ?? 1500;
-      attr(div19, "class", "value");
-      attr(div20, "class", "row");
-      attr(div21, "class", "label");
-      attr(input5, "class", "input");
-      attr(input5, "type", "number");
-      attr(input5, "min", "100");
-      input5.value = input5_value_value = /*activeRigModeSync*/
-      ((_k = (_j = ctx[38]) == null ? void 0 : _j.r1) == null ? void 0 : _k.io_timeout_ms) ?? 1500;
-      attr(div22, "class", "value");
-      attr(div23, "class", "row");
-      attr(div24, "class", "label");
-      attr(input6, "class", "input");
-      attr(input6, "type", "number");
-      attr(input6, "min", "100");
-      input6.value = input6_value_value = /*activeRigModeSync*/
-      ((_m = (_l = ctx[38]) == null ? void 0 : _l.r1) == null ? void 0 : _m.poll_ms) ?? 500;
-      attr(div25, "class", "value");
-      attr(div26, "class", "row");
-      attr(div27, "class", "label");
-      attr(input7, "type", "checkbox");
-      input7.checked = input7_checked_value = !!/*activeRigModeSync*/
-      ((_o = (_n = ctx[38]) == null ? void 0 : _n.r1) == null ? void 0 : _o.auto_start);
-      attr(div28, "class", "value");
-      attr(div29, "class", "row");
-      attr(div30, "class", "panel");
-      set_style(div30, "margin-top", "12px");
+      attr(div7, "class", "label");
+      attr(div8, "class", "value placeholder");
+      attr(div9, "class", "row");
+      attr(div10, "class", "panel");
       attr(button, "class", "btn");
       attr(button, "type", "button");
-      attr(div31, "class", "button-row");
+      attr(div11, "class", "button-row");
       attr(section, "class", "section");
     },
     m(target, anchor) {
-      var _a2;
+      var _a;
       if (if_block0) if_block0.m(target, anchor);
       insert(target, t0, anchor);
       if (if_block1) if_block1.m(target, anchor);
@@ -10067,149 +9967,71 @@ function create_if_block_7(ctx) {
       insert(target, section, anchor);
       append(section, div0);
       append(section, t3);
-      append(section, div7);
-      append(div7, div3);
+      append(section, div10);
+      append(div10, div3);
       append(div3, div1);
       append(div3, t5);
       append(div3, div2);
-      append(div2, input0);
-      append(div7, t6);
-      append(div7, div6);
+      append(div2, input);
+      append(div10, t6);
+      append(div10, div6);
       append(div6, div4);
       append(div6, t8);
       append(div6, div5);
       append(div5, select);
-      append(select, option);
+      append(select, option0);
+      append(select, option1);
       select_option(
         select,
         /*activeRigModeSync*/
-        ((_a2 = ctx[38]) == null ? void 0 : _a2.backend) || "rigctld"
+        ((_a = ctx[41]) == null ? void 0 : _a.backend) || "rigctld"
       );
-      append(section, t10);
-      append(section, div30);
-      append(div30, div8);
-      append(div30, t12);
-      append(div30, div11);
-      append(div11, div9);
-      append(div11, t14);
-      append(div11, div10);
-      append(div10, input1);
-      append(div30, t15);
-      append(div30, div14);
-      append(div14, div12);
-      append(div14, t17);
-      append(div14, div13);
-      append(div13, input2);
-      append(div30, t18);
-      append(div30, div17);
-      append(div17, div15);
-      append(div17, t20);
-      append(div17, div16);
-      append(div16, input3);
-      append(div30, t21);
-      append(div30, div20);
-      append(div20, div18);
-      append(div20, t23);
-      append(div20, div19);
-      append(div19, input4);
-      append(div30, t24);
-      append(div30, div23);
-      append(div23, div21);
-      append(div23, t26);
-      append(div23, div22);
-      append(div22, input5);
-      append(div30, t27);
-      append(div30, div26);
-      append(div26, div24);
-      append(div26, t29);
-      append(div26, div25);
-      append(div25, input6);
-      append(div30, t30);
-      append(div30, div29);
-      append(div29, div27);
-      append(div29, t32);
-      append(div29, div28);
-      append(div28, input7);
-      append(div30, t33);
-      if (if_block2) if_block2.m(div30, null);
-      append(section, t34);
+      append(div10, t11);
+      append(div10, div9);
+      append(div9, div7);
+      append(div9, t12);
+      append(div9, div8);
+      if_block2.m(div8, null);
+      append(section, t13);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(section, null);
+        }
+      }
+      append(section, t14);
+      append(section, div11);
+      append(div11, button);
+      append(section, t16);
       if (if_block3) if_block3.m(section, null);
-      append(section, t35);
-      append(section, div31);
-      append(div31, button);
-      append(section, t37);
-      if (if_block4) if_block4.m(section, null);
       if (!mounted) {
         dispose = [
           listen(
-            input0,
+            input,
             "change",
             /*change_handler_22*/
-            ctx[198]
+            ctx[206]
           ),
           listen(
             select,
             "change",
             /*change_handler_23*/
-            ctx[199]
-          ),
-          listen(
-            input1,
-            "change",
-            /*change_handler_24*/
-            ctx[200]
-          ),
-          listen(
-            input2,
-            "input",
-            /*input_handler_2*/
-            ctx[201]
-          ),
-          listen(
-            input3,
-            "input",
-            /*input_handler_3*/
-            ctx[202]
-          ),
-          listen(
-            input4,
-            "input",
-            /*input_handler_4*/
-            ctx[203]
-          ),
-          listen(
-            input5,
-            "input",
-            /*input_handler_5*/
-            ctx[204]
-          ),
-          listen(
-            input6,
-            "input",
-            /*input_handler_6*/
-            ctx[205]
-          ),
-          listen(
-            input7,
-            "change",
-            /*change_handler_25*/
-            ctx[206]
+            ctx[207]
           ),
           listen(
             button,
             "click",
-            /*click_handler_2*/
-            ctx[216]
+            /*click_handler_3*/
+            ctx[220]
           )
         ];
         mounted = true;
       }
     },
     p(ctx2, dirty) {
-      var _a2, _b2, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s;
+      var _a, _b, _c;
       if (dirty[0] & /*activeSerial*/
       1) show_if = /*hasFlag*/
-      ctx2[86](
+      ctx2[89](
         /*activeSerial*/
         ctx2[0],
         "HAS_R1"
@@ -10218,7 +10040,7 @@ function create_if_block_7(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_15(ctx2);
+          if_block0 = create_if_block_16(ctx2);
           if_block0.c();
           if_block0.m(t0.parentNode, t0);
         }
@@ -10233,7 +10055,7 @@ function create_if_block_7(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_12(ctx2);
+          if_block1 = create_if_block_13(ctx2);
           if_block1.c();
           if_block1.m(t1.parentNode, t1);
         }
@@ -10242,83 +10064,37 @@ function create_if_block_7(ctx) {
         if_block1 = null;
       }
       if (dirty[1] & /*activeRigModeSync*/
-      128 && input0_checked_value !== (input0_checked_value = !!/*activeRigModeSync*/
-      ((_a2 = ctx2[38]) == null ? void 0 : _a2.enabled))) {
-        input0.checked = input0_checked_value;
+      1024 && input_checked_value !== (input_checked_value = !!/*activeRigModeSync*/
+      ((_a = ctx2[41]) == null ? void 0 : _a.enabled))) {
+        input.checked = input_checked_value;
       }
       if (dirty[1] & /*activeRigModeSync*/
-      128 && select_value_value !== (select_value_value = /*activeRigModeSync*/
-      ((_b2 = ctx2[38]) == null ? void 0 : _b2.backend) || "rigctld")) {
+      1024 && select_value_value !== (select_value_value = /*activeRigModeSync*/
+      ((_b = ctx2[41]) == null ? void 0 : _b.backend) || "rigctld")) {
         select_option(
           select,
           /*activeRigModeSync*/
-          ((_c = ctx2[38]) == null ? void 0 : _c.backend) || "rigctld"
+          ((_c = ctx2[41]) == null ? void 0 : _c.backend) || "rigctld"
         );
       }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input1_checked_value !== (input1_checked_value = !!/*activeRigModeSync*/
-      ((_e = (_d = ctx2[38]) == null ? void 0 : _d.r1) == null ? void 0 : _e.enabled))) {
-        input1.checked = input1_checked_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input2_value_value !== (input2_value_value = /*activeRigModeSync*/
-      ((_g = (_f = ctx2[38]) == null ? void 0 : _f.r1) == null ? void 0 : _g.host) ?? "127.0.0.1") && input2.value !== input2_value_value) {
-        input2.value = input2_value_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input3_value_value !== (input3_value_value = /*activeRigModeSync*/
-      ((_i = (_h = ctx2[38]) == null ? void 0 : _h.r1) == null ? void 0 : _i.port) ?? 4532) && input3.value !== input3_value_value) {
-        input3.value = input3_value_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input4_value_value !== (input4_value_value = /*activeRigModeSync*/
-      ((_k = (_j = ctx2[38]) == null ? void 0 : _j.r1) == null ? void 0 : _k.connect_timeout_ms) ?? 1500) && input4.value !== input4_value_value) {
-        input4.value = input4_value_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input5_value_value !== (input5_value_value = /*activeRigModeSync*/
-      ((_m = (_l = ctx2[38]) == null ? void 0 : _l.r1) == null ? void 0 : _m.io_timeout_ms) ?? 1500) && input5.value !== input5_value_value) {
-        input5.value = input5_value_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input6_value_value !== (input6_value_value = /*activeRigModeSync*/
-      ((_o = (_n = ctx2[38]) == null ? void 0 : _n.r1) == null ? void 0 : _o.poll_ms) ?? 500) && input6.value !== input6_value_value) {
-        input6.value = input6_value_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input7_checked_value !== (input7_checked_value = !!/*activeRigModeSync*/
-      ((_q = (_p = ctx2[38]) == null ? void 0 : _p.r1) == null ? void 0 : _q.auto_start))) {
-        input7.checked = input7_checked_value;
-      }
-      if (
-        /*activeRigModeSync*/
-        (_s = (_r = ctx2[38]) == null ? void 0 : _r.r1) == null ? void 0 : _s.auto_start
-      ) {
-        if (if_block2) {
-          if_block2.p(ctx2, dirty);
-        } else {
-          if_block2 = create_if_block_11(ctx2);
-          if_block2.c();
-          if_block2.m(div30, null);
-        }
-      } else if (if_block2) {
+      if (current_block_type !== (current_block_type = select_block_type_2(ctx2))) {
         if_block2.d(1);
-        if_block2 = null;
-      }
-      if (
-        /*hasR2*/
-        ctx2[3]
-      ) {
-        if (if_block3) {
-          if_block3.p(ctx2, dirty);
-        } else {
-          if_block3 = create_if_block_9(ctx2);
-          if_block3.c();
-          if_block3.m(section, t35);
+        if_block2 = current_block_type(ctx2);
+        if (if_block2) {
+          if_block2.c();
+          if_block2.m(div8, null);
         }
-      } else if (if_block3) {
-        if_block3.d(1);
-        if_block3 = null;
+      }
+      if (dirty[0] & /*activeSerial*/
+      1 | dirty[1] & /*rigRadios, activeCatMonitor, activeRigModeSync, activeRadioInfo*/
+      1920 | dirty[2] & /*updateRigModeSyncRadio*/
+      1073741824 | dirty[3] & /*clearCatMonitor, radioInfoText*/
+      6) {
+        each_value_2 = ensure_array_like(
+          /*rigRadios*/
+          ctx2[40]
+        );
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_2, each_1_lookup, section, destroy_block, create_each_block_2, t14, get_each_context_2);
       }
       if (
         /*rigModeSyncStatus*/
@@ -10327,16 +10103,16 @@ function create_if_block_7(ctx) {
           ctx2[0]
         ]
       ) {
-        if (if_block4) {
-          if_block4.p(ctx2, dirty);
+        if (if_block3) {
+          if_block3.p(ctx2, dirty);
         } else {
-          if_block4 = create_if_block_8(ctx2);
-          if_block4.c();
-          if_block4.m(section, null);
+          if_block3 = create_if_block_8(ctx2);
+          if_block3.c();
+          if_block3.m(section, null);
         }
-      } else if (if_block4) {
-        if_block4.d(1);
-        if_block4 = null;
+      } else if (if_block3) {
+        if_block3.d(1);
+        if_block3 = null;
       }
     },
     d(detaching) {
@@ -10347,9 +10123,11 @@ function create_if_block_7(ctx) {
       }
       if (if_block0) if_block0.d(detaching);
       if (if_block1) if_block1.d(detaching);
-      if (if_block2) if_block2.d();
+      if_block2.d();
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d();
+      }
       if (if_block3) if_block3.d();
-      if (if_block4) if_block4.d();
       mounted = false;
       run_all(dispose);
     }
@@ -10360,7 +10138,7 @@ function create_if_block$1(ctx) {
   function select_block_type_1(ctx2, dirty) {
     if (
       /*hasKeyerMode*/
-      ctx2[63]
+      ctx2[66]
     ) return create_if_block_1$1;
     return create_else_block$1;
   }
@@ -10395,12 +10173,12 @@ function create_if_block$1(ctx) {
     }
   };
 }
-function create_each_block_90(ctx) {
+function create_each_block_91(ctx) {
   let div2;
   let div0;
   let t0_value = (
     /*entry*/
-    ctx[705][0] + ""
+    ctx[719][0] + ""
   );
   let t0;
   let t1;
@@ -10410,12 +10188,12 @@ function create_each_block_90(ctx) {
   let input_value_value;
   let mounted;
   let dispose;
-  function input_handler_51(...args) {
+  function input_handler_46(...args) {
     return (
-      /*input_handler_51*/
-      ctx[435](
+      /*input_handler_46*/
+      ctx[439](
         /*entry*/
-        ctx[705],
+        ctx[719],
         ...args
       )
     );
@@ -10434,7 +10212,7 @@ function create_each_block_90(ctx) {
       set_style(input, "width", "100%");
       attr(input, "type", "number");
       input.value = input_value_value = /*entry*/
-      ctx[705][1];
+      ctx[719][1];
       attr(div1, "class", "value");
       attr(div2, "class", "row");
     },
@@ -10447,7 +10225,7 @@ function create_each_block_90(ctx) {
       append(div2, div1);
       append(div1, input);
       if (!mounted) {
-        dispose = listen(input, "input", input_handler_51);
+        dispose = listen(input, "input", input_handler_46);
         mounted = true;
       }
     },
@@ -10455,11 +10233,11 @@ function create_each_block_90(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*allParamForm, activeSerial*/
       8193 && t0_value !== (t0_value = /*entry*/
-      ctx[705][0] + "")) set_data(t0, t0_value);
+      ctx[719][0] + "")) set_data(t0, t0_value);
       if (dirty[0] & /*allParamForm, activeSerial*/
       8193 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_value_value !== (input_value_value = /*entry*/
-      ctx[705][1]) && input.value !== input_value_value) {
+      65536 && input_value_value !== (input_value_value = /*entry*/
+      ctx[719][1]) && input.value !== input_value_value) {
         input.value = input_value_value;
       }
     },
@@ -10472,7 +10250,7 @@ function create_each_block_90(ctx) {
     }
   };
 }
-function create_if_block_120(ctx) {
+function create_if_block_121(ctx) {
   let div;
   let t_value = (
     /*allParamStatus*/
@@ -10506,7 +10284,7 @@ function create_if_block_120(ctx) {
       ].text + "")) set_data(t, t_value);
       if (dirty[0] & /*allParamStatus, activeSerial*/
       16385 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*allParamStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*allParamStatus*/
       ctx2[14][
         /*activeSerial*/
         ctx2[0]
@@ -10521,7 +10299,7 @@ function create_if_block_120(ctx) {
     }
   };
 }
-function create_if_block_118(ctx) {
+function create_if_block_119(ctx) {
   let th;
   return {
     c() {
@@ -10538,7 +10316,7 @@ function create_if_block_118(ctx) {
     }
   };
 }
-function create_if_block_117(ctx) {
+function create_if_block_118(ctx) {
   let th;
   return {
     c() {
@@ -10555,7 +10333,7 @@ function create_if_block_117(ctx) {
     }
   };
 }
-function create_else_block_21(ctx) {
+function create_else_block_23(ctx) {
   let td;
   let input;
   let input_checked_value;
@@ -10564,9 +10342,9 @@ function create_else_block_21(ctx) {
   function change_handler_131() {
     return (
       /*change_handler_131*/
-      ctx[405](
+      ctx[409](
         /*bnd*/
-        ctx[672]
+        ctx[686]
       )
     );
   }
@@ -10581,7 +10359,7 @@ function create_else_block_21(ctx) {
         ctx[0]
       ] || []).includes(
         /*bnd*/
-        ctx[672].id
+        ctx[686].id
       );
     },
     m(target, anchor) {
@@ -10596,13 +10374,13 @@ function create_else_block_21(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndSelected, activeBnds, activeAntsAndGroups*/
-      139272 && input_checked_value !== (input_checked_value = /*smBndSelected*/
+      1114120 && input_checked_value !== (input_checked_value = /*smBndSelected*/
       (ctx[34][
         /*activeSerial*/
         ctx[0]
       ] || []).includes(
         /*bnd*/
-        ctx[672].id
+        ctx[686].id
       ))) {
         input.checked = input_checked_value;
       }
@@ -10616,7 +10394,7 @@ function create_else_block_21(ctx) {
     }
   };
 }
-function create_if_block_116(ctx) {
+function create_if_block_117(ctx) {
   let td;
   return {
     c() {
@@ -10633,46 +10411,46 @@ function create_if_block_116(ctx) {
     }
   };
 }
-function create_else_block_20(ctx) {
+function create_else_block_22(ctx) {
   let td0;
   let t0_value = (
     /*bnd*/
-    (ctx[672].display || "") + ""
+    (ctx[686].display || "") + ""
   );
   let t0;
   let t1;
   let td1;
   let t2_value = (
     /*bnd*/
-    (ctx[672].low_freq || 0) + ""
+    (ctx[686].low_freq || 0) + ""
   );
   let t2;
   let t3;
   let td2;
   let t4_value = (
     /*bnd*/
-    (ctx[672].high_freq || 0) + ""
+    (ctx[686].high_freq || 0) + ""
   );
   let t4;
   let t5;
   let td3;
   let t6_value = (
     /*bnd*/
-    (ctx[672].bcd_code || 0) + ""
+    (ctx[686].bcd_code || 0) + ""
   );
   let t6;
   let t7;
   let td4;
   let t8_value = (
     /*bnd*/
-    ctx[672].pa_power ? "Yes" : "No"
+    ctx[686].pa_power ? "Yes" : "No"
   );
   let t8;
   let t9;
   let td5;
   let t10_value = (
     /*bnd*/
-    ctx[672].keyout ? "Yes" : "No"
+    ctx[686].keyout ? "Yes" : "No"
   );
   let t10;
   let t11;
@@ -10682,11 +10460,11 @@ function create_else_block_20(ctx) {
   let if_block1_anchor;
   let if_block0 = (
     /*bpfOuts*/
-    ctx[668].length > 0 && create_if_block_115(ctx)
+    ctx[682].length > 0 && create_if_block_116(ctx)
   );
   let if_block1 = (
     /*seqOuts*/
-    ctx[669].length > 0 && create_if_block_114(ctx)
+    ctx[683].length > 0 && create_if_block_115(ctx)
   );
   return {
     c() {
@@ -10743,31 +10521,31 @@ function create_else_block_20(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeBnds*/
-      131072 && t0_value !== (t0_value = /*bnd*/
-      (ctx2[672].display || "") + "")) set_data(t0, t0_value);
+      1048576 && t0_value !== (t0_value = /*bnd*/
+      (ctx2[686].display || "") + "")) set_data(t0, t0_value);
       if (dirty[1] & /*activeBnds*/
-      131072 && t2_value !== (t2_value = /*bnd*/
-      (ctx2[672].low_freq || 0) + "")) set_data(t2, t2_value);
+      1048576 && t2_value !== (t2_value = /*bnd*/
+      (ctx2[686].low_freq || 0) + "")) set_data(t2, t2_value);
       if (dirty[1] & /*activeBnds*/
-      131072 && t4_value !== (t4_value = /*bnd*/
-      (ctx2[672].high_freq || 0) + "")) set_data(t4, t4_value);
+      1048576 && t4_value !== (t4_value = /*bnd*/
+      (ctx2[686].high_freq || 0) + "")) set_data(t4, t4_value);
       if (dirty[1] & /*activeBnds*/
-      131072 && t6_value !== (t6_value = /*bnd*/
-      (ctx2[672].bcd_code || 0) + "")) set_data(t6, t6_value);
+      1048576 && t6_value !== (t6_value = /*bnd*/
+      (ctx2[686].bcd_code || 0) + "")) set_data(t6, t6_value);
       if (dirty[1] & /*activeBnds*/
-      131072 && t8_value !== (t8_value = /*bnd*/
-      ctx2[672].pa_power ? "Yes" : "No")) set_data(t8, t8_value);
+      1048576 && t8_value !== (t8_value = /*bnd*/
+      ctx2[686].pa_power ? "Yes" : "No")) set_data(t8, t8_value);
       if (dirty[1] & /*activeBnds*/
-      131072 && t10_value !== (t10_value = /*bnd*/
-      ctx2[672].keyout ? "Yes" : "No")) set_data(t10, t10_value);
+      1048576 && t10_value !== (t10_value = /*bnd*/
+      ctx2[686].keyout ? "Yes" : "No")) set_data(t10, t10_value);
       if (
         /*bpfOuts*/
-        ctx2[668].length > 0
+        ctx2[682].length > 0
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_115(ctx2);
+          if_block0 = create_if_block_116(ctx2);
           if_block0.c();
           if_block0.m(t13.parentNode, t13);
         }
@@ -10777,12 +10555,12 @@ function create_else_block_20(ctx) {
       }
       if (
         /*seqOuts*/
-        ctx2[669].length > 0
+        ctx2[683].length > 0
       ) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_114(ctx2);
+          if_block1 = create_if_block_115(ctx2);
           if_block1.c();
           if_block1.m(if_block1_anchor.parentNode, if_block1_anchor);
         }
@@ -10815,7 +10593,7 @@ function create_else_block_20(ctx) {
     }
   };
 }
-function create_if_block_111(ctx) {
+function create_if_block_112(ctx) {
   let td0;
   let input0;
   let input0_value_value;
@@ -10846,42 +10624,42 @@ function create_if_block_111(ctx) {
   let if_block1_anchor;
   let mounted;
   let dispose;
-  function input_handler_47(...args) {
+  function input_handler_42(...args) {
     return (
-      /*input_handler_47*/
-      ctx[406](
+      /*input_handler_42*/
+      ctx[410](
         /*bnd*/
-        ctx[672],
+        ctx[686],
         ...args
       )
     );
   }
-  function input_handler_48(...args) {
+  function input_handler_43(...args) {
     return (
-      /*input_handler_48*/
-      ctx[407](
+      /*input_handler_43*/
+      ctx[411](
         /*bnd*/
-        ctx[672],
+        ctx[686],
         ...args
       )
     );
   }
-  function input_handler_49(...args) {
+  function input_handler_44(...args) {
     return (
-      /*input_handler_49*/
-      ctx[408](
+      /*input_handler_44*/
+      ctx[412](
         /*bnd*/
-        ctx[672],
+        ctx[686],
         ...args
       )
     );
   }
-  function input_handler_50(...args) {
+  function input_handler_45(...args) {
     return (
-      /*input_handler_50*/
-      ctx[409](
+      /*input_handler_45*/
+      ctx[413](
         /*bnd*/
-        ctx[672],
+        ctx[686],
         ...args
       )
     );
@@ -10889,9 +10667,9 @@ function create_if_block_111(ctx) {
   function change_handler_132(...args) {
     return (
       /*change_handler_132*/
-      ctx[410](
+      ctx[414](
         /*bnd*/
-        ctx[672],
+        ctx[686],
         ...args
       )
     );
@@ -10899,20 +10677,20 @@ function create_if_block_111(ctx) {
   function change_handler_133(...args) {
     return (
       /*change_handler_133*/
-      ctx[411](
+      ctx[415](
         /*bnd*/
-        ctx[672],
+        ctx[686],
         ...args
       )
     );
   }
   let if_block0 = (
     /*bpfOuts*/
-    ctx[668].length > 0 && create_if_block_113(ctx)
+    ctx[682].length > 0 && create_if_block_114(ctx)
   );
   let if_block1 = (
     /*seqOuts*/
-    ctx[669].length > 0 && create_if_block_112(ctx)
+    ctx[683].length > 0 && create_if_block_113(ctx)
   );
   return {
     c() {
@@ -10944,28 +10722,28 @@ function create_if_block_111(ctx) {
       attr(input0, "type", "text");
       attr(input0, "size", "10");
       input0.value = input0_value_value = /*ef*/
-      ctx[630].display;
+      ctx[644].display;
       attr(input1, "class", "input");
       attr(input1, "type", "number");
       set_style(input1, "width", "90px");
       input1.value = input1_value_value = /*ef*/
-      ctx[630].low_freq;
+      ctx[644].low_freq;
       attr(input2, "class", "input");
       attr(input2, "type", "number");
       set_style(input2, "width", "90px");
       input2.value = input2_value_value = /*ef*/
-      ctx[630].high_freq;
+      ctx[644].high_freq;
       attr(input3, "class", "input");
       attr(input3, "type", "number");
       set_style(input3, "width", "40px");
       input3.value = input3_value_value = /*ef*/
-      ctx[630].bcd_code;
+      ctx[644].bcd_code;
       attr(input4, "type", "checkbox");
       input4.checked = input4_checked_value = /*ef*/
-      ctx[630].pa_power === 1;
+      ctx[644].pa_power === 1;
       attr(input5, "type", "checkbox");
       input5.checked = input5_checked_value = /*ef*/
-      ctx[630].keyout === 1;
+      ctx[644].keyout === 1;
     },
     m(target, anchor) {
       insert(target, td0, anchor);
@@ -10994,10 +10772,10 @@ function create_if_block_111(ctx) {
       insert(target, if_block1_anchor, anchor);
       if (!mounted) {
         dispose = [
-          listen(input0, "input", input_handler_47),
-          listen(input1, "input", input_handler_48),
-          listen(input2, "input", input_handler_49),
-          listen(input3, "input", input_handler_50),
+          listen(input0, "input", input_handler_42),
+          listen(input1, "input", input_handler_43),
+          listen(input2, "input", input_handler_44),
+          listen(input3, "input", input_handler_45),
           listen(input4, "change", change_handler_132),
           listen(input5, "change", change_handler_133)
         ];
@@ -11008,48 +10786,48 @@ function create_if_block_111(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeAntsAndGroups*/
-      139268 && input0_value_value !== (input0_value_value = /*ef*/
-      ctx[630].display) && input0.value !== input0_value_value) {
+      1114116 && input0_value_value !== (input0_value_value = /*ef*/
+      ctx[644].display) && input0.value !== input0_value_value) {
         input0.value = input0_value_value;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeAntsAndGroups*/
-      139268 && input1_value_value !== (input1_value_value = /*ef*/
-      ctx[630].low_freq) && input1.value !== input1_value_value) {
+      1114116 && input1_value_value !== (input1_value_value = /*ef*/
+      ctx[644].low_freq) && input1.value !== input1_value_value) {
         input1.value = input1_value_value;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeAntsAndGroups*/
-      139268 && input2_value_value !== (input2_value_value = /*ef*/
-      ctx[630].high_freq) && input2.value !== input2_value_value) {
+      1114116 && input2_value_value !== (input2_value_value = /*ef*/
+      ctx[644].high_freq) && input2.value !== input2_value_value) {
         input2.value = input2_value_value;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeAntsAndGroups*/
-      139268 && input3_value_value !== (input3_value_value = /*ef*/
-      ctx[630].bcd_code) && input3.value !== input3_value_value) {
+      1114116 && input3_value_value !== (input3_value_value = /*ef*/
+      ctx[644].bcd_code) && input3.value !== input3_value_value) {
         input3.value = input3_value_value;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeAntsAndGroups*/
-      139268 && input4_checked_value !== (input4_checked_value = /*ef*/
-      ctx[630].pa_power === 1)) {
+      1114116 && input4_checked_value !== (input4_checked_value = /*ef*/
+      ctx[644].pa_power === 1)) {
         input4.checked = input4_checked_value;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeAntsAndGroups*/
-      139268 && input5_checked_value !== (input5_checked_value = /*ef*/
-      ctx[630].keyout === 1)) {
+      1114116 && input5_checked_value !== (input5_checked_value = /*ef*/
+      ctx[644].keyout === 1)) {
         input5.checked = input5_checked_value;
       }
       if (
         /*bpfOuts*/
-        ctx[668].length > 0
+        ctx[682].length > 0
       ) {
         if (if_block0) {
           if_block0.p(ctx, dirty);
         } else {
-          if_block0 = create_if_block_113(ctx);
+          if_block0 = create_if_block_114(ctx);
           if_block0.c();
           if_block0.m(t7.parentNode, t7);
         }
@@ -11059,12 +10837,12 @@ function create_if_block_111(ctx) {
       }
       if (
         /*seqOuts*/
-        ctx[669].length > 0
+        ctx[683].length > 0
       ) {
         if (if_block1) {
           if_block1.p(ctx, dirty);
         } else {
-          if_block1 = create_if_block_112(ctx);
+          if_block1 = create_if_block_113(ctx);
           if_block1.c();
           if_block1.m(if_block1_anchor.parentNode, if_block1_anchor);
         }
@@ -11099,27 +10877,27 @@ function create_if_block_111(ctx) {
     }
   };
 }
-function create_if_block_115(ctx) {
+function create_if_block_116(ctx) {
   let td;
   let table;
   let tr0;
   let t;
   let tr1;
-  let each_value_89 = ensure_array_like(
+  let each_value_90 = ensure_array_like(
     /*bpfOuts*/
-    ctx[668]
+    ctx[682]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_89.length; i += 1) {
-    each_blocks_1[i] = create_each_block_89(get_each_context_89(ctx, each_value_89, i));
+  for (let i = 0; i < each_value_90.length; i += 1) {
+    each_blocks_1[i] = create_each_block_90(get_each_context_90(ctx, each_value_90, i));
   }
-  let each_value_88 = ensure_array_like(
+  let each_value_89 = ensure_array_like(
     /*bpfOuts*/
-    ctx[668]
+    ctx[682]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_88.length; i += 1) {
-    each_blocks[i] = create_each_block_88(get_each_context_88(ctx, each_value_88, i));
+  for (let i = 0; i < each_value_89.length; i += 1) {
+    each_blocks[i] = create_each_block_89(get_each_context_89(ctx, each_value_89, i));
   }
   return {
     c() {
@@ -11156,18 +10934,18 @@ function create_if_block_115(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeBpfOutputs*/
-      65536) {
-        each_value_89 = ensure_array_like(
+      524288) {
+        each_value_90 = ensure_array_like(
           /*bpfOuts*/
-          ctx2[668]
+          ctx2[682]
         );
         let i;
-        for (i = 0; i < each_value_89.length; i += 1) {
-          const child_ctx = get_each_context_89(ctx2, each_value_89, i);
+        for (i = 0; i < each_value_90.length; i += 1) {
+          const child_ctx = get_each_context_90(ctx2, each_value_90, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_89(child_ctx);
+            each_blocks_1[i] = create_each_block_90(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(tr0, null);
           }
@@ -11175,21 +10953,21 @@ function create_if_block_115(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_89.length;
+        each_blocks_1.length = each_value_90.length;
       }
       if (dirty[1] & /*activeBnds, activeBpfOutputs*/
-      196608) {
-        each_value_88 = ensure_array_like(
+      1572864) {
+        each_value_89 = ensure_array_like(
           /*bpfOuts*/
-          ctx2[668]
+          ctx2[682]
         );
         let i;
-        for (i = 0; i < each_value_88.length; i += 1) {
-          const child_ctx = get_each_context_88(ctx2, each_value_88, i);
+        for (i = 0; i < each_value_89.length; i += 1) {
+          const child_ctx = get_each_context_89(ctx2, each_value_89, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_88(child_ctx);
+            each_blocks[i] = create_each_block_89(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(tr1, null);
           }
@@ -11197,7 +10975,7 @@ function create_if_block_115(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_88.length;
+        each_blocks.length = each_value_89.length;
       }
     },
     d(detaching) {
@@ -11209,11 +10987,11 @@ function create_if_block_115(ctx) {
     }
   };
 }
-function create_each_block_89(ctx) {
+function create_each_block_90(ctx) {
   let td;
   let t_value = (
     /*bo*/
-    ctx[692] + ""
+    ctx[706] + ""
   );
   let t;
   return {
@@ -11229,8 +11007,8 @@ function create_each_block_89(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeBpfOutputs*/
-      65536 && t_value !== (t_value = /*bo*/
-      ctx2[692] + "")) set_data(t, t_value);
+      524288 && t_value !== (t_value = /*bo*/
+      ctx2[706] + "")) set_data(t, t_value);
     },
     d(detaching) {
       if (detaching) {
@@ -11239,14 +11017,14 @@ function create_each_block_89(ctx) {
     }
   };
 }
-function create_each_block_88(ctx) {
+function create_each_block_89(ctx) {
   var _a;
   let td;
   let t_value = (
     /*bnd*/
-    ((_a = ctx[672].bpf_seq) == null ? void 0 : _a[
+    ((_a = ctx[686].bpf_seq) == null ? void 0 : _a[
       /*bo*/
-      ctx[692]
+      ctx[706]
     ]) || 0 ? "Yes" : "No"
   );
   let t;
@@ -11263,10 +11041,187 @@ function create_each_block_88(ctx) {
     p(ctx2, dirty) {
       var _a2;
       if (dirty[1] & /*activeBnds, activeBpfOutputs*/
-      196608 && t_value !== (t_value = /*bnd*/
-      ((_a2 = ctx2[672].bpf_seq) == null ? void 0 : _a2[
+      1572864 && t_value !== (t_value = /*bnd*/
+      ((_a2 = ctx2[686].bpf_seq) == null ? void 0 : _a2[
         /*bo*/
-        ctx2[692]
+        ctx2[706]
+      ]) || 0 ? "Yes" : "No")) set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(td);
+      }
+    }
+  };
+}
+function create_if_block_115(ctx) {
+  let td;
+  let table;
+  let tr0;
+  let t;
+  let tr1;
+  let each_value_88 = ensure_array_like(
+    /*seqOuts*/
+    ctx[683]
+  );
+  let each_blocks_1 = [];
+  for (let i = 0; i < each_value_88.length; i += 1) {
+    each_blocks_1[i] = create_each_block_88(get_each_context_88(ctx, each_value_88, i));
+  }
+  let each_value_87 = ensure_array_like(
+    /*seqOuts*/
+    ctx[683]
+  );
+  let each_blocks = [];
+  for (let i = 0; i < each_value_87.length; i += 1) {
+    each_blocks[i] = create_each_block_87(get_each_context_87(ctx, each_value_87, i));
+  }
+  return {
+    c() {
+      td = element("td");
+      table = element("table");
+      tr0 = element("tr");
+      for (let i = 0; i < each_blocks_1.length; i += 1) {
+        each_blocks_1[i].c();
+      }
+      t = space();
+      tr1 = element("tr");
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].c();
+      }
+      attr(table, "class", "ant-table");
+      set_style(table, "margin", "0");
+    },
+    m(target, anchor) {
+      insert(target, td, anchor);
+      append(td, table);
+      append(table, tr0);
+      for (let i = 0; i < each_blocks_1.length; i += 1) {
+        if (each_blocks_1[i]) {
+          each_blocks_1[i].m(tr0, null);
+        }
+      }
+      append(table, t);
+      append(table, tr1);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        if (each_blocks[i]) {
+          each_blocks[i].m(tr1, null);
+        }
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[1] & /*activeSeqOutputs*/
+      262144) {
+        each_value_88 = ensure_array_like(
+          /*seqOuts*/
+          ctx2[683]
+        );
+        let i;
+        for (i = 0; i < each_value_88.length; i += 1) {
+          const child_ctx = get_each_context_88(ctx2, each_value_88, i);
+          if (each_blocks_1[i]) {
+            each_blocks_1[i].p(child_ctx, dirty);
+          } else {
+            each_blocks_1[i] = create_each_block_88(child_ctx);
+            each_blocks_1[i].c();
+            each_blocks_1[i].m(tr0, null);
+          }
+        }
+        for (; i < each_blocks_1.length; i += 1) {
+          each_blocks_1[i].d(1);
+        }
+        each_blocks_1.length = each_value_88.length;
+      }
+      if (dirty[1] & /*activeBnds, activeSeqOutputs*/
+      1310720) {
+        each_value_87 = ensure_array_like(
+          /*seqOuts*/
+          ctx2[683]
+        );
+        let i;
+        for (i = 0; i < each_value_87.length; i += 1) {
+          const child_ctx = get_each_context_87(ctx2, each_value_87, i);
+          if (each_blocks[i]) {
+            each_blocks[i].p(child_ctx, dirty);
+          } else {
+            each_blocks[i] = create_each_block_87(child_ctx);
+            each_blocks[i].c();
+            each_blocks[i].m(tr1, null);
+          }
+        }
+        for (; i < each_blocks.length; i += 1) {
+          each_blocks[i].d(1);
+        }
+        each_blocks.length = each_value_87.length;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(td);
+      }
+      destroy_each(each_blocks_1, detaching);
+      destroy_each(each_blocks, detaching);
+    }
+  };
+}
+function create_each_block_88(ctx) {
+  let td;
+  let t_value = (
+    /*so*/
+    ctx[701] + ""
+  );
+  let t;
+  return {
+    c() {
+      td = element("td");
+      t = text(t_value);
+      set_style(td, "padding", "1px 4px");
+      set_style(td, "font-size", "0.85em");
+    },
+    m(target, anchor) {
+      insert(target, td, anchor);
+      append(td, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[1] & /*activeSeqOutputs*/
+      262144 && t_value !== (t_value = /*so*/
+      ctx2[701] + "")) set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(td);
+      }
+    }
+  };
+}
+function create_each_block_87(ctx) {
+  var _a;
+  let td;
+  let t_value = (
+    /*bnd*/
+    ((_a = ctx[686].bpf_seq) == null ? void 0 : _a[
+      /*so*/
+      ctx[701]
+    ]) || 0 ? "Yes" : "No"
+  );
+  let t;
+  return {
+    c() {
+      td = element("td");
+      t = text(t_value);
+      set_style(td, "padding", "1px 4px");
+    },
+    m(target, anchor) {
+      insert(target, td, anchor);
+      append(td, t);
+    },
+    p(ctx2, dirty) {
+      var _a2;
+      if (dirty[1] & /*activeBnds, activeSeqOutputs*/
+      1310720 && t_value !== (t_value = /*bnd*/
+      ((_a2 = ctx2[686].bpf_seq) == null ? void 0 : _a2[
+        /*so*/
+        ctx2[701]
       ]) || 0 ? "Yes" : "No")) set_data(t, t_value);
     },
     d(detaching) {
@@ -11282,21 +11237,21 @@ function create_if_block_114(ctx) {
   let tr0;
   let t;
   let tr1;
-  let each_value_87 = ensure_array_like(
-    /*seqOuts*/
-    ctx[669]
+  let each_value_86 = ensure_array_like(
+    /*bpfOuts*/
+    ctx[682]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_87.length; i += 1) {
-    each_blocks_1[i] = create_each_block_87(get_each_context_87(ctx, each_value_87, i));
+  for (let i = 0; i < each_value_86.length; i += 1) {
+    each_blocks_1[i] = create_each_block_86(get_each_context_86(ctx, each_value_86, i));
   }
-  let each_value_86 = ensure_array_like(
-    /*seqOuts*/
-    ctx[669]
+  let each_value_85 = ensure_array_like(
+    /*bpfOuts*/
+    ctx[682]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_86.length; i += 1) {
-    each_blocks[i] = create_each_block_86(get_each_context_86(ctx, each_value_86, i));
+  for (let i = 0; i < each_value_85.length; i += 1) {
+    each_blocks[i] = create_each_block_85(get_each_context_85(ctx, each_value_85, i));
   }
   return {
     c() {
@@ -11332,196 +11287,19 @@ function create_if_block_114(ctx) {
       }
     },
     p(ctx2, dirty) {
-      if (dirty[1] & /*activeSeqOutputs*/
-      32768) {
-        each_value_87 = ensure_array_like(
-          /*seqOuts*/
-          ctx2[669]
-        );
-        let i;
-        for (i = 0; i < each_value_87.length; i += 1) {
-          const child_ctx = get_each_context_87(ctx2, each_value_87, i);
-          if (each_blocks_1[i]) {
-            each_blocks_1[i].p(child_ctx, dirty);
-          } else {
-            each_blocks_1[i] = create_each_block_87(child_ctx);
-            each_blocks_1[i].c();
-            each_blocks_1[i].m(tr0, null);
-          }
-        }
-        for (; i < each_blocks_1.length; i += 1) {
-          each_blocks_1[i].d(1);
-        }
-        each_blocks_1.length = each_value_87.length;
-      }
-      if (dirty[1] & /*activeBnds, activeSeqOutputs*/
-      163840) {
+      if (dirty[1] & /*activeBpfOutputs*/
+      524288) {
         each_value_86 = ensure_array_like(
-          /*seqOuts*/
-          ctx2[669]
+          /*bpfOuts*/
+          ctx2[682]
         );
         let i;
         for (i = 0; i < each_value_86.length; i += 1) {
           const child_ctx = get_each_context_86(ctx2, each_value_86, i);
-          if (each_blocks[i]) {
-            each_blocks[i].p(child_ctx, dirty);
-          } else {
-            each_blocks[i] = create_each_block_86(child_ctx);
-            each_blocks[i].c();
-            each_blocks[i].m(tr1, null);
-          }
-        }
-        for (; i < each_blocks.length; i += 1) {
-          each_blocks[i].d(1);
-        }
-        each_blocks.length = each_value_86.length;
-      }
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(td);
-      }
-      destroy_each(each_blocks_1, detaching);
-      destroy_each(each_blocks, detaching);
-    }
-  };
-}
-function create_each_block_87(ctx) {
-  let td;
-  let t_value = (
-    /*so*/
-    ctx[687] + ""
-  );
-  let t;
-  return {
-    c() {
-      td = element("td");
-      t = text(t_value);
-      set_style(td, "padding", "1px 4px");
-      set_style(td, "font-size", "0.85em");
-    },
-    m(target, anchor) {
-      insert(target, td, anchor);
-      append(td, t);
-    },
-    p(ctx2, dirty) {
-      if (dirty[1] & /*activeSeqOutputs*/
-      32768 && t_value !== (t_value = /*so*/
-      ctx2[687] + "")) set_data(t, t_value);
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(td);
-      }
-    }
-  };
-}
-function create_each_block_86(ctx) {
-  var _a;
-  let td;
-  let t_value = (
-    /*bnd*/
-    ((_a = ctx[672].bpf_seq) == null ? void 0 : _a[
-      /*so*/
-      ctx[687]
-    ]) || 0 ? "Yes" : "No"
-  );
-  let t;
-  return {
-    c() {
-      td = element("td");
-      t = text(t_value);
-      set_style(td, "padding", "1px 4px");
-    },
-    m(target, anchor) {
-      insert(target, td, anchor);
-      append(td, t);
-    },
-    p(ctx2, dirty) {
-      var _a2;
-      if (dirty[1] & /*activeBnds, activeSeqOutputs*/
-      163840 && t_value !== (t_value = /*bnd*/
-      ((_a2 = ctx2[672].bpf_seq) == null ? void 0 : _a2[
-        /*so*/
-        ctx2[687]
-      ]) || 0 ? "Yes" : "No")) set_data(t, t_value);
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(td);
-      }
-    }
-  };
-}
-function create_if_block_113(ctx) {
-  let td;
-  let table;
-  let tr0;
-  let t;
-  let tr1;
-  let each_value_85 = ensure_array_like(
-    /*bpfOuts*/
-    ctx[668]
-  );
-  let each_blocks_1 = [];
-  for (let i = 0; i < each_value_85.length; i += 1) {
-    each_blocks_1[i] = create_each_block_85(get_each_context_85(ctx, each_value_85, i));
-  }
-  let each_value_84 = ensure_array_like(
-    /*bpfOuts*/
-    ctx[668]
-  );
-  let each_blocks = [];
-  for (let i = 0; i < each_value_84.length; i += 1) {
-    each_blocks[i] = create_each_block_84(get_each_context_84(ctx, each_value_84, i));
-  }
-  return {
-    c() {
-      td = element("td");
-      table = element("table");
-      tr0 = element("tr");
-      for (let i = 0; i < each_blocks_1.length; i += 1) {
-        each_blocks_1[i].c();
-      }
-      t = space();
-      tr1 = element("tr");
-      for (let i = 0; i < each_blocks.length; i += 1) {
-        each_blocks[i].c();
-      }
-      attr(table, "class", "ant-table");
-      set_style(table, "margin", "0");
-    },
-    m(target, anchor) {
-      insert(target, td, anchor);
-      append(td, table);
-      append(table, tr0);
-      for (let i = 0; i < each_blocks_1.length; i += 1) {
-        if (each_blocks_1[i]) {
-          each_blocks_1[i].m(tr0, null);
-        }
-      }
-      append(table, t);
-      append(table, tr1);
-      for (let i = 0; i < each_blocks.length; i += 1) {
-        if (each_blocks[i]) {
-          each_blocks[i].m(tr1, null);
-        }
-      }
-    },
-    p(ctx2, dirty) {
-      if (dirty[1] & /*activeBpfOutputs*/
-      65536) {
-        each_value_85 = ensure_array_like(
-          /*bpfOuts*/
-          ctx2[668]
-        );
-        let i;
-        for (i = 0; i < each_value_85.length; i += 1) {
-          const child_ctx = get_each_context_85(ctx2, each_value_85, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_85(child_ctx);
+            each_blocks_1[i] = create_each_block_86(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(tr0, null);
           }
@@ -11529,22 +11307,22 @@ function create_if_block_113(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_85.length;
+        each_blocks_1.length = each_value_86.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeBpfOutputs*/
-      196612) {
-        each_value_84 = ensure_array_like(
+      1572868) {
+        each_value_85 = ensure_array_like(
           /*bpfOuts*/
-          ctx2[668]
+          ctx2[682]
         );
         let i;
-        for (i = 0; i < each_value_84.length; i += 1) {
-          const child_ctx = get_each_context_84(ctx2, each_value_84, i);
+        for (i = 0; i < each_value_85.length; i += 1) {
+          const child_ctx = get_each_context_85(ctx2, each_value_85, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_84(child_ctx);
+            each_blocks[i] = create_each_block_85(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(tr1, null);
           }
@@ -11552,7 +11330,7 @@ function create_if_block_113(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_84.length;
+        each_blocks.length = each_value_85.length;
       }
     },
     d(detaching) {
@@ -11564,11 +11342,11 @@ function create_if_block_113(ctx) {
     }
   };
 }
-function create_each_block_85(ctx) {
+function create_each_block_86(ctx) {
   let td;
   let t_value = (
     /*bo*/
-    ctx[692] + ""
+    ctx[706] + ""
   );
   let t;
   return {
@@ -11584,8 +11362,8 @@ function create_each_block_85(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeBpfOutputs*/
-      65536 && t_value !== (t_value = /*bo*/
-      ctx2[692] + "")) set_data(t, t_value);
+      524288 && t_value !== (t_value = /*bo*/
+      ctx2[706] + "")) set_data(t, t_value);
     },
     d(detaching) {
       if (detaching) {
@@ -11594,7 +11372,7 @@ function create_each_block_85(ctx) {
     }
   };
 }
-function create_each_block_84(ctx) {
+function create_each_block_85(ctx) {
   let td;
   let input;
   let input_checked_value;
@@ -11604,11 +11382,11 @@ function create_each_block_84(ctx) {
   function change_handler_134(...args) {
     return (
       /*change_handler_134*/
-      ctx[412](
+      ctx[416](
         /*bnd*/
-        ctx[672],
+        ctx[686],
         /*bo*/
-        ctx[692],
+        ctx[706],
         ...args
       )
     );
@@ -11621,9 +11399,9 @@ function create_each_block_84(ctx) {
       t = space();
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = /*ef*/
-      (((_a = ctx[630].bpf_seq) == null ? void 0 : _a[
+      (((_a = ctx[644].bpf_seq) == null ? void 0 : _a[
         /*bo*/
-        ctx[692]
+        ctx[706]
       ]) || 0) === 1;
       set_style(td, "padding", "1px 4px");
     },
@@ -11641,10 +11419,10 @@ function create_each_block_84(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeBpfOutputs, activeAntsAndGroups*/
-      204804 && input_checked_value !== (input_checked_value = /*ef*/
-      (((_a = ctx[630].bpf_seq) == null ? void 0 : _a[
+      1638404 && input_checked_value !== (input_checked_value = /*ef*/
+      (((_a = ctx[644].bpf_seq) == null ? void 0 : _a[
         /*bo*/
-        ctx[692]
+        ctx[706]
       ]) || 0) === 1)) {
         input.checked = input_checked_value;
       }
@@ -11659,27 +11437,27 @@ function create_each_block_84(ctx) {
     }
   };
 }
-function create_if_block_112(ctx) {
+function create_if_block_113(ctx) {
   let td;
   let table;
   let tr0;
   let t;
   let tr1;
-  let each_value_83 = ensure_array_like(
+  let each_value_84 = ensure_array_like(
     /*seqOuts*/
-    ctx[669]
+    ctx[683]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_83.length; i += 1) {
-    each_blocks_1[i] = create_each_block_83(get_each_context_83(ctx, each_value_83, i));
+  for (let i = 0; i < each_value_84.length; i += 1) {
+    each_blocks_1[i] = create_each_block_84(get_each_context_84(ctx, each_value_84, i));
   }
-  let each_value_82 = ensure_array_like(
+  let each_value_83 = ensure_array_like(
     /*seqOuts*/
-    ctx[669]
+    ctx[683]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_82.length; i += 1) {
-    each_blocks[i] = create_each_block_82(get_each_context_82(ctx, each_value_82, i));
+  for (let i = 0; i < each_value_83.length; i += 1) {
+    each_blocks[i] = create_each_block_83(get_each_context_83(ctx, each_value_83, i));
   }
   return {
     c() {
@@ -11716,18 +11494,18 @@ function create_if_block_112(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeSeqOutputs*/
-      32768) {
-        each_value_83 = ensure_array_like(
+      262144) {
+        each_value_84 = ensure_array_like(
           /*seqOuts*/
-          ctx2[669]
+          ctx2[683]
         );
         let i;
-        for (i = 0; i < each_value_83.length; i += 1) {
-          const child_ctx = get_each_context_83(ctx2, each_value_83, i);
+        for (i = 0; i < each_value_84.length; i += 1) {
+          const child_ctx = get_each_context_84(ctx2, each_value_84, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_83(child_ctx);
+            each_blocks_1[i] = create_each_block_84(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(tr0, null);
           }
@@ -11735,22 +11513,22 @@ function create_if_block_112(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_83.length;
+        each_blocks_1.length = each_value_84.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeSeqOutputs*/
-      163844) {
-        each_value_82 = ensure_array_like(
+      1310724) {
+        each_value_83 = ensure_array_like(
           /*seqOuts*/
-          ctx2[669]
+          ctx2[683]
         );
         let i;
-        for (i = 0; i < each_value_82.length; i += 1) {
-          const child_ctx = get_each_context_82(ctx2, each_value_82, i);
+        for (i = 0; i < each_value_83.length; i += 1) {
+          const child_ctx = get_each_context_83(ctx2, each_value_83, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_82(child_ctx);
+            each_blocks[i] = create_each_block_83(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(tr1, null);
           }
@@ -11758,7 +11536,7 @@ function create_if_block_112(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_82.length;
+        each_blocks.length = each_value_83.length;
       }
     },
     d(detaching) {
@@ -11770,11 +11548,11 @@ function create_if_block_112(ctx) {
     }
   };
 }
-function create_each_block_83(ctx) {
+function create_each_block_84(ctx) {
   let td;
   let t_value = (
     /*so*/
-    ctx[687] + ""
+    ctx[701] + ""
   );
   let t;
   return {
@@ -11790,8 +11568,8 @@ function create_each_block_83(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeSeqOutputs*/
-      32768 && t_value !== (t_value = /*so*/
-      ctx2[687] + "")) set_data(t, t_value);
+      262144 && t_value !== (t_value = /*so*/
+      ctx2[701] + "")) set_data(t, t_value);
     },
     d(detaching) {
       if (detaching) {
@@ -11800,7 +11578,7 @@ function create_each_block_83(ctx) {
     }
   };
 }
-function create_each_block_82(ctx) {
+function create_each_block_83(ctx) {
   let td;
   let input;
   let input_checked_value;
@@ -11810,11 +11588,11 @@ function create_each_block_82(ctx) {
   function change_handler_135(...args) {
     return (
       /*change_handler_135*/
-      ctx[413](
+      ctx[417](
         /*bnd*/
-        ctx[672],
+        ctx[686],
         /*so*/
-        ctx[687],
+        ctx[701],
         ...args
       )
     );
@@ -11827,9 +11605,9 @@ function create_each_block_82(ctx) {
       t = space();
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = /*ef*/
-      (((_a = ctx[630].bpf_seq) == null ? void 0 : _a[
+      (((_a = ctx[644].bpf_seq) == null ? void 0 : _a[
         /*so*/
-        ctx[687]
+        ctx[701]
       ]) || 0) === 1;
       set_style(td, "padding", "1px 4px");
     },
@@ -11847,10 +11625,10 @@ function create_each_block_82(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeSeqOutputs, activeAntsAndGroups*/
-      172036 && input_checked_value !== (input_checked_value = /*ef*/
-      (((_a = ctx[630].bpf_seq) == null ? void 0 : _a[
+      1376260 && input_checked_value !== (input_checked_value = /*ef*/
+      (((_a = ctx[644].bpf_seq) == null ? void 0 : _a[
         /*so*/
-        ctx[687]
+        ctx[701]
       ]) || 0) === 1)) {
         input.checked = input_checked_value;
       }
@@ -11865,7 +11643,7 @@ function create_each_block_82(ctx) {
     }
   };
 }
-function create_else_block_19(ctx) {
+function create_else_block_21(ctx) {
   let td;
   let input;
   let input_checked_value;
@@ -11874,11 +11652,11 @@ function create_else_block_19(ctx) {
   function change_handler_136() {
     return (
       /*change_handler_136*/
-      ctx[414](
+      ctx[418](
         /*bnd*/
-        ctx[672],
+        ctx[686],
         /*ref*/
-        ctx[647]
+        ctx[661]
       )
     );
   }
@@ -11892,8 +11670,8 @@ function create_else_block_19(ctx) {
         /*activeSerial*/
         ctx[0]
       ] || []).includes(`${/*bnd*/
-      ctx[672].id}:${/*ref*/
-      ctx[647].id}`);
+      ctx[686].id}:${/*ref*/
+      ctx[661].id}`);
     },
     m(target, anchor) {
       insert(target, td, anchor);
@@ -11907,13 +11685,13 @@ function create_else_block_19(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndSelected, activeBnds, activeAntsAndGroups*/
-      139272 && input_checked_value !== (input_checked_value = /*smBndSelected*/
+      1114120 && input_checked_value !== (input_checked_value = /*smBndSelected*/
       (ctx[34][
         /*activeSerial*/
         ctx[0]
       ] || []).includes(`${/*bnd*/
-      ctx[672].id}:${/*ref*/
-      ctx[647].id}`))) {
+      ctx[686].id}:${/*ref*/
+      ctx[661].id}`))) {
         input.checked = input_checked_value;
       }
     },
@@ -11926,7 +11704,7 @@ function create_else_block_19(ctx) {
     }
   };
 }
-function create_if_block_110(ctx) {
+function create_if_block_111(ctx) {
   let td;
   return {
     c() {
@@ -11943,15 +11721,15 @@ function create_if_block_110(ctx) {
     }
   };
 }
-function create_else_block_18(ctx) {
+function create_else_block_20(ctx) {
   let td0;
   let t0_value = (
     /*smObjTypedDisplay*/
-    ctx[148](
+    ctx[154](
       /*activeSerial*/
       ctx[0],
       /*ref*/
-      ctx[647].dest_id
+      ctx[661].dest_id
     ) + ""
   );
   let t0;
@@ -11960,7 +11738,7 @@ function create_else_block_18(ctx) {
   let t2;
   let t3_value = (
     /*ref*/
-    ctx[647].rxonly ? "Yes" : "No"
+    ctx[661].rxonly ? "Yes" : "No"
   );
   let t3;
   return {
@@ -11984,16 +11762,16 @@ function create_else_block_18(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeBnds*/
-      131072 && t0_value !== (t0_value = /*smObjTypedDisplay*/
-      ctx2[148](
+      1048576 && t0_value !== (t0_value = /*smObjTypedDisplay*/
+      ctx2[154](
         /*activeSerial*/
         ctx2[0],
         /*ref*/
-        ctx2[647].dest_id
+        ctx2[661].dest_id
       ) + "")) set_data(t0, t0_value);
       if (dirty[1] & /*activeBnds*/
-      131072 && t3_value !== (t3_value = /*ref*/
-      ctx2[647].rxonly ? "Yes" : "No")) set_data(t3, t3_value);
+      1048576 && t3_value !== (t3_value = /*ref*/
+      ctx2[661].rxonly ? "Yes" : "No")) set_data(t3, t3_value);
     },
     d(detaching) {
       if (detaching) {
@@ -12004,7 +11782,7 @@ function create_else_block_18(ctx) {
     }
   };
 }
-function create_if_block_109(ctx) {
+function create_if_block_110(ctx) {
   let td0;
   let select;
   let select_value_value;
@@ -12015,22 +11793,22 @@ function create_if_block_109(ctx) {
   let input_checked_value;
   let mounted;
   let dispose;
-  let each_value_81 = ensure_array_like(
+  let each_value_82 = ensure_array_like(
     /*antGrpObjs*/
-    ctx[671]
+    ctx[685]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_81.length; i += 1) {
-    each_blocks[i] = create_each_block_81(get_each_context_81(ctx, each_value_81, i));
+  for (let i = 0; i < each_value_82.length; i += 1) {
+    each_blocks[i] = create_each_block_82(get_each_context_82(ctx, each_value_82, i));
   }
   function change_handler_137(...args) {
     return (
       /*change_handler_137*/
-      ctx[415](
+      ctx[419](
         /*bnd*/
-        ctx[672],
+        ctx[686],
         /*ref*/
-        ctx[647],
+        ctx[661],
         ...args
       )
     );
@@ -12038,11 +11816,11 @@ function create_if_block_109(ctx) {
   function change_handler_138(...args) {
     return (
       /*change_handler_138*/
-      ctx[416](
+      ctx[420](
         /*bnd*/
-        ctx[672],
+        ctx[686],
         /*ref*/
-        ctx[647],
+        ctx[661],
         ...args
       )
     );
@@ -12062,7 +11840,7 @@ function create_if_block_109(ctx) {
       attr(td0, "colspan", "3");
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = /*rf*/
-      (ctx[650].rxonly || 0) === 1;
+      (ctx[664].rxonly || 0) === 1;
     },
     m(target, anchor) {
       insert(target, td0, anchor);
@@ -12075,7 +11853,7 @@ function create_if_block_109(ctx) {
       select_option(
         select,
         /*rf*/
-        ctx[650].dest_id
+        ctx[664].dest_id
       );
       insert(target, t0, anchor);
       insert(target, td1, anchor);
@@ -12092,18 +11870,18 @@ function create_if_block_109(ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[1] & /*activeAntsAndGroups*/
-      8192) {
-        each_value_81 = ensure_array_like(
+      65536) {
+        each_value_82 = ensure_array_like(
           /*antGrpObjs*/
-          ctx[671]
+          ctx[685]
         );
         let i;
-        for (i = 0; i < each_value_81.length; i += 1) {
-          const child_ctx = get_each_context_81(ctx, each_value_81, i);
+        for (i = 0; i < each_value_82.length; i += 1) {
+          const child_ctx = get_each_context_82(ctx, each_value_82, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_81(child_ctx);
+            each_blocks[i] = create_each_block_82(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -12111,22 +11889,22 @@ function create_if_block_109(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_81.length;
+        each_blocks.length = each_value_82.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeAntsAndGroups*/
-      139268 && select_value_value !== (select_value_value = /*rf*/
-      ctx[650].dest_id)) {
+      1114116 && select_value_value !== (select_value_value = /*rf*/
+      ctx[664].dest_id)) {
         select_option(
           select,
           /*rf*/
-          ctx[650].dest_id
+          ctx[664].dest_id
         );
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndEditForms, activeBnds, activeAntsAndGroups*/
-      139268 && input_checked_value !== (input_checked_value = /*rf*/
-      (ctx[650].rxonly || 0) === 1)) {
+      1114116 && input_checked_value !== (input_checked_value = /*rf*/
+      (ctx[664].rxonly || 0) === 1)) {
         input.checked = input_checked_value;
       }
     },
@@ -12142,23 +11920,23 @@ function create_if_block_109(ctx) {
     }
   };
 }
-function create_each_block_81(ctx) {
+function create_each_block_82(ctx) {
   let option;
   let t0_value = (
     /*obj*/
-    ctx[644].type === 0 ? "ANT" : (
+    ctx[658].type === 0 ? "ANT" : (
       /*obj*/
-      ctx[644].type === 1 && /*obj*/
-      ctx[644].virtual_rotator ? "VIR" : "GRP"
+      ctx[658].type === 1 && /*obj*/
+      ctx[658].virtual_rotator ? "VIR" : "GRP"
     )
   );
   let t0;
   let t1;
   let t2_value = (
     /*obj*/
-    (ctx[644].display || /*obj*/
-    ctx[644].label || `#${/*obj*/
-    ctx[644].id}`) + ""
+    (ctx[658].display || /*obj*/
+    ctx[658].label || `#${/*obj*/
+    ctx[658].id}`) + ""
   );
   let t2;
   let option_value_value;
@@ -12169,7 +11947,7 @@ function create_each_block_81(ctx) {
       t1 = text(": ");
       t2 = text(t2_value);
       option.__value = option_value_value = /*obj*/
-      ctx[644].id;
+      ctx[658].id;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -12180,20 +11958,20 @@ function create_each_block_81(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAntsAndGroups*/
-      8192 && t0_value !== (t0_value = /*obj*/
-      ctx2[644].type === 0 ? "ANT" : (
+      65536 && t0_value !== (t0_value = /*obj*/
+      ctx2[658].type === 0 ? "ANT" : (
         /*obj*/
-        ctx2[644].type === 1 && /*obj*/
-        ctx2[644].virtual_rotator ? "VIR" : "GRP"
+        ctx2[658].type === 1 && /*obj*/
+        ctx2[658].virtual_rotator ? "VIR" : "GRP"
       ))) set_data(t0, t0_value);
       if (dirty[1] & /*activeAntsAndGroups*/
-      8192 && t2_value !== (t2_value = /*obj*/
-      (ctx2[644].display || /*obj*/
-      ctx2[644].label || `#${/*obj*/
-      ctx2[644].id}`) + "")) set_data(t2, t2_value);
+      65536 && t2_value !== (t2_value = /*obj*/
+      (ctx2[658].display || /*obj*/
+      ctx2[658].label || `#${/*obj*/
+      ctx2[658].id}`) + "")) set_data(t2, t2_value);
       if (dirty[1] & /*activeAntsAndGroups*/
-      8192 && option_value_value !== (option_value_value = /*obj*/
-      ctx2[644].id)) {
+      65536 && option_value_value !== (option_value_value = /*obj*/
+      ctx2[658].id)) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -12205,26 +11983,26 @@ function create_each_block_81(ctx) {
     }
   };
 }
-function create_if_block_108(ctx) {
+function create_if_block_109(ctx) {
   let table;
   let tr0;
   let t;
   let tr1;
-  let each_value_80 = ensure_array_like(
+  let each_value_81 = ensure_array_like(
     /*antOuts*/
-    ctx[670]
+    ctx[684]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_80.length; i += 1) {
-    each_blocks_1[i] = create_each_block_80(get_each_context_80(ctx, each_value_80, i));
+  for (let i = 0; i < each_value_81.length; i += 1) {
+    each_blocks_1[i] = create_each_block_81(get_each_context_81(ctx, each_value_81, i));
   }
-  let each_value_79 = ensure_array_like(
+  let each_value_80 = ensure_array_like(
     /*antOuts*/
-    ctx[670]
+    ctx[684]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_79.length; i += 1) {
-    each_blocks[i] = create_each_block_79(get_each_context_79(ctx, each_value_79, i));
+  for (let i = 0; i < each_value_80.length; i += 1) {
+    each_blocks[i] = create_each_block_80(get_each_context_80(ctx, each_value_80, i));
   }
   return {
     c() {
@@ -12259,18 +12037,18 @@ function create_if_block_108(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAntOutputs*/
-      16384) {
-        each_value_80 = ensure_array_like(
+      131072) {
+        each_value_81 = ensure_array_like(
           /*antOuts*/
-          ctx2[670]
+          ctx2[684]
         );
         let i;
-        for (i = 0; i < each_value_80.length; i += 1) {
-          const child_ctx = get_each_context_80(ctx2, each_value_80, i);
+        for (i = 0; i < each_value_81.length; i += 1) {
+          const child_ctx = get_each_context_81(ctx2, each_value_81, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_80(child_ctx);
+            each_blocks_1[i] = create_each_block_81(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(tr0, null);
           }
@@ -12278,21 +12056,21 @@ function create_if_block_108(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_80.length;
+        each_blocks_1.length = each_value_81.length;
       }
       if (dirty[1] & /*activeAllObjs, activeBnds, activeAntOutputs*/
-      409600) {
-        each_value_79 = ensure_array_like(
+      3276800) {
+        each_value_80 = ensure_array_like(
           /*antOuts*/
-          ctx2[670]
+          ctx2[684]
         );
         let i;
-        for (i = 0; i < each_value_79.length; i += 1) {
-          const child_ctx = get_each_context_79(ctx2, each_value_79, i);
+        for (i = 0; i < each_value_80.length; i += 1) {
+          const child_ctx = get_each_context_80(ctx2, each_value_80, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_79(child_ctx);
+            each_blocks[i] = create_each_block_80(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(tr1, null);
           }
@@ -12300,7 +12078,7 @@ function create_if_block_108(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_79.length;
+        each_blocks.length = each_value_80.length;
       }
     },
     d(detaching) {
@@ -12312,11 +12090,11 @@ function create_if_block_108(ctx) {
     }
   };
 }
-function create_each_block_80(ctx) {
+function create_each_block_81(ctx) {
   let td;
   let t_value = (
     /*ao*/
-    ctx[680] + ""
+    ctx[694] + ""
   );
   let t;
   return {
@@ -12332,8 +12110,8 @@ function create_each_block_80(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAntOutputs*/
-      16384 && t_value !== (t_value = /*ao*/
-      ctx2[680] + "")) set_data(t, t_value);
+      131072 && t_value !== (t_value = /*ao*/
+      ctx2[694] + "")) set_data(t, t_value);
     },
     d(detaching) {
       if (detaching) {
@@ -12342,14 +12120,14 @@ function create_each_block_80(ctx) {
     }
   };
 }
-function create_each_block_79(ctx) {
+function create_each_block_80(ctx) {
   var _a;
   let td;
   let t_value = (
     /*destObj*/
-    ((_a = ctx[677].output) == null ? void 0 : _a[
+    ((_a = ctx[691].output) == null ? void 0 : _a[
       /*ao*/
-      ctx[680]
+      ctx[694]
     ]) || 0 ? "Yes" : "No"
   );
   let t;
@@ -12366,11 +12144,27 @@ function create_each_block_79(ctx) {
     p(ctx2, dirty) {
       var _a2;
       if (dirty[1] & /*activeAllObjs, activeBnds, activeAntOutputs*/
-      409600 && t_value !== (t_value = /*destObj*/
-      ((_a2 = ctx2[677].output) == null ? void 0 : _a2[
+      3276800 && t_value !== (t_value = /*destObj*/
+      ((_a2 = ctx2[691].output) == null ? void 0 : _a2[
         /*ao*/
-        ctx2[680]
+        ctx2[694]
       ]) || 0 ? "Yes" : "No")) set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(td);
+      }
+    }
+  };
+}
+function create_if_block_108(ctx) {
+  let td;
+  return {
+    c() {
+      td = element("td");
+    },
+    m(target, anchor) {
+      insert(target, td, anchor);
     },
     d(detaching) {
       if (detaching) {
@@ -12395,23 +12189,7 @@ function create_if_block_107(ctx) {
     }
   };
 }
-function create_if_block_106(ctx) {
-  let td;
-  return {
-    c() {
-      td = element("td");
-    },
-    m(target, anchor) {
-      insert(target, td, anchor);
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(td);
-      }
-    }
-  };
-}
-function create_each_block_78(key_1, ctx) {
+function create_each_block_79(key_1, ctx) {
   let tr;
   let t0;
   let td0;
@@ -12423,40 +12201,40 @@ function create_each_block_78(key_1, ctx) {
   let t4;
   let t5;
   let t6;
-  function select_block_type_19(ctx2, dirty) {
+  function select_block_type_21(ctx2, dirty) {
     if (
       /*bndMode*/
-      ctx2[666] === "edit"
-    ) return create_if_block_110;
-    return create_else_block_19;
+      ctx2[680] === "edit"
+    ) return create_if_block_111;
+    return create_else_block_21;
   }
-  let current_block_type = select_block_type_19(ctx);
+  let current_block_type = select_block_type_21(ctx);
   let if_block0 = current_block_type(ctx);
-  function select_block_type_20(ctx2, dirty) {
+  function select_block_type_22(ctx2, dirty) {
     if (
       /*bndMode*/
-      ctx2[666] === "edit"
-    ) return create_if_block_109;
-    return create_else_block_18;
+      ctx2[680] === "edit"
+    ) return create_if_block_110;
+    return create_else_block_20;
   }
   function select_block_ctx(ctx2, type) {
-    if (type === create_if_block_109) return get_if_ctx_9(ctx2);
+    if (type === create_if_block_110) return get_if_ctx_9(ctx2);
     return ctx2;
   }
-  let current_block_type_1 = select_block_type_20(ctx);
+  let current_block_type_1 = select_block_type_22(ctx);
   let if_block1 = current_block_type_1(select_block_ctx(ctx, current_block_type_1));
   let if_block2 = (
     /*destObj*/
-    ctx[677] && /*destObj*/
-    ctx[677].type === 0 && create_if_block_108(ctx)
+    ctx[691] && /*destObj*/
+    ctx[691].type === 0 && create_if_block_109(ctx)
   );
   let if_block3 = (
     /*bpfOuts*/
-    ctx[668].length > 0 && create_if_block_107()
+    ctx[682].length > 0 && create_if_block_108()
   );
   let if_block4 = (
     /*seqOuts*/
-    ctx[669].length > 0 && create_if_block_106()
+    ctx[683].length > 0 && create_if_block_107()
   );
   return {
     key: key_1,
@@ -12500,7 +12278,7 @@ function create_each_block_78(key_1, ctx) {
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (current_block_type === (current_block_type = select_block_type_19(ctx)) && if_block0) {
+      if (current_block_type === (current_block_type = select_block_type_21(ctx)) && if_block0) {
         if_block0.p(ctx, dirty);
       } else {
         if_block0.d(1);
@@ -12510,7 +12288,7 @@ function create_each_block_78(key_1, ctx) {
           if_block0.m(tr, t0);
         }
       }
-      if (current_block_type_1 === (current_block_type_1 = select_block_type_20(ctx)) && if_block1) {
+      if (current_block_type_1 === (current_block_type_1 = select_block_type_22(ctx)) && if_block1) {
         if_block1.p(select_block_ctx(ctx, current_block_type_1), dirty);
       } else {
         if_block1.d(1);
@@ -12522,13 +12300,13 @@ function create_each_block_78(key_1, ctx) {
       }
       if (
         /*destObj*/
-        ctx[677] && /*destObj*/
-        ctx[677].type === 0
+        ctx[691] && /*destObj*/
+        ctx[691].type === 0
       ) {
         if (if_block2) {
           if_block2.p(ctx, dirty);
         } else {
-          if_block2 = create_if_block_108(ctx);
+          if_block2 = create_if_block_109(ctx);
           if_block2.c();
           if_block2.m(td2, null);
         }
@@ -12538,11 +12316,11 @@ function create_each_block_78(key_1, ctx) {
       }
       if (
         /*bpfOuts*/
-        ctx[668].length > 0
+        ctx[682].length > 0
       ) {
         if (if_block3) ;
         else {
-          if_block3 = create_if_block_107();
+          if_block3 = create_if_block_108();
           if_block3.c();
           if_block3.m(tr, t5);
         }
@@ -12552,11 +12330,11 @@ function create_each_block_78(key_1, ctx) {
       }
       if (
         /*seqOuts*/
-        ctx[669].length > 0
+        ctx[683].length > 0
       ) {
         if (if_block4) ;
         else {
-          if_block4 = create_if_block_106();
+          if_block4 = create_if_block_107();
           if_block4.c();
           if_block4.m(tr, t6);
         }
@@ -12577,7 +12355,7 @@ function create_each_block_78(key_1, ctx) {
     }
   };
 }
-function create_else_block_17(ctx) {
+function create_else_block_19(ctx) {
   let td0;
   let t0;
   let t1;
@@ -12585,15 +12363,15 @@ function create_else_block_17(ctx) {
   let td1;
   let if_block0 = (
     /*bpfOuts*/
-    ctx[668].length > 0 && create_if_block_105()
+    ctx[682].length > 0 && create_if_block_106()
   );
   let if_block1 = (
     /*seqOuts*/
-    ctx[669].length > 0 && create_if_block_104()
+    ctx[683].length > 0 && create_if_block_105()
   );
   let if_block2 = !/*bndMode*/
-  ctx[666] && !/*bndAddRefState*/
-  ctx[667] && create_if_block_103(ctx);
+  ctx[680] && !/*bndAddRefState*/
+  ctx[681] && create_if_block_104(ctx);
   return {
     c() {
       td0 = element("td");
@@ -12619,11 +12397,11 @@ function create_else_block_17(ctx) {
     p(ctx2, dirty) {
       if (
         /*bpfOuts*/
-        ctx2[668].length > 0
+        ctx2[682].length > 0
       ) {
         if (if_block0) ;
         else {
-          if_block0 = create_if_block_105();
+          if_block0 = create_if_block_106();
           if_block0.c();
           if_block0.m(t1.parentNode, t1);
         }
@@ -12633,11 +12411,11 @@ function create_else_block_17(ctx) {
       }
       if (
         /*seqOuts*/
-        ctx2[669].length > 0
+        ctx2[683].length > 0
       ) {
         if (if_block1) ;
         else {
-          if_block1 = create_if_block_104();
+          if_block1 = create_if_block_105();
           if_block1.c();
           if_block1.m(t2.parentNode, t2);
         }
@@ -12646,12 +12424,12 @@ function create_else_block_17(ctx) {
         if_block1 = null;
       }
       if (!/*bndMode*/
-      ctx2[666] && !/*bndAddRefState*/
-      ctx2[667]) {
+      ctx2[680] && !/*bndAddRefState*/
+      ctx2[681]) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_103(ctx2);
+          if_block2 = create_if_block_104(ctx2);
           if_block2.c();
           if_block2.m(td1, null);
         }
@@ -12674,7 +12452,7 @@ function create_else_block_17(ctx) {
     }
   };
 }
-function create_if_block_101(ctx) {
+function create_if_block_102(ctx) {
   let td0;
   let select;
   let t0;
@@ -12691,17 +12469,17 @@ function create_if_block_101(ctx) {
   let if_block_anchor;
   let mounted;
   let dispose;
-  let each_value_77 = ensure_array_like(
+  let each_value_78 = ensure_array_like(
     /*antGrpObjs*/
-    ctx[671]
+    ctx[685]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_77.length; i += 1) {
-    each_blocks[i] = create_each_block_77(get_each_context_77(ctx, each_value_77, i));
+  for (let i = 0; i < each_value_78.length; i += 1) {
+    each_blocks[i] = create_each_block_78(get_each_context_78(ctx, each_value_78, i));
   }
   let if_block = (
     /*seqOuts*/
-    ctx[669].length > 0 && create_if_block_102()
+    ctx[683].length > 0 && create_if_block_103()
   );
   return {
     c() {
@@ -12734,7 +12512,7 @@ function create_if_block_101(ctx) {
         ].dest_id === void 0
       ) add_render_callback(() => (
         /*select_change_handler_3*/
-        ctx[418].call(select)
+        ctx[422].call(select)
       ));
       attr(td0, "colspan", "3");
       attr(button0, "class", "btn");
@@ -12778,19 +12556,19 @@ function create_if_block_101(ctx) {
             select,
             "change",
             /*select_change_handler_3*/
-            ctx[418]
+            ctx[422]
           ),
           listen(
             button0,
             "click",
-            /*click_handler_39*/
-            ctx[419]
+            /*click_handler_40*/
+            ctx[423]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_40*/
-            ctx[420]
+            /*click_handler_41*/
+            ctx[424]
           )
         ];
         mounted = true;
@@ -12798,18 +12576,18 @@ function create_if_block_101(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAntsAndGroups*/
-      8192) {
-        each_value_77 = ensure_array_like(
+      65536) {
+        each_value_78 = ensure_array_like(
           /*antGrpObjs*/
-          ctx2[671]
+          ctx2[685]
         );
         let i;
-        for (i = 0; i < each_value_77.length; i += 1) {
-          const child_ctx = get_each_context_77(ctx2, each_value_77, i);
+        for (i = 0; i < each_value_78.length; i += 1) {
+          const child_ctx = get_each_context_78(ctx2, each_value_78, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_77(child_ctx);
+            each_blocks[i] = create_each_block_78(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -12817,11 +12595,11 @@ function create_if_block_101(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_77.length;
+        each_blocks.length = each_value_78.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndAddRef, activeAntsAndGroups*/
-      8208) {
+      65552) {
         select_option(
           select,
           /*smBndAddRef*/
@@ -12833,11 +12611,11 @@ function create_if_block_101(ctx) {
       }
       if (
         /*seqOuts*/
-        ctx2[669].length > 0
+        ctx2[683].length > 0
       ) {
         if (if_block) ;
         else {
-          if_block = create_if_block_102();
+          if_block = create_if_block_103();
           if_block.c();
           if_block.m(if_block_anchor.parentNode, if_block_anchor);
         }
@@ -12867,6 +12645,22 @@ function create_if_block_101(ctx) {
     }
   };
 }
+function create_if_block_106(ctx) {
+  let td;
+  return {
+    c() {
+      td = element("td");
+    },
+    m(target, anchor) {
+      insert(target, td, anchor);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(td);
+      }
+    }
+  };
+}
 function create_if_block_105(ctx) {
   let td;
   return {
@@ -12884,31 +12678,15 @@ function create_if_block_105(ctx) {
   };
 }
 function create_if_block_104(ctx) {
-  let td;
-  return {
-    c() {
-      td = element("td");
-    },
-    m(target, anchor) {
-      insert(target, td, anchor);
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(td);
-      }
-    }
-  };
-}
-function create_if_block_103(ctx) {
   let button;
   let mounted;
   let dispose;
-  function click_handler_41() {
+  function click_handler_42() {
     return (
-      /*click_handler_41*/
-      ctx[421](
+      /*click_handler_42*/
+      ctx[425](
         /*bnd*/
-        ctx[672]
+        ctx[686]
       )
     );
   }
@@ -12922,7 +12700,7 @@ function create_if_block_103(ctx) {
     m(target, anchor) {
       insert(target, button, anchor);
       if (!mounted) {
-        dispose = listen(button, "click", click_handler_41);
+        dispose = listen(button, "click", click_handler_42);
         mounted = true;
       }
     },
@@ -12938,23 +12716,23 @@ function create_if_block_103(ctx) {
     }
   };
 }
-function create_each_block_77(ctx) {
+function create_each_block_78(ctx) {
   let option;
   let t0_value = (
     /*obj*/
-    ctx[644].type === 0 ? "ANT" : (
+    ctx[658].type === 0 ? "ANT" : (
       /*obj*/
-      ctx[644].type === 1 && /*obj*/
-      ctx[644].virtual_rotator ? "VIR" : "GRP"
+      ctx[658].type === 1 && /*obj*/
+      ctx[658].virtual_rotator ? "VIR" : "GRP"
     )
   );
   let t0;
   let t1;
   let t2_value = (
     /*obj*/
-    (ctx[644].display || /*obj*/
-    ctx[644].label || `#${/*obj*/
-    ctx[644].id}`) + ""
+    (ctx[658].display || /*obj*/
+    ctx[658].label || `#${/*obj*/
+    ctx[658].id}`) + ""
   );
   let t2;
   let option_value_value;
@@ -12965,7 +12743,7 @@ function create_each_block_77(ctx) {
       t1 = text(": ");
       t2 = text(t2_value);
       option.__value = option_value_value = /*obj*/
-      ctx[644].id;
+      ctx[658].id;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -12976,20 +12754,20 @@ function create_each_block_77(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAntsAndGroups*/
-      8192 && t0_value !== (t0_value = /*obj*/
-      ctx2[644].type === 0 ? "ANT" : (
+      65536 && t0_value !== (t0_value = /*obj*/
+      ctx2[658].type === 0 ? "ANT" : (
         /*obj*/
-        ctx2[644].type === 1 && /*obj*/
-        ctx2[644].virtual_rotator ? "VIR" : "GRP"
+        ctx2[658].type === 1 && /*obj*/
+        ctx2[658].virtual_rotator ? "VIR" : "GRP"
       ))) set_data(t0, t0_value);
       if (dirty[1] & /*activeAntsAndGroups*/
-      8192 && t2_value !== (t2_value = /*obj*/
-      (ctx2[644].display || /*obj*/
-      ctx2[644].label || `#${/*obj*/
-      ctx2[644].id}`) + "")) set_data(t2, t2_value);
+      65536 && t2_value !== (t2_value = /*obj*/
+      (ctx2[658].display || /*obj*/
+      ctx2[658].label || `#${/*obj*/
+      ctx2[658].id}`) + "")) set_data(t2, t2_value);
       if (dirty[1] & /*activeAntsAndGroups*/
-      8192 && option_value_value !== (option_value_value = /*obj*/
-      ctx2[644].id)) {
+      65536 && option_value_value !== (option_value_value = /*obj*/
+      ctx2[658].id)) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -13001,7 +12779,7 @@ function create_each_block_77(ctx) {
     }
   };
 }
-function create_if_block_102(ctx) {
+function create_if_block_103(ctx) {
   let td;
   return {
     c() {
@@ -13017,13 +12795,13 @@ function create_if_block_102(ctx) {
     }
   };
 }
-function create_each_block_76(key_1, ctx) {
+function create_each_block_77(key_1, ctx) {
   let tr0;
   let t0;
   let td0;
   let t1_value = (
     /*bnd*/
-    ctx[672].id + ""
+    ctx[686].id + ""
   );
   let t1;
   let t2;
@@ -13037,51 +12815,51 @@ function create_each_block_76(key_1, ctx) {
   let td2;
   let t6;
   let t7;
-  function select_block_type_17(ctx2, dirty) {
+  function select_block_type_19(ctx2, dirty) {
     if (
       /*bndMode*/
-      ctx2[666] === "edit"
-    ) return create_if_block_116;
-    return create_else_block_21;
+      ctx2[680] === "edit"
+    ) return create_if_block_117;
+    return create_else_block_23;
   }
-  let current_block_type = select_block_type_17(ctx);
+  let current_block_type = select_block_type_19(ctx);
   let if_block0 = current_block_type(ctx);
-  function select_block_type_18(ctx2, dirty) {
+  function select_block_type_20(ctx2, dirty) {
     if (
       /*bndMode*/
-      ctx2[666] === "edit"
-    ) return create_if_block_111;
-    return create_else_block_20;
+      ctx2[680] === "edit"
+    ) return create_if_block_112;
+    return create_else_block_22;
   }
   function select_block_ctx(ctx2, type) {
-    if (type === create_if_block_111) return get_if_ctx_10(ctx2);
+    if (type === create_if_block_112) return get_if_ctx_10(ctx2);
     return ctx2;
   }
-  let current_block_type_1 = select_block_type_18(ctx);
+  let current_block_type_1 = select_block_type_20(ctx);
   let if_block1 = current_block_type_1(select_block_ctx(ctx, current_block_type_1));
-  let each_value_78 = ensure_array_like(
+  let each_value_79 = ensure_array_like(
     /*bnd*/
-    ctx[672].refs || []
+    ctx[686].refs || []
   );
   const get_key = (ctx2) => (
     /*ref*/
-    ctx2[647].id
+    ctx2[661].id
   );
-  for (let i = 0; i < each_value_78.length; i += 1) {
-    let child_ctx = get_each_context_78(ctx, each_value_78, i);
+  for (let i = 0; i < each_value_79.length; i += 1) {
+    let child_ctx = get_each_context_79(ctx, each_value_79, i);
     let key = get_key(child_ctx);
-    each_1_lookup.set(key, each_blocks[i] = create_each_block_78(key, child_ctx));
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_79(key, child_ctx));
   }
-  function select_block_type_21(ctx2, dirty) {
+  function select_block_type_23(ctx2, dirty) {
     if (
       /*bndAddRefState*/
-      ctx2[667] && /*bndAddRefState*/
-      ctx2[667].bndId === /*bnd*/
-      ctx2[672].id
-    ) return create_if_block_101;
-    return create_else_block_17;
+      ctx2[681] && /*bndAddRefState*/
+      ctx2[681].bndId === /*bnd*/
+      ctx2[686].id
+    ) return create_if_block_102;
+    return create_else_block_19;
   }
-  let current_block_type_2 = select_block_type_21(ctx);
+  let current_block_type_2 = select_block_type_23(ctx);
   let if_block2 = current_block_type_2(ctx);
   return {
     key: key_1,
@@ -13134,7 +12912,7 @@ function create_each_block_76(key_1, ctx) {
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (current_block_type === (current_block_type = select_block_type_17(ctx)) && if_block0) {
+      if (current_block_type === (current_block_type = select_block_type_19(ctx)) && if_block0) {
         if_block0.p(ctx, dirty);
       } else {
         if_block0.d(1);
@@ -13145,9 +12923,9 @@ function create_each_block_76(key_1, ctx) {
         }
       }
       if (dirty[1] & /*activeBnds*/
-      131072 && t1_value !== (t1_value = /*bnd*/
-      ctx[672].id + "")) set_data(t1, t1_value);
-      if (current_block_type_1 === (current_block_type_1 = select_block_type_18(ctx)) && if_block1) {
+      1048576 && t1_value !== (t1_value = /*bnd*/
+      ctx[686].id + "")) set_data(t1, t1_value);
+      if (current_block_type_1 === (current_block_type_1 = select_block_type_20(ctx)) && if_block1) {
         if_block1.p(select_block_ctx(ctx, current_block_type_1), dirty);
       } else {
         if_block1.d(1);
@@ -13159,16 +12937,16 @@ function create_each_block_76(key_1, ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeSeqOutputs, activeBpfOutputs, activeAntOutputs, activeAllObjs, activeBnds, smBndEditForms, activeAntsAndGroups, smBndMode, smBndSelected*/
-      516109 | dirty[4] & /*smObjTypedDisplay*/
-      16777216 | dirty[5] & /*smBndToggleSelect*/
-      1) {
-        each_value_78 = ensure_array_like(
+      4128781 | dirty[4] & /*smObjTypedDisplay*/
+      1073741824 | dirty[5] & /*smBndToggleSelect*/
+      64) {
+        each_value_79 = ensure_array_like(
           /*bnd*/
-          ctx[672].refs || []
+          ctx[686].refs || []
         );
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_78, each_1_lookup, t4.parentNode, destroy_block, create_each_block_78, t4, get_each_context_78);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_79, each_1_lookup, t4.parentNode, destroy_block, create_each_block_79, t4, get_each_context_79);
       }
-      if (current_block_type_2 === (current_block_type_2 = select_block_type_21(ctx)) && if_block2) {
+      if (current_block_type_2 === (current_block_type_2 = select_block_type_23(ctx)) && if_block2) {
         if_block2.p(ctx, dirty);
       } else {
         if_block2.d(1);
@@ -13195,7 +12973,7 @@ function create_each_block_76(key_1, ctx) {
     }
   };
 }
-function create_if_block_98(ctx) {
+function create_if_block_99(ctx) {
   let tr;
   let td0;
   let t0;
@@ -13226,11 +13004,11 @@ function create_if_block_98(ctx) {
   let dispose;
   let if_block0 = (
     /*bpfOuts*/
-    ctx[668].length > 0 && create_if_block_100()
+    ctx[682].length > 0 && create_if_block_101()
   );
   let if_block1 = (
     /*seqOuts*/
-    ctx[669].length > 0 && create_if_block_99()
+    ctx[683].length > 0 && create_if_block_100()
   );
   return {
     c() {
@@ -13355,37 +13133,37 @@ function create_if_block_98(ctx) {
             input0,
             "input",
             /*input0_input_handler_4*/
-            ctx[422]
+            ctx[426]
           ),
           listen(
             input1,
             "input",
             /*input1_input_handler_4*/
-            ctx[423]
+            ctx[427]
           ),
           listen(
             input2,
             "input",
             /*input2_input_handler_1*/
-            ctx[424]
+            ctx[428]
           ),
           listen(
             input3,
             "input",
             /*input3_input_handler_1*/
-            ctx[425]
+            ctx[429]
           ),
           listen(
             input4,
             "change",
             /*input4_change_handler*/
-            ctx[426]
+            ctx[430]
           ),
           listen(
             input5,
             "change",
             /*input5_change_handler*/
-            ctx[427]
+            ctx[431]
           )
         ];
         mounted = true;
@@ -13394,7 +13172,7 @@ function create_if_block_98(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndAddForm, activeAntsAndGroups*/
-      8194 && input0.value !== /*smBndAddForm*/
+      65538 && input0.value !== /*smBndAddForm*/
       ctx2[32][
         /*activeSerial*/
         ctx2[0]
@@ -13410,7 +13188,7 @@ function create_if_block_98(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndAddForm, activeAntsAndGroups*/
-      8194 && to_number(input1.value) !== /*smBndAddForm*/
+      65538 && to_number(input1.value) !== /*smBndAddForm*/
       ctx2[32][
         /*activeSerial*/
         ctx2[0]
@@ -13426,7 +13204,7 @@ function create_if_block_98(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndAddForm, activeAntsAndGroups*/
-      8194 && to_number(input2.value) !== /*smBndAddForm*/
+      65538 && to_number(input2.value) !== /*smBndAddForm*/
       ctx2[32][
         /*activeSerial*/
         ctx2[0]
@@ -13442,7 +13220,7 @@ function create_if_block_98(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndAddForm, activeAntsAndGroups*/
-      8194 && to_number(input3.value) !== /*smBndAddForm*/
+      65538 && to_number(input3.value) !== /*smBndAddForm*/
       ctx2[32][
         /*activeSerial*/
         ctx2[0]
@@ -13458,7 +13236,7 @@ function create_if_block_98(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndAddForm, activeAntsAndGroups*/
-      8194) {
+      65538) {
         input4.checked = /*smBndAddForm*/
         ctx2[32][
           /*activeSerial*/
@@ -13467,7 +13245,7 @@ function create_if_block_98(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*smBndAddForm, activeAntsAndGroups*/
-      8194) {
+      65538) {
         input5.checked = /*smBndAddForm*/
         ctx2[32][
           /*activeSerial*/
@@ -13476,11 +13254,11 @@ function create_if_block_98(ctx) {
       }
       if (
         /*bpfOuts*/
-        ctx2[668].length > 0
+        ctx2[682].length > 0
       ) {
         if (if_block0) ;
         else {
-          if_block0 = create_if_block_100();
+          if_block0 = create_if_block_101();
           if_block0.c();
           if_block0.m(tr, t9);
         }
@@ -13490,11 +13268,11 @@ function create_if_block_98(ctx) {
       }
       if (
         /*seqOuts*/
-        ctx2[669].length > 0
+        ctx2[683].length > 0
       ) {
         if (if_block1) ;
         else {
-          if_block1 = create_if_block_99();
+          if_block1 = create_if_block_100();
           if_block1.c();
           if_block1.m(tr, null);
         }
@@ -13514,6 +13292,22 @@ function create_if_block_98(ctx) {
     }
   };
 }
+function create_if_block_101(ctx) {
+  let td;
+  return {
+    c() {
+      td = element("td");
+    },
+    m(target, anchor) {
+      insert(target, td, anchor);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(td);
+      }
+    }
+  };
+}
 function create_if_block_100(ctx) {
   let td;
   return {
@@ -13530,23 +13324,7 @@ function create_if_block_100(ctx) {
     }
   };
 }
-function create_if_block_99(ctx) {
-  let td;
-  return {
-    c() {
-      td = element("td");
-    },
-    m(target, anchor) {
-      insert(target, td, anchor);
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(td);
-      }
-    }
-  };
-}
-function create_else_block_16(ctx) {
+function create_else_block_18(ctx) {
   let button0;
   let t1;
   let button1;
@@ -13582,20 +13360,20 @@ function create_else_block_16(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_46*/
-            ctx[432]
+            /*click_handler_47*/
+            ctx[436]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_47*/
-            ctx[433]
+            /*click_handler_48*/
+            ctx[437]
           ),
           listen(
             button2,
             "click",
-            /*click_handler_48*/
-            ctx[434]
+            /*click_handler_49*/
+            ctx[438]
           )
         ];
         mounted = true;
@@ -13609,6 +13387,58 @@ function create_else_block_16(ctx) {
         detach(button1);
         detach(t3);
         detach(button2);
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_98(ctx) {
+  let button0;
+  let t1;
+  let button1;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      button0 = element("button");
+      button0.textContent = "Save";
+      t1 = space();
+      button1 = element("button");
+      button1.textContent = "Cancel";
+      attr(button0, "class", "btn");
+      attr(button0, "type", "button");
+      attr(button1, "class", "btn");
+      attr(button1, "type", "button");
+    },
+    m(target, anchor) {
+      insert(target, button0, anchor);
+      insert(target, t1, anchor);
+      insert(target, button1, anchor);
+      if (!mounted) {
+        dispose = [
+          listen(
+            button0,
+            "click",
+            /*click_handler_45*/
+            ctx[434]
+          ),
+          listen(
+            button1,
+            "click",
+            /*click_handler_46*/
+            ctx[435]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(button0);
+        detach(t1);
+        detach(button1);
       }
       mounted = false;
       run_all(dispose);
@@ -13642,14 +13472,14 @@ function create_if_block_97(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_44*/
-            ctx[430]
+            /*click_handler_43*/
+            ctx[432]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_45*/
-            ctx[431]
+            /*click_handler_44*/
+            ctx[433]
           )
         ];
         mounted = true;
@@ -13668,61 +13498,9 @@ function create_if_block_97(ctx) {
   };
 }
 function create_if_block_96(ctx) {
-  let button0;
-  let t1;
-  let button1;
-  let mounted;
-  let dispose;
-  return {
-    c() {
-      button0 = element("button");
-      button0.textContent = "Save";
-      t1 = space();
-      button1 = element("button");
-      button1.textContent = "Cancel";
-      attr(button0, "class", "btn");
-      attr(button0, "type", "button");
-      attr(button1, "class", "btn");
-      attr(button1, "type", "button");
-    },
-    m(target, anchor) {
-      insert(target, button0, anchor);
-      insert(target, t1, anchor);
-      insert(target, button1, anchor);
-      if (!mounted) {
-        dispose = [
-          listen(
-            button0,
-            "click",
-            /*click_handler_42*/
-            ctx[428]
-          ),
-          listen(
-            button1,
-            "click",
-            /*click_handler_43*/
-            ctx[429]
-          )
-        ];
-        mounted = true;
-      }
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(button0);
-        detach(t1);
-        detach(button1);
-      }
-      mounted = false;
-      run_all(dispose);
-    }
-  };
-}
-function create_if_block_95(ctx) {
   return { c: noop, m: noop, p: noop, d: noop };
 }
-function create_if_block_94(ctx) {
+function create_if_block_95(ctx) {
   let div;
   let t_value = (
     /*keyerStatus*/
@@ -13756,7 +13534,7 @@ function create_if_block_94(ctx) {
       ].text + "")) set_data(t, t_value);
       if (dirty[0] & /*keyerStatus, activeSerial*/
       129 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
       ctx2[7][
         /*activeSerial*/
         ctx2[0]
@@ -13771,7 +13549,7 @@ function create_if_block_94(ctx) {
     }
   };
 }
-function create_else_block_15(ctx) {
+function create_else_block_17(ctx) {
   let td;
   let input;
   let input_checked_value;
@@ -13780,9 +13558,9 @@ function create_else_block_15(ctx) {
   function change_handler_128() {
     return (
       /*change_handler_128*/
-      ctx[387](
+      ctx[391](
         /*grp*/
-        ctx[656]
+        ctx[670]
       )
     );
   }
@@ -13797,7 +13575,7 @@ function create_else_block_15(ctx) {
         ctx[0]
       ] || []).includes(
         /*grp*/
-        ctx[656].id
+        ctx[670].id
       );
     },
     m(target, anchor) {
@@ -13812,13 +13590,13 @@ function create_else_block_15(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*smGrpSelected, activeSerial*/
       536870913 | dirty[1] & /*activeGrps, activeAntsAndGroups, activeAllObjs*/
-      794624 && input_checked_value !== (input_checked_value = /*smGrpSelected*/
+      6356992 && input_checked_value !== (input_checked_value = /*smGrpSelected*/
       (ctx[29][
         /*activeSerial*/
         ctx[0]
       ] || []).includes(
         /*grp*/
-        ctx[656].id
+        ctx[670].id
       ))) {
         input.checked = input_checked_value;
       }
@@ -13832,7 +13610,7 @@ function create_else_block_15(ctx) {
     }
   };
 }
-function create_if_block_92(ctx) {
+function create_if_block_93(ctx) {
   let td;
   return {
     c() {
@@ -13849,18 +13627,18 @@ function create_if_block_92(ctx) {
     }
   };
 }
-function create_else_block_14(ctx) {
+function create_else_block_16(ctx) {
   let td0;
   let t0_value = (
     /*grp*/
-    (ctx[656].label || "") + ""
+    (ctx[670].label || "") + ""
   );
   let t0;
   let t1;
   let td1;
   let t2_value = (
     /*grp*/
-    (ctx[656].display || "") + ""
+    (ctx[670].display || "") + ""
   );
   let t2;
   return {
@@ -13880,11 +13658,11 @@ function create_else_block_14(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeGrps*/
-      524288 && t0_value !== (t0_value = /*grp*/
-      (ctx2[656].label || "") + "")) set_data(t0, t0_value);
+      4194304 && t0_value !== (t0_value = /*grp*/
+      (ctx2[670].label || "") + "")) set_data(t0, t0_value);
       if (dirty[1] & /*activeGrps*/
-      524288 && t2_value !== (t2_value = /*grp*/
-      (ctx2[656].display || "") + "")) set_data(t2, t2_value);
+      4194304 && t2_value !== (t2_value = /*grp*/
+      (ctx2[670].display || "") + "")) set_data(t2, t2_value);
     },
     d(detaching) {
       if (detaching) {
@@ -13895,7 +13673,7 @@ function create_else_block_14(ctx) {
     }
   };
 }
-function create_if_block_91(ctx) {
+function create_if_block_92(ctx) {
   let td0;
   let input0;
   let input0_value_value;
@@ -13905,22 +13683,22 @@ function create_if_block_91(ctx) {
   let input1_value_value;
   let mounted;
   let dispose;
-  function input_handler_45(...args) {
+  function input_handler_40(...args) {
     return (
-      /*input_handler_45*/
-      ctx[388](
+      /*input_handler_40*/
+      ctx[392](
         /*grp*/
-        ctx[656],
+        ctx[670],
         ...args
       )
     );
   }
-  function input_handler_46(...args) {
+  function input_handler_41(...args) {
     return (
-      /*input_handler_46*/
-      ctx[389](
+      /*input_handler_41*/
+      ctx[393](
         /*grp*/
-        ctx[656],
+        ctx[670],
         ...args
       )
     );
@@ -13936,12 +13714,12 @@ function create_if_block_91(ctx) {
       attr(input0, "type", "text");
       attr(input0, "size", "5");
       input0.value = input0_value_value = /*ef*/
-      ctx[630].label;
+      ctx[644].label;
       attr(input1, "class", "input");
       attr(input1, "type", "text");
       attr(input1, "size", "10");
       input1.value = input1_value_value = /*ef*/
-      ctx[630].display;
+      ctx[644].display;
     },
     m(target, anchor) {
       insert(target, td0, anchor);
@@ -13951,8 +13729,8 @@ function create_if_block_91(ctx) {
       append(td1, input1);
       if (!mounted) {
         dispose = [
-          listen(input0, "input", input_handler_45),
-          listen(input1, "input", input_handler_46)
+          listen(input0, "input", input_handler_40),
+          listen(input1, "input", input_handler_41)
         ];
         mounted = true;
       }
@@ -13961,14 +13739,14 @@ function create_if_block_91(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*smGrpEditForms, activeSerial*/
       268435457 | dirty[1] & /*activeGrps, activeAllObjs, activeAntsAndGroups*/
-      794624 && input0_value_value !== (input0_value_value = /*ef*/
-      ctx[630].label) && input0.value !== input0_value_value) {
+      6356992 && input0_value_value !== (input0_value_value = /*ef*/
+      ctx[644].label) && input0.value !== input0_value_value) {
         input0.value = input0_value_value;
       }
       if (dirty[0] & /*smGrpEditForms, activeSerial*/
       268435457 | dirty[1] & /*activeGrps, activeAllObjs, activeAntsAndGroups*/
-      794624 && input1_value_value !== (input1_value_value = /*ef*/
-      ctx[630].display) && input1.value !== input1_value_value) {
+      6356992 && input1_value_value !== (input1_value_value = /*ef*/
+      ctx[644].display) && input1.value !== input1_value_value) {
         input1.value = input1_value_value;
       }
     },
@@ -13983,16 +13761,16 @@ function create_if_block_91(ctx) {
     }
   };
 }
-function create_if_block_90(ctx) {
+function create_if_block_91(ctx) {
   let button;
   let mounted;
   let dispose;
-  function click_handler_29() {
+  function click_handler_30() {
     return (
-      /*click_handler_29*/
-      ctx[390](
+      /*click_handler_30*/
+      ctx[394](
         /*grp*/
-        ctx[656]
+        ctx[670]
       )
     );
   }
@@ -14006,7 +13784,7 @@ function create_if_block_90(ctx) {
     m(target, anchor) {
       insert(target, button, anchor);
       if (!mounted) {
-        dispose = listen(button, "click", click_handler_29);
+        dispose = listen(button, "click", click_handler_30);
         mounted = true;
       }
     },
@@ -14022,7 +13800,7 @@ function create_if_block_90(ctx) {
     }
   };
 }
-function create_else_block_13(ctx) {
+function create_else_block_15(ctx) {
   let td;
   let input;
   let input_checked_value;
@@ -14031,11 +13809,11 @@ function create_else_block_13(ctx) {
   function change_handler_129() {
     return (
       /*change_handler_129*/
-      ctx[391](
+      ctx[395](
         /*grp*/
-        ctx[656],
+        ctx[670],
         /*ref*/
-        ctx[647]
+        ctx[661]
       )
     );
   }
@@ -14049,8 +13827,8 @@ function create_else_block_13(ctx) {
         /*activeSerial*/
         ctx[0]
       ] || []).includes(`${/*grp*/
-      ctx[656].id}:${/*ref*/
-      ctx[647].id}`);
+      ctx[670].id}:${/*ref*/
+      ctx[661].id}`);
     },
     m(target, anchor) {
       insert(target, td, anchor);
@@ -14064,13 +13842,13 @@ function create_else_block_13(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*smGrpSelected, activeSerial*/
       536870913 | dirty[1] & /*activeGrps, activeAntsAndGroups, activeAllObjs*/
-      794624 && input_checked_value !== (input_checked_value = /*smGrpSelected*/
+      6356992 && input_checked_value !== (input_checked_value = /*smGrpSelected*/
       (ctx[29][
         /*activeSerial*/
         ctx[0]
       ] || []).includes(`${/*grp*/
-      ctx[656].id}:${/*ref*/
-      ctx[647].id}`))) {
+      ctx[670].id}:${/*ref*/
+      ctx[661].id}`))) {
         input.checked = input_checked_value;
       }
     },
@@ -14083,7 +13861,7 @@ function create_else_block_13(ctx) {
     }
   };
 }
-function create_if_block_89(ctx) {
+function create_if_block_90(ctx) {
   let td;
   return {
     c() {
@@ -14100,15 +13878,15 @@ function create_if_block_89(ctx) {
     }
   };
 }
-function create_else_block_12(ctx) {
+function create_else_block_14(ctx) {
   let td;
   let t_value = (
     /*smObjDisplay*/
-    ctx[126](
+    ctx[132](
       /*activeSerial*/
       ctx[0],
       /*ref*/
-      ctx[647].dest_id
+      ctx[661].dest_id
     ) + ""
   );
   let t;
@@ -14124,12 +13902,12 @@ function create_else_block_12(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeGrps*/
-      524288 && t_value !== (t_value = /*smObjDisplay*/
-      ctx2[126](
+      4194304 && t_value !== (t_value = /*smObjDisplay*/
+      ctx2[132](
         /*activeSerial*/
         ctx2[0],
         /*ref*/
-        ctx2[647].dest_id
+        ctx2[661].dest_id
       ) + "")) set_data(t, t_value);
     },
     d(detaching) {
@@ -14139,28 +13917,28 @@ function create_else_block_12(ctx) {
     }
   };
 }
-function create_if_block_88(ctx) {
+function create_if_block_89(ctx) {
   let td;
   let select;
   let select_value_value;
   let mounted;
   let dispose;
-  let each_value_75 = ensure_array_like(
+  let each_value_76 = ensure_array_like(
     /*allObjs*/
-    ctx[640]
+    ctx[654]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_75.length; i += 1) {
-    each_blocks[i] = create_each_block_75(get_each_context_75(ctx, each_value_75, i));
+  for (let i = 0; i < each_value_76.length; i += 1) {
+    each_blocks[i] = create_each_block_76(get_each_context_76(ctx, each_value_76, i));
   }
   function change_handler_130(...args) {
     return (
       /*change_handler_130*/
-      ctx[392](
+      ctx[396](
         /*grp*/
-        ctx[656],
+        ctx[670],
         /*ref*/
-        ctx[647],
+        ctx[661],
         ...args
       )
     );
@@ -14185,7 +13963,7 @@ function create_if_block_88(ctx) {
       select_option(
         select,
         /*rf*/
-        ctx[650].dest_id
+        ctx[664].dest_id
       );
       if (!mounted) {
         dispose = listen(select, "change", change_handler_130);
@@ -14195,18 +13973,18 @@ function create_if_block_88(ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[1] & /*activeAllObjs*/
-      262144) {
-        each_value_75 = ensure_array_like(
+      2097152) {
+        each_value_76 = ensure_array_like(
           /*allObjs*/
-          ctx[640]
+          ctx[654]
         );
         let i;
-        for (i = 0; i < each_value_75.length; i += 1) {
-          const child_ctx = get_each_context_75(ctx, each_value_75, i);
+        for (i = 0; i < each_value_76.length; i += 1) {
+          const child_ctx = get_each_context_76(ctx, each_value_76, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_75(child_ctx);
+            each_blocks[i] = create_each_block_76(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -14214,16 +13992,16 @@ function create_if_block_88(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_75.length;
+        each_blocks.length = each_value_76.length;
       }
       if (dirty[0] & /*smGrpEditForms, activeSerial*/
       268435457 | dirty[1] & /*activeGrps, activeAllObjs, activeAntsAndGroups*/
-      794624 && select_value_value !== (select_value_value = /*rf*/
-      ctx[650].dest_id)) {
+      6356992 && select_value_value !== (select_value_value = /*rf*/
+      ctx[664].dest_id)) {
         select_option(
           select,
           /*rf*/
-          ctx[650].dest_id
+          ctx[664].dest_id
         );
       }
     },
@@ -14237,13 +14015,13 @@ function create_if_block_88(ctx) {
     }
   };
 }
-function create_each_block_75(ctx) {
+function create_each_block_76(ctx) {
   let option;
   let t_value = (
     /*obj*/
-    (ctx[644].display || /*obj*/
-    ctx[644].label || `#${/*obj*/
-    ctx[644].id}`) + ""
+    (ctx[658].display || /*obj*/
+    ctx[658].label || `#${/*obj*/
+    ctx[658].id}`) + ""
   );
   let t;
   let option_value_value;
@@ -14252,7 +14030,7 @@ function create_each_block_75(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*obj*/
-      ctx[644].id;
+      ctx[658].id;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -14261,13 +14039,13 @@ function create_each_block_75(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAllObjs*/
-      262144 && t_value !== (t_value = /*obj*/
-      (ctx2[644].display || /*obj*/
-      ctx2[644].label || `#${/*obj*/
-      ctx2[644].id}`) + "")) set_data(t, t_value);
+      2097152 && t_value !== (t_value = /*obj*/
+      (ctx2[658].display || /*obj*/
+      ctx2[658].label || `#${/*obj*/
+      ctx2[658].id}`) + "")) set_data(t, t_value);
       if (dirty[1] & /*activeAllObjs*/
-      262144 && option_value_value !== (option_value_value = /*obj*/
-      ctx2[644].id)) {
+      2097152 && option_value_value !== (option_value_value = /*obj*/
+      ctx2[658].id)) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -14279,7 +14057,7 @@ function create_each_block_75(ctx) {
     }
   };
 }
-function create_each_block_74(key_1, ctx) {
+function create_each_block_75(key_1, ctx) {
   let tr;
   let t0;
   let td0;
@@ -14291,37 +14069,37 @@ function create_each_block_74(key_1, ctx) {
   let td3;
   let t4_value = (
     /*smObjRxOnly*/
-    ctx[127](
+    ctx[133](
       /*activeSerial*/
       ctx[0],
       /*ref*/
-      ctx[647].dest_id
+      ctx[661].dest_id
     ) + ""
   );
   let t4;
   let t5;
   let t6;
-  function select_block_type_14(ctx2, dirty) {
+  function select_block_type_16(ctx2, dirty) {
     if (
       /*grpMode*/
-      ctx2[654] === "edit"
-    ) return create_if_block_89;
-    return create_else_block_13;
+      ctx2[668] === "edit"
+    ) return create_if_block_90;
+    return create_else_block_15;
   }
-  let current_block_type = select_block_type_14(ctx);
+  let current_block_type = select_block_type_16(ctx);
   let if_block0 = current_block_type(ctx);
-  function select_block_type_15(ctx2, dirty) {
+  function select_block_type_17(ctx2, dirty) {
     if (
       /*grpMode*/
-      ctx2[654] === "edit"
-    ) return create_if_block_88;
-    return create_else_block_12;
+      ctx2[668] === "edit"
+    ) return create_if_block_89;
+    return create_else_block_14;
   }
   function select_block_ctx(ctx2, type) {
-    if (type === create_if_block_88) return get_if_ctx_6(ctx2);
+    if (type === create_if_block_89) return get_if_ctx_6(ctx2);
     return ctx2;
   }
-  let current_block_type_1 = select_block_type_15(ctx);
+  let current_block_type_1 = select_block_type_17(ctx);
   let if_block1 = current_block_type_1(select_block_ctx(ctx, current_block_type_1));
   return {
     key: key_1,
@@ -14361,7 +14139,7 @@ function create_each_block_74(key_1, ctx) {
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (current_block_type === (current_block_type = select_block_type_14(ctx)) && if_block0) {
+      if (current_block_type === (current_block_type = select_block_type_16(ctx)) && if_block0) {
         if_block0.p(ctx, dirty);
       } else {
         if_block0.d(1);
@@ -14373,14 +14151,14 @@ function create_each_block_74(key_1, ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeGrps*/
-      524288 && t4_value !== (t4_value = /*smObjRxOnly*/
-      ctx[127](
+      4194304 && t4_value !== (t4_value = /*smObjRxOnly*/
+      ctx[133](
         /*activeSerial*/
         ctx[0],
         /*ref*/
-        ctx[647].dest_id
+        ctx[661].dest_id
       ) + "")) set_data(t4, t4_value);
-      if (current_block_type_1 === (current_block_type_1 = select_block_type_15(ctx)) && if_block1) {
+      if (current_block_type_1 === (current_block_type_1 = select_block_type_17(ctx)) && if_block1) {
         if_block1.p(select_block_ctx(ctx, current_block_type_1), dirty);
       } else {
         if_block1.d(1);
@@ -14400,7 +14178,7 @@ function create_each_block_74(key_1, ctx) {
     }
   };
 }
-function create_if_block_87(ctx) {
+function create_if_block_88(ctx) {
   let tr;
   let td0;
   let t0;
@@ -14417,13 +14195,13 @@ function create_if_block_87(ctx) {
   let t5;
   let mounted;
   let dispose;
-  let each_value_73 = ensure_array_like(
+  let each_value_74 = ensure_array_like(
     /*allObjs*/
-    ctx[640]
+    ctx[654]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_73.length; i += 1) {
-    each_blocks[i] = create_each_block_73(get_each_context_73(ctx, each_value_73, i));
+  for (let i = 0; i < each_value_74.length; i += 1) {
+    each_blocks[i] = create_each_block_74(get_each_context_74(ctx, each_value_74, i));
   }
   return {
     c() {
@@ -14453,7 +14231,7 @@ function create_if_block_87(ctx) {
         ].dest_id === void 0
       ) add_render_callback(() => (
         /*select_change_handler_2*/
-        ctx[393].call(select)
+        ctx[397].call(select)
       ));
       attr(tr, "class", "add-row");
     },
@@ -14491,25 +14269,25 @@ function create_if_block_87(ctx) {
           select,
           "change",
           /*select_change_handler_2*/
-          ctx[393]
+          ctx[397]
         );
         mounted = true;
       }
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAllObjs*/
-      262144) {
-        each_value_73 = ensure_array_like(
+      2097152) {
+        each_value_74 = ensure_array_like(
           /*allObjs*/
-          ctx2[640]
+          ctx2[654]
         );
         let i;
-        for (i = 0; i < each_value_73.length; i += 1) {
-          const child_ctx = get_each_context_73(ctx2, each_value_73, i);
+        for (i = 0; i < each_value_74.length; i += 1) {
+          const child_ctx = get_each_context_74(ctx2, each_value_74, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_73(child_ctx);
+            each_blocks[i] = create_each_block_74(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -14517,11 +14295,11 @@ function create_if_block_87(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_73.length;
+        each_blocks.length = each_value_74.length;
       }
       if (dirty[0] & /*smGrpAddAnt, activeSerial*/
       1073741825 | dirty[1] & /*activeAllObjs, activeAntsAndGroups*/
-      270336) {
+      2162688) {
         select_option(
           select,
           /*smGrpAddAnt*/
@@ -14542,13 +14320,13 @@ function create_if_block_87(ctx) {
     }
   };
 }
-function create_each_block_73(ctx) {
+function create_each_block_74(ctx) {
   let option;
   let t_value = (
     /*obj*/
-    (ctx[644].display || /*obj*/
-    ctx[644].label || `#${/*obj*/
-    ctx[644].id}`) + ""
+    (ctx[658].display || /*obj*/
+    ctx[658].label || `#${/*obj*/
+    ctx[658].id}`) + ""
   );
   let t;
   let option_value_value;
@@ -14557,7 +14335,7 @@ function create_each_block_73(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*obj*/
-      ctx[644].id;
+      ctx[658].id;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -14566,13 +14344,13 @@ function create_each_block_73(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAllObjs*/
-      262144 && t_value !== (t_value = /*obj*/
-      (ctx2[644].display || /*obj*/
-      ctx2[644].label || `#${/*obj*/
-      ctx2[644].id}`) + "")) set_data(t, t_value);
+      2097152 && t_value !== (t_value = /*obj*/
+      (ctx2[658].display || /*obj*/
+      ctx2[658].label || `#${/*obj*/
+      ctx2[658].id}`) + "")) set_data(t, t_value);
       if (dirty[1] & /*activeAllObjs*/
-      262144 && option_value_value !== (option_value_value = /*obj*/
-      ctx2[644].id)) {
+      2097152 && option_value_value !== (option_value_value = /*obj*/
+      ctx2[658].id)) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -14584,13 +14362,13 @@ function create_each_block_73(ctx) {
     }
   };
 }
-function create_each_block_72(key_1, ctx) {
+function create_each_block_73(key_1, ctx) {
   let tr;
   let t0;
   let td0;
   let t1_value = (
     /*grp*/
-    ctx[656].id + ""
+    ctx[670].id + ""
   );
   let t1;
   let t2;
@@ -14603,49 +14381,49 @@ function create_each_block_72(key_1, ctx) {
   let each_1_lookup = /* @__PURE__ */ new Map();
   let t6;
   let if_block3_anchor;
-  function select_block_type_12(ctx2, dirty) {
+  function select_block_type_14(ctx2, dirty) {
     if (
       /*grpMode*/
-      ctx2[654] === "edit"
-    ) return create_if_block_92;
-    return create_else_block_15;
+      ctx2[668] === "edit"
+    ) return create_if_block_93;
+    return create_else_block_17;
   }
-  let current_block_type = select_block_type_12(ctx);
+  let current_block_type = select_block_type_14(ctx);
   let if_block0 = current_block_type(ctx);
-  function select_block_type_13(ctx2, dirty) {
+  function select_block_type_15(ctx2, dirty) {
     if (
       /*grpMode*/
-      ctx2[654] === "edit"
-    ) return create_if_block_91;
-    return create_else_block_14;
+      ctx2[668] === "edit"
+    ) return create_if_block_92;
+    return create_else_block_16;
   }
   function select_block_ctx(ctx2, type) {
-    if (type === create_if_block_91) return get_if_ctx_7(ctx2);
+    if (type === create_if_block_92) return get_if_ctx_7(ctx2);
     return ctx2;
   }
-  let current_block_type_1 = select_block_type_13(ctx);
+  let current_block_type_1 = select_block_type_15(ctx);
   let if_block1 = current_block_type_1(select_block_ctx(ctx, current_block_type_1));
   let if_block2 = !/*grpMode*/
-  ctx[654] && !/*grpAddAntState*/
-  ctx[655] && create_if_block_90(ctx);
-  let each_value_74 = ensure_array_like(
+  ctx[668] && !/*grpAddAntState*/
+  ctx[669] && create_if_block_91(ctx);
+  let each_value_75 = ensure_array_like(
     /*grp*/
-    ctx[656].refs || []
+    ctx[670].refs || []
   );
   const get_key = (ctx2) => (
     /*ref*/
-    ctx2[647].id
+    ctx2[661].id
   );
-  for (let i = 0; i < each_value_74.length; i += 1) {
-    let child_ctx = get_each_context_74(ctx, each_value_74, i);
+  for (let i = 0; i < each_value_75.length; i += 1) {
+    let child_ctx = get_each_context_75(ctx, each_value_75, i);
     let key = get_key(child_ctx);
-    each_1_lookup.set(key, each_blocks[i] = create_each_block_74(key, child_ctx));
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_75(key, child_ctx));
   }
   let if_block3 = (
     /*grpAddAntState*/
-    ctx[655] && /*grpAddAntState*/
-    ctx[655].grpId === /*grp*/
-    ctx[656].id && create_if_block_87(ctx)
+    ctx[669] && /*grpAddAntState*/
+    ctx[669].grpId === /*grp*/
+    ctx[670].id && create_if_block_88(ctx)
   );
   return {
     key: key_1,
@@ -14698,7 +14476,7 @@ function create_each_block_72(key_1, ctx) {
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (current_block_type === (current_block_type = select_block_type_12(ctx)) && if_block0) {
+      if (current_block_type === (current_block_type = select_block_type_14(ctx)) && if_block0) {
         if_block0.p(ctx, dirty);
       } else {
         if_block0.d(1);
@@ -14709,9 +14487,9 @@ function create_each_block_72(key_1, ctx) {
         }
       }
       if (dirty[1] & /*activeGrps*/
-      524288 && t1_value !== (t1_value = /*grp*/
-      ctx[656].id + "")) set_data(t1, t1_value);
-      if (current_block_type_1 === (current_block_type_1 = select_block_type_13(ctx)) && if_block1) {
+      4194304 && t1_value !== (t1_value = /*grp*/
+      ctx[670].id + "")) set_data(t1, t1_value);
+      if (current_block_type_1 === (current_block_type_1 = select_block_type_15(ctx)) && if_block1) {
         if_block1.p(select_block_ctx(ctx, current_block_type_1), dirty);
       } else {
         if_block1.d(1);
@@ -14722,12 +14500,12 @@ function create_each_block_72(key_1, ctx) {
         }
       }
       if (!/*grpMode*/
-      ctx[654] && !/*grpAddAntState*/
-      ctx[655]) {
+      ctx[668] && !/*grpAddAntState*/
+      ctx[669]) {
         if (if_block2) {
           if_block2.p(ctx, dirty);
         } else {
-          if_block2 = create_if_block_90(ctx);
+          if_block2 = create_if_block_91(ctx);
           if_block2.c();
           if_block2.m(td2, null);
         }
@@ -14737,24 +14515,24 @@ function create_each_block_72(key_1, ctx) {
       }
       if (dirty[0] & /*smGrpEditForms, activeSerial, smGrpMode, smGrpSelected*/
       872415233 | dirty[1] & /*activeGrps, activeAllObjs*/
-      786432 | dirty[4] & /*smObjDisplay, smObjRxOnly, smGrpToggleSelect*/
-      1048588) {
-        each_value_74 = ensure_array_like(
+      6291456 | dirty[4] & /*smObjDisplay, smObjRxOnly, smGrpToggleSelect*/
+      67109632) {
+        each_value_75 = ensure_array_like(
           /*grp*/
-          ctx[656].refs || []
+          ctx[670].refs || []
         );
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_74, each_1_lookup, t6.parentNode, destroy_block, create_each_block_74, t6, get_each_context_74);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_75, each_1_lookup, t6.parentNode, destroy_block, create_each_block_75, t6, get_each_context_75);
       }
       if (
         /*grpAddAntState*/
-        ctx[655] && /*grpAddAntState*/
-        ctx[655].grpId === /*grp*/
-        ctx[656].id
+        ctx[669] && /*grpAddAntState*/
+        ctx[669].grpId === /*grp*/
+        ctx[670].id
       ) {
         if (if_block3) {
           if_block3.p(ctx, dirty);
         } else {
-          if_block3 = create_if_block_87(ctx);
+          if_block3 = create_if_block_88(ctx);
           if_block3.c();
           if_block3.m(if_block3_anchor.parentNode, if_block3_anchor);
         }
@@ -14780,7 +14558,7 @@ function create_each_block_72(key_1, ctx) {
     }
   };
 }
-function create_if_block_86(ctx) {
+function create_if_block_87(ctx) {
   let tr;
   let td0;
   let t0;
@@ -14858,13 +14636,13 @@ function create_if_block_86(ctx) {
             input0,
             "input",
             /*input0_input_handler_3*/
-            ctx[394]
+            ctx[398]
           ),
           listen(
             input1,
             "input",
             /*input1_input_handler_3*/
-            ctx[395]
+            ctx[399]
           )
         ];
         mounted = true;
@@ -14873,7 +14651,7 @@ function create_if_block_86(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*smGrpAddForm, activeSerial*/
       134217729 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0.value !== /*smGrpAddForm*/
+      65536 && input0.value !== /*smGrpAddForm*/
       ctx2[27][
         /*activeSerial*/
         ctx2[0]
@@ -14889,7 +14667,7 @@ function create_if_block_86(ctx) {
       }
       if (dirty[0] & /*smGrpAddForm, activeSerial*/
       134217729 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1.value !== /*smGrpAddForm*/
+      65536 && input1.value !== /*smGrpAddForm*/
       ctx2[27][
         /*activeSerial*/
         ctx2[0]
@@ -14913,7 +14691,7 @@ function create_if_block_86(ctx) {
     }
   };
 }
-function create_else_block_11(ctx) {
+function create_else_block_13(ctx) {
   let button0;
   let t1;
   let button1;
@@ -14949,20 +14727,20 @@ function create_else_block_11(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_36*/
-            ctx[402]
+            /*click_handler_37*/
+            ctx[406]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_37*/
-            ctx[403]
+            /*click_handler_38*/
+            ctx[407]
           ),
           listen(
             button2,
             "click",
-            /*click_handler_38*/
-            ctx[404]
+            /*click_handler_39*/
+            ctx[408]
           )
         ];
         mounted = true;
@@ -14976,6 +14754,58 @@ function create_else_block_11(ctx) {
         detach(button1);
         detach(t3);
         detach(button2);
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_86(ctx) {
+  let button0;
+  let t1;
+  let button1;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      button0 = element("button");
+      button0.textContent = "Save";
+      t1 = space();
+      button1 = element("button");
+      button1.textContent = "Cancel";
+      attr(button0, "class", "btn");
+      attr(button0, "type", "button");
+      attr(button1, "class", "btn");
+      attr(button1, "type", "button");
+    },
+    m(target, anchor) {
+      insert(target, button0, anchor);
+      insert(target, t1, anchor);
+      insert(target, button1, anchor);
+      if (!mounted) {
+        dispose = [
+          listen(
+            button0,
+            "click",
+            /*click_handler_35*/
+            ctx[404]
+          ),
+          listen(
+            button1,
+            "click",
+            /*click_handler_36*/
+            ctx[405]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(button0);
+        detach(t1);
+        detach(button1);
       }
       mounted = false;
       run_all(dispose);
@@ -15009,14 +14839,14 @@ function create_if_block_85(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_34*/
-            ctx[400]
+            /*click_handler_33*/
+            ctx[402]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_35*/
-            ctx[401]
+            /*click_handler_34*/
+            ctx[403]
           )
         ];
         mounted = true;
@@ -15061,14 +14891,14 @@ function create_if_block_84(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_32*/
-            ctx[398]
+            /*click_handler_31*/
+            ctx[400]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_33*/
-            ctx[399]
+            /*click_handler_32*/
+            ctx[401]
           )
         ];
         mounted = true;
@@ -15087,58 +14917,6 @@ function create_if_block_84(ctx) {
   };
 }
 function create_if_block_83(ctx) {
-  let button0;
-  let t1;
-  let button1;
-  let mounted;
-  let dispose;
-  return {
-    c() {
-      button0 = element("button");
-      button0.textContent = "Save";
-      t1 = space();
-      button1 = element("button");
-      button1.textContent = "Cancel";
-      attr(button0, "class", "btn");
-      attr(button0, "type", "button");
-      attr(button1, "class", "btn");
-      attr(button1, "type", "button");
-    },
-    m(target, anchor) {
-      insert(target, button0, anchor);
-      insert(target, t1, anchor);
-      insert(target, button1, anchor);
-      if (!mounted) {
-        dispose = [
-          listen(
-            button0,
-            "click",
-            /*click_handler_30*/
-            ctx[396]
-          ),
-          listen(
-            button1,
-            "click",
-            /*click_handler_31*/
-            ctx[397]
-          )
-        ];
-        mounted = true;
-      }
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(button0);
-        detach(t1);
-        detach(button1);
-      }
-      mounted = false;
-      run_all(dispose);
-    }
-  };
-}
-function create_if_block_82(ctx) {
   let div;
   let t_value = (
     /*keyerStatus*/
@@ -15172,7 +14950,7 @@ function create_if_block_82(ctx) {
       ].text + "")) set_data(t, t_value);
       if (dirty[0] & /*keyerStatus, activeSerial*/
       129 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
       ctx2[7][
         /*activeSerial*/
         ctx2[0]
@@ -15187,7 +14965,7 @@ function create_if_block_82(ctx) {
     }
   };
 }
-function create_else_block_10(ctx) {
+function create_else_block_12(ctx) {
   let td;
   let input;
   let input_checked_value;
@@ -15196,9 +14974,9 @@ function create_else_block_10(ctx) {
   function change_handler_125() {
     return (
       /*change_handler_125*/
-      ctx[365](
+      ctx[369](
         /*vr*/
-        ctx[641]
+        ctx[655]
       )
     );
   }
@@ -15213,7 +14991,7 @@ function create_else_block_10(ctx) {
         ctx[0]
       ] || []).includes(
         /*vr*/
-        ctx[641].id
+        ctx[655].id
       );
     },
     m(target, anchor) {
@@ -15228,13 +15006,13 @@ function create_else_block_10(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*smVrSelected, activeSerial*/
       16777217 | dirty[1] & /*activeVrs, activeAntsAndGroups, activeAllObjs*/
-      1318912 && input_checked_value !== (input_checked_value = /*smVrSelected*/
+      10551296 && input_checked_value !== (input_checked_value = /*smVrSelected*/
       (ctx[24][
         /*activeSerial*/
         ctx[0]
       ] || []).includes(
         /*vr*/
-        ctx[641].id
+        ctx[655].id
       ))) {
         input.checked = input_checked_value;
       }
@@ -15248,7 +15026,7 @@ function create_else_block_10(ctx) {
     }
   };
 }
-function create_if_block_80(ctx) {
+function create_if_block_81(ctx) {
   let td;
   return {
     c() {
@@ -15265,18 +15043,18 @@ function create_if_block_80(ctx) {
     }
   };
 }
-function create_else_block_9(ctx) {
+function create_else_block_11(ctx) {
   let td0;
   let t0_value = (
     /*vr*/
-    (ctx[641].label || "") + ""
+    (ctx[655].label || "") + ""
   );
   let t0;
   let t1;
   let td1;
   let t2_value = (
     /*vr*/
-    (ctx[641].display || "") + ""
+    (ctx[655].display || "") + ""
   );
   let t2;
   return {
@@ -15296,11 +15074,11 @@ function create_else_block_9(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeVrs*/
-      1048576 && t0_value !== (t0_value = /*vr*/
-      (ctx2[641].label || "") + "")) set_data(t0, t0_value);
+      8388608 && t0_value !== (t0_value = /*vr*/
+      (ctx2[655].label || "") + "")) set_data(t0, t0_value);
       if (dirty[1] & /*activeVrs*/
-      1048576 && t2_value !== (t2_value = /*vr*/
-      (ctx2[641].display || "") + "")) set_data(t2, t2_value);
+      8388608 && t2_value !== (t2_value = /*vr*/
+      (ctx2[655].display || "") + "")) set_data(t2, t2_value);
     },
     d(detaching) {
       if (detaching) {
@@ -15311,7 +15089,7 @@ function create_else_block_9(ctx) {
     }
   };
 }
-function create_if_block_79(ctx) {
+function create_if_block_80(ctx) {
   let td0;
   let input0;
   let input0_value_value;
@@ -15321,22 +15099,22 @@ function create_if_block_79(ctx) {
   let input1_value_value;
   let mounted;
   let dispose;
-  function input_handler_41(...args) {
+  function input_handler_36(...args) {
     return (
-      /*input_handler_41*/
-      ctx[366](
+      /*input_handler_36*/
+      ctx[370](
         /*vr*/
-        ctx[641],
+        ctx[655],
         ...args
       )
     );
   }
-  function input_handler_42(...args) {
+  function input_handler_37(...args) {
     return (
-      /*input_handler_42*/
-      ctx[367](
+      /*input_handler_37*/
+      ctx[371](
         /*vr*/
-        ctx[641],
+        ctx[655],
         ...args
       )
     );
@@ -15352,12 +15130,12 @@ function create_if_block_79(ctx) {
       attr(input0, "type", "text");
       attr(input0, "size", "5");
       input0.value = input0_value_value = /*ef*/
-      ctx[630].label;
+      ctx[644].label;
       attr(input1, "class", "input");
       attr(input1, "type", "text");
       attr(input1, "size", "10");
       input1.value = input1_value_value = /*ef*/
-      ctx[630].display;
+      ctx[644].display;
     },
     m(target, anchor) {
       insert(target, td0, anchor);
@@ -15367,8 +15145,8 @@ function create_if_block_79(ctx) {
       append(td1, input1);
       if (!mounted) {
         dispose = [
-          listen(input0, "input", input_handler_41),
-          listen(input1, "input", input_handler_42)
+          listen(input0, "input", input_handler_36),
+          listen(input1, "input", input_handler_37)
         ];
         mounted = true;
       }
@@ -15377,14 +15155,14 @@ function create_if_block_79(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*smVrEditForms, activeSerial*/
       8388609 | dirty[1] & /*activeVrs, activeAllObjs, activeAntsAndGroups*/
-      1318912 && input0_value_value !== (input0_value_value = /*ef*/
-      ctx[630].label) && input0.value !== input0_value_value) {
+      10551296 && input0_value_value !== (input0_value_value = /*ef*/
+      ctx[644].label) && input0.value !== input0_value_value) {
         input0.value = input0_value_value;
       }
       if (dirty[0] & /*smVrEditForms, activeSerial*/
       8388609 | dirty[1] & /*activeVrs, activeAllObjs, activeAntsAndGroups*/
-      1318912 && input1_value_value !== (input1_value_value = /*ef*/
-      ctx[630].display) && input1.value !== input1_value_value) {
+      10551296 && input1_value_value !== (input1_value_value = /*ef*/
+      ctx[644].display) && input1.value !== input1_value_value) {
         input1.value = input1_value_value;
       }
     },
@@ -15399,16 +15177,16 @@ function create_if_block_79(ctx) {
     }
   };
 }
-function create_if_block_78(ctx) {
+function create_if_block_79(ctx) {
   let button;
   let mounted;
   let dispose;
-  function click_handler_19() {
+  function click_handler_20() {
     return (
-      /*click_handler_19*/
-      ctx[368](
+      /*click_handler_20*/
+      ctx[372](
         /*vr*/
-        ctx[641]
+        ctx[655]
       )
     );
   }
@@ -15422,7 +15200,7 @@ function create_if_block_78(ctx) {
     m(target, anchor) {
       insert(target, button, anchor);
       if (!mounted) {
-        dispose = listen(button, "click", click_handler_19);
+        dispose = listen(button, "click", click_handler_20);
         mounted = true;
       }
     },
@@ -15438,7 +15216,7 @@ function create_if_block_78(ctx) {
     }
   };
 }
-function create_else_block_8(ctx) {
+function create_else_block_10(ctx) {
   let td;
   let input;
   let input_checked_value;
@@ -15447,11 +15225,11 @@ function create_else_block_8(ctx) {
   function change_handler_126() {
     return (
       /*change_handler_126*/
-      ctx[369](
+      ctx[373](
         /*vr*/
-        ctx[641],
+        ctx[655],
         /*ref*/
-        ctx[647]
+        ctx[661]
       )
     );
   }
@@ -15465,8 +15243,8 @@ function create_else_block_8(ctx) {
         /*activeSerial*/
         ctx[0]
       ] || []).includes(`${/*vr*/
-      ctx[641].id}:${/*ref*/
-      ctx[647].id}`);
+      ctx[655].id}:${/*ref*/
+      ctx[661].id}`);
     },
     m(target, anchor) {
       insert(target, td, anchor);
@@ -15480,13 +15258,13 @@ function create_else_block_8(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*smVrSelected, activeSerial*/
       16777217 | dirty[1] & /*activeVrs, activeAntsAndGroups, activeAllObjs*/
-      1318912 && input_checked_value !== (input_checked_value = /*smVrSelected*/
+      10551296 && input_checked_value !== (input_checked_value = /*smVrSelected*/
       (ctx[24][
         /*activeSerial*/
         ctx[0]
       ] || []).includes(`${/*vr*/
-      ctx[641].id}:${/*ref*/
-      ctx[647].id}`))) {
+      ctx[655].id}:${/*ref*/
+      ctx[661].id}`))) {
         input.checked = input_checked_value;
       }
     },
@@ -15499,7 +15277,7 @@ function create_else_block_8(ctx) {
     }
   };
 }
-function create_if_block_77(ctx) {
+function create_if_block_78(ctx) {
   let td;
   return {
     c() {
@@ -15516,29 +15294,29 @@ function create_if_block_77(ctx) {
     }
   };
 }
-function create_else_block_7(ctx) {
+function create_else_block_9(ctx) {
   let td0;
   let t0_value = (
     /*ref*/
-    (ctx[647].min_azimuth || 0) + ""
+    (ctx[661].min_azimuth || 0) + ""
   );
   let t0;
   let t1;
   let td1;
   let t2_value = (
     /*ref*/
-    (ctx[647].max_azimuth || 0) + ""
+    (ctx[661].max_azimuth || 0) + ""
   );
   let t2;
   let t3;
   let td2;
   let t4_value = (
     /*smObjDisplay*/
-    ctx[126](
+    ctx[132](
       /*activeSerial*/
       ctx[0],
       /*ref*/
-      ctx[647].dest_id
+      ctx[661].dest_id
     ) + ""
   );
   let t4;
@@ -15565,19 +15343,19 @@ function create_else_block_7(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeVrs*/
-      1048576 && t0_value !== (t0_value = /*ref*/
-      (ctx2[647].min_azimuth || 0) + "")) set_data(t0, t0_value);
+      8388608 && t0_value !== (t0_value = /*ref*/
+      (ctx2[661].min_azimuth || 0) + "")) set_data(t0, t0_value);
       if (dirty[1] & /*activeVrs*/
-      1048576 && t2_value !== (t2_value = /*ref*/
-      (ctx2[647].max_azimuth || 0) + "")) set_data(t2, t2_value);
+      8388608 && t2_value !== (t2_value = /*ref*/
+      (ctx2[661].max_azimuth || 0) + "")) set_data(t2, t2_value);
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeVrs*/
-      1048576 && t4_value !== (t4_value = /*smObjDisplay*/
-      ctx2[126](
+      8388608 && t4_value !== (t4_value = /*smObjDisplay*/
+      ctx2[132](
         /*activeSerial*/
         ctx2[0],
         /*ref*/
-        ctx2[647].dest_id
+        ctx2[661].dest_id
       ) + "")) set_data(t4, t4_value);
     },
     d(detaching) {
@@ -15591,7 +15369,7 @@ function create_else_block_7(ctx) {
     }
   };
 }
-function create_if_block_76(ctx) {
+function create_if_block_77(ctx) {
   let td0;
   let input0;
   let input0_value_value;
@@ -15605,46 +15383,46 @@ function create_if_block_76(ctx) {
   let select_value_value;
   let mounted;
   let dispose;
-  function input_handler_43(...args) {
+  function input_handler_38(...args) {
     return (
-      /*input_handler_43*/
-      ctx[370](
+      /*input_handler_38*/
+      ctx[374](
         /*vr*/
-        ctx[641],
+        ctx[655],
         /*ref*/
-        ctx[647],
+        ctx[661],
         ...args
       )
     );
   }
-  function input_handler_44(...args) {
+  function input_handler_39(...args) {
     return (
-      /*input_handler_44*/
-      ctx[371](
+      /*input_handler_39*/
+      ctx[375](
         /*vr*/
-        ctx[641],
+        ctx[655],
         /*ref*/
-        ctx[647],
+        ctx[661],
         ...args
       )
     );
   }
-  let each_value_71 = ensure_array_like(
+  let each_value_72 = ensure_array_like(
     /*allObjs*/
-    ctx[640]
+    ctx[654]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_71.length; i += 1) {
-    each_blocks[i] = create_each_block_71(get_each_context_71(ctx, each_value_71, i));
+  for (let i = 0; i < each_value_72.length; i += 1) {
+    each_blocks[i] = create_each_block_72(get_each_context_72(ctx, each_value_72, i));
   }
   function change_handler_127(...args) {
     return (
       /*change_handler_127*/
-      ctx[372](
+      ctx[376](
         /*vr*/
-        ctx[641],
+        ctx[655],
         /*ref*/
-        ctx[647],
+        ctx[661],
         ...args
       )
     );
@@ -15666,12 +15444,12 @@ function create_if_block_76(ctx) {
       attr(input0, "type", "number");
       set_style(input0, "width", "70px");
       input0.value = input0_value_value = /*rf*/
-      ctx[650].min_azimuth;
+      ctx[664].min_azimuth;
       attr(input1, "class", "input");
       attr(input1, "type", "number");
       set_style(input1, "width", "70px");
       input1.value = input1_value_value = /*rf*/
-      ctx[650].max_azimuth;
+      ctx[664].max_azimuth;
       attr(select, "class", "select");
     },
     m(target, anchor) {
@@ -15691,12 +15469,12 @@ function create_if_block_76(ctx) {
       select_option(
         select,
         /*rf*/
-        ctx[650].dest_id
+        ctx[664].dest_id
       );
       if (!mounted) {
         dispose = [
-          listen(input0, "input", input_handler_43),
-          listen(input1, "input", input_handler_44),
+          listen(input0, "input", input_handler_38),
+          listen(input1, "input", input_handler_39),
           listen(select, "change", change_handler_127)
         ];
         mounted = true;
@@ -15706,29 +15484,29 @@ function create_if_block_76(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*smVrEditForms, activeSerial*/
       8388609 | dirty[1] & /*activeVrs, activeAllObjs, activeAntsAndGroups*/
-      1318912 && input0_value_value !== (input0_value_value = /*rf*/
-      ctx[650].min_azimuth) && input0.value !== input0_value_value) {
+      10551296 && input0_value_value !== (input0_value_value = /*rf*/
+      ctx[664].min_azimuth) && input0.value !== input0_value_value) {
         input0.value = input0_value_value;
       }
       if (dirty[0] & /*smVrEditForms, activeSerial*/
       8388609 | dirty[1] & /*activeVrs, activeAllObjs, activeAntsAndGroups*/
-      1318912 && input1_value_value !== (input1_value_value = /*rf*/
-      ctx[650].max_azimuth) && input1.value !== input1_value_value) {
+      10551296 && input1_value_value !== (input1_value_value = /*rf*/
+      ctx[664].max_azimuth) && input1.value !== input1_value_value) {
         input1.value = input1_value_value;
       }
       if (dirty[1] & /*activeAllObjs*/
-      262144) {
-        each_value_71 = ensure_array_like(
+      2097152) {
+        each_value_72 = ensure_array_like(
           /*allObjs*/
-          ctx[640]
+          ctx[654]
         );
         let i;
-        for (i = 0; i < each_value_71.length; i += 1) {
-          const child_ctx = get_each_context_71(ctx, each_value_71, i);
+        for (i = 0; i < each_value_72.length; i += 1) {
+          const child_ctx = get_each_context_72(ctx, each_value_72, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_71(child_ctx);
+            each_blocks[i] = create_each_block_72(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -15736,16 +15514,16 @@ function create_if_block_76(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_71.length;
+        each_blocks.length = each_value_72.length;
       }
       if (dirty[0] & /*smVrEditForms, activeSerial*/
       8388609 | dirty[1] & /*activeVrs, activeAllObjs, activeAntsAndGroups*/
-      1318912 && select_value_value !== (select_value_value = /*rf*/
-      ctx[650].dest_id)) {
+      10551296 && select_value_value !== (select_value_value = /*rf*/
+      ctx[664].dest_id)) {
         select_option(
           select,
           /*rf*/
-          ctx[650].dest_id
+          ctx[664].dest_id
         );
       }
     },
@@ -15763,13 +15541,13 @@ function create_if_block_76(ctx) {
     }
   };
 }
-function create_each_block_71(ctx) {
+function create_each_block_72(ctx) {
   let option;
   let t_value = (
     /*obj*/
-    (ctx[644].display || /*obj*/
-    ctx[644].label || `#${/*obj*/
-    ctx[644].id}`) + ""
+    (ctx[658].display || /*obj*/
+    ctx[658].label || `#${/*obj*/
+    ctx[658].id}`) + ""
   );
   let t;
   let option_value_value;
@@ -15778,7 +15556,7 @@ function create_each_block_71(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*obj*/
-      ctx[644].id;
+      ctx[658].id;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -15787,13 +15565,13 @@ function create_each_block_71(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAllObjs*/
-      262144 && t_value !== (t_value = /*obj*/
-      (ctx2[644].display || /*obj*/
-      ctx2[644].label || `#${/*obj*/
-      ctx2[644].id}`) + "")) set_data(t, t_value);
+      2097152 && t_value !== (t_value = /*obj*/
+      (ctx2[658].display || /*obj*/
+      ctx2[658].label || `#${/*obj*/
+      ctx2[658].id}`) + "")) set_data(t, t_value);
       if (dirty[1] & /*activeAllObjs*/
-      262144 && option_value_value !== (option_value_value = /*obj*/
-      ctx2[644].id)) {
+      2097152 && option_value_value !== (option_value_value = /*obj*/
+      ctx2[658].id)) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -15805,7 +15583,7 @@ function create_each_block_71(ctx) {
     }
   };
 }
-function create_each_block_70(key_1, ctx) {
+function create_each_block_71(key_1, ctx) {
   let tr;
   let t0;
   let td0;
@@ -15817,37 +15595,37 @@ function create_each_block_70(key_1, ctx) {
   let td3;
   let t4_value = (
     /*smObjRxOnly*/
-    ctx[127](
+    ctx[133](
       /*activeSerial*/
       ctx[0],
       /*ref*/
-      ctx[647].dest_id
+      ctx[661].dest_id
     ) + ""
   );
   let t4;
   let t5;
   let t6;
-  function select_block_type_9(ctx2, dirty) {
+  function select_block_type_11(ctx2, dirty) {
     if (
       /*vrMode*/
-      ctx2[638] === "edit"
-    ) return create_if_block_77;
-    return create_else_block_8;
+      ctx2[652] === "edit"
+    ) return create_if_block_78;
+    return create_else_block_10;
   }
-  let current_block_type = select_block_type_9(ctx);
+  let current_block_type = select_block_type_11(ctx);
   let if_block0 = current_block_type(ctx);
-  function select_block_type_10(ctx2, dirty) {
+  function select_block_type_12(ctx2, dirty) {
     if (
       /*vrMode*/
-      ctx2[638] === "edit"
-    ) return create_if_block_76;
-    return create_else_block_7;
+      ctx2[652] === "edit"
+    ) return create_if_block_77;
+    return create_else_block_9;
   }
   function select_block_ctx(ctx2, type) {
-    if (type === create_if_block_76) return get_if_ctx_3(ctx2);
+    if (type === create_if_block_77) return get_if_ctx_3(ctx2);
     return ctx2;
   }
-  let current_block_type_1 = select_block_type_10(ctx);
+  let current_block_type_1 = select_block_type_12(ctx);
   let if_block1 = current_block_type_1(select_block_ctx(ctx, current_block_type_1));
   return {
     key: key_1,
@@ -15887,7 +15665,7 @@ function create_each_block_70(key_1, ctx) {
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (current_block_type === (current_block_type = select_block_type_9(ctx)) && if_block0) {
+      if (current_block_type === (current_block_type = select_block_type_11(ctx)) && if_block0) {
         if_block0.p(ctx, dirty);
       } else {
         if_block0.d(1);
@@ -15899,14 +15677,14 @@ function create_each_block_70(key_1, ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeVrs*/
-      1048576 && t4_value !== (t4_value = /*smObjRxOnly*/
-      ctx[127](
+      8388608 && t4_value !== (t4_value = /*smObjRxOnly*/
+      ctx[133](
         /*activeSerial*/
         ctx[0],
         /*ref*/
-        ctx[647].dest_id
+        ctx[661].dest_id
       ) + "")) set_data(t4, t4_value);
-      if (current_block_type_1 === (current_block_type_1 = select_block_type_10(ctx)) && if_block1) {
+      if (current_block_type_1 === (current_block_type_1 = select_block_type_12(ctx)) && if_block1) {
         if_block1.p(select_block_ctx(ctx, current_block_type_1), dirty);
       } else {
         if_block1.d(1);
@@ -15926,7 +15704,7 @@ function create_each_block_70(key_1, ctx) {
     }
   };
 }
-function create_if_block_75(ctx) {
+function create_if_block_76(ctx) {
   let tr;
   let td0;
   let t0;
@@ -15949,13 +15727,13 @@ function create_if_block_75(ctx) {
   let t7;
   let mounted;
   let dispose;
-  let each_value_69 = ensure_array_like(
+  let each_value_70 = ensure_array_like(
     /*allObjs*/
-    ctx[640]
+    ctx[654]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_69.length; i += 1) {
-    each_blocks[i] = create_each_block_69(get_each_context_69(ctx, each_value_69, i));
+  for (let i = 0; i < each_value_70.length; i += 1) {
+    each_blocks[i] = create_each_block_70(get_each_context_70(ctx, each_value_70, i));
   }
   return {
     c() {
@@ -15997,7 +15775,7 @@ function create_if_block_75(ctx) {
         ].dest_id === void 0
       ) add_render_callback(() => (
         /*select_change_handler_1*/
-        ctx[375].call(select)
+        ctx[379].call(select)
       ));
       attr(tr, "class", "add-row");
     },
@@ -16058,19 +15836,19 @@ function create_if_block_75(ctx) {
             input0,
             "input",
             /*input0_input_handler_1*/
-            ctx[373]
+            ctx[377]
           ),
           listen(
             input1,
             "input",
             /*input1_input_handler_1*/
-            ctx[374]
+            ctx[378]
           ),
           listen(
             select,
             "change",
             /*select_change_handler_1*/
-            ctx[375]
+            ctx[379]
           )
         ];
         mounted = true;
@@ -16079,7 +15857,7 @@ function create_if_block_75(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*smVrAddAnt, activeSerial*/
       33554433 | dirty[1] & /*activeAllObjs, activeAntsAndGroups*/
-      270336 && to_number(input0.value) !== /*smVrAddAnt*/
+      2162688 && to_number(input0.value) !== /*smVrAddAnt*/
       ctx2[25][
         /*activeSerial*/
         ctx2[0]
@@ -16095,7 +15873,7 @@ function create_if_block_75(ctx) {
       }
       if (dirty[0] & /*smVrAddAnt, activeSerial*/
       33554433 | dirty[1] & /*activeAllObjs, activeAntsAndGroups*/
-      270336 && to_number(input1.value) !== /*smVrAddAnt*/
+      2162688 && to_number(input1.value) !== /*smVrAddAnt*/
       ctx2[25][
         /*activeSerial*/
         ctx2[0]
@@ -16110,18 +15888,18 @@ function create_if_block_75(ctx) {
         );
       }
       if (dirty[1] & /*activeAllObjs*/
-      262144) {
-        each_value_69 = ensure_array_like(
+      2097152) {
+        each_value_70 = ensure_array_like(
           /*allObjs*/
-          ctx2[640]
+          ctx2[654]
         );
         let i;
-        for (i = 0; i < each_value_69.length; i += 1) {
-          const child_ctx = get_each_context_69(ctx2, each_value_69, i);
+        for (i = 0; i < each_value_70.length; i += 1) {
+          const child_ctx = get_each_context_70(ctx2, each_value_70, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_69(child_ctx);
+            each_blocks[i] = create_each_block_70(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -16129,11 +15907,11 @@ function create_if_block_75(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_69.length;
+        each_blocks.length = each_value_70.length;
       }
       if (dirty[0] & /*smVrAddAnt, activeSerial*/
       33554433 | dirty[1] & /*activeAllObjs, activeAntsAndGroups*/
-      270336) {
+      2162688) {
         select_option(
           select,
           /*smVrAddAnt*/
@@ -16154,13 +15932,13 @@ function create_if_block_75(ctx) {
     }
   };
 }
-function create_each_block_69(ctx) {
+function create_each_block_70(ctx) {
   let option;
   let t_value = (
     /*obj*/
-    (ctx[644].display || /*obj*/
-    ctx[644].label || `#${/*obj*/
-    ctx[644].id}`) + ""
+    (ctx[658].display || /*obj*/
+    ctx[658].label || `#${/*obj*/
+    ctx[658].id}`) + ""
   );
   let t;
   let option_value_value;
@@ -16169,7 +15947,7 @@ function create_each_block_69(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*obj*/
-      ctx[644].id;
+      ctx[658].id;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -16178,13 +15956,13 @@ function create_each_block_69(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAllObjs*/
-      262144 && t_value !== (t_value = /*obj*/
-      (ctx2[644].display || /*obj*/
-      ctx2[644].label || `#${/*obj*/
-      ctx2[644].id}`) + "")) set_data(t, t_value);
+      2097152 && t_value !== (t_value = /*obj*/
+      (ctx2[658].display || /*obj*/
+      ctx2[658].label || `#${/*obj*/
+      ctx2[658].id}`) + "")) set_data(t, t_value);
       if (dirty[1] & /*activeAllObjs*/
-      262144 && option_value_value !== (option_value_value = /*obj*/
-      ctx2[644].id)) {
+      2097152 && option_value_value !== (option_value_value = /*obj*/
+      ctx2[658].id)) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -16196,13 +15974,13 @@ function create_each_block_69(ctx) {
     }
   };
 }
-function create_each_block_68(key_1, ctx) {
+function create_each_block_69(key_1, ctx) {
   let tr;
   let t0;
   let td0;
   let t1_value = (
     /*vr*/
-    ctx[641].id + ""
+    ctx[655].id + ""
   );
   let t1;
   let t2;
@@ -16219,49 +15997,49 @@ function create_each_block_68(key_1, ctx) {
   let each_1_lookup = /* @__PURE__ */ new Map();
   let t8;
   let if_block3_anchor;
-  function select_block_type_7(ctx2, dirty) {
+  function select_block_type_9(ctx2, dirty) {
     if (
       /*vrMode*/
-      ctx2[638] === "edit"
-    ) return create_if_block_80;
-    return create_else_block_10;
+      ctx2[652] === "edit"
+    ) return create_if_block_81;
+    return create_else_block_12;
   }
-  let current_block_type = select_block_type_7(ctx);
+  let current_block_type = select_block_type_9(ctx);
   let if_block0 = current_block_type(ctx);
-  function select_block_type_8(ctx2, dirty) {
+  function select_block_type_10(ctx2, dirty) {
     if (
       /*vrMode*/
-      ctx2[638] === "edit"
-    ) return create_if_block_79;
-    return create_else_block_9;
+      ctx2[652] === "edit"
+    ) return create_if_block_80;
+    return create_else_block_11;
   }
   function select_block_ctx(ctx2, type) {
-    if (type === create_if_block_79) return get_if_ctx_4(ctx2);
+    if (type === create_if_block_80) return get_if_ctx_4(ctx2);
     return ctx2;
   }
-  let current_block_type_1 = select_block_type_8(ctx);
+  let current_block_type_1 = select_block_type_10(ctx);
   let if_block1 = current_block_type_1(select_block_ctx(ctx, current_block_type_1));
   let if_block2 = !/*vrMode*/
-  ctx[638] && !/*vrAddAntState*/
-  ctx[639] && create_if_block_78(ctx);
-  let each_value_70 = ensure_array_like(
+  ctx[652] && !/*vrAddAntState*/
+  ctx[653] && create_if_block_79(ctx);
+  let each_value_71 = ensure_array_like(
     /*vr*/
-    ctx[641].refs || []
+    ctx[655].refs || []
   );
   const get_key = (ctx2) => (
     /*ref*/
-    ctx2[647].id
+    ctx2[661].id
   );
-  for (let i = 0; i < each_value_70.length; i += 1) {
-    let child_ctx = get_each_context_70(ctx, each_value_70, i);
+  for (let i = 0; i < each_value_71.length; i += 1) {
+    let child_ctx = get_each_context_71(ctx, each_value_71, i);
     let key = get_key(child_ctx);
-    each_1_lookup.set(key, each_blocks[i] = create_each_block_70(key, child_ctx));
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_71(key, child_ctx));
   }
   let if_block3 = (
     /*vrAddAntState*/
-    ctx[639] && /*vrAddAntState*/
-    ctx[639].vrId === /*vr*/
-    ctx[641].id && create_if_block_75(ctx)
+    ctx[653] && /*vrAddAntState*/
+    ctx[653].vrId === /*vr*/
+    ctx[655].id && create_if_block_76(ctx)
   );
   return {
     key: key_1,
@@ -16322,7 +16100,7 @@ function create_each_block_68(key_1, ctx) {
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (current_block_type === (current_block_type = select_block_type_7(ctx)) && if_block0) {
+      if (current_block_type === (current_block_type = select_block_type_9(ctx)) && if_block0) {
         if_block0.p(ctx, dirty);
       } else {
         if_block0.d(1);
@@ -16333,9 +16111,9 @@ function create_each_block_68(key_1, ctx) {
         }
       }
       if (dirty[1] & /*activeVrs*/
-      1048576 && t1_value !== (t1_value = /*vr*/
-      ctx[641].id + "")) set_data(t1, t1_value);
-      if (current_block_type_1 === (current_block_type_1 = select_block_type_8(ctx)) && if_block1) {
+      8388608 && t1_value !== (t1_value = /*vr*/
+      ctx[655].id + "")) set_data(t1, t1_value);
+      if (current_block_type_1 === (current_block_type_1 = select_block_type_10(ctx)) && if_block1) {
         if_block1.p(select_block_ctx(ctx, current_block_type_1), dirty);
       } else {
         if_block1.d(1);
@@ -16346,12 +16124,12 @@ function create_each_block_68(key_1, ctx) {
         }
       }
       if (!/*vrMode*/
-      ctx[638] && !/*vrAddAntState*/
-      ctx[639]) {
+      ctx[652] && !/*vrAddAntState*/
+      ctx[653]) {
         if (if_block2) {
           if_block2.p(ctx, dirty);
         } else {
-          if_block2 = create_if_block_78(ctx);
+          if_block2 = create_if_block_79(ctx);
           if_block2.c();
           if_block2.m(td4, null);
         }
@@ -16361,24 +16139,24 @@ function create_each_block_68(key_1, ctx) {
       }
       if (dirty[0] & /*smVrEditForms, activeSerial, smVrMode, smVrSelected*/
       27262977 | dirty[1] & /*activeVrs, activeAllObjs*/
-      1310720 | dirty[4] & /*smObjDisplay, smObjRxOnly, smVrToggleSelect*/
-      1036) {
-        each_value_70 = ensure_array_like(
+      10485760 | dirty[4] & /*smObjDisplay, smObjRxOnly, smVrToggleSelect*/
+      66304) {
+        each_value_71 = ensure_array_like(
           /*vr*/
-          ctx[641].refs || []
+          ctx[655].refs || []
         );
-        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_70, each_1_lookup, t8.parentNode, destroy_block, create_each_block_70, t8, get_each_context_70);
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value_71, each_1_lookup, t8.parentNode, destroy_block, create_each_block_71, t8, get_each_context_71);
       }
       if (
         /*vrAddAntState*/
-        ctx[639] && /*vrAddAntState*/
-        ctx[639].vrId === /*vr*/
-        ctx[641].id
+        ctx[653] && /*vrAddAntState*/
+        ctx[653].vrId === /*vr*/
+        ctx[655].id
       ) {
         if (if_block3) {
           if_block3.p(ctx, dirty);
         } else {
-          if_block3 = create_if_block_75(ctx);
+          if_block3 = create_if_block_76(ctx);
           if_block3.c();
           if_block3.m(if_block3_anchor.parentNode, if_block3_anchor);
         }
@@ -16404,7 +16182,7 @@ function create_each_block_68(key_1, ctx) {
     }
   };
 }
-function create_if_block_74(ctx) {
+function create_if_block_75(ctx) {
   let tr;
   let td0;
   let t0;
@@ -16494,13 +16272,13 @@ function create_if_block_74(ctx) {
             input0,
             "input",
             /*input0_input_handler_2*/
-            ctx[376]
+            ctx[380]
           ),
           listen(
             input1,
             "input",
             /*input1_input_handler_2*/
-            ctx[377]
+            ctx[381]
           )
         ];
         mounted = true;
@@ -16509,7 +16287,7 @@ function create_if_block_74(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*smVrAddForm, activeSerial*/
       4194305 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0.value !== /*smVrAddForm*/
+      65536 && input0.value !== /*smVrAddForm*/
       ctx2[22][
         /*activeSerial*/
         ctx2[0]
@@ -16525,7 +16303,7 @@ function create_if_block_74(ctx) {
       }
       if (dirty[0] & /*smVrAddForm, activeSerial*/
       4194305 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1.value !== /*smVrAddForm*/
+      65536 && input1.value !== /*smVrAddForm*/
       ctx2[22][
         /*activeSerial*/
         ctx2[0]
@@ -16549,7 +16327,7 @@ function create_if_block_74(ctx) {
     }
   };
 }
-function create_else_block_6(ctx) {
+function create_else_block_8(ctx) {
   let button0;
   let t1;
   let button1;
@@ -16585,20 +16363,20 @@ function create_else_block_6(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_26*/
-            ctx[384]
+            /*click_handler_27*/
+            ctx[388]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_27*/
-            ctx[385]
+            /*click_handler_28*/
+            ctx[389]
           ),
           listen(
             button2,
             "click",
-            /*click_handler_28*/
-            ctx[386]
+            /*click_handler_29*/
+            ctx[390]
           )
         ];
         mounted = true;
@@ -16612,6 +16390,58 @@ function create_else_block_6(ctx) {
         detach(button1);
         detach(t3);
         detach(button2);
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_74(ctx) {
+  let button0;
+  let t1;
+  let button1;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      button0 = element("button");
+      button0.textContent = "Save";
+      t1 = space();
+      button1 = element("button");
+      button1.textContent = "Cancel";
+      attr(button0, "class", "btn");
+      attr(button0, "type", "button");
+      attr(button1, "class", "btn");
+      attr(button1, "type", "button");
+    },
+    m(target, anchor) {
+      insert(target, button0, anchor);
+      insert(target, t1, anchor);
+      insert(target, button1, anchor);
+      if (!mounted) {
+        dispose = [
+          listen(
+            button0,
+            "click",
+            /*click_handler_25*/
+            ctx[386]
+          ),
+          listen(
+            button1,
+            "click",
+            /*click_handler_26*/
+            ctx[387]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(button0);
+        detach(t1);
+        detach(button1);
       }
       mounted = false;
       run_all(dispose);
@@ -16645,14 +16475,14 @@ function create_if_block_73(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_24*/
-            ctx[382]
+            /*click_handler_23*/
+            ctx[384]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_25*/
-            ctx[383]
+            /*click_handler_24*/
+            ctx[385]
           )
         ];
         mounted = true;
@@ -16697,14 +16527,14 @@ function create_if_block_72(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_22*/
-            ctx[380]
+            /*click_handler_21*/
+            ctx[382]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_23*/
-            ctx[381]
+            /*click_handler_22*/
+            ctx[383]
           )
         ];
         mounted = true;
@@ -16723,58 +16553,6 @@ function create_if_block_72(ctx) {
   };
 }
 function create_if_block_71(ctx) {
-  let button0;
-  let t1;
-  let button1;
-  let mounted;
-  let dispose;
-  return {
-    c() {
-      button0 = element("button");
-      button0.textContent = "Save";
-      t1 = space();
-      button1 = element("button");
-      button1.textContent = "Cancel";
-      attr(button0, "class", "btn");
-      attr(button0, "type", "button");
-      attr(button1, "class", "btn");
-      attr(button1, "type", "button");
-    },
-    m(target, anchor) {
-      insert(target, button0, anchor);
-      insert(target, t1, anchor);
-      insert(target, button1, anchor);
-      if (!mounted) {
-        dispose = [
-          listen(
-            button0,
-            "click",
-            /*click_handler_20*/
-            ctx[378]
-          ),
-          listen(
-            button1,
-            "click",
-            /*click_handler_21*/
-            ctx[379]
-          )
-        ];
-        mounted = true;
-      }
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(button0);
-        detach(t1);
-        detach(button1);
-      }
-      mounted = false;
-      run_all(dispose);
-    }
-  };
-}
-function create_if_block_70(ctx) {
   let div;
   let t_value = (
     /*keyerStatus*/
@@ -16808,7 +16586,7 @@ function create_if_block_70(ctx) {
       ].text + "")) set_data(t, t_value);
       if (dirty[0] & /*keyerStatus, activeSerial*/
       129 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
       ctx2[7][
         /*activeSerial*/
         ctx2[0]
@@ -16823,11 +16601,11 @@ function create_if_block_70(ctx) {
     }
   };
 }
-function create_each_block_67(ctx) {
+function create_each_block_68(ctx) {
   let th;
   let t_value = (
     /*oc*/
-    ctx[624] + ""
+    ctx[638] + ""
   );
   let t;
   return {
@@ -16841,8 +16619,8 @@ function create_each_block_67(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAntOutCols*/
-      2097152 && t_value !== (t_value = /*oc*/
-      ctx2[624] + "")) set_data(t, t_value);
+      16777216 && t_value !== (t_value = /*oc*/
+      ctx2[638] + "")) set_data(t, t_value);
     },
     d(detaching) {
       if (detaching) {
@@ -16851,7 +16629,7 @@ function create_each_block_67(ctx) {
     }
   };
 }
-function create_else_block_5(ctx) {
+function create_else_block_7(ctx) {
   let td;
   let input;
   let input_checked_value;
@@ -16860,9 +16638,9 @@ function create_else_block_5(ctx) {
   function change_handler_120() {
     return (
       /*change_handler_120*/
-      ctx[341](
+      ctx[345](
         /*ant*/
-        ctx[627]
+        ctx[641]
       )
     );
   }
@@ -16877,7 +16655,7 @@ function create_else_block_5(ctx) {
         ctx[0]
       ] || []).includes(
         /*ant*/
-        ctx[627].id
+        ctx[641].id
       );
     },
     m(target, anchor) {
@@ -16892,13 +16670,13 @@ function create_else_block_5(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*smAntSelected, activeSerial*/
       1048577 | dirty[1] & /*activeAnts, activeAntsAndGroups*/
-      4202496 && input_checked_value !== (input_checked_value = /*smAntSelected*/
+      33619968 && input_checked_value !== (input_checked_value = /*smAntSelected*/
       (ctx[20][
         /*activeSerial*/
         ctx[0]
       ] || []).includes(
         /*ant*/
-        ctx[627].id
+        ctx[641].id
       ))) {
         input.checked = input_checked_value;
       }
@@ -16912,7 +16690,7 @@ function create_else_block_5(ctx) {
     }
   };
 }
-function create_if_block_68(ctx) {
+function create_if_block_69(ctx) {
   let td;
   return {
     c() {
@@ -16929,64 +16707,64 @@ function create_if_block_68(ctx) {
     }
   };
 }
-function create_else_block_4(ctx) {
+function create_else_block_6(ctx) {
   let td0;
   let t0_value = (
     /*ant*/
-    (ctx[627].label || "") + ""
+    (ctx[641].label || "") + ""
   );
   let t0;
   let t1;
   let td1;
   let t2_value = (
     /*ant*/
-    (ctx[627].display || "") + ""
+    (ctx[641].display || "") + ""
   );
   let t2;
   let t3;
   let td2;
   let t4_value = (
     /*ant*/
-    ctx[627].steppir ? "Yes" : "No"
+    ctx[641].steppir ? "Yes" : "No"
   );
   let t4;
   let t5;
   let td3;
   let t6_value = (
     /*ant*/
-    ctx[627].rxonly ? "Yes" : "No"
+    ctx[641].rxonly ? "Yes" : "No"
   );
   let t6;
   let t7;
   let td4;
   let t8_value = (
     /*ant*/
-    (ctx[627].pa_ant_number || 0) + ""
+    (ctx[641].pa_ant_number || 0) + ""
   );
   let t8;
   let t9;
   let td5;
   let t10_value = (
     /*ant*/
-    ctx[627].rotator ? "Yes" : "No"
+    ctx[641].rotator ? "Yes" : "No"
   );
   let t10;
   let t11;
   let td6;
   let t12_value = (
     /*ant*/
-    (ctx[627].rotator_offset || 0) + ""
+    (ctx[641].rotator_offset || 0) + ""
   );
   let t12;
   let t13;
   let each_1_anchor;
-  let each_value_66 = ensure_array_like(
+  let each_value_67 = ensure_array_like(
     /*antOutCols*/
-    ctx[622]
+    ctx[636]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_66.length; i += 1) {
-    each_blocks[i] = create_each_block_66(get_each_context_66(ctx, each_value_66, i));
+  for (let i = 0; i < each_value_67.length; i += 1) {
+    each_blocks[i] = create_each_block_67(get_each_context_67(ctx, each_value_67, i));
   }
   return {
     c() {
@@ -17047,39 +16825,39 @@ function create_else_block_4(ctx) {
     },
     p(ctx2, dirty) {
       if (dirty[1] & /*activeAnts*/
-      4194304 && t0_value !== (t0_value = /*ant*/
-      (ctx2[627].label || "") + "")) set_data(t0, t0_value);
+      33554432 && t0_value !== (t0_value = /*ant*/
+      (ctx2[641].label || "") + "")) set_data(t0, t0_value);
       if (dirty[1] & /*activeAnts*/
-      4194304 && t2_value !== (t2_value = /*ant*/
-      (ctx2[627].display || "") + "")) set_data(t2, t2_value);
+      33554432 && t2_value !== (t2_value = /*ant*/
+      (ctx2[641].display || "") + "")) set_data(t2, t2_value);
       if (dirty[1] & /*activeAnts*/
-      4194304 && t4_value !== (t4_value = /*ant*/
-      ctx2[627].steppir ? "Yes" : "No")) set_data(t4, t4_value);
+      33554432 && t4_value !== (t4_value = /*ant*/
+      ctx2[641].steppir ? "Yes" : "No")) set_data(t4, t4_value);
       if (dirty[1] & /*activeAnts*/
-      4194304 && t6_value !== (t6_value = /*ant*/
-      ctx2[627].rxonly ? "Yes" : "No")) set_data(t6, t6_value);
+      33554432 && t6_value !== (t6_value = /*ant*/
+      ctx2[641].rxonly ? "Yes" : "No")) set_data(t6, t6_value);
       if (dirty[1] & /*activeAnts*/
-      4194304 && t8_value !== (t8_value = /*ant*/
-      (ctx2[627].pa_ant_number || 0) + "")) set_data(t8, t8_value);
+      33554432 && t8_value !== (t8_value = /*ant*/
+      (ctx2[641].pa_ant_number || 0) + "")) set_data(t8, t8_value);
       if (dirty[1] & /*activeAnts*/
-      4194304 && t10_value !== (t10_value = /*ant*/
-      ctx2[627].rotator ? "Yes" : "No")) set_data(t10, t10_value);
+      33554432 && t10_value !== (t10_value = /*ant*/
+      ctx2[641].rotator ? "Yes" : "No")) set_data(t10, t10_value);
       if (dirty[1] & /*activeAnts*/
-      4194304 && t12_value !== (t12_value = /*ant*/
-      (ctx2[627].rotator_offset || 0) + "")) set_data(t12, t12_value);
+      33554432 && t12_value !== (t12_value = /*ant*/
+      (ctx2[641].rotator_offset || 0) + "")) set_data(t12, t12_value);
       if (dirty[1] & /*activeAnts, activeAntOutCols*/
-      6291456) {
-        each_value_66 = ensure_array_like(
+      50331648) {
+        each_value_67 = ensure_array_like(
           /*antOutCols*/
-          ctx2[622]
+          ctx2[636]
         );
         let i;
-        for (i = 0; i < each_value_66.length; i += 1) {
-          const child_ctx = get_each_context_66(ctx2, each_value_66, i);
+        for (i = 0; i < each_value_67.length; i += 1) {
+          const child_ctx = get_each_context_67(ctx2, each_value_67, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_66(child_ctx);
+            each_blocks[i] = create_each_block_67(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(each_1_anchor.parentNode, each_1_anchor);
           }
@@ -17087,7 +16865,7 @@ function create_else_block_4(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_66.length;
+        each_blocks.length = each_value_67.length;
       }
     },
     d(detaching) {
@@ -17112,7 +16890,7 @@ function create_else_block_4(ctx) {
     }
   };
 }
-function create_if_block_67(ctx) {
+function create_if_block_68(ctx) {
   let td0;
   let input0;
   let input0_value_value;
@@ -17150,22 +16928,22 @@ function create_if_block_67(ctx) {
   let each_1_anchor;
   let mounted;
   let dispose;
-  function input_handler_37(...args) {
+  function input_handler_32(...args) {
     return (
-      /*input_handler_37*/
-      ctx[342](
+      /*input_handler_32*/
+      ctx[346](
         /*ant*/
-        ctx[627],
+        ctx[641],
         ...args
       )
     );
   }
-  function input_handler_38(...args) {
+  function input_handler_33(...args) {
     return (
-      /*input_handler_38*/
-      ctx[343](
+      /*input_handler_33*/
+      ctx[347](
         /*ant*/
-        ctx[627],
+        ctx[641],
         ...args
       )
     );
@@ -17173,9 +16951,9 @@ function create_if_block_67(ctx) {
   function change_handler_121(...args) {
     return (
       /*change_handler_121*/
-      ctx[344](
+      ctx[348](
         /*ant*/
-        ctx[627],
+        ctx[641],
         ...args
       )
     );
@@ -17183,19 +16961,19 @@ function create_if_block_67(ctx) {
   function change_handler_122(...args) {
     return (
       /*change_handler_122*/
-      ctx[345](
+      ctx[349](
         /*ant*/
-        ctx[627],
+        ctx[641],
         ...args
       )
     );
   }
-  function input_handler_39(...args) {
+  function input_handler_34(...args) {
     return (
-      /*input_handler_39*/
-      ctx[346](
+      /*input_handler_34*/
+      ctx[350](
         /*ant*/
-        ctx[627],
+        ctx[641],
         ...args
       )
     );
@@ -17203,30 +16981,30 @@ function create_if_block_67(ctx) {
   function change_handler_123(...args) {
     return (
       /*change_handler_123*/
-      ctx[347](
+      ctx[351](
         /*ant*/
-        ctx[627],
+        ctx[641],
         ...args
       )
     );
   }
-  function input_handler_40(...args) {
+  function input_handler_35(...args) {
     return (
-      /*input_handler_40*/
-      ctx[348](
+      /*input_handler_35*/
+      ctx[352](
         /*ant*/
-        ctx[627],
+        ctx[641],
         ...args
       )
     );
   }
-  let each_value_65 = ensure_array_like(
+  let each_value_66 = ensure_array_like(
     /*antOutCols*/
-    ctx[622]
+    ctx[636]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_65.length; i += 1) {
-    each_blocks[i] = create_each_block_65(get_each_context_65(ctx, each_value_65, i));
+  for (let i = 0; i < each_value_66.length; i += 1) {
+    each_blocks[i] = create_each_block_66(get_each_context_66(ctx, each_value_66, i));
   }
   return {
     c() {
@@ -17271,12 +17049,12 @@ function create_if_block_67(ctx) {
       attr(input0, "type", "text");
       attr(input0, "size", "5");
       input0.value = input0_value_value = /*ef*/
-      ctx[630].label;
+      ctx[644].label;
       attr(input1, "class", "input");
       attr(input1, "type", "text");
       attr(input1, "size", "10");
       input1.value = input1_value_value = /*ef*/
-      ctx[630].display;
+      ctx[644].display;
       option0.__value = 0;
       set_input_value(option0, option0.__value);
       option1.__value = 1;
@@ -17291,7 +17069,7 @@ function create_if_block_67(ctx) {
       attr(input2, "type", "number");
       set_style(input2, "width", "60px");
       input2.value = input2_value_value = /*ef*/
-      ctx[630].pa_ant_number;
+      ctx[644].pa_ant_number;
       option4.__value = 0;
       set_input_value(option4, option4.__value);
       option5.__value = 1;
@@ -17301,7 +17079,7 @@ function create_if_block_67(ctx) {
       attr(input3, "type", "number");
       set_style(input3, "width", "70px");
       input3.value = input3_value_value = /*ef*/
-      ctx[630].rotator_offset;
+      ctx[644].rotator_offset;
     },
     m(target, anchor) {
       insert(target, td0, anchor);
@@ -17317,7 +17095,7 @@ function create_if_block_67(ctx) {
       select_option(
         select0,
         /*ef*/
-        ctx[630].steppir
+        ctx[644].steppir
       );
       insert(target, t4, anchor);
       insert(target, td3, anchor);
@@ -17327,7 +17105,7 @@ function create_if_block_67(ctx) {
       select_option(
         select1,
         /*ef*/
-        ctx[630].rxonly
+        ctx[644].rxonly
       );
       insert(target, t7, anchor);
       insert(target, td4, anchor);
@@ -17340,7 +17118,7 @@ function create_if_block_67(ctx) {
       select_option(
         select2,
         /*ef*/
-        ctx[630].rotator
+        ctx[644].rotator
       );
       insert(target, t11, anchor);
       insert(target, td6, anchor);
@@ -17354,13 +17132,13 @@ function create_if_block_67(ctx) {
       insert(target, each_1_anchor, anchor);
       if (!mounted) {
         dispose = [
-          listen(input0, "input", input_handler_37),
-          listen(input1, "input", input_handler_38),
+          listen(input0, "input", input_handler_32),
+          listen(input1, "input", input_handler_33),
           listen(select0, "change", change_handler_121),
           listen(select1, "change", change_handler_122),
-          listen(input2, "input", input_handler_39),
+          listen(input2, "input", input_handler_34),
           listen(select2, "change", change_handler_123),
-          listen(input3, "input", input_handler_40)
+          listen(input3, "input", input_handler_35)
         ];
         mounted = true;
       }
@@ -17369,72 +17147,72 @@ function create_if_block_67(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*smAntEditForms, activeSerial*/
       262145 | dirty[1] & /*activeAnts, activeAntsAndGroups*/
-      4202496 && input0_value_value !== (input0_value_value = /*ef*/
-      ctx[630].label) && input0.value !== input0_value_value) {
+      33619968 && input0_value_value !== (input0_value_value = /*ef*/
+      ctx[644].label) && input0.value !== input0_value_value) {
         input0.value = input0_value_value;
       }
       if (dirty[0] & /*smAntEditForms, activeSerial*/
       262145 | dirty[1] & /*activeAnts, activeAntsAndGroups*/
-      4202496 && input1_value_value !== (input1_value_value = /*ef*/
-      ctx[630].display) && input1.value !== input1_value_value) {
+      33619968 && input1_value_value !== (input1_value_value = /*ef*/
+      ctx[644].display) && input1.value !== input1_value_value) {
         input1.value = input1_value_value;
       }
       if (dirty[0] & /*smAntEditForms, activeSerial*/
       262145 | dirty[1] & /*activeAnts, activeAntsAndGroups*/
-      4202496 && select0_value_value !== (select0_value_value = /*ef*/
-      ctx[630].steppir)) {
+      33619968 && select0_value_value !== (select0_value_value = /*ef*/
+      ctx[644].steppir)) {
         select_option(
           select0,
           /*ef*/
-          ctx[630].steppir
+          ctx[644].steppir
         );
       }
       if (dirty[0] & /*smAntEditForms, activeSerial*/
       262145 | dirty[1] & /*activeAnts, activeAntsAndGroups*/
-      4202496 && select1_value_value !== (select1_value_value = /*ef*/
-      ctx[630].rxonly)) {
+      33619968 && select1_value_value !== (select1_value_value = /*ef*/
+      ctx[644].rxonly)) {
         select_option(
           select1,
           /*ef*/
-          ctx[630].rxonly
+          ctx[644].rxonly
         );
       }
       if (dirty[0] & /*smAntEditForms, activeSerial*/
       262145 | dirty[1] & /*activeAnts, activeAntsAndGroups*/
-      4202496 && input2_value_value !== (input2_value_value = /*ef*/
-      ctx[630].pa_ant_number) && input2.value !== input2_value_value) {
+      33619968 && input2_value_value !== (input2_value_value = /*ef*/
+      ctx[644].pa_ant_number) && input2.value !== input2_value_value) {
         input2.value = input2_value_value;
       }
       if (dirty[0] & /*smAntEditForms, activeSerial*/
       262145 | dirty[1] & /*activeAnts, activeAntsAndGroups*/
-      4202496 && select2_value_value !== (select2_value_value = /*ef*/
-      ctx[630].rotator)) {
+      33619968 && select2_value_value !== (select2_value_value = /*ef*/
+      ctx[644].rotator)) {
         select_option(
           select2,
           /*ef*/
-          ctx[630].rotator
+          ctx[644].rotator
         );
       }
       if (dirty[0] & /*smAntEditForms, activeSerial*/
       262145 | dirty[1] & /*activeAnts, activeAntsAndGroups*/
-      4202496 && input3_value_value !== (input3_value_value = /*ef*/
-      ctx[630].rotator_offset) && input3.value !== input3_value_value) {
+      33619968 && input3_value_value !== (input3_value_value = /*ef*/
+      ctx[644].rotator_offset) && input3.value !== input3_value_value) {
         input3.value = input3_value_value;
       }
       if (dirty[0] & /*smAntEditForms, activeSerial*/
       262145 | dirty[1] & /*activeAnts, activeAntOutCols*/
-      6291456) {
-        each_value_65 = ensure_array_like(
+      50331648) {
+        each_value_66 = ensure_array_like(
           /*antOutCols*/
-          ctx[622]
+          ctx[636]
         );
         let i;
-        for (i = 0; i < each_value_65.length; i += 1) {
-          const child_ctx = get_each_context_65(ctx, each_value_65, i);
+        for (i = 0; i < each_value_66.length; i += 1) {
+          const child_ctx = get_each_context_66(ctx, each_value_66, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_65(child_ctx);
+            each_blocks[i] = create_each_block_66(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(each_1_anchor.parentNode, each_1_anchor);
           }
@@ -17442,7 +17220,7 @@ function create_if_block_67(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_65.length;
+        each_blocks.length = each_value_66.length;
       }
     },
     d(detaching) {
@@ -17469,14 +17247,14 @@ function create_if_block_67(ctx) {
     }
   };
 }
-function create_each_block_66(ctx) {
+function create_each_block_67(ctx) {
   var _a;
   let td;
   let t_value = (
     /*ant*/
-    ((_a = ctx[627].output) == null ? void 0 : _a[
+    ((_a = ctx[641].output) == null ? void 0 : _a[
       /*oc*/
-      ctx[624]
+      ctx[638]
     ]) ? "Yes" : "No"
   );
   let t;
@@ -17492,10 +17270,10 @@ function create_each_block_66(ctx) {
     p(ctx2, dirty) {
       var _a2;
       if (dirty[1] & /*activeAnts, activeAntOutCols*/
-      6291456 && t_value !== (t_value = /*ant*/
-      ((_a2 = ctx2[627].output) == null ? void 0 : _a2[
+      50331648 && t_value !== (t_value = /*ant*/
+      ((_a2 = ctx2[641].output) == null ? void 0 : _a2[
         /*oc*/
-        ctx2[624]
+        ctx2[638]
       ]) ? "Yes" : "No")) set_data(t, t_value);
     },
     d(detaching) {
@@ -17505,7 +17283,7 @@ function create_each_block_66(ctx) {
     }
   };
 }
-function create_each_block_65(ctx) {
+function create_each_block_66(ctx) {
   let td;
   let select;
   let option0;
@@ -17516,11 +17294,11 @@ function create_each_block_65(ctx) {
   function change_handler_124(...args) {
     return (
       /*change_handler_124*/
-      ctx[349](
+      ctx[353](
         /*ant*/
-        ctx[627],
+        ctx[641],
         /*oc*/
-        ctx[624],
+        ctx[638],
         ...args
       )
     );
@@ -17548,9 +17326,9 @@ function create_each_block_65(ctx) {
       select_option(
         select,
         /*ef*/
-        ((_a = ctx[630].output) == null ? void 0 : _a[
+        ((_a = ctx[644].output) == null ? void 0 : _a[
           /*oc*/
-          ctx[624]
+          ctx[638]
         ]) ?? 0
       );
       if (!mounted) {
@@ -17563,17 +17341,17 @@ function create_each_block_65(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*smAntEditForms, activeSerial*/
       262145 | dirty[1] & /*activeAnts, activeAntOutCols, activeAntsAndGroups*/
-      6299648 && select_value_value !== (select_value_value = /*ef*/
-      ((_a = ctx[630].output) == null ? void 0 : _a[
+      50397184 && select_value_value !== (select_value_value = /*ef*/
+      ((_a = ctx[644].output) == null ? void 0 : _a[
         /*oc*/
-        ctx[624]
+        ctx[638]
       ]) ?? 0)) {
         select_option(
           select,
           /*ef*/
-          ((_b = ctx[630].output) == null ? void 0 : _b[
+          ((_b = ctx[644].output) == null ? void 0 : _b[
             /*oc*/
-            ctx[624]
+            ctx[638]
           ]) ?? 0
         );
       }
@@ -17587,37 +17365,37 @@ function create_each_block_65(ctx) {
     }
   };
 }
-function create_each_block_64(key_1, ctx) {
+function create_each_block_65(key_1, ctx) {
   let tr;
   let t0;
   let td;
   let t1_value = (
     /*ant*/
-    ctx[627].id + ""
+    ctx[641].id + ""
   );
   let t1;
   let t2;
-  function select_block_type_4(ctx2, dirty) {
+  function select_block_type_6(ctx2, dirty) {
     if (
       /*mode*/
-      ctx2[547] === "edit"
-    ) return create_if_block_68;
-    return create_else_block_5;
+      ctx2[561] === "edit"
+    ) return create_if_block_69;
+    return create_else_block_7;
   }
-  let current_block_type = select_block_type_4(ctx);
+  let current_block_type = select_block_type_6(ctx);
   let if_block0 = current_block_type(ctx);
-  function select_block_type_5(ctx2, dirty) {
+  function select_block_type_7(ctx2, dirty) {
     if (
       /*mode*/
-      ctx2[547] === "edit"
-    ) return create_if_block_67;
-    return create_else_block_4;
+      ctx2[561] === "edit"
+    ) return create_if_block_68;
+    return create_else_block_6;
   }
   function select_block_ctx(ctx2, type) {
-    if (type === create_if_block_67) return get_if_ctx_1(ctx2);
+    if (type === create_if_block_68) return get_if_ctx_1(ctx2);
     return ctx2;
   }
-  let current_block_type_1 = select_block_type_5(ctx);
+  let current_block_type_1 = select_block_type_7(ctx);
   let if_block1 = current_block_type_1(select_block_ctx(ctx, current_block_type_1));
   return {
     key: key_1,
@@ -17643,7 +17421,7 @@ function create_each_block_64(key_1, ctx) {
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (current_block_type === (current_block_type = select_block_type_4(ctx)) && if_block0) {
+      if (current_block_type === (current_block_type = select_block_type_6(ctx)) && if_block0) {
         if_block0.p(ctx, dirty);
       } else {
         if_block0.d(1);
@@ -17654,9 +17432,9 @@ function create_each_block_64(key_1, ctx) {
         }
       }
       if (dirty[1] & /*activeAnts*/
-      4194304 && t1_value !== (t1_value = /*ant*/
-      ctx[627].id + "")) set_data(t1, t1_value);
-      if (current_block_type_1 === (current_block_type_1 = select_block_type_5(ctx)) && if_block1) {
+      33554432 && t1_value !== (t1_value = /*ant*/
+      ctx[641].id + "")) set_data(t1, t1_value);
+      if (current_block_type_1 === (current_block_type_1 = select_block_type_7(ctx)) && if_block1) {
         if_block1.p(select_block_ctx(ctx, current_block_type_1), dirty);
       } else {
         if_block1.d(1);
@@ -17676,7 +17454,7 @@ function create_each_block_64(key_1, ctx) {
     }
   };
 }
-function create_if_block_66(ctx) {
+function create_if_block_67(ctx) {
   let tr;
   let td0;
   let t0;
@@ -17711,13 +17489,13 @@ function create_if_block_66(ctx) {
   let t14;
   let mounted;
   let dispose;
-  let each_value_63 = ensure_array_like(
+  let each_value_64 = ensure_array_like(
     /*antOutCols*/
-    ctx[622]
+    ctx[636]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_63.length; i += 1) {
-    each_blocks[i] = create_each_block_63(get_each_context_63(ctx, each_value_63, i));
+  for (let i = 0; i < each_value_64.length; i += 1) {
+    each_blocks[i] = create_each_block_64(get_each_context_64(ctx, each_value_64, i));
   }
   return {
     c() {
@@ -17781,7 +17559,7 @@ function create_if_block_66(ctx) {
         ].steppir === void 0
       ) add_render_callback(() => (
         /*select0_change_handler*/
-        ctx[352].call(select0)
+        ctx[356].call(select0)
       ));
       option2.__value = 0;
       set_input_value(option2, option2.__value);
@@ -17796,7 +17574,7 @@ function create_if_block_66(ctx) {
         ].rxonly === void 0
       ) add_render_callback(() => (
         /*select1_change_handler*/
-        ctx[353].call(select1)
+        ctx[357].call(select1)
       ));
       attr(input2, "class", "input");
       attr(input2, "type", "number");
@@ -17814,7 +17592,7 @@ function create_if_block_66(ctx) {
         ].rotator === void 0
       ) add_render_callback(() => (
         /*select2_change_handler*/
-        ctx[355].call(select2)
+        ctx[359].call(select2)
       ));
       attr(input3, "class", "input");
       attr(input3, "type", "number");
@@ -17924,43 +17702,43 @@ function create_if_block_66(ctx) {
             input0,
             "input",
             /*input0_input_handler*/
-            ctx[350]
+            ctx[354]
           ),
           listen(
             input1,
             "input",
             /*input1_input_handler*/
-            ctx[351]
+            ctx[355]
           ),
           listen(
             select0,
             "change",
             /*select0_change_handler*/
-            ctx[352]
+            ctx[356]
           ),
           listen(
             select1,
             "change",
             /*select1_change_handler*/
-            ctx[353]
+            ctx[357]
           ),
           listen(
             input2,
             "input",
             /*input2_input_handler*/
-            ctx[354]
+            ctx[358]
           ),
           listen(
             select2,
             "change",
             /*select2_change_handler*/
-            ctx[355]
+            ctx[359]
           ),
           listen(
             input3,
             "input",
             /*input3_input_handler*/
-            ctx[356]
+            ctx[360]
           )
         ];
         mounted = true;
@@ -17969,7 +17747,7 @@ function create_if_block_66(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*smAntAddForm, activeSerial*/
       524289 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0.value !== /*smAntAddForm*/
+      65536 && input0.value !== /*smAntAddForm*/
       ctx2[19][
         /*activeSerial*/
         ctx2[0]
@@ -17985,7 +17763,7 @@ function create_if_block_66(ctx) {
       }
       if (dirty[0] & /*smAntAddForm, activeSerial*/
       524289 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1.value !== /*smAntAddForm*/
+      65536 && input1.value !== /*smAntAddForm*/
       ctx2[19][
         /*activeSerial*/
         ctx2[0]
@@ -18001,7 +17779,7 @@ function create_if_block_66(ctx) {
       }
       if (dirty[0] & /*smAntAddForm, activeSerial*/
       524289 | dirty[1] & /*activeAntsAndGroups*/
-      8192) {
+      65536) {
         select_option(
           select0,
           /*smAntAddForm*/
@@ -18013,7 +17791,7 @@ function create_if_block_66(ctx) {
       }
       if (dirty[0] & /*smAntAddForm, activeSerial*/
       524289 | dirty[1] & /*activeAntsAndGroups*/
-      8192) {
+      65536) {
         select_option(
           select1,
           /*smAntAddForm*/
@@ -18025,7 +17803,7 @@ function create_if_block_66(ctx) {
       }
       if (dirty[0] & /*smAntAddForm, activeSerial*/
       524289 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && to_number(input2.value) !== /*smAntAddForm*/
+      65536 && to_number(input2.value) !== /*smAntAddForm*/
       ctx2[19][
         /*activeSerial*/
         ctx2[0]
@@ -18041,7 +17819,7 @@ function create_if_block_66(ctx) {
       }
       if (dirty[0] & /*smAntAddForm, activeSerial*/
       524289 | dirty[1] & /*activeAntsAndGroups*/
-      8192) {
+      65536) {
         select_option(
           select2,
           /*smAntAddForm*/
@@ -18053,7 +17831,7 @@ function create_if_block_66(ctx) {
       }
       if (dirty[0] & /*smAntAddForm, activeSerial*/
       524289 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && to_number(input3.value) !== /*smAntAddForm*/
+      65536 && to_number(input3.value) !== /*smAntAddForm*/
       ctx2[19][
         /*activeSerial*/
         ctx2[0]
@@ -18069,18 +17847,18 @@ function create_if_block_66(ctx) {
       }
       if (dirty[0] & /*smAntAddForm, activeSerial*/
       524289 | dirty[1] & /*activeAntOutCols*/
-      2097152) {
-        each_value_63 = ensure_array_like(
+      16777216) {
+        each_value_64 = ensure_array_like(
           /*antOutCols*/
-          ctx2[622]
+          ctx2[636]
         );
         let i;
-        for (i = 0; i < each_value_63.length; i += 1) {
-          const child_ctx = get_each_context_63(ctx2, each_value_63, i);
+        for (i = 0; i < each_value_64.length; i += 1) {
+          const child_ctx = get_each_context_64(ctx2, each_value_64, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_63(child_ctx);
+            each_blocks[i] = create_each_block_64(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(tr, null);
           }
@@ -18088,7 +17866,7 @@ function create_if_block_66(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_63.length;
+        each_blocks.length = each_value_64.length;
       }
     },
     d(detaching) {
@@ -18101,7 +17879,7 @@ function create_if_block_66(ctx) {
     }
   };
 }
-function create_each_block_63(ctx) {
+function create_each_block_64(ctx) {
   let td;
   let select;
   let option0;
@@ -18109,10 +17887,10 @@ function create_each_block_63(ctx) {
   let mounted;
   let dispose;
   function select_change_handler() {
-    ctx[357].call(
+    ctx[361].call(
       select,
       /*oc*/
-      ctx[624]
+      ctx[638]
     );
   }
   return {
@@ -18135,7 +17913,7 @@ function create_each_block_63(ctx) {
           ctx[0]
         ].output[
           /*oc*/
-          ctx[624]
+          ctx[638]
         ] === void 0
       ) add_render_callback(select_change_handler);
     },
@@ -18152,7 +17930,7 @@ function create_each_block_63(ctx) {
           ctx[0]
         ].output[
           /*oc*/
-          ctx[624]
+          ctx[638]
         ],
         true
       );
@@ -18165,7 +17943,7 @@ function create_each_block_63(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*smAntAddForm, activeSerial*/
       524289 | dirty[1] & /*activeAntOutCols, activeAntsAndGroups*/
-      2105344) {
+      16842752) {
         select_option(
           select,
           /*smAntAddForm*/
@@ -18174,7 +17952,7 @@ function create_each_block_63(ctx) {
             ctx[0]
           ].output[
             /*oc*/
-            ctx[624]
+            ctx[638]
           ]
         );
       }
@@ -18188,7 +17966,7 @@ function create_each_block_63(ctx) {
     }
   };
 }
-function create_else_block_3(ctx) {
+function create_else_block_5(ctx) {
   let button0;
   let t1;
   let button1;
@@ -18224,20 +18002,20 @@ function create_else_block_3(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_16*/
-            ctx[362]
+            /*click_handler_17*/
+            ctx[366]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_17*/
-            ctx[363]
+            /*click_handler_18*/
+            ctx[367]
           ),
           listen(
             button2,
             "click",
-            /*click_handler_18*/
-            ctx[364]
+            /*click_handler_19*/
+            ctx[368]
           )
         ];
         mounted = true;
@@ -18251,6 +18029,58 @@ function create_else_block_3(ctx) {
         detach(button1);
         detach(t3);
         detach(button2);
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_66(ctx) {
+  let button0;
+  let t1;
+  let button1;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      button0 = element("button");
+      button0.textContent = "Save";
+      t1 = space();
+      button1 = element("button");
+      button1.textContent = "Cancel";
+      attr(button0, "class", "btn");
+      attr(button0, "type", "button");
+      attr(button1, "class", "btn");
+      attr(button1, "type", "button");
+    },
+    m(target, anchor) {
+      insert(target, button0, anchor);
+      insert(target, t1, anchor);
+      insert(target, button1, anchor);
+      if (!mounted) {
+        dispose = [
+          listen(
+            button0,
+            "click",
+            /*click_handler_15*/
+            ctx[364]
+          ),
+          listen(
+            button1,
+            "click",
+            /*click_handler_16*/
+            ctx[365]
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(button0);
+        detach(t1);
+        detach(button1);
       }
       mounted = false;
       run_all(dispose);
@@ -18284,14 +18114,14 @@ function create_if_block_65(ctx) {
           listen(
             button0,
             "click",
-            /*click_handler_14*/
-            ctx[360]
+            /*click_handler_13*/
+            ctx[362]
           ),
           listen(
             button1,
             "click",
-            /*click_handler_15*/
-            ctx[361]
+            /*click_handler_14*/
+            ctx[363]
           )
         ];
         mounted = true;
@@ -18310,58 +18140,6 @@ function create_if_block_65(ctx) {
   };
 }
 function create_if_block_64(ctx) {
-  let button0;
-  let t1;
-  let button1;
-  let mounted;
-  let dispose;
-  return {
-    c() {
-      button0 = element("button");
-      button0.textContent = "Save";
-      t1 = space();
-      button1 = element("button");
-      button1.textContent = "Cancel";
-      attr(button0, "class", "btn");
-      attr(button0, "type", "button");
-      attr(button1, "class", "btn");
-      attr(button1, "type", "button");
-    },
-    m(target, anchor) {
-      insert(target, button0, anchor);
-      insert(target, t1, anchor);
-      insert(target, button1, anchor);
-      if (!mounted) {
-        dispose = [
-          listen(
-            button0,
-            "click",
-            /*click_handler_12*/
-            ctx[358]
-          ),
-          listen(
-            button1,
-            "click",
-            /*click_handler_13*/
-            ctx[359]
-          )
-        ];
-        mounted = true;
-      }
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(button0);
-        detach(t1);
-        detach(button1);
-      }
-      mounted = false;
-      run_all(dispose);
-    }
-  };
-}
-function create_if_block_63(ctx) {
   let div;
   let t_value = (
     /*keyerStatus*/
@@ -18395,7 +18173,7 @@ function create_if_block_63(ctx) {
       ].text + "")) set_data(t, t_value);
       if (dirty[0] & /*keyerStatus, activeSerial*/
       129 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
       ctx2[7][
         /*activeSerial*/
         ctx2[0]
@@ -18410,11 +18188,11 @@ function create_if_block_63(ctx) {
     }
   };
 }
-function create_each_block_62(ctx) {
+function create_each_block_63(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -18422,7 +18200,7 @@ function create_each_block_62(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -18437,7 +18215,7 @@ function create_each_block_62(ctx) {
     }
   };
 }
-function create_each_block_61(ctx) {
+function create_each_block_62(ctx) {
   let div2;
   let div0;
   let t2;
@@ -18446,20 +18224,20 @@ function create_each_block_61(ctx) {
   let select_value_value;
   let mounted;
   let dispose;
-  let each_value_62 = ensure_array_like(
+  let each_value_63 = ensure_array_like(
     /*smOutputClassOptions*/
-    ctx[84]
+    ctx[87]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_62.length; i += 1) {
-    each_blocks[i] = create_each_block_62(get_each_context_62(ctx, each_value_62, i));
+  for (let i = 0; i < each_value_63.length; i += 1) {
+    each_blocks[i] = create_each_block_63(get_each_context_63(ctx, each_value_63, i));
   }
   function change_handler_119(...args) {
     return (
       /*change_handler_119*/
-      ctx[340](
+      ctx[344](
         /*output*/
-        ctx[606],
+        ctx[620],
         ...args
       )
     );
@@ -18469,7 +18247,7 @@ function create_each_block_61(ctx) {
       div2 = element("div");
       div0 = element("div");
       div0.textContent = `${/*output*/
-      ctx[606]}:`;
+      ctx[620]}:`;
       t2 = space();
       div1 = element("div");
       select = element("select");
@@ -18495,11 +18273,11 @@ function create_each_block_61(ctx) {
       select_option(
         select,
         /*smOutputVal*/
-        ctx[113](
+        ctx[119](
           /*activeSerial*/
           ctx[0],
           /*output*/
-          ctx[606]
+          ctx[620]
         )
       );
       if (!mounted) {
@@ -18510,18 +18288,18 @@ function create_each_block_61(ctx) {
     p(new_ctx, dirty) {
       ctx = new_ctx;
       if (dirty[2] & /*smOutputClassOptions*/
-      4194304) {
-        each_value_62 = ensure_array_like(
+      33554432) {
+        each_value_63 = ensure_array_like(
           /*smOutputClassOptions*/
-          ctx[84]
+          ctx[87]
         );
         let i;
-        for (i = 0; i < each_value_62.length; i += 1) {
-          const child_ctx = get_each_context_62(ctx, each_value_62, i);
+        for (i = 0; i < each_value_63.length; i += 1) {
+          const child_ctx = get_each_context_63(ctx, each_value_63, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_62(child_ctx);
+            each_blocks[i] = create_each_block_63(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -18529,25 +18307,25 @@ function create_each_block_61(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_62.length;
+        each_blocks.length = each_value_63.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select_value_value !== (select_value_value = /*smOutputVal*/
-      ctx[113](
+      65536 && select_value_value !== (select_value_value = /*smOutputVal*/
+      ctx[119](
         /*activeSerial*/
         ctx[0],
         /*output*/
-        ctx[606]
+        ctx[620]
       ))) {
         select_option(
           select,
           /*smOutputVal*/
-          ctx[113](
+          ctx[119](
             /*activeSerial*/
             ctx[0],
             /*output*/
-            ctx[606]
+            ctx[620]
           )
         );
       }
@@ -18562,7 +18340,7 @@ function create_each_block_61(ctx) {
     }
   };
 }
-function create_if_block_61(ctx) {
+function create_if_block_62(ctx) {
   let div;
   let t_value = (
     /*keyerStatus*/
@@ -18596,7 +18374,7 @@ function create_if_block_61(ctx) {
       ].text + "")) set_data(t, t_value);
       if (dirty[0] & /*keyerStatus, activeSerial*/
       129 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
       ctx2[7][
         /*activeSerial*/
         ctx2[0]
@@ -18611,11 +18389,11 @@ function create_if_block_61(ctx) {
     }
   };
 }
-function create_each_block_60(ctx) {
+function create_each_block_61(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -18623,7 +18401,34 @@ function create_each_block_60(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_60(ctx) {
+  let option;
+  let t_value = (
+    /*opt*/
+    ctx[498].label + ""
+  );
+  let t;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = /*opt*/
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -18642,7 +18447,7 @@ function create_each_block_59(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -18650,7 +18455,7 @@ function create_each_block_59(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -18669,7 +18474,7 @@ function create_each_block_58(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -18677,7 +18482,7 @@ function create_each_block_58(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -18692,34 +18497,7 @@ function create_each_block_58(ctx) {
     }
   };
 }
-function create_each_block_57(ctx) {
-  let option;
-  let t_value = (
-    /*opt*/
-    ctx[489].label + ""
-  );
-  let t;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = /*opt*/
-      ctx[489].value;
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_if_block_59(ctx) {
+function create_if_block_60(ctx) {
   let div;
   let t_value = (
     /*keyerStatus*/
@@ -18753,7 +18531,7 @@ function create_if_block_59(ctx) {
       ].text + "")) set_data(t, t_value);
       if (dirty[0] & /*keyerStatus, activeSerial*/
       129 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
       ctx2[7][
         /*activeSerial*/
         ctx2[0]
@@ -18768,23 +18546,23 @@ function create_if_block_59(ctx) {
     }
   };
 }
-function create_if_block_58(ctx) {
+function create_if_block_59(ctx) {
   let section;
   let div0;
   let t1;
   let div4;
   let div3;
   let t7;
-  let each_value_56 = ensure_array_like(
+  let each_value_57 = ensure_array_like(
     /*smSequencerOutputs*/
-    ctx[114](
+    ctx[120](
       /*activeSerial*/
       ctx[0]
     )
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_56.length; i += 1) {
-    each_blocks[i] = create_each_block_56(get_each_context_56(ctx, each_value_56, i));
+  for (let i = 0; i < each_value_57.length; i += 1) {
+    each_blocks[i] = create_each_block_57(get_each_context_57(ctx, each_value_57, i));
   }
   return {
     c() {
@@ -18821,21 +18599,21 @@ function create_if_block_58(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[3] & /*smSequencerVal, smSequencerOutputs, applySmSequencer*/
-      11010048) {
-        each_value_56 = ensure_array_like(
+      704643072) {
+        each_value_57 = ensure_array_like(
           /*smSequencerOutputs*/
-          ctx2[114](
+          ctx2[120](
             /*activeSerial*/
             ctx2[0]
           )
         );
         let i;
-        for (i = 0; i < each_value_56.length; i += 1) {
-          const child_ctx = get_each_context_56(ctx2, each_value_56, i);
+        for (i = 0; i < each_value_57.length; i += 1) {
+          const child_ctx = get_each_context_57(ctx2, each_value_57, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_56(child_ctx);
+            each_blocks[i] = create_each_block_57(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(div4, null);
           }
@@ -18843,7 +18621,7 @@ function create_if_block_58(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_56.length;
+        each_blocks.length = each_value_57.length;
       }
     },
     d(detaching) {
@@ -18854,12 +18632,12 @@ function create_if_block_58(ctx) {
     }
   };
 }
-function create_each_block_56(ctx) {
+function create_each_block_57(ctx) {
   let div2;
   let div0;
   let t0_value = (
     /*output*/
-    ctx[606] + ""
+    ctx[620] + ""
   );
   let t0;
   let t1;
@@ -18876,9 +18654,9 @@ function create_each_block_56(ctx) {
   function change_handler_117(...args) {
     return (
       /*change_handler_117*/
-      ctx[338](
+      ctx[342](
         /*output*/
-        ctx[606],
+        ctx[620],
         ...args
       )
     );
@@ -18886,9 +18664,9 @@ function create_each_block_56(ctx) {
   function change_handler_118(...args) {
     return (
       /*change_handler_118*/
-      ctx[339](
+      ctx[343](
         /*output*/
-        ctx[606],
+        ctx[620],
         ...args
       )
     );
@@ -18911,24 +18689,24 @@ function create_each_block_56(ctx) {
       attr(input0, "type", "number");
       attr(input0, "min", "0");
       input0.value = input0_value_value = /*smSequencerVal*/
-      ctx[112](
+      ctx[118](
         /*activeSerial*/
         ctx[0],
         "lead",
         /*output*/
-        ctx[606]
+        ctx[620]
       );
       attr(input1, "class", "input");
       set_style(input1, "width", "80px");
       attr(input1, "type", "number");
       attr(input1, "min", "0");
       input1.value = input1_value_value = /*smSequencerVal*/
-      ctx[112](
+      ctx[118](
         /*activeSerial*/
         ctx[0],
         "tail",
         /*output*/
-        ctx[606]
+        ctx[620]
       );
       attr(div1, "class", "value");
       set_style(div1, "display", "flex");
@@ -18958,28 +18736,28 @@ function create_each_block_56(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*activeSerial*/
       1 && t0_value !== (t0_value = /*output*/
-      ctx[606] + "")) set_data(t0, t0_value);
+      ctx[620] + "")) set_data(t0, t0_value);
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_value_value !== (input0_value_value = /*smSequencerVal*/
-      ctx[112](
+      65536 && input0_value_value !== (input0_value_value = /*smSequencerVal*/
+      ctx[118](
         /*activeSerial*/
         ctx[0],
         "lead",
         /*output*/
-        ctx[606]
+        ctx[620]
       )) && input0.value !== input0_value_value) {
         input0.value = input0_value_value;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_value_value !== (input1_value_value = /*smSequencerVal*/
-      ctx[112](
+      65536 && input1_value_value !== (input1_value_value = /*smSequencerVal*/
+      ctx[118](
         /*activeSerial*/
         ctx[0],
         "tail",
         /*output*/
-        ctx[606]
+        ctx[620]
       )) && input1.value !== input1_value_value) {
         input1.value = input1_value_value;
       }
@@ -18993,7 +18771,7 @@ function create_each_block_56(ctx) {
     }
   };
 }
-function create_if_block_56(ctx) {
+function create_if_block_57(ctx) {
   let div;
   let t_value = (
     /*smActionStatus*/
@@ -19027,7 +18805,7 @@ function create_if_block_56(ctx) {
       ].text + "")) set_data(t, t_value);
       if (dirty[0] & /*smActionStatus, activeSerial*/
       32769 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*smActionStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*smActionStatus*/
       ctx2[15][
         /*activeSerial*/
         ctx2[0]
@@ -19042,7 +18820,7 @@ function create_if_block_56(ctx) {
     }
   };
 }
-function create_each_block_55(ctx) {
+function create_each_block_56(ctx) {
   let div2;
   let div0;
   let t3;
@@ -19053,22 +18831,22 @@ function create_each_block_55(ctx) {
   let button;
   let mounted;
   let dispose;
-  function input_handler_35(...args) {
+  function input_handler_30(...args) {
     return (
-      /*input_handler_35*/
-      ctx[320](
+      /*input_handler_30*/
+      ctx[324](
         /*idx*/
-        ctx[601],
+        ctx[615],
         ...args
       )
     );
   }
-  function click_handler_6() {
+  function click_handler_7() {
     return (
-      /*click_handler_6*/
-      ctx[321](
+      /*click_handler_7*/
+      ctx[325](
         /*idx*/
-        ctx[601]
+        ctx[615]
       )
     );
   }
@@ -19078,7 +18856,7 @@ function create_each_block_55(ctx) {
       div2 = element("div");
       div0 = element("div");
       div0.textContent = `Message #${/*idx*/
-      ctx[601]}:`;
+      ctx[615]}:`;
       t3 = space();
       div1 = element("div");
       input = element("input");
@@ -19095,7 +18873,7 @@ function create_each_block_55(ctx) {
         ctx[0]
       ]) == null ? void 0 : _a.cw) == null ? void 0 : _b[
         /*idx*/
-        ctx[601]
+        ctx[615]
       ]) ?? "";
       attr(button, "class", "btn");
       attr(button, "type", "button");
@@ -19114,8 +18892,8 @@ function create_each_block_55(ctx) {
       append(div1, button);
       if (!mounted) {
         dispose = [
-          listen(input, "input", input_handler_35),
-          listen(button, "click", click_handler_6)
+          listen(input, "input", input_handler_30),
+          listen(button, "click", click_handler_7)
         ];
         mounted = true;
       }
@@ -19125,13 +18903,13 @@ function create_each_block_55(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*messageForm, activeSerial*/
       2049 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_value_value !== (input_value_value = /*messageForm*/
+      65536 && input_value_value !== (input_value_value = /*messageForm*/
       ((_b = (_a = ctx[11][
         /*activeSerial*/
         ctx[0]
       ]) == null ? void 0 : _a.cw) == null ? void 0 : _b[
         /*idx*/
-        ctx[601]
+        ctx[615]
       ]) ?? "") && input.value !== input_value_value) {
         input.value = input_value_value;
       }
@@ -19145,7 +18923,7 @@ function create_each_block_55(ctx) {
     }
   };
 }
-function create_if_block_54(ctx) {
+function create_if_block_55(ctx) {
   let div;
   let t_value = (
     /*messageStatus*/
@@ -19173,7 +18951,7 @@ function create_if_block_54(ctx) {
       ctx2[0]}:cw`].text + "")) set_data(t, t_value);
       if (dirty[0] & /*messageStatus, activeSerial*/
       4097 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*messageStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*messageStatus*/
       ctx2[12][`${/*activeSerial*/
       ctx2[0]}:cw`].kind === "error" ? "error" : ""}`)) {
         attr(div, "class", div_class_value);
@@ -19186,7 +18964,7 @@ function create_if_block_54(ctx) {
     }
   };
 }
-function create_each_block_54(ctx) {
+function create_each_block_55(ctx) {
   let div2;
   let div0;
   let t3;
@@ -19197,22 +18975,22 @@ function create_each_block_54(ctx) {
   let button;
   let mounted;
   let dispose;
-  function input_handler_36(...args) {
+  function input_handler_31(...args) {
     return (
-      /*input_handler_36*/
-      ctx[323](
+      /*input_handler_31*/
+      ctx[327](
         /*idx*/
-        ctx[601],
+        ctx[615],
         ...args
       )
     );
   }
-  function click_handler_8() {
+  function click_handler_9() {
     return (
-      /*click_handler_8*/
-      ctx[324](
+      /*click_handler_9*/
+      ctx[328](
         /*idx*/
-        ctx[601]
+        ctx[615]
       )
     );
   }
@@ -19222,7 +19000,7 @@ function create_each_block_54(ctx) {
       div2 = element("div");
       div0 = element("div");
       div0.textContent = `Message #${/*idx*/
-      ctx[601]}:`;
+      ctx[615]}:`;
       t3 = space();
       div1 = element("div");
       input = element("input");
@@ -19239,7 +19017,7 @@ function create_each_block_54(ctx) {
         ctx[0]
       ]) == null ? void 0 : _a.fsk) == null ? void 0 : _b[
         /*idx*/
-        ctx[601]
+        ctx[615]
       ]) ?? "";
       attr(button, "class", "btn");
       attr(button, "type", "button");
@@ -19258,8 +19036,8 @@ function create_each_block_54(ctx) {
       append(div1, button);
       if (!mounted) {
         dispose = [
-          listen(input, "input", input_handler_36),
-          listen(button, "click", click_handler_8)
+          listen(input, "input", input_handler_31),
+          listen(button, "click", click_handler_9)
         ];
         mounted = true;
       }
@@ -19269,13 +19047,13 @@ function create_each_block_54(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*messageForm, activeSerial*/
       2049 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_value_value !== (input_value_value = /*messageForm*/
+      65536 && input_value_value !== (input_value_value = /*messageForm*/
       ((_b = (_a = ctx[11][
         /*activeSerial*/
         ctx[0]
       ]) == null ? void 0 : _a.fsk) == null ? void 0 : _b[
         /*idx*/
-        ctx[601]
+        ctx[615]
       ]) ?? "") && input.value !== input_value_value) {
         input.value = input_value_value;
       }
@@ -19289,7 +19067,7 @@ function create_each_block_54(ctx) {
     }
   };
 }
-function create_if_block_53(ctx) {
+function create_if_block_54(ctx) {
   let div;
   let t_value = (
     /*messageStatus*/
@@ -19317,7 +19095,7 @@ function create_if_block_53(ctx) {
       ctx2[0]}:fsk`].text + "")) set_data(t, t_value);
       if (dirty[0] & /*messageStatus, activeSerial*/
       4097 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*messageStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*messageStatus*/
       ctx2[12][`${/*activeSerial*/
       ctx2[0]}:fsk`].kind === "error" ? "error" : ""}`)) {
         attr(div, "class", div_class_value);
@@ -19326,6 +19104,152 @@ function create_if_block_53(ctx) {
     d(detaching) {
       if (detaching) {
         detach(div);
+      }
+    }
+  };
+}
+function create_if_block_52(ctx) {
+  let div2;
+  let div0;
+  let t1;
+  let div1;
+  let input;
+  let input_checked_value;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      div2 = element("div");
+      div0 = element("div");
+      div0.textContent = "Paddle Only Side Tone:";
+      t1 = space();
+      div1 = element("div");
+      input = element("input");
+      attr(div0, "class", "label");
+      attr(input, "type", "checkbox");
+      input.checked = input_checked_value = !!/*keyerParam*/
+      ctx[111](
+        /*activeSerial*/
+        ctx[0],
+        "paddleOnlySideTone"
+      );
+      attr(div1, "class", "value");
+      attr(div2, "class", "row");
+    },
+    m(target, anchor) {
+      insert(target, div2, anchor);
+      append(div2, div0);
+      append(div2, t1);
+      append(div2, div1);
+      append(div1, input);
+      if (!mounted) {
+        dispose = listen(
+          input,
+          "change",
+          /*change_handler_98*/
+          ctx[304]
+        );
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*activeSerial*/
+      1 | dirty[1] & /*activeAntsAndGroups*/
+      65536 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
+      ctx2[111](
+        /*activeSerial*/
+        ctx2[0],
+        "paddleOnlySideTone"
+      ))) {
+        input.checked = input_checked_value;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div2);
+      }
+      mounted = false;
+      dispose();
+    }
+  };
+}
+function create_each_block_54(ctx) {
+  let option;
+  let t_value = (
+    /*opt*/
+    ctx[498].label + ""
+  );
+  let t;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = /*opt*/
+      ctx[498].value;
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_53(ctx) {
+  let option;
+  let t_value = (
+    /*opt*/
+    ctx[498].label + ""
+  );
+  let t;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = /*opt*/
+      ctx[498].value;
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_52(ctx) {
+  let option;
+  let t_value = (
+    /*opt*/
+    ctx[498].label + ""
+  );
+  let t;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = /*opt*/
+      ctx[498].value;
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(option);
       }
     }
   };
@@ -19350,153 +19274,7 @@ function create_if_block_51(ctx) {
       attr(div0, "class", "label");
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = !!/*keyerParam*/
-      ctx[105](
-        /*activeSerial*/
-        ctx[0],
-        "paddleOnlySideTone"
-      );
-      attr(div1, "class", "value");
-      attr(div2, "class", "row");
-    },
-    m(target, anchor) {
-      insert(target, div2, anchor);
-      append(div2, div0);
-      append(div2, t1);
-      append(div2, div1);
-      append(div1, input);
-      if (!mounted) {
-        dispose = listen(
-          input,
-          "change",
-          /*change_handler_98*/
-          ctx[300]
-        );
-        mounted = true;
-      }
-    },
-    p(ctx2, dirty) {
-      if (dirty[0] & /*activeSerial*/
-      1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
-      ctx2[105](
-        /*activeSerial*/
-        ctx2[0],
-        "paddleOnlySideTone"
-      ))) {
-        input.checked = input_checked_value;
-      }
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(div2);
-      }
-      mounted = false;
-      dispose();
-    }
-  };
-}
-function create_each_block_53(ctx) {
-  let option;
-  let t_value = (
-    /*opt*/
-    ctx[489].label + ""
-  );
-  let t;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = /*opt*/
-      ctx[489].value;
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_each_block_52(ctx) {
-  let option;
-  let t_value = (
-    /*opt*/
-    ctx[489].label + ""
-  );
-  let t;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = /*opt*/
-      ctx[489].value;
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_each_block_51(ctx) {
-  let option;
-  let t_value = (
-    /*opt*/
-    ctx[489].label + ""
-  );
-  let t;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = /*opt*/
-      ctx[489].value;
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_if_block_50(ctx) {
-  let div2;
-  let div0;
-  let t1;
-  let div1;
-  let input;
-  let input_checked_value;
-  let mounted;
-  let dispose;
-  return {
-    c() {
-      div2 = element("div");
-      div0 = element("div");
-      div0.textContent = "Paddle Only Side Tone:";
-      t1 = space();
-      div1 = element("div");
-      input = element("input");
-      attr(div0, "class", "label");
-      attr(input, "type", "checkbox");
-      input.checked = input_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "paddleOnlySideTone"
@@ -19515,7 +19293,7 @@ function create_if_block_50(ctx) {
           input,
           "change",
           /*change_handler_106*/
-          ctx[319]
+          ctx[323]
         );
         mounted = true;
       }
@@ -19523,8 +19301,8 @@ function create_if_block_50(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "paddleOnlySideTone"
@@ -19541,11 +19319,11 @@ function create_if_block_50(ctx) {
     }
   };
 }
-function create_each_block_50(ctx) {
+function create_each_block_51(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489].display + ""
+    ctx[498].display + ""
   );
   let t;
   let option_value_value;
@@ -19554,7 +19332,7 @@ function create_each_block_50(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -19564,11 +19342,50 @@ function create_each_block_50(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*opt*/
-      ctx2[489].display + "")) set_data(t, t_value);
+      ctx2[498].display + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489].value)) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498].value)) {
+        option.__value = option_value_value;
+        set_input_value(option, option.__value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_50(ctx) {
+  let option;
+  let t_value = (
+    /*opt*/
+    ctx[498].display + ""
+  );
+  let t;
+  let option_value_value;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = option_value_value = /*opt*/
+      ctx[498].value;
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*activeKeyer*/
+      4 && t_value !== (t_value = /*opt*/
+      ctx2[498].display + "")) set_data(t, t_value);
+      if (dirty[0] & /*activeKeyer*/
+      4 | dirty[2] & /*displayLineOptions*/
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498].value)) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -19583,47 +19400,8 @@ function create_each_block_50(ctx) {
 function create_each_block_49(ctx) {
   let option;
   let t_value = (
-    /*opt*/
-    ctx[489].display + ""
-  );
-  let t;
-  let option_value_value;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = option_value_value = /*opt*/
-      ctx[489].value;
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p(ctx2, dirty) {
-      if (dirty[0] & /*activeKeyer*/
-      4 && t_value !== (t_value = /*opt*/
-      ctx2[489].display + "")) set_data(t, t_value);
-      if (dirty[0] & /*activeKeyer*/
-      4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489].value)) {
-        option.__value = option_value_value;
-        set_input_value(option, option.__value);
-      }
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_each_block_48(ctx) {
-  let option;
-  let t_value = (
     /*lineOpt*/
-    ctx[588].label + ""
+    ctx[602].label + ""
   );
   let t;
   return {
@@ -19631,7 +19409,7 @@ function create_each_block_48(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*lineOpt*/
-      ctx[588].value;
+      ctx[602].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -19646,12 +19424,12 @@ function create_each_block_48(ctx) {
     }
   };
 }
-function create_each_block_47(ctx) {
+function create_each_block_48(ctx) {
   let div3;
   let div0;
   let t0_value = (
     /*opt*/
-    ctx[489].display + ""
+    ctx[498].display + ""
   );
   let t0;
   let t1;
@@ -19668,27 +19446,27 @@ function create_each_block_47(ctx) {
   function change_handler_96(...args) {
     return (
       /*change_handler_96*/
-      ctx[298](
+      ctx[302](
         /*opt*/
-        ctx[489],
+        ctx[498],
         ...args
       )
     );
   }
-  let each_value_48 = ensure_array_like(
+  let each_value_49 = ensure_array_like(
     /*displayLineOptions*/
-    ctx[77]
+    ctx[80]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_48.length; i += 1) {
-    each_blocks[i] = create_each_block_48(get_each_context_48(ctx, each_value_48, i));
+  for (let i = 0; i < each_value_49.length; i += 1) {
+    each_blocks[i] = create_each_block_49(get_each_context_49(ctx, each_value_49, i));
   }
   function change_handler_97(...args) {
     return (
       /*change_handler_97*/
-      ctx[299](
+      ctx[303](
         /*opt*/
-        ctx[489],
+        ctx[498],
         ...args
       )
     );
@@ -19710,11 +19488,11 @@ function create_each_block_47(ctx) {
       t3 = space();
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `dispEv.${/*opt*/
-        ctx[489].value}`
+        ctx[498].value}`
       );
       attr(select, "class", "select");
       attr(div3, "class", "table-row");
@@ -19737,11 +19515,11 @@ function create_each_block_47(ctx) {
       select_option(
         select,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `dispEvLn.${/*opt*/
-          ctx[489].value}`
+          ctx[498].value}`
         )
       );
       append(div3, t3);
@@ -19757,32 +19535,32 @@ function create_each_block_47(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*activeKeyer*/
       4 && t0_value !== (t0_value = /*opt*/
-      ctx[489].display + "")) set_data(t0, t0_value);
+      ctx[498].display + "")) set_data(t0, t0_value);
       if (dirty[0] & /*activeSerial, activeKeyer*/
       5 | dirty[1] & /*activeAntsAndGroups*/
-      8192 | dirty[2] & /*displayLineOptions*/
-      32768 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
-      ctx[105](
+      65536 | dirty[2] & /*displayLineOptions*/
+      262144 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `dispEv.${/*opt*/
-        ctx[489].value}`
+        ctx[498].value}`
       ))) {
         input.checked = input_checked_value;
       }
       if (dirty[2] & /*displayLineOptions*/
-      32768) {
-        each_value_48 = ensure_array_like(
+      262144) {
+        each_value_49 = ensure_array_like(
           /*displayLineOptions*/
-          ctx[77]
+          ctx[80]
         );
         let i;
-        for (i = 0; i < each_value_48.length; i += 1) {
-          const child_ctx = get_each_context_48(ctx, each_value_48, i);
+        for (i = 0; i < each_value_49.length; i += 1) {
+          const child_ctx = get_each_context_49(ctx, each_value_49, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_48(child_ctx);
+            each_blocks[i] = create_each_block_49(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -19790,26 +19568,26 @@ function create_each_block_47(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_48.length;
+        each_blocks.length = each_value_49.length;
       }
       if (dirty[0] & /*activeSerial, activeKeyer*/
       5 | dirty[1] & /*activeAntsAndGroups*/
-      8192 | dirty[2] & /*displayLineOptions*/
-      32768 && select_value_value !== (select_value_value = /*keyerParam*/
-      ctx[105](
+      65536 | dirty[2] & /*displayLineOptions*/
+      262144 && select_value_value !== (select_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `dispEvLn.${/*opt*/
-        ctx[489].value}`
+        ctx[498].value}`
       ))) {
         select_option(
           select,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `dispEvLn.${/*opt*/
-            ctx[489].value}`
+            ctx[498].value}`
           )
         );
       }
@@ -19824,7 +19602,7 @@ function create_each_block_47(ctx) {
     }
   };
 }
-function create_else_block_2(ctx) {
+function create_else_block_4(ctx) {
   let section;
   return {
     c() {
@@ -19843,7 +19621,7 @@ function create_else_block_2(ctx) {
     }
   };
 }
-function create_if_block_47(ctx) {
+function create_if_block_48(ctx) {
   let section0;
   let div0;
   let t1;
@@ -19857,15 +19635,15 @@ function create_if_block_47(ctx) {
   let div21;
   let div20;
   let t36;
-  let each_value_42 = ensure_array_like(["voice", "digital"]);
+  let each_value_43 = ensure_array_like(["voice", "digital"]);
   let each_blocks_1 = [];
   for (let i = 0; i < 2; i += 1) {
-    each_blocks_1[i] = create_each_block_42(get_each_context_42(ctx, each_value_42, i));
+    each_blocks_1[i] = create_each_block_43(get_each_context_43(ctx, each_value_43, i));
   }
-  let each_value_37 = ensure_array_like(["voice", "digital"]);
+  let each_value_38 = ensure_array_like(["voice", "digital"]);
   let each_blocks = [];
   for (let i = 0; i < 2; i += 1) {
-    each_blocks[i] = create_each_block_37(get_each_context_37(ctx, each_value_37, i));
+    each_blocks[i] = create_each_block_38(get_each_context_38(ctx, each_value_38, i));
   }
   return {
     c() {
@@ -19929,16 +19707,16 @@ function create_if_block_47(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial, activeKeyer*/
       5 | dirty[2] & /*mk2rCodecOptions*/
-      2048 | dirty[3] & /*keyerParam, updateKeyerParam, audioOptionsFor, audioOptionLabel*/
-      12300) {
-        each_value_42 = ensure_array_like(["voice", "digital"]);
+      16384 | dirty[3] & /*keyerParam, updateKeyerParam, audioOptionsFor, audioOptionLabel*/
+      787200) {
+        each_value_43 = ensure_array_like(["voice", "digital"]);
         let i;
         for (i = 0; i < 2; i += 1) {
-          const child_ctx = get_each_context_42(ctx2, each_value_42, i);
+          const child_ctx = get_each_context_43(ctx2, each_value_43, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_42(child_ctx);
+            each_blocks_1[i] = create_each_block_43(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(div10, null);
           }
@@ -19949,16 +19727,16 @@ function create_if_block_47(ctx) {
       }
       if (dirty[0] & /*activeSerial, activeKeyer*/
       5 | dirty[2] & /*mk2rCodecOptions*/
-      2048 | dirty[3] & /*keyerParam, updateKeyerParam, audioOptionsFor, audioOptionLabel*/
-      12300) {
-        each_value_37 = ensure_array_like(["voice", "digital"]);
+      16384 | dirty[3] & /*keyerParam, updateKeyerParam, audioOptionsFor, audioOptionLabel*/
+      787200) {
+        each_value_38 = ensure_array_like(["voice", "digital"]);
         let i;
         for (i = 0; i < 2; i += 1) {
-          const child_ctx = get_each_context_37(ctx2, each_value_37, i);
+          const child_ctx = get_each_context_38(ctx2, each_value_38, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_37(child_ctx);
+            each_blocks[i] = create_each_block_38(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(div21, null);
           }
@@ -19979,17 +19757,17 @@ function create_if_block_47(ctx) {
     }
   };
 }
-function create_if_block_46(ctx) {
+function create_if_block_47(ctx) {
   let section;
   let div0;
   let t1;
   let div6;
   let div5;
   let t9;
-  let each_value_32 = ensure_array_like(["voice", "digital"]);
+  let each_value_33 = ensure_array_like(["voice", "digital"]);
   let each_blocks = [];
   for (let i = 0; i < 2; i += 1) {
-    each_blocks[i] = create_each_block_32(get_each_context_32(ctx, each_value_32, i));
+    each_blocks[i] = create_each_block_33(get_each_context_33(ctx, each_value_33, i));
   }
   return {
     c() {
@@ -20025,16 +19803,16 @@ function create_if_block_46(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial, activeKeyer*/
       5 | dirty[2] & /*mk2rCodecOptions*/
-      2048 | dirty[3] & /*keyerParam, updateKeyerParam, audioOptionsFor, audioOptionLabel*/
-      12300) {
-        each_value_32 = ensure_array_like(["voice", "digital"]);
+      16384 | dirty[3] & /*keyerParam, updateKeyerParam, audioOptionsFor, audioOptionLabel*/
+      787200) {
+        each_value_33 = ensure_array_like(["voice", "digital"]);
         let i;
         for (i = 0; i < 2; i += 1) {
-          const child_ctx = get_each_context_32(ctx2, each_value_32, i);
+          const child_ctx = get_each_context_33(ctx2, each_value_33, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_32(child_ctx);
+            each_blocks[i] = create_each_block_33(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(div6, null);
           }
@@ -20052,7 +19830,7 @@ function create_if_block_46(ctx) {
     }
   };
 }
-function create_if_block_45(ctx) {
+function create_if_block_46(ctx) {
   let section0;
   let div0;
   let t1;
@@ -20122,18 +19900,18 @@ function create_if_block_45(ctx) {
   let input7_checked_value;
   let mounted;
   let dispose;
-  let each_value_28 = ensure_array_like(["voice", "digital"]);
+  let each_value_29 = ensure_array_like(["voice", "digital"]);
   let each_blocks_1 = [];
   for (let i = 0; i < 2; i += 1) {
-    each_blocks_1[i] = create_each_block_28(get_each_context_28(ctx, each_value_28, i));
+    each_blocks_1[i] = create_each_block_29(get_each_context_29(ctx, each_value_29, i));
   }
-  let each_value_27 = ensure_array_like(
+  let each_value_28 = ensure_array_like(
     /*mk2MicSelOptions*/
-    ctx[72]
+    ctx[75]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_27.length; i += 1) {
-    each_blocks[i] = create_each_block_27(get_each_context_27(ctx, each_value_27, i));
+  for (let i = 0; i < each_value_28.length; i += 1) {
+    each_blocks[i] = create_each_block_28(get_each_context_28(ctx, each_value_28, i));
   }
   return {
     c() {
@@ -20219,14 +19997,14 @@ function create_if_block_45(ctx) {
       attr(div11, "class", "table-header");
       attr(input0, "type", "checkbox");
       input0.checked = input0_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1FrMpkExtra_Voice.onAirRecActive"
       );
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1FrMpkExtra_Digital.onAirRecActive"
@@ -20234,14 +20012,14 @@ function create_if_block_45(ctx) {
       attr(div15, "class", "table-row");
       attr(input2, "type", "checkbox");
       input2.checked = input2_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1FrMpkExtra_Voice.onAirRecControlByRouter"
       );
       attr(input3, "type", "checkbox");
       input3.checked = input3_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1FrMpkExtra_Digital.onAirRecControlByRouter"
@@ -20250,7 +20028,7 @@ function create_if_block_45(ctx) {
       attr(input4, "class", "input");
       attr(input4, "type", "number");
       input4.value = input4_value_value = /*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1FrMpkExtra_Voice.pwmMonctr"
@@ -20258,7 +20036,7 @@ function create_if_block_45(ctx) {
       attr(input5, "class", "input");
       attr(input5, "type", "number");
       input5.value = input5_value_value = /*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1FrMpkExtra_Digital.pwmMonctr"
@@ -20272,7 +20050,7 @@ function create_if_block_45(ctx) {
       attr(div28, "class", "label");
       attr(input6, "type", "checkbox");
       input6.checked = input6_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "useAutoPtt"
@@ -20282,7 +20060,7 @@ function create_if_block_45(ctx) {
       attr(div31, "class", "label");
       attr(input7, "type", "checkbox");
       input7.checked = input7_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "downstreamOverFootSw"
@@ -20353,7 +20131,7 @@ function create_if_block_45(ctx) {
       select_option(
         select,
         /*mk2MicSelValue*/
-        ctx[97](
+        ctx[103](
           /*activeSerial*/
           ctx[0]
         )
@@ -20376,55 +20154,55 @@ function create_if_block_45(ctx) {
             input0,
             "change",
             /*change_handler_66*/
-            ctx[264]
+            ctx[268]
           ),
           listen(
             input1,
             "change",
             /*change_handler_67*/
-            ctx[265]
+            ctx[269]
           ),
           listen(
             input2,
             "change",
             /*change_handler_68*/
-            ctx[266]
+            ctx[270]
           ),
           listen(
             input3,
             "change",
             /*change_handler_69*/
-            ctx[267]
+            ctx[271]
           ),
           listen(
             input4,
             "input",
-            /*input_handler_20*/
-            ctx[268]
+            /*input_handler_15*/
+            ctx[272]
           ),
           listen(
             input5,
             "input",
-            /*input_handler_21*/
-            ctx[269]
+            /*input_handler_16*/
+            ctx[273]
           ),
           listen(
             select,
             "change",
             /*change_handler_70*/
-            ctx[270]
+            ctx[274]
           ),
           listen(
             input6,
             "change",
             /*change_handler_71*/
-            ctx[271]
+            ctx[275]
           ),
           listen(
             input7,
             "change",
             /*change_handler_72*/
-            ctx[272]
+            ctx[276]
           )
         ];
         mounted = true;
@@ -20433,15 +20211,15 @@ function create_if_block_45(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial, activeKeyer*/
       5 | dirty[3] & /*keyerParam, updateKeyerParam, audioOptionsFor, audioOptionLabel*/
-      12300) {
-        each_value_28 = ensure_array_like(["voice", "digital"]);
+      787200) {
+        each_value_29 = ensure_array_like(["voice", "digital"]);
         let i;
         for (i = 0; i < 2; i += 1) {
-          const child_ctx = get_each_context_28(ctx2, each_value_28, i);
+          const child_ctx = get_each_context_29(ctx2, each_value_29, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_28(child_ctx);
+            each_blocks_1[i] = create_each_block_29(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(div6, null);
           }
@@ -20452,8 +20230,8 @@ function create_if_block_45(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1FrMpkExtra_Voice.onAirRecActive"
@@ -20462,8 +20240,8 @@ function create_if_block_45(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1FrMpkExtra_Digital.onAirRecActive"
@@ -20472,8 +20250,8 @@ function create_if_block_45(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input2_checked_value !== (input2_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input2_checked_value !== (input2_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1FrMpkExtra_Voice.onAirRecControlByRouter"
@@ -20482,8 +20260,8 @@ function create_if_block_45(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input3_checked_value !== (input3_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input3_checked_value !== (input3_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1FrMpkExtra_Digital.onAirRecControlByRouter"
@@ -20492,8 +20270,8 @@ function create_if_block_45(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input4_value_value !== (input4_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && input4_value_value !== (input4_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1FrMpkExtra_Voice.pwmMonctr"
@@ -20502,8 +20280,8 @@ function create_if_block_45(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input5_value_value !== (input5_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && input5_value_value !== (input5_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1FrMpkExtra_Digital.pwmMonctr"
@@ -20511,18 +20289,18 @@ function create_if_block_45(ctx) {
         input5.value = input5_value_value;
       }
       if (dirty[2] & /*mk2MicSelOptions*/
-      1024) {
-        each_value_27 = ensure_array_like(
+      8192) {
+        each_value_28 = ensure_array_like(
           /*mk2MicSelOptions*/
-          ctx2[72]
+          ctx2[75]
         );
         let i;
-        for (i = 0; i < each_value_27.length; i += 1) {
-          const child_ctx = get_each_context_27(ctx2, each_value_27, i);
+        for (i = 0; i < each_value_28.length; i += 1) {
+          const child_ctx = get_each_context_28(ctx2, each_value_28, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_27(child_ctx);
+            each_blocks[i] = create_each_block_28(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -20530,19 +20308,19 @@ function create_if_block_45(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_27.length;
+        each_blocks.length = each_value_28.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select_value_value !== (select_value_value = /*mk2MicSelValue*/
-      ctx2[97](
+      65536 && select_value_value !== (select_value_value = /*mk2MicSelValue*/
+      ctx2[103](
         /*activeSerial*/
         ctx2[0]
       ))) {
         select_option(
           select,
           /*mk2MicSelValue*/
-          ctx2[97](
+          ctx2[103](
             /*activeSerial*/
             ctx2[0]
           )
@@ -20550,8 +20328,8 @@ function create_if_block_45(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input6_checked_value !== (input6_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input6_checked_value !== (input6_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "useAutoPtt"
@@ -20560,8 +20338,8 @@ function create_if_block_45(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input7_checked_value !== (input7_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input7_checked_value !== (input7_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "downstreamOverFootSw"
@@ -20582,13 +20360,13 @@ function create_if_block_45(ctx) {
     }
   };
 }
-function create_each_block_46(ctx) {
+function create_each_block_47(ctx) {
   let option;
   let t_value = (
     /*audioOptionLabel*/
-    ctx[96](
+    ctx[102](
       /*opt*/
-      ctx[489]
+      ctx[498]
     ) + ""
   );
   let t;
@@ -20598,7 +20376,7 @@ function create_each_block_46(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -20608,14 +20386,59 @@ function create_each_block_46(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
+      ctx2[102](
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
+        option.__value = option_value_value;
+        set_input_value(option, option.__value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_46(ctx) {
+  let option;
+  let t_value = (
+    /*audioOptionLabel*/
+    ctx[102](
+      /*opt*/
+      ctx[498]
+    ) + ""
+  );
+  let t;
+  let option_value_value;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = option_value_value = /*opt*/
+      ctx[498];
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*activeKeyer*/
+      4 && t_value !== (t_value = /*audioOptionLabel*/
+      ctx2[102](
+        /*opt*/
+        ctx2[498]
+      ) + "")) set_data(t, t_value);
+      if (dirty[0] & /*activeKeyer*/
+      4 | dirty[2] & /*displayLineOptions*/
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -20631,9 +20454,9 @@ function create_each_block_45(ctx) {
   let option;
   let t_value = (
     /*audioOptionLabel*/
-    ctx[96](
+    ctx[102](
       /*opt*/
-      ctx[489]
+      ctx[498]
     ) + ""
   );
   let t;
@@ -20643,7 +20466,7 @@ function create_each_block_45(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -20653,14 +20476,14 @@ function create_each_block_45(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
+      ctx2[102](
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -20675,53 +20498,8 @@ function create_each_block_45(ctx) {
 function create_each_block_44(ctx) {
   let option;
   let t_value = (
-    /*audioOptionLabel*/
-    ctx[96](
-      /*opt*/
-      ctx[489]
-    ) + ""
-  );
-  let t;
-  let option_value_value;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = option_value_value = /*opt*/
-      ctx[489];
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p(ctx2, dirty) {
-      if (dirty[0] & /*activeKeyer*/
-      4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
-        /*opt*/
-        ctx2[489]
-      ) + "")) set_data(t, t_value);
-      if (dirty[0] & /*activeKeyer*/
-      4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
-        option.__value = option_value_value;
-        set_input_value(option, option.__value);
-      }
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_each_block_43(ctx) {
-  let option;
-  let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -20729,7 +20507,7 @@ function create_each_block_43(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -20744,7 +20522,7 @@ function create_each_block_43(ctx) {
     }
   };
 }
-function create_each_block_42(ctx) {
+function create_each_block_43(ctx) {
   var _a, _b, _c;
   let div8;
   let div0;
@@ -20779,25 +20557,25 @@ function create_each_block_42(ctx) {
   let t8;
   let mounted;
   let dispose;
-  let each_value_46 = ensure_array_like(
+  let each_value_47 = ensure_array_like(
     /*audioOptionsFor*/
-    ctx[95](
+    ctx[101](
       /*activeKeyer*/
       ((_a = ctx[2]) == null ? void 0 : _a.type) ?? 0,
       /*mode*/
-      ctx[547]
+      ctx[561]
     )
   );
   let each_blocks_3 = [];
-  for (let i = 0; i < each_value_46.length; i += 1) {
-    each_blocks_3[i] = create_each_block_46(get_each_context_46(ctx, each_value_46, i));
+  for (let i = 0; i < each_value_47.length; i += 1) {
+    each_blocks_3[i] = create_each_block_47(get_each_context_47(ctx, each_value_47, i));
   }
   function change_handler_80(...args) {
     return (
       /*change_handler_80*/
-      ctx[280](
+      ctx[284](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -20805,32 +20583,32 @@ function create_each_block_42(ctx) {
   function change_handler_81(...args) {
     return (
       /*change_handler_81*/
-      ctx[281](
+      ctx[285](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
   }
-  let each_value_45 = ensure_array_like(
+  let each_value_46 = ensure_array_like(
     /*audioOptionsFor*/
-    ctx[95](
+    ctx[101](
       /*activeKeyer*/
       ((_b = ctx[2]) == null ? void 0 : _b.type) ?? 0,
       /*mode*/
-      ctx[547]
+      ctx[561]
     )
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_45.length; i += 1) {
-    each_blocks_2[i] = create_each_block_45(get_each_context_45(ctx, each_value_45, i));
+  for (let i = 0; i < each_value_46.length; i += 1) {
+    each_blocks_2[i] = create_each_block_46(get_each_context_46(ctx, each_value_46, i));
   }
   function change_handler_82(...args) {
     return (
       /*change_handler_82*/
-      ctx[282](
+      ctx[286](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -20838,32 +20616,32 @@ function create_each_block_42(ctx) {
   function change_handler_83(...args) {
     return (
       /*change_handler_83*/
-      ctx[283](
+      ctx[287](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
   }
-  let each_value_44 = ensure_array_like(
+  let each_value_45 = ensure_array_like(
     /*audioOptionsFor*/
-    ctx[95](
+    ctx[101](
       /*activeKeyer*/
       ((_c = ctx[2]) == null ? void 0 : _c.type) ?? 0,
       /*mode*/
-      ctx[547]
+      ctx[561]
     )
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_44.length; i += 1) {
-    each_blocks_1[i] = create_each_block_44(get_each_context_44(ctx, each_value_44, i));
+  for (let i = 0; i < each_value_45.length; i += 1) {
+    each_blocks_1[i] = create_each_block_45(get_each_context_45(ctx, each_value_45, i));
   }
   function change_handler_84(...args) {
     return (
       /*change_handler_84*/
-      ctx[284](
+      ctx[288](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -20871,27 +20649,27 @@ function create_each_block_42(ctx) {
   function change_handler_85(...args) {
     return (
       /*change_handler_85*/
-      ctx[285](
+      ctx[289](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
   }
-  let each_value_43 = ensure_array_like(
+  let each_value_44 = ensure_array_like(
     /*mk2rCodecOptions*/
-    ctx[73]
+    ctx[76]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_43.length; i += 1) {
-    each_blocks[i] = create_each_block_43(get_each_context_43(ctx, each_value_43, i));
+  for (let i = 0; i < each_value_44.length; i += 1) {
+    each_blocks[i] = create_each_block_44(get_each_context_44(ctx, each_value_44, i));
   }
   function change_handler_86(...args) {
     return (
       /*change_handler_86*/
-      ctx[286](
+      ctx[290](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -20901,7 +20679,7 @@ function create_each_block_42(ctx) {
       div8 = element("div");
       div0 = element("div");
       div0.textContent = `${/*mode*/
-      ctx[547].toUpperCase()}`;
+      ctx[561].toUpperCase()}`;
       t1 = space();
       div1 = element("div");
       select0 = element("select");
@@ -20939,37 +20717,37 @@ function create_each_block_42(ctx) {
       attr(select0, "class", "select");
       attr(input0, "type", "checkbox");
       input0.checked = input0_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioRxMic`
       );
       attr(select1, "class", "select");
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxMic`
       );
       attr(select2, "class", "select");
       attr(input2, "type", "checkbox");
       input2.checked = input2_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxFootSwMic`
       );
       attr(select3, "class", "select");
@@ -20989,13 +20767,13 @@ function create_each_block_42(ctx) {
       select_option(
         select0,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r1FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioRx`
         )
       );
@@ -21013,13 +20791,13 @@ function create_each_block_42(ctx) {
       select_option(
         select1,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r1FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioTx`
         )
       );
@@ -21037,13 +20815,13 @@ function create_each_block_42(ctx) {
       select_option(
         select2,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r1FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioTxFootSw`
         )
       );
@@ -21061,13 +20839,13 @@ function create_each_block_42(ctx) {
       select_option(
         select3,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r1FrMokExtra_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.voiceCodec`
         )
       );
@@ -21090,23 +20868,23 @@ function create_each_block_42(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_46 = ensure_array_like(
+      768) {
+        each_value_47 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_a2 = ctx[2]) == null ? void 0 : _a2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_46.length; i += 1) {
-          const child_ctx = get_each_context_46(ctx, each_value_46, i);
+        for (i = 0; i < each_value_47.length; i += 1) {
+          const child_ctx = get_each_context_47(ctx, each_value_47, i);
           if (each_blocks_3[i]) {
             each_blocks_3[i].p(child_ctx, dirty);
           } else {
-            each_blocks_3[i] = create_each_block_46(child_ctx);
+            each_blocks_3[i] = create_each_block_47(child_ctx);
             each_blocks_3[i].c();
             each_blocks_3[i].m(select0, null);
           }
@@ -21114,67 +20892,67 @@ function create_each_block_42(ctx) {
         for (; i < each_blocks_3.length; i += 1) {
           each_blocks_3[i].d(1);
         }
-        each_blocks_3.length = each_value_46.length;
+        each_blocks_3.length = each_value_47.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select0_value_value !== (select0_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select0_value_value !== (select0_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioRx`
       ))) {
         select_option(
           select0,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r1FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioRx`
           )
         );
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
-      ctx[105](
+      65536 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioRxMic`
       ))) {
         input0.checked = input0_checked_value;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_45 = ensure_array_like(
+      768) {
+        each_value_46 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_b2 = ctx[2]) == null ? void 0 : _b2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_45.length; i += 1) {
-          const child_ctx = get_each_context_45(ctx, each_value_45, i);
+        for (i = 0; i < each_value_46.length; i += 1) {
+          const child_ctx = get_each_context_46(ctx, each_value_46, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_45(child_ctx);
+            each_blocks_2[i] = create_each_block_46(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select1, null);
           }
@@ -21182,67 +20960,67 @@ function create_each_block_42(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_45.length;
+        each_blocks_2.length = each_value_46.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select1_value_value !== (select1_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select1_value_value !== (select1_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTx`
       ))) {
         select_option(
           select1,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r1FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioTx`
           )
         );
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      65536 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxMic`
       ))) {
         input1.checked = input1_checked_value;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_44 = ensure_array_like(
+      768) {
+        each_value_45 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_c2 = ctx[2]) == null ? void 0 : _c2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_44.length; i += 1) {
-          const child_ctx = get_each_context_44(ctx, each_value_44, i);
+        for (i = 0; i < each_value_45.length; i += 1) {
+          const child_ctx = get_each_context_45(ctx, each_value_45, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_44(child_ctx);
+            each_blocks_1[i] = create_each_block_45(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select2, null);
           }
@@ -21250,61 +21028,61 @@ function create_each_block_42(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_44.length;
+        each_blocks_1.length = each_value_45.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select2_value_value !== (select2_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select2_value_value !== (select2_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxFootSw`
       ))) {
         select_option(
           select2,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r1FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioTxFootSw`
           )
         );
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input2_checked_value !== (input2_checked_value = !!/*keyerParam*/
-      ctx[105](
+      65536 && input2_checked_value !== (input2_checked_value = !!/*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxFootSwMic`
       ))) {
         input2.checked = input2_checked_value;
       }
       if (dirty[2] & /*mk2rCodecOptions*/
-      2048) {
-        each_value_43 = ensure_array_like(
+      16384) {
+        each_value_44 = ensure_array_like(
           /*mk2rCodecOptions*/
-          ctx[73]
+          ctx[76]
         );
         let i;
-        for (i = 0; i < each_value_43.length; i += 1) {
-          const child_ctx = get_each_context_43(ctx, each_value_43, i);
+        for (i = 0; i < each_value_44.length; i += 1) {
+          const child_ctx = get_each_context_44(ctx, each_value_44, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_43(child_ctx);
+            each_blocks[i] = create_each_block_44(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select3, null);
           }
@@ -21312,30 +21090,30 @@ function create_each_block_42(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_43.length;
+        each_blocks.length = each_value_44.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select3_value_value !== (select3_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select3_value_value !== (select3_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.voiceCodec`
       ))) {
         select_option(
           select3,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r1FrMokExtra_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.voiceCodec`
           )
         );
@@ -21354,13 +21132,13 @@ function create_each_block_42(ctx) {
     }
   };
 }
-function create_each_block_41(ctx) {
+function create_each_block_42(ctx) {
   let option;
   let t_value = (
     /*audioOptionLabel*/
-    ctx[96](
+    ctx[102](
       /*opt*/
-      ctx[489]
+      ctx[498]
     ) + ""
   );
   let t;
@@ -21370,7 +21148,7 @@ function create_each_block_41(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -21380,14 +21158,59 @@ function create_each_block_41(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
+      ctx2[102](
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
+        option.__value = option_value_value;
+        set_input_value(option, option.__value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_41(ctx) {
+  let option;
+  let t_value = (
+    /*audioOptionLabel*/
+    ctx[102](
+      /*opt*/
+      ctx[498]
+    ) + ""
+  );
+  let t;
+  let option_value_value;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = option_value_value = /*opt*/
+      ctx[498];
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*activeKeyer*/
+      4 && t_value !== (t_value = /*audioOptionLabel*/
+      ctx2[102](
+        /*opt*/
+        ctx2[498]
+      ) + "")) set_data(t, t_value);
+      if (dirty[0] & /*activeKeyer*/
+      4 | dirty[2] & /*displayLineOptions*/
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -21403,9 +21226,9 @@ function create_each_block_40(ctx) {
   let option;
   let t_value = (
     /*audioOptionLabel*/
-    ctx[96](
+    ctx[102](
       /*opt*/
-      ctx[489]
+      ctx[498]
     ) + ""
   );
   let t;
@@ -21415,7 +21238,7 @@ function create_each_block_40(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -21425,14 +21248,14 @@ function create_each_block_40(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
+      ctx2[102](
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -21447,53 +21270,8 @@ function create_each_block_40(ctx) {
 function create_each_block_39(ctx) {
   let option;
   let t_value = (
-    /*audioOptionLabel*/
-    ctx[96](
-      /*opt*/
-      ctx[489]
-    ) + ""
-  );
-  let t;
-  let option_value_value;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = option_value_value = /*opt*/
-      ctx[489];
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p(ctx2, dirty) {
-      if (dirty[0] & /*activeKeyer*/
-      4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
-        /*opt*/
-        ctx2[489]
-      ) + "")) set_data(t, t_value);
-      if (dirty[0] & /*activeKeyer*/
-      4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
-        option.__value = option_value_value;
-        set_input_value(option, option.__value);
-      }
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_each_block_38(ctx) {
-  let option;
-  let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -21501,7 +21279,7 @@ function create_each_block_38(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -21516,7 +21294,7 @@ function create_each_block_38(ctx) {
     }
   };
 }
-function create_each_block_37(ctx) {
+function create_each_block_38(ctx) {
   var _a, _b, _c;
   let div8;
   let div0;
@@ -21551,25 +21329,25 @@ function create_each_block_37(ctx) {
   let t8;
   let mounted;
   let dispose;
-  let each_value_41 = ensure_array_like(
+  let each_value_42 = ensure_array_like(
     /*audioOptionsFor*/
-    ctx[95](
+    ctx[101](
       /*activeKeyer*/
       ((_a = ctx[2]) == null ? void 0 : _a.type) ?? 0,
       /*mode*/
-      ctx[547]
+      ctx[561]
     )
   );
   let each_blocks_3 = [];
-  for (let i = 0; i < each_value_41.length; i += 1) {
-    each_blocks_3[i] = create_each_block_41(get_each_context_41(ctx, each_value_41, i));
+  for (let i = 0; i < each_value_42.length; i += 1) {
+    each_blocks_3[i] = create_each_block_42(get_each_context_42(ctx, each_value_42, i));
   }
   function change_handler_87(...args) {
     return (
       /*change_handler_87*/
-      ctx[287](
+      ctx[291](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -21577,32 +21355,32 @@ function create_each_block_37(ctx) {
   function change_handler_88(...args) {
     return (
       /*change_handler_88*/
-      ctx[288](
+      ctx[292](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
   }
-  let each_value_40 = ensure_array_like(
+  let each_value_41 = ensure_array_like(
     /*audioOptionsFor*/
-    ctx[95](
+    ctx[101](
       /*activeKeyer*/
       ((_b = ctx[2]) == null ? void 0 : _b.type) ?? 0,
       /*mode*/
-      ctx[547]
+      ctx[561]
     )
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_40.length; i += 1) {
-    each_blocks_2[i] = create_each_block_40(get_each_context_40(ctx, each_value_40, i));
+  for (let i = 0; i < each_value_41.length; i += 1) {
+    each_blocks_2[i] = create_each_block_41(get_each_context_41(ctx, each_value_41, i));
   }
   function change_handler_89(...args) {
     return (
       /*change_handler_89*/
-      ctx[289](
+      ctx[293](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -21610,32 +21388,32 @@ function create_each_block_37(ctx) {
   function change_handler_90(...args) {
     return (
       /*change_handler_90*/
-      ctx[290](
+      ctx[294](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
   }
-  let each_value_39 = ensure_array_like(
+  let each_value_40 = ensure_array_like(
     /*audioOptionsFor*/
-    ctx[95](
+    ctx[101](
       /*activeKeyer*/
       ((_c = ctx[2]) == null ? void 0 : _c.type) ?? 0,
       /*mode*/
-      ctx[547]
+      ctx[561]
     )
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_39.length; i += 1) {
-    each_blocks_1[i] = create_each_block_39(get_each_context_39(ctx, each_value_39, i));
+  for (let i = 0; i < each_value_40.length; i += 1) {
+    each_blocks_1[i] = create_each_block_40(get_each_context_40(ctx, each_value_40, i));
   }
   function change_handler_91(...args) {
     return (
       /*change_handler_91*/
-      ctx[291](
+      ctx[295](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -21643,27 +21421,27 @@ function create_each_block_37(ctx) {
   function change_handler_92(...args) {
     return (
       /*change_handler_92*/
-      ctx[292](
+      ctx[296](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
   }
-  let each_value_38 = ensure_array_like(
+  let each_value_39 = ensure_array_like(
     /*mk2rCodecOptions*/
-    ctx[73]
+    ctx[76]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_38.length; i += 1) {
-    each_blocks[i] = create_each_block_38(get_each_context_38(ctx, each_value_38, i));
+  for (let i = 0; i < each_value_39.length; i += 1) {
+    each_blocks[i] = create_each_block_39(get_each_context_39(ctx, each_value_39, i));
   }
   function change_handler_93(...args) {
     return (
       /*change_handler_93*/
-      ctx[293](
+      ctx[297](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -21673,7 +21451,7 @@ function create_each_block_37(ctx) {
       div8 = element("div");
       div0 = element("div");
       div0.textContent = `${/*mode*/
-      ctx[547].toUpperCase()}`;
+      ctx[561].toUpperCase()}`;
       t1 = space();
       div1 = element("div");
       select0 = element("select");
@@ -21711,37 +21489,37 @@ function create_each_block_37(ctx) {
       attr(select0, "class", "select");
       attr(input0, "type", "checkbox");
       input0.checked = input0_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r2FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioRxMic`
       );
       attr(select1, "class", "select");
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r2FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxMic`
       );
       attr(select2, "class", "select");
       attr(input2, "type", "checkbox");
       input2.checked = input2_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r2FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxFootSwMic`
       );
       attr(select3, "class", "select");
@@ -21761,13 +21539,13 @@ function create_each_block_37(ctx) {
       select_option(
         select0,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r2FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioRx`
         )
       );
@@ -21785,13 +21563,13 @@ function create_each_block_37(ctx) {
       select_option(
         select1,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r2FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioTx`
         )
       );
@@ -21809,13 +21587,13 @@ function create_each_block_37(ctx) {
       select_option(
         select2,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r2FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioTxFootSw`
         )
       );
@@ -21833,13 +21611,13 @@ function create_each_block_37(ctx) {
       select_option(
         select3,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r2FrMokExtra_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.voiceCodec`
         )
       );
@@ -21862,23 +21640,23 @@ function create_each_block_37(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_41 = ensure_array_like(
+      768) {
+        each_value_42 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_a2 = ctx[2]) == null ? void 0 : _a2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_41.length; i += 1) {
-          const child_ctx = get_each_context_41(ctx, each_value_41, i);
+        for (i = 0; i < each_value_42.length; i += 1) {
+          const child_ctx = get_each_context_42(ctx, each_value_42, i);
           if (each_blocks_3[i]) {
             each_blocks_3[i].p(child_ctx, dirty);
           } else {
-            each_blocks_3[i] = create_each_block_41(child_ctx);
+            each_blocks_3[i] = create_each_block_42(child_ctx);
             each_blocks_3[i].c();
             each_blocks_3[i].m(select0, null);
           }
@@ -21886,67 +21664,67 @@ function create_each_block_37(ctx) {
         for (; i < each_blocks_3.length; i += 1) {
           each_blocks_3[i].d(1);
         }
-        each_blocks_3.length = each_value_41.length;
+        each_blocks_3.length = each_value_42.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select0_value_value !== (select0_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select0_value_value !== (select0_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r2FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioRx`
       ))) {
         select_option(
           select0,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r2FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioRx`
           )
         );
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
-      ctx[105](
+      65536 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r2FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioRxMic`
       ))) {
         input0.checked = input0_checked_value;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_40 = ensure_array_like(
+      768) {
+        each_value_41 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_b2 = ctx[2]) == null ? void 0 : _b2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_40.length; i += 1) {
-          const child_ctx = get_each_context_40(ctx, each_value_40, i);
+        for (i = 0; i < each_value_41.length; i += 1) {
+          const child_ctx = get_each_context_41(ctx, each_value_41, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_40(child_ctx);
+            each_blocks_2[i] = create_each_block_41(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select1, null);
           }
@@ -21954,67 +21732,67 @@ function create_each_block_37(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_40.length;
+        each_blocks_2.length = each_value_41.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select1_value_value !== (select1_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select1_value_value !== (select1_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r2FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTx`
       ))) {
         select_option(
           select1,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r2FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioTx`
           )
         );
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      65536 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r2FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxMic`
       ))) {
         input1.checked = input1_checked_value;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_39 = ensure_array_like(
+      768) {
+        each_value_40 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_c2 = ctx[2]) == null ? void 0 : _c2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_39.length; i += 1) {
-          const child_ctx = get_each_context_39(ctx, each_value_39, i);
+        for (i = 0; i < each_value_40.length; i += 1) {
+          const child_ctx = get_each_context_40(ctx, each_value_40, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_39(child_ctx);
+            each_blocks_1[i] = create_each_block_40(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select2, null);
           }
@@ -22022,61 +21800,61 @@ function create_each_block_37(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_39.length;
+        each_blocks_1.length = each_value_40.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select2_value_value !== (select2_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select2_value_value !== (select2_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r2FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxFootSw`
       ))) {
         select_option(
           select2,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r2FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioTxFootSw`
           )
         );
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input2_checked_value !== (input2_checked_value = !!/*keyerParam*/
-      ctx[105](
+      65536 && input2_checked_value !== (input2_checked_value = !!/*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r2FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxFootSwMic`
       ))) {
         input2.checked = input2_checked_value;
       }
       if (dirty[2] & /*mk2rCodecOptions*/
-      2048) {
-        each_value_38 = ensure_array_like(
+      16384) {
+        each_value_39 = ensure_array_like(
           /*mk2rCodecOptions*/
-          ctx[73]
+          ctx[76]
         );
         let i;
-        for (i = 0; i < each_value_38.length; i += 1) {
-          const child_ctx = get_each_context_38(ctx, each_value_38, i);
+        for (i = 0; i < each_value_39.length; i += 1) {
+          const child_ctx = get_each_context_39(ctx, each_value_39, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_38(child_ctx);
+            each_blocks[i] = create_each_block_39(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select3, null);
           }
@@ -22084,30 +21862,30 @@ function create_each_block_37(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_38.length;
+        each_blocks.length = each_value_39.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select3_value_value !== (select3_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select3_value_value !== (select3_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r2FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.voiceCodec`
       ))) {
         select_option(
           select3,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r2FrMokExtra_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.voiceCodec`
           )
         );
@@ -22126,13 +21904,13 @@ function create_each_block_37(ctx) {
     }
   };
 }
-function create_each_block_36(ctx) {
+function create_each_block_37(ctx) {
   let option;
   let t_value = (
     /*audioOptionLabel*/
-    ctx[96](
+    ctx[102](
       /*opt*/
-      ctx[489]
+      ctx[498]
     ) + ""
   );
   let t;
@@ -22142,7 +21920,7 @@ function create_each_block_36(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -22152,14 +21930,59 @@ function create_each_block_36(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
+      ctx2[102](
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
+        option.__value = option_value_value;
+        set_input_value(option, option.__value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_36(ctx) {
+  let option;
+  let t_value = (
+    /*audioOptionLabel*/
+    ctx[102](
+      /*opt*/
+      ctx[498]
+    ) + ""
+  );
+  let t;
+  let option_value_value;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = option_value_value = /*opt*/
+      ctx[498];
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*activeKeyer*/
+      4 && t_value !== (t_value = /*audioOptionLabel*/
+      ctx2[102](
+        /*opt*/
+        ctx2[498]
+      ) + "")) set_data(t, t_value);
+      if (dirty[0] & /*activeKeyer*/
+      4 | dirty[2] & /*displayLineOptions*/
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -22175,9 +21998,9 @@ function create_each_block_35(ctx) {
   let option;
   let t_value = (
     /*audioOptionLabel*/
-    ctx[96](
+    ctx[102](
       /*opt*/
-      ctx[489]
+      ctx[498]
     ) + ""
   );
   let t;
@@ -22187,7 +22010,7 @@ function create_each_block_35(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -22197,14 +22020,14 @@ function create_each_block_35(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
+      ctx2[102](
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -22219,53 +22042,8 @@ function create_each_block_35(ctx) {
 function create_each_block_34(ctx) {
   let option;
   let t_value = (
-    /*audioOptionLabel*/
-    ctx[96](
-      /*opt*/
-      ctx[489]
-    ) + ""
-  );
-  let t;
-  let option_value_value;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = option_value_value = /*opt*/
-      ctx[489];
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p(ctx2, dirty) {
-      if (dirty[0] & /*activeKeyer*/
-      4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
-        /*opt*/
-        ctx2[489]
-      ) + "")) set_data(t, t_value);
-      if (dirty[0] & /*activeKeyer*/
-      4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
-        option.__value = option_value_value;
-        set_input_value(option, option.__value);
-      }
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_each_block_33(ctx) {
-  let option;
-  let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -22273,7 +22051,7 @@ function create_each_block_33(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -22288,7 +22066,7 @@ function create_each_block_33(ctx) {
     }
   };
 }
-function create_each_block_32(ctx) {
+function create_each_block_33(ctx) {
   var _a, _b, _c;
   let div8;
   let div0;
@@ -22323,25 +22101,25 @@ function create_each_block_32(ctx) {
   let t8;
   let mounted;
   let dispose;
-  let each_value_36 = ensure_array_like(
+  let each_value_37 = ensure_array_like(
     /*audioOptionsFor*/
-    ctx[95](
+    ctx[101](
       /*activeKeyer*/
       ((_a = ctx[2]) == null ? void 0 : _a.type) ?? 0,
       /*mode*/
-      ctx[547]
+      ctx[561]
     )
   );
   let each_blocks_3 = [];
-  for (let i = 0; i < each_value_36.length; i += 1) {
-    each_blocks_3[i] = create_each_block_36(get_each_context_36(ctx, each_value_36, i));
+  for (let i = 0; i < each_value_37.length; i += 1) {
+    each_blocks_3[i] = create_each_block_37(get_each_context_37(ctx, each_value_37, i));
   }
   function change_handler_73(...args) {
     return (
       /*change_handler_73*/
-      ctx[273](
+      ctx[277](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -22349,32 +22127,32 @@ function create_each_block_32(ctx) {
   function change_handler_74(...args) {
     return (
       /*change_handler_74*/
-      ctx[274](
+      ctx[278](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
   }
-  let each_value_35 = ensure_array_like(
+  let each_value_36 = ensure_array_like(
     /*audioOptionsFor*/
-    ctx[95](
+    ctx[101](
       /*activeKeyer*/
       ((_b = ctx[2]) == null ? void 0 : _b.type) ?? 0,
       /*mode*/
-      ctx[547]
+      ctx[561]
     )
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_35.length; i += 1) {
-    each_blocks_2[i] = create_each_block_35(get_each_context_35(ctx, each_value_35, i));
+  for (let i = 0; i < each_value_36.length; i += 1) {
+    each_blocks_2[i] = create_each_block_36(get_each_context_36(ctx, each_value_36, i));
   }
   function change_handler_75(...args) {
     return (
       /*change_handler_75*/
-      ctx[275](
+      ctx[279](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -22382,32 +22160,32 @@ function create_each_block_32(ctx) {
   function change_handler_76(...args) {
     return (
       /*change_handler_76*/
-      ctx[276](
+      ctx[280](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
   }
-  let each_value_34 = ensure_array_like(
+  let each_value_35 = ensure_array_like(
     /*audioOptionsFor*/
-    ctx[95](
+    ctx[101](
       /*activeKeyer*/
       ((_c = ctx[2]) == null ? void 0 : _c.type) ?? 0,
       /*mode*/
-      ctx[547]
+      ctx[561]
     )
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_34.length; i += 1) {
-    each_blocks_1[i] = create_each_block_34(get_each_context_34(ctx, each_value_34, i));
+  for (let i = 0; i < each_value_35.length; i += 1) {
+    each_blocks_1[i] = create_each_block_35(get_each_context_35(ctx, each_value_35, i));
   }
   function change_handler_77(...args) {
     return (
       /*change_handler_77*/
-      ctx[277](
+      ctx[281](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -22415,27 +22193,27 @@ function create_each_block_32(ctx) {
   function change_handler_78(...args) {
     return (
       /*change_handler_78*/
-      ctx[278](
+      ctx[282](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
   }
-  let each_value_33 = ensure_array_like(
+  let each_value_34 = ensure_array_like(
     /*mk2rCodecOptions*/
-    ctx[73]
+    ctx[76]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_33.length; i += 1) {
-    each_blocks[i] = create_each_block_33(get_each_context_33(ctx, each_value_33, i));
+  for (let i = 0; i < each_value_34.length; i += 1) {
+    each_blocks[i] = create_each_block_34(get_each_context_34(ctx, each_value_34, i));
   }
   function change_handler_79(...args) {
     return (
       /*change_handler_79*/
-      ctx[279](
+      ctx[283](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -22445,7 +22223,7 @@ function create_each_block_32(ctx) {
       div8 = element("div");
       div0 = element("div");
       div0.textContent = `${/*mode*/
-      ctx[547].toUpperCase()}`;
+      ctx[561].toUpperCase()}`;
       t1 = space();
       div1 = element("div");
       select0 = element("select");
@@ -22483,37 +22261,37 @@ function create_each_block_32(ctx) {
       attr(select0, "class", "select");
       attr(input0, "type", "checkbox");
       input0.checked = input0_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioRxMic`
       );
       attr(select1, "class", "select");
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxMic`
       );
       attr(select2, "class", "select");
       attr(input2, "type", "checkbox");
       input2.checked = input2_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxFootSwMic`
       );
       attr(select3, "class", "select");
@@ -22533,13 +22311,13 @@ function create_each_block_32(ctx) {
       select_option(
         select0,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r1FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioRx`
         )
       );
@@ -22557,13 +22335,13 @@ function create_each_block_32(ctx) {
       select_option(
         select1,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r1FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioTx`
         )
       );
@@ -22581,13 +22359,13 @@ function create_each_block_32(ctx) {
       select_option(
         select2,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r1FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioTxFootSw`
         )
       );
@@ -22605,13 +22383,13 @@ function create_each_block_32(ctx) {
       select_option(
         select3,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r1FrMokExtra_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.voiceCodec`
         )
       );
@@ -22634,23 +22412,23 @@ function create_each_block_32(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_36 = ensure_array_like(
+      768) {
+        each_value_37 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_a2 = ctx[2]) == null ? void 0 : _a2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_36.length; i += 1) {
-          const child_ctx = get_each_context_36(ctx, each_value_36, i);
+        for (i = 0; i < each_value_37.length; i += 1) {
+          const child_ctx = get_each_context_37(ctx, each_value_37, i);
           if (each_blocks_3[i]) {
             each_blocks_3[i].p(child_ctx, dirty);
           } else {
-            each_blocks_3[i] = create_each_block_36(child_ctx);
+            each_blocks_3[i] = create_each_block_37(child_ctx);
             each_blocks_3[i].c();
             each_blocks_3[i].m(select0, null);
           }
@@ -22658,67 +22436,67 @@ function create_each_block_32(ctx) {
         for (; i < each_blocks_3.length; i += 1) {
           each_blocks_3[i].d(1);
         }
-        each_blocks_3.length = each_value_36.length;
+        each_blocks_3.length = each_value_37.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select0_value_value !== (select0_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select0_value_value !== (select0_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioRx`
       ))) {
         select_option(
           select0,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r1FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioRx`
           )
         );
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
-      ctx[105](
+      65536 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioRxMic`
       ))) {
         input0.checked = input0_checked_value;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_35 = ensure_array_like(
+      768) {
+        each_value_36 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_b2 = ctx[2]) == null ? void 0 : _b2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_35.length; i += 1) {
-          const child_ctx = get_each_context_35(ctx, each_value_35, i);
+        for (i = 0; i < each_value_36.length; i += 1) {
+          const child_ctx = get_each_context_36(ctx, each_value_36, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_35(child_ctx);
+            each_blocks_2[i] = create_each_block_36(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select1, null);
           }
@@ -22726,67 +22504,67 @@ function create_each_block_32(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_35.length;
+        each_blocks_2.length = each_value_36.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select1_value_value !== (select1_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select1_value_value !== (select1_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTx`
       ))) {
         select_option(
           select1,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r1FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioTx`
           )
         );
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      65536 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxMic`
       ))) {
         input1.checked = input1_checked_value;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_34 = ensure_array_like(
+      768) {
+        each_value_35 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_c2 = ctx[2]) == null ? void 0 : _c2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_34.length; i += 1) {
-          const child_ctx = get_each_context_34(ctx, each_value_34, i);
+        for (i = 0; i < each_value_35.length; i += 1) {
+          const child_ctx = get_each_context_35(ctx, each_value_35, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_34(child_ctx);
+            each_blocks_1[i] = create_each_block_35(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select2, null);
           }
@@ -22794,61 +22572,61 @@ function create_each_block_32(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_34.length;
+        each_blocks_1.length = each_value_35.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select2_value_value !== (select2_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select2_value_value !== (select2_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxFootSw`
       ))) {
         select_option(
           select2,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r1FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioTxFootSw`
           )
         );
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input2_checked_value !== (input2_checked_value = !!/*keyerParam*/
-      ctx[105](
+      65536 && input2_checked_value !== (input2_checked_value = !!/*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxFootSwMic`
       ))) {
         input2.checked = input2_checked_value;
       }
       if (dirty[2] & /*mk2rCodecOptions*/
-      2048) {
-        each_value_33 = ensure_array_like(
+      16384) {
+        each_value_34 = ensure_array_like(
           /*mk2rCodecOptions*/
-          ctx[73]
+          ctx[76]
         );
         let i;
-        for (i = 0; i < each_value_33.length; i += 1) {
-          const child_ctx = get_each_context_33(ctx, each_value_33, i);
+        for (i = 0; i < each_value_34.length; i += 1) {
+          const child_ctx = get_each_context_34(ctx, each_value_34, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_33(child_ctx);
+            each_blocks[i] = create_each_block_34(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select3, null);
           }
@@ -22856,30 +22634,30 @@ function create_each_block_32(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_33.length;
+        each_blocks.length = each_value_34.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select3_value_value !== (select3_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select3_value_value !== (select3_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrMokExtra_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.voiceCodec`
       ))) {
         select_option(
           select3,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r1FrMokExtra_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.voiceCodec`
           )
         );
@@ -22898,13 +22676,13 @@ function create_each_block_32(ctx) {
     }
   };
 }
-function create_each_block_31(ctx) {
+function create_each_block_32(ctx) {
   let option;
   let t_value = (
     /*audioOptionLabel*/
-    ctx[96](
+    ctx[102](
       /*opt*/
-      ctx[489]
+      ctx[498]
     ) + ""
   );
   let t;
@@ -22914,7 +22692,7 @@ function create_each_block_31(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -22924,14 +22702,59 @@ function create_each_block_31(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
+      ctx2[102](
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
+        option.__value = option_value_value;
+        set_input_value(option, option.__value);
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_31(ctx) {
+  let option;
+  let t_value = (
+    /*audioOptionLabel*/
+    ctx[102](
+      /*opt*/
+      ctx[498]
+    ) + ""
+  );
+  let t;
+  let option_value_value;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = option_value_value = /*opt*/
+      ctx[498];
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*activeKeyer*/
+      4 && t_value !== (t_value = /*audioOptionLabel*/
+      ctx2[102](
+        /*opt*/
+        ctx2[498]
+      ) + "")) set_data(t, t_value);
+      if (dirty[0] & /*activeKeyer*/
+      4 | dirty[2] & /*displayLineOptions*/
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -22947,9 +22770,9 @@ function create_each_block_30(ctx) {
   let option;
   let t_value = (
     /*audioOptionLabel*/
-    ctx[96](
+    ctx[102](
       /*opt*/
-      ctx[489]
+      ctx[498]
     ) + ""
   );
   let t;
@@ -22959,7 +22782,7 @@ function create_each_block_30(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -22969,14 +22792,14 @@ function create_each_block_30(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
+      ctx2[102](
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -22989,51 +22812,6 @@ function create_each_block_30(ctx) {
   };
 }
 function create_each_block_29(ctx) {
-  let option;
-  let t_value = (
-    /*audioOptionLabel*/
-    ctx[96](
-      /*opt*/
-      ctx[489]
-    ) + ""
-  );
-  let t;
-  let option_value_value;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = option_value_value = /*opt*/
-      ctx[489];
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p(ctx2, dirty) {
-      if (dirty[0] & /*activeKeyer*/
-      4 && t_value !== (t_value = /*audioOptionLabel*/
-      ctx2[96](
-        /*opt*/
-        ctx2[489]
-      ) + "")) set_data(t, t_value);
-      if (dirty[0] & /*activeKeyer*/
-      4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
-        option.__value = option_value_value;
-        set_input_value(option, option.__value);
-      }
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_each_block_28(ctx) {
   var _a, _b, _c;
   let div4;
   let div0;
@@ -23052,71 +22830,71 @@ function create_each_block_28(ctx) {
   let t4;
   let mounted;
   let dispose;
-  let each_value_31 = ensure_array_like(
+  let each_value_32 = ensure_array_like(
     /*audioOptionsFor*/
-    ctx[95](
+    ctx[101](
       /*activeKeyer*/
       ((_a = ctx[2]) == null ? void 0 : _a.type) ?? 0,
       /*mode*/
-      ctx[547]
+      ctx[561]
     )
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_31.length; i += 1) {
-    each_blocks_2[i] = create_each_block_31(get_each_context_31(ctx, each_value_31, i));
+  for (let i = 0; i < each_value_32.length; i += 1) {
+    each_blocks_2[i] = create_each_block_32(get_each_context_32(ctx, each_value_32, i));
   }
   function change_handler_63(...args) {
     return (
       /*change_handler_63*/
-      ctx[261](
+      ctx[265](
         /*mode*/
-        ctx[547],
+        ctx[561],
+        ...args
+      )
+    );
+  }
+  let each_value_31 = ensure_array_like(
+    /*audioOptionsFor*/
+    ctx[101](
+      /*activeKeyer*/
+      ((_b = ctx[2]) == null ? void 0 : _b.type) ?? 0,
+      /*mode*/
+      ctx[561]
+    )
+  );
+  let each_blocks_1 = [];
+  for (let i = 0; i < each_value_31.length; i += 1) {
+    each_blocks_1[i] = create_each_block_31(get_each_context_31(ctx, each_value_31, i));
+  }
+  function change_handler_64(...args) {
+    return (
+      /*change_handler_64*/
+      ctx[266](
+        /*mode*/
+        ctx[561],
         ...args
       )
     );
   }
   let each_value_30 = ensure_array_like(
     /*audioOptionsFor*/
-    ctx[95](
-      /*activeKeyer*/
-      ((_b = ctx[2]) == null ? void 0 : _b.type) ?? 0,
-      /*mode*/
-      ctx[547]
-    )
-  );
-  let each_blocks_1 = [];
-  for (let i = 0; i < each_value_30.length; i += 1) {
-    each_blocks_1[i] = create_each_block_30(get_each_context_30(ctx, each_value_30, i));
-  }
-  function change_handler_64(...args) {
-    return (
-      /*change_handler_64*/
-      ctx[262](
-        /*mode*/
-        ctx[547],
-        ...args
-      )
-    );
-  }
-  let each_value_29 = ensure_array_like(
-    /*audioOptionsFor*/
-    ctx[95](
+    ctx[101](
       /*activeKeyer*/
       ((_c = ctx[2]) == null ? void 0 : _c.type) ?? 0,
       /*mode*/
-      ctx[547]
+      ctx[561]
     )
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_29.length; i += 1) {
-    each_blocks[i] = create_each_block_29(get_each_context_29(ctx, each_value_29, i));
+  for (let i = 0; i < each_value_30.length; i += 1) {
+    each_blocks[i] = create_each_block_30(get_each_context_30(ctx, each_value_30, i));
   }
   function change_handler_65(...args) {
     return (
       /*change_handler_65*/
-      ctx[263](
+      ctx[267](
         /*mode*/
-        ctx[547],
+        ctx[561],
         ...args
       )
     );
@@ -23126,7 +22904,7 @@ function create_each_block_28(ctx) {
       div4 = element("div");
       div0 = element("div");
       div0.textContent = `${/*mode*/
-      ctx[547].toUpperCase()}`;
+      ctx[561].toUpperCase()}`;
       t1 = space();
       div1 = element("div");
       select0 = element("select");
@@ -23165,13 +22943,13 @@ function create_each_block_28(ctx) {
       select_option(
         select0,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r1FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioRx`
         )
       );
@@ -23186,13 +22964,13 @@ function create_each_block_28(ctx) {
       select_option(
         select1,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r1FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioTx`
         )
       );
@@ -23207,13 +22985,13 @@ function create_each_block_28(ctx) {
       select_option(
         select2,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           `r1FrBase_${/*mode*/
-          ctx[547] === "cw" ? "Cw" : (
+          ctx[561] === "cw" ? "Cw" : (
             /*mode*/
-            ctx[547] === "voice" ? "Voice" : "Digital"
+            ctx[561] === "voice" ? "Voice" : "Digital"
           )}.audioTxFootSw`
         )
       );
@@ -23232,23 +23010,23 @@ function create_each_block_28(ctx) {
       ctx = new_ctx;
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_31 = ensure_array_like(
+      768) {
+        each_value_32 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_a2 = ctx[2]) == null ? void 0 : _a2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_31.length; i += 1) {
-          const child_ctx = get_each_context_31(ctx, each_value_31, i);
+        for (i = 0; i < each_value_32.length; i += 1) {
+          const child_ctx = get_each_context_32(ctx, each_value_32, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_31(child_ctx);
+            each_blocks_2[i] = create_each_block_32(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select0, null);
           }
@@ -23256,53 +23034,53 @@ function create_each_block_28(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_31.length;
+        each_blocks_2.length = each_value_32.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select0_value_value !== (select0_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select0_value_value !== (select0_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioRx`
       ))) {
         select_option(
           select0,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r1FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioRx`
           )
         );
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_30 = ensure_array_like(
+      768) {
+        each_value_31 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_b2 = ctx[2]) == null ? void 0 : _b2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_30.length; i += 1) {
-          const child_ctx = get_each_context_30(ctx, each_value_30, i);
+        for (i = 0; i < each_value_31.length; i += 1) {
+          const child_ctx = get_each_context_31(ctx, each_value_31, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_30(child_ctx);
+            each_blocks_1[i] = create_each_block_31(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select1, null);
           }
@@ -23310,53 +23088,53 @@ function create_each_block_28(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_30.length;
+        each_blocks_1.length = each_value_31.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select1_value_value !== (select1_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select1_value_value !== (select1_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTx`
       ))) {
         select_option(
           select1,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r1FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioTx`
           )
         );
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[3] & /*audioOptionsFor, audioOptionLabel*/
-      12) {
-        each_value_29 = ensure_array_like(
+      768) {
+        each_value_30 = ensure_array_like(
           /*audioOptionsFor*/
-          ctx[95](
+          ctx[101](
             /*activeKeyer*/
             ((_c2 = ctx[2]) == null ? void 0 : _c2.type) ?? 0,
             /*mode*/
-            ctx[547]
+            ctx[561]
           )
         );
         let i;
-        for (i = 0; i < each_value_29.length; i += 1) {
-          const child_ctx = get_each_context_29(ctx, each_value_29, i);
+        for (i = 0; i < each_value_30.length; i += 1) {
+          const child_ctx = get_each_context_30(ctx, each_value_30, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_29(child_ctx);
+            each_blocks[i] = create_each_block_30(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select2, null);
           }
@@ -23364,30 +23142,30 @@ function create_each_block_28(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_29.length;
+        each_blocks.length = each_value_30.length;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select2_value_value !== (select2_value_value = /*keyerParam*/
-      ctx[105](
+      65536 && select2_value_value !== (select2_value_value = /*keyerParam*/
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         `r1FrBase_${/*mode*/
-        ctx[547] === "cw" ? "Cw" : (
+        ctx[561] === "cw" ? "Cw" : (
           /*mode*/
-          ctx[547] === "voice" ? "Voice" : "Digital"
+          ctx[561] === "voice" ? "Voice" : "Digital"
         )}.audioTxFootSw`
       ))) {
         select_option(
           select2,
           /*keyerParam*/
-          ctx[105](
+          ctx[111](
             /*activeSerial*/
             ctx[0],
             `r1FrBase_${/*mode*/
-            ctx[547] === "cw" ? "Cw" : (
+            ctx[561] === "cw" ? "Cw" : (
               /*mode*/
-              ctx[547] === "voice" ? "Voice" : "Digital"
+              ctx[561] === "voice" ? "Voice" : "Digital"
             )}.audioTxFootSw`
           )
         );
@@ -23405,11 +23183,11 @@ function create_each_block_28(ctx) {
     }
   };
 }
-function create_each_block_27(ctx) {
+function create_each_block_28(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -23417,7 +23195,7 @@ function create_each_block_27(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -23432,15 +23210,15 @@ function create_each_block_27(ctx) {
     }
   };
 }
-function create_each_block_26(ctx) {
+function create_each_block_27(ctx) {
   let option;
   let t_value = (
     /*pttOptionLabels*/
-    (ctx[79][
+    (ctx[82][
       /*opt*/
-      ctx[489]
+      ctx[498]
     ] || /*opt*/
-    ctx[489]) + ""
+    ctx[498]) + ""
   );
   let t;
   let option_value_value;
@@ -23449,7 +23227,7 @@ function create_each_block_26(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -23459,15 +23237,15 @@ function create_each_block_26(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*pttOptionLabels*/
-      (ctx2[79][
+      (ctx2[82][
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ] || /*opt*/
-      ctx2[489]) + "")) set_data(t, t_value);
+      ctx2[498]) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -23479,7 +23257,7 @@ function create_each_block_26(ctx) {
     }
   };
 }
-function create_if_block_43(ctx) {
+function create_if_block_44(ctx) {
   var _a;
   let div2;
   let div0;
@@ -23489,17 +23267,17 @@ function create_if_block_43(ctx) {
   let select_value_value;
   let mounted;
   let dispose;
-  let each_value_25 = ensure_array_like(
+  let each_value_26 = ensure_array_like(
     /*pttOptionsFor*/
-    ctx[100](
+    ctx[106](
       /*activeKeyer*/
       ((_a = ctx[2]) == null ? void 0 : _a.type) ?? 0,
       "voice"
     )
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_25.length; i += 1) {
-    each_blocks[i] = create_each_block_25(get_each_context_25(ctx, each_value_25, i));
+  for (let i = 0; i < each_value_26.length; i += 1) {
+    each_blocks[i] = create_each_block_26(get_each_context_26(ctx, each_value_26, i));
   }
   return {
     c() {
@@ -23539,7 +23317,7 @@ function create_if_block_43(ctx) {
           select,
           "change",
           /*change_handler_45*/
-          ctx[237]
+          ctx[241]
         );
         mounted = true;
       }
@@ -23548,23 +23326,23 @@ function create_if_block_43(ctx) {
       var _a2, _b, _c;
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*pttOptionLabels*/
-      131072 | dirty[3] & /*pttOptionsFor*/
-      128) {
-        each_value_25 = ensure_array_like(
+      1048576 | dirty[3] & /*pttOptionsFor*/
+      8192) {
+        each_value_26 = ensure_array_like(
           /*pttOptionsFor*/
-          ctx2[100](
+          ctx2[106](
             /*activeKeyer*/
             ((_a2 = ctx2[2]) == null ? void 0 : _a2.type) ?? 0,
             "voice"
           )
         );
         let i;
-        for (i = 0; i < each_value_25.length; i += 1) {
-          const child_ctx = get_each_context_25(ctx2, each_value_25, i);
+        for (i = 0; i < each_value_26.length; i += 1) {
+          const child_ctx = get_each_context_26(ctx2, each_value_26, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_25(child_ctx);
+            each_blocks[i] = create_each_block_26(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -23572,12 +23350,12 @@ function create_if_block_43(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_25.length;
+        each_blocks.length = each_value_26.length;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[1] & /*activePttR1*/
       64 | dirty[3] & /*pttOptionsFor*/
-      128 && select_value_value !== (select_value_value = /*activePttR1*/
+      8192 && select_value_value !== (select_value_value = /*activePttR1*/
       (_b = ctx2[37]) == null ? void 0 : _b.voice)) {
         select_option(
           select,
@@ -23596,15 +23374,15 @@ function create_if_block_43(ctx) {
     }
   };
 }
-function create_each_block_25(ctx) {
+function create_each_block_26(ctx) {
   let option;
   let t_value = (
     /*pttOptionLabels*/
-    (ctx[79][
+    (ctx[82][
       /*opt*/
-      ctx[489]
+      ctx[498]
     ] || /*opt*/
-    ctx[489]) + ""
+    ctx[498]) + ""
   );
   let t;
   let option_value_value;
@@ -23613,7 +23391,7 @@ function create_each_block_25(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -23623,15 +23401,15 @@ function create_each_block_25(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*pttOptionLabels*/
-      (ctx2[79][
+      (ctx2[82][
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ] || /*opt*/
-      ctx2[489]) + "")) set_data(t, t_value);
+      ctx2[498]) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -23643,7 +23421,7 @@ function create_each_block_25(ctx) {
     }
   };
 }
-function create_if_block_42(ctx) {
+function create_if_block_43(ctx) {
   var _a;
   let div2;
   let div0;
@@ -23653,17 +23431,17 @@ function create_if_block_42(ctx) {
   let select_value_value;
   let mounted;
   let dispose;
-  let each_value_24 = ensure_array_like(
+  let each_value_25 = ensure_array_like(
     /*pttOptionsFor*/
-    ctx[100](
+    ctx[106](
       /*activeKeyer*/
       ((_a = ctx[2]) == null ? void 0 : _a.type) ?? 0,
       "digital"
     )
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_24.length; i += 1) {
-    each_blocks[i] = create_each_block_24(get_each_context_24(ctx, each_value_24, i));
+  for (let i = 0; i < each_value_25.length; i += 1) {
+    each_blocks[i] = create_each_block_25(get_each_context_25(ctx, each_value_25, i));
   }
   return {
     c() {
@@ -23703,7 +23481,7 @@ function create_if_block_42(ctx) {
           select,
           "change",
           /*change_handler_46*/
-          ctx[238]
+          ctx[242]
         );
         mounted = true;
       }
@@ -23712,23 +23490,23 @@ function create_if_block_42(ctx) {
       var _a2, _b, _c;
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*pttOptionLabels*/
-      131072 | dirty[3] & /*pttOptionsFor*/
-      128) {
-        each_value_24 = ensure_array_like(
+      1048576 | dirty[3] & /*pttOptionsFor*/
+      8192) {
+        each_value_25 = ensure_array_like(
           /*pttOptionsFor*/
-          ctx2[100](
+          ctx2[106](
             /*activeKeyer*/
             ((_a2 = ctx2[2]) == null ? void 0 : _a2.type) ?? 0,
             "digital"
           )
         );
         let i;
-        for (i = 0; i < each_value_24.length; i += 1) {
-          const child_ctx = get_each_context_24(ctx2, each_value_24, i);
+        for (i = 0; i < each_value_25.length; i += 1) {
+          const child_ctx = get_each_context_25(ctx2, each_value_25, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_24(child_ctx);
+            each_blocks[i] = create_each_block_25(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -23736,12 +23514,12 @@ function create_if_block_42(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_24.length;
+        each_blocks.length = each_value_25.length;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[1] & /*activePttR1*/
       64 | dirty[3] & /*pttOptionsFor*/
-      128 && select_value_value !== (select_value_value = /*activePttR1*/
+      8192 && select_value_value !== (select_value_value = /*activePttR1*/
       (_b = ctx2[37]) == null ? void 0 : _b.digital)) {
         select_option(
           select,
@@ -23760,15 +23538,15 @@ function create_if_block_42(ctx) {
     }
   };
 }
-function create_each_block_24(ctx) {
+function create_each_block_25(ctx) {
   let option;
   let t_value = (
     /*pttOptionLabels*/
-    (ctx[79][
+    (ctx[82][
       /*opt*/
-      ctx[489]
+      ctx[498]
     ] || /*opt*/
-    ctx[489]) + ""
+    ctx[498]) + ""
   );
   let t;
   let option_value_value;
@@ -23777,7 +23555,7 @@ function create_each_block_24(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -23787,15 +23565,15 @@ function create_each_block_24(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*pttOptionLabels*/
-      (ctx2[79][
+      (ctx2[82][
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ] || /*opt*/
-      ctx2[489]) + "")) set_data(t, t_value);
+      ctx2[498]) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -23807,7 +23585,7 @@ function create_each_block_24(ctx) {
     }
   };
 }
-function create_if_block_41(ctx) {
+function create_if_block_42(ctx) {
   let div2;
   let div0;
   let t1;
@@ -23841,7 +23619,7 @@ function create_if_block_41(ctx) {
       attr(div0, "class", "label");
       attr(input0, "type", "checkbox");
       input0.checked = input0_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1LnaPtt"
@@ -23851,7 +23629,7 @@ function create_if_block_41(ctx) {
       attr(div3, "class", "label");
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1PaPtt"
@@ -23877,13 +23655,13 @@ function create_if_block_41(ctx) {
             input0,
             "change",
             /*change_handler_47*/
-            ctx[239]
+            ctx[243]
           ),
           listen(
             input1,
             "change",
             /*change_handler_48*/
-            ctx[240]
+            ctx[244]
           )
         ];
         mounted = true;
@@ -23892,8 +23670,8 @@ function create_if_block_41(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1LnaPtt"
@@ -23902,8 +23680,8 @@ function create_if_block_41(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1PaPtt"
@@ -23922,7 +23700,7 @@ function create_if_block_41(ctx) {
     }
   };
 }
-function create_if_block_40(ctx) {
+function create_if_block_41(ctx) {
   let div2;
   let div0;
   let t1;
@@ -23957,7 +23735,7 @@ function create_if_block_40(ctx) {
       attr(input0, "class", "input");
       attr(input0, "type", "number");
       input0.value = input0_value_value = /*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1PaPttTail"
@@ -23968,7 +23746,7 @@ function create_if_block_40(ctx) {
       attr(input1, "class", "input");
       attr(input1, "type", "number");
       input1.value = input1_value_value = /*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1LnaPttTail"
@@ -23993,14 +23771,14 @@ function create_if_block_40(ctx) {
           listen(
             input0,
             "input",
-            /*input_handler_14*/
-            ctx[241]
+            /*input_handler_9*/
+            ctx[245]
           ),
           listen(
             input1,
             "input",
-            /*input_handler_15*/
-            ctx[242]
+            /*input_handler_10*/
+            ctx[246]
           )
         ];
         mounted = true;
@@ -24009,8 +23787,8 @@ function create_if_block_40(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_value_value !== (input0_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && input0_value_value !== (input0_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1PaPttTail"
@@ -24019,8 +23797,8 @@ function create_if_block_40(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_value_value !== (input1_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && input1_value_value !== (input1_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1LnaPttTail"
@@ -24039,7 +23817,7 @@ function create_if_block_40(ctx) {
     }
   };
 }
-function create_if_block_39(ctx) {
+function create_if_block_40(ctx) {
   let div2;
   let div0;
   let t1;
@@ -24059,7 +23837,7 @@ function create_if_block_39(ctx) {
       attr(div0, "class", "label");
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1AllowCwInVoice"
@@ -24078,7 +23856,7 @@ function create_if_block_39(ctx) {
           input,
           "change",
           /*change_handler_49*/
-          ctx[244]
+          ctx[248]
         );
         mounted = true;
       }
@@ -24086,8 +23864,8 @@ function create_if_block_39(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1AllowCwInVoice"
@@ -24104,7 +23882,7 @@ function create_if_block_39(ctx) {
     }
   };
 }
-function create_if_block_38(ctx) {
+function create_if_block_39(ctx) {
   let div2;
   let div0;
   let t1;
@@ -24138,7 +23916,7 @@ function create_if_block_38(ctx) {
       attr(div0, "class", "label");
       attr(input0, "type", "checkbox");
       input0.checked = input0_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "useAutoPtt"
@@ -24148,7 +23926,7 @@ function create_if_block_38(ctx) {
       attr(div3, "class", "label");
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "downstreamOverFootSw"
@@ -24174,13 +23952,13 @@ function create_if_block_38(ctx) {
             input0,
             "change",
             /*change_handler_50*/
-            ctx[245]
+            ctx[249]
           ),
           listen(
             input1,
             "change",
             /*change_handler_51*/
-            ctx[246]
+            ctx[250]
           )
         ];
         mounted = true;
@@ -24189,8 +23967,8 @@ function create_if_block_38(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "useAutoPtt"
@@ -24199,8 +23977,8 @@ function create_if_block_38(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "downstreamOverFootSw"
@@ -24219,7 +23997,7 @@ function create_if_block_38(ctx) {
     }
   };
 }
-function create_if_block_37(ctx) {
+function create_if_block_38(ctx) {
   let div;
   let t_value = (
     /*pttStatus*/
@@ -24247,7 +24025,7 @@ function create_if_block_37(ctx) {
       ctx2[0]}:r1`].text + "")) set_data(t, t_value);
       if (dirty[0] & /*pttStatus, activeSerial*/
       1025 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*pttStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*pttStatus*/
       ctx2[10][`${/*activeSerial*/
       ctx2[0]}:r1`].kind === "error" ? "error" : ""}`)) {
         attr(div, "class", div_class_value);
@@ -24260,7 +24038,7 @@ function create_if_block_37(ctx) {
     }
   };
 }
-function create_if_block_30(ctx) {
+function create_if_block_31(ctx) {
   var _a, _b, _c;
   let section;
   let div0;
@@ -24275,7 +24053,7 @@ function create_if_block_30(ctx) {
   let t4;
   let show_if_1 = (
     /*pttOptionsFor*/
-    ctx[100](
+    ctx[106](
       /*activeKeyer*/
       ((_a = ctx[2]) == null ? void 0 : _a.type) ?? 0,
       "voice"
@@ -24284,7 +24062,7 @@ function create_if_block_30(ctx) {
   let t5;
   let show_if = (
     /*pttOptionsFor*/
-    ctx[100](
+    ctx[106](
       /*activeKeyer*/
       ((_b = ctx[2]) == null ? void 0 : _b.type) ?? 0,
       "digital"
@@ -24303,36 +24081,36 @@ function create_if_block_30(ctx) {
   let t12;
   let mounted;
   let dispose;
-  let each_value_23 = ensure_array_like(
+  let each_value_24 = ensure_array_like(
     /*pttOptionsFor*/
-    ctx[100](
+    ctx[106](
       /*activeKeyer*/
       ((_c = ctx[2]) == null ? void 0 : _c.type) ?? 0,
       "cw"
     )
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_23.length; i += 1) {
-    each_blocks[i] = create_each_block_23(get_each_context_23(ctx, each_value_23, i));
+  for (let i = 0; i < each_value_24.length; i += 1) {
+    each_blocks[i] = create_each_block_24(get_each_context_24(ctx, each_value_24, i));
   }
-  let if_block0 = show_if_1 && create_if_block_36(ctx);
-  let if_block1 = show_if && create_if_block_35(ctx);
+  let if_block0 = show_if_1 && create_if_block_37(ctx);
+  let if_block1 = show_if && create_if_block_36(ctx);
   let if_block2 = (
     /*hasLnaPaPtt*/
-    ctx[60] && create_if_block_34(ctx)
+    ctx[63] && create_if_block_35(ctx)
   );
   let if_block3 = (
     /*hasLnaPaPttTail*/
-    ctx[59] && create_if_block_33(ctx)
+    ctx[62] && create_if_block_34(ctx)
   );
   let if_block4 = (
     /*hasCwInVoice*/
-    ctx[57] && create_if_block_32(ctx)
+    ctx[60] && create_if_block_33(ctx)
   );
   let if_block5 = (
     /*pttStatus*/
     ctx[10][`${/*activeSerial*/
-    ctx[0]}:r2`] && create_if_block_31(ctx)
+    ctx[0]}:r2`] && create_if_block_32(ctx)
   );
   return {
     c() {
@@ -24378,7 +24156,7 @@ function create_if_block_30(ctx) {
       attr(input, "class", "input");
       attr(input, "type", "number");
       input.value = input_value_value = /*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r2PttDelay"
@@ -24433,13 +24211,13 @@ function create_if_block_30(ctx) {
             select,
             "change",
             /*change_handler_52*/
-            ctx[247]
+            ctx[251]
           ),
           listen(
             input,
             "input",
-            /*input_handler_19*/
-            ctx[254]
+            /*input_handler_14*/
+            ctx[258]
           )
         ];
         mounted = true;
@@ -24449,23 +24227,23 @@ function create_if_block_30(ctx) {
       var _a2, _b2, _c2, _d, _e;
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*pttOptionLabels*/
-      131072 | dirty[3] & /*pttOptionsFor*/
-      128) {
-        each_value_23 = ensure_array_like(
+      1048576 | dirty[3] & /*pttOptionsFor*/
+      8192) {
+        each_value_24 = ensure_array_like(
           /*pttOptionsFor*/
-          ctx2[100](
+          ctx2[106](
             /*activeKeyer*/
             ((_a2 = ctx2[2]) == null ? void 0 : _a2.type) ?? 0,
             "cw"
           )
         );
         let i;
-        for (i = 0; i < each_value_23.length; i += 1) {
-          const child_ctx = get_each_context_23(ctx2, each_value_23, i);
+        for (i = 0; i < each_value_24.length; i += 1) {
+          const child_ctx = get_each_context_24(ctx2, each_value_24, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_23(child_ctx);
+            each_blocks[i] = create_each_block_24(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -24473,12 +24251,12 @@ function create_if_block_30(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_23.length;
+        each_blocks.length = each_value_24.length;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[1] & /*activePttR2*/
       32 | dirty[3] & /*pttOptionsFor*/
-      128 && select_value_value !== (select_value_value = /*activePttR2*/
+      8192 && select_value_value !== (select_value_value = /*activePttR2*/
       (_b2 = ctx2[36]) == null ? void 0 : _b2.cw)) {
         select_option(
           select,
@@ -24488,7 +24266,7 @@ function create_if_block_30(ctx) {
       }
       if (dirty[0] & /*activeKeyer*/
       4) show_if_1 = /*pttOptionsFor*/
-      ctx2[100](
+      ctx2[106](
         /*activeKeyer*/
         ((_d = ctx2[2]) == null ? void 0 : _d.type) ?? 0,
         "voice"
@@ -24497,7 +24275,7 @@ function create_if_block_30(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_36(ctx2);
+          if_block0 = create_if_block_37(ctx2);
           if_block0.c();
           if_block0.m(div7, t5);
         }
@@ -24507,7 +24285,7 @@ function create_if_block_30(ctx) {
       }
       if (dirty[0] & /*activeKeyer*/
       4) show_if = /*pttOptionsFor*/
-      ctx2[100](
+      ctx2[106](
         /*activeKeyer*/
         ((_e = ctx2[2]) == null ? void 0 : _e.type) ?? 0,
         "digital"
@@ -24516,7 +24294,7 @@ function create_if_block_30(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_35(ctx2);
+          if_block1 = create_if_block_36(ctx2);
           if_block1.c();
           if_block1.m(div7, t6);
         }
@@ -24526,12 +24304,12 @@ function create_if_block_30(ctx) {
       }
       if (
         /*hasLnaPaPtt*/
-        ctx2[60]
+        ctx2[63]
       ) {
         if (if_block2) {
           if_block2.p(ctx2, dirty);
         } else {
-          if_block2 = create_if_block_34(ctx2);
+          if_block2 = create_if_block_35(ctx2);
           if_block2.c();
           if_block2.m(div7, t7);
         }
@@ -24541,12 +24319,12 @@ function create_if_block_30(ctx) {
       }
       if (
         /*hasLnaPaPttTail*/
-        ctx2[59]
+        ctx2[62]
       ) {
         if (if_block3) {
           if_block3.p(ctx2, dirty);
         } else {
-          if_block3 = create_if_block_33(ctx2);
+          if_block3 = create_if_block_34(ctx2);
           if_block3.c();
           if_block3.m(div7, t8);
         }
@@ -24556,8 +24334,8 @@ function create_if_block_30(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_value_value !== (input_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && input_value_value !== (input_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r2PttDelay"
@@ -24566,12 +24344,12 @@ function create_if_block_30(ctx) {
       }
       if (
         /*hasCwInVoice*/
-        ctx2[57]
+        ctx2[60]
       ) {
         if (if_block4) {
           if_block4.p(ctx2, dirty);
         } else {
-          if_block4 = create_if_block_32(ctx2);
+          if_block4 = create_if_block_33(ctx2);
           if_block4.c();
           if_block4.m(div7, null);
         }
@@ -24587,7 +24365,7 @@ function create_if_block_30(ctx) {
         if (if_block5) {
           if_block5.p(ctx2, dirty);
         } else {
-          if_block5 = create_if_block_31(ctx2);
+          if_block5 = create_if_block_32(ctx2);
           if_block5.c();
           if_block5.m(section, null);
         }
@@ -24612,15 +24390,15 @@ function create_if_block_30(ctx) {
     }
   };
 }
-function create_each_block_23(ctx) {
+function create_each_block_24(ctx) {
   let option;
   let t_value = (
     /*pttOptionLabels*/
-    (ctx[79][
+    (ctx[82][
       /*opt*/
-      ctx[489]
+      ctx[498]
     ] || /*opt*/
-    ctx[489]) + ""
+    ctx[498]) + ""
   );
   let t;
   let option_value_value;
@@ -24629,7 +24407,7 @@ function create_each_block_23(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -24639,15 +24417,15 @@ function create_each_block_23(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*pttOptionLabels*/
-      (ctx2[79][
+      (ctx2[82][
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ] || /*opt*/
-      ctx2[489]) + "")) set_data(t, t_value);
+      ctx2[498]) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -24659,7 +24437,7 @@ function create_each_block_23(ctx) {
     }
   };
 }
-function create_if_block_36(ctx) {
+function create_if_block_37(ctx) {
   var _a;
   let div2;
   let div0;
@@ -24669,17 +24447,17 @@ function create_if_block_36(ctx) {
   let select_value_value;
   let mounted;
   let dispose;
-  let each_value_22 = ensure_array_like(
+  let each_value_23 = ensure_array_like(
     /*pttOptionsFor*/
-    ctx[100](
+    ctx[106](
       /*activeKeyer*/
       ((_a = ctx[2]) == null ? void 0 : _a.type) ?? 0,
       "voice"
     )
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_22.length; i += 1) {
-    each_blocks[i] = create_each_block_22(get_each_context_22(ctx, each_value_22, i));
+  for (let i = 0; i < each_value_23.length; i += 1) {
+    each_blocks[i] = create_each_block_23(get_each_context_23(ctx, each_value_23, i));
   }
   return {
     c() {
@@ -24719,7 +24497,7 @@ function create_if_block_36(ctx) {
           select,
           "change",
           /*change_handler_53*/
-          ctx[248]
+          ctx[252]
         );
         mounted = true;
       }
@@ -24728,23 +24506,23 @@ function create_if_block_36(ctx) {
       var _a2, _b, _c;
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*pttOptionLabels*/
-      131072 | dirty[3] & /*pttOptionsFor*/
-      128) {
-        each_value_22 = ensure_array_like(
+      1048576 | dirty[3] & /*pttOptionsFor*/
+      8192) {
+        each_value_23 = ensure_array_like(
           /*pttOptionsFor*/
-          ctx2[100](
+          ctx2[106](
             /*activeKeyer*/
             ((_a2 = ctx2[2]) == null ? void 0 : _a2.type) ?? 0,
             "voice"
           )
         );
         let i;
-        for (i = 0; i < each_value_22.length; i += 1) {
-          const child_ctx = get_each_context_22(ctx2, each_value_22, i);
+        for (i = 0; i < each_value_23.length; i += 1) {
+          const child_ctx = get_each_context_23(ctx2, each_value_23, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_22(child_ctx);
+            each_blocks[i] = create_each_block_23(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -24752,12 +24530,12 @@ function create_if_block_36(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_22.length;
+        each_blocks.length = each_value_23.length;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[1] & /*activePttR2*/
       32 | dirty[3] & /*pttOptionsFor*/
-      128 && select_value_value !== (select_value_value = /*activePttR2*/
+      8192 && select_value_value !== (select_value_value = /*activePttR2*/
       (_b = ctx2[36]) == null ? void 0 : _b.voice)) {
         select_option(
           select,
@@ -24776,15 +24554,15 @@ function create_if_block_36(ctx) {
     }
   };
 }
-function create_each_block_22(ctx) {
+function create_each_block_23(ctx) {
   let option;
   let t_value = (
     /*pttOptionLabels*/
-    (ctx[79][
+    (ctx[82][
       /*opt*/
-      ctx[489]
+      ctx[498]
     ] || /*opt*/
-    ctx[489]) + ""
+    ctx[498]) + ""
   );
   let t;
   let option_value_value;
@@ -24793,7 +24571,7 @@ function create_each_block_22(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -24803,15 +24581,15 @@ function create_each_block_22(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*pttOptionLabels*/
-      (ctx2[79][
+      (ctx2[82][
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ] || /*opt*/
-      ctx2[489]) + "")) set_data(t, t_value);
+      ctx2[498]) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -24823,7 +24601,7 @@ function create_each_block_22(ctx) {
     }
   };
 }
-function create_if_block_35(ctx) {
+function create_if_block_36(ctx) {
   var _a;
   let div2;
   let div0;
@@ -24833,17 +24611,17 @@ function create_if_block_35(ctx) {
   let select_value_value;
   let mounted;
   let dispose;
-  let each_value_21 = ensure_array_like(
+  let each_value_22 = ensure_array_like(
     /*pttOptionsFor*/
-    ctx[100](
+    ctx[106](
       /*activeKeyer*/
       ((_a = ctx[2]) == null ? void 0 : _a.type) ?? 0,
       "digital"
     )
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_21.length; i += 1) {
-    each_blocks[i] = create_each_block_21(get_each_context_21(ctx, each_value_21, i));
+  for (let i = 0; i < each_value_22.length; i += 1) {
+    each_blocks[i] = create_each_block_22(get_each_context_22(ctx, each_value_22, i));
   }
   return {
     c() {
@@ -24883,7 +24661,7 @@ function create_if_block_35(ctx) {
           select,
           "change",
           /*change_handler_54*/
-          ctx[249]
+          ctx[253]
         );
         mounted = true;
       }
@@ -24892,23 +24670,23 @@ function create_if_block_35(ctx) {
       var _a2, _b, _c;
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*pttOptionLabels*/
-      131072 | dirty[3] & /*pttOptionsFor*/
-      128) {
-        each_value_21 = ensure_array_like(
+      1048576 | dirty[3] & /*pttOptionsFor*/
+      8192) {
+        each_value_22 = ensure_array_like(
           /*pttOptionsFor*/
-          ctx2[100](
+          ctx2[106](
             /*activeKeyer*/
             ((_a2 = ctx2[2]) == null ? void 0 : _a2.type) ?? 0,
             "digital"
           )
         );
         let i;
-        for (i = 0; i < each_value_21.length; i += 1) {
-          const child_ctx = get_each_context_21(ctx2, each_value_21, i);
+        for (i = 0; i < each_value_22.length; i += 1) {
+          const child_ctx = get_each_context_22(ctx2, each_value_22, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_21(child_ctx);
+            each_blocks[i] = create_each_block_22(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select, null);
           }
@@ -24916,12 +24694,12 @@ function create_if_block_35(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_21.length;
+        each_blocks.length = each_value_22.length;
       }
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[1] & /*activePttR2*/
       32 | dirty[3] & /*pttOptionsFor*/
-      128 && select_value_value !== (select_value_value = /*activePttR2*/
+      8192 && select_value_value !== (select_value_value = /*activePttR2*/
       (_b = ctx2[36]) == null ? void 0 : _b.digital)) {
         select_option(
           select,
@@ -24940,15 +24718,15 @@ function create_if_block_35(ctx) {
     }
   };
 }
-function create_each_block_21(ctx) {
+function create_each_block_22(ctx) {
   let option;
   let t_value = (
     /*pttOptionLabels*/
-    (ctx[79][
+    (ctx[82][
       /*opt*/
-      ctx[489]
+      ctx[498]
     ] || /*opt*/
-    ctx[489]) + ""
+    ctx[498]) + ""
   );
   let t;
   let option_value_value;
@@ -24957,7 +24735,7 @@ function create_each_block_21(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = option_value_value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -24967,15 +24745,15 @@ function create_each_block_21(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeKeyer*/
       4 && t_value !== (t_value = /*pttOptionLabels*/
-      (ctx2[79][
+      (ctx2[82][
         /*opt*/
-        ctx2[489]
+        ctx2[498]
       ] || /*opt*/
-      ctx2[489]) + "")) set_data(t, t_value);
+      ctx2[498]) + "")) set_data(t, t_value);
       if (dirty[0] & /*activeKeyer*/
       4 | dirty[2] & /*displayLineOptions*/
-      32768 && option_value_value !== (option_value_value = /*opt*/
-      ctx2[489])) {
+      262144 && option_value_value !== (option_value_value = /*opt*/
+      ctx2[498])) {
         option.__value = option_value_value;
         set_input_value(option, option.__value);
       }
@@ -24987,7 +24765,7 @@ function create_each_block_21(ctx) {
     }
   };
 }
-function create_if_block_34(ctx) {
+function create_if_block_35(ctx) {
   let div2;
   let div0;
   let t1;
@@ -25021,7 +24799,7 @@ function create_if_block_34(ctx) {
       attr(div0, "class", "label");
       attr(input0, "type", "checkbox");
       input0.checked = input0_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r2LnaPtt"
@@ -25031,7 +24809,7 @@ function create_if_block_34(ctx) {
       attr(div3, "class", "label");
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r2PaPtt"
@@ -25057,13 +24835,13 @@ function create_if_block_34(ctx) {
             input0,
             "change",
             /*change_handler_55*/
-            ctx[250]
+            ctx[254]
           ),
           listen(
             input1,
             "change",
             /*change_handler_56*/
-            ctx[251]
+            ctx[255]
           )
         ];
         mounted = true;
@@ -25072,8 +24850,8 @@ function create_if_block_34(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input0_checked_value !== (input0_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r2LnaPtt"
@@ -25082,8 +24860,8 @@ function create_if_block_34(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r2PaPtt"
@@ -25102,7 +24880,7 @@ function create_if_block_34(ctx) {
     }
   };
 }
-function create_if_block_33(ctx) {
+function create_if_block_34(ctx) {
   let div2;
   let div0;
   let t1;
@@ -25137,7 +24915,7 @@ function create_if_block_33(ctx) {
       attr(input0, "class", "input");
       attr(input0, "type", "number");
       input0.value = input0_value_value = /*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r2PaPttTail"
@@ -25148,7 +24926,7 @@ function create_if_block_33(ctx) {
       attr(input1, "class", "input");
       attr(input1, "type", "number");
       input1.value = input1_value_value = /*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r2LnaPttTail"
@@ -25173,14 +24951,14 @@ function create_if_block_33(ctx) {
           listen(
             input0,
             "input",
-            /*input_handler_17*/
-            ctx[252]
+            /*input_handler_12*/
+            ctx[256]
           ),
           listen(
             input1,
             "input",
-            /*input_handler_18*/
-            ctx[253]
+            /*input_handler_13*/
+            ctx[257]
           )
         ];
         mounted = true;
@@ -25189,8 +24967,8 @@ function create_if_block_33(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input0_value_value !== (input0_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && input0_value_value !== (input0_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r2PaPttTail"
@@ -25199,8 +24977,8 @@ function create_if_block_33(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_value_value !== (input1_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && input1_value_value !== (input1_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r2LnaPttTail"
@@ -25219,7 +24997,7 @@ function create_if_block_33(ctx) {
     }
   };
 }
-function create_if_block_32(ctx) {
+function create_if_block_33(ctx) {
   let div2;
   let div0;
   let t1;
@@ -25239,7 +25017,7 @@ function create_if_block_32(ctx) {
       attr(div0, "class", "label");
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r2AllowCwInVoice"
@@ -25258,7 +25036,7 @@ function create_if_block_32(ctx) {
           input,
           "change",
           /*change_handler_57*/
-          ctx[255]
+          ctx[259]
         );
         mounted = true;
       }
@@ -25266,8 +25044,8 @@ function create_if_block_32(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r2AllowCwInVoice"
@@ -25284,7 +25062,7 @@ function create_if_block_32(ctx) {
     }
   };
 }
-function create_if_block_31(ctx) {
+function create_if_block_32(ctx) {
   let div;
   let t_value = (
     /*pttStatus*/
@@ -25312,7 +25090,7 @@ function create_if_block_31(ctx) {
       ctx2[0]}:r2`].text + "")) set_data(t, t_value);
       if (dirty[0] & /*pttStatus, activeSerial*/
       1025 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*pttStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*pttStatus*/
       ctx2[10][`${/*activeSerial*/
       ctx2[0]}:r2`].kind === "error" ? "error" : ""}`)) {
         attr(div, "class", div_class_value);
@@ -25325,7 +25103,7 @@ function create_if_block_31(ctx) {
     }
   };
 }
-function create_if_block_26(ctx) {
+function create_if_block_27(ctx) {
   let section;
   let div0;
   let t1;
@@ -25371,38 +25149,38 @@ function create_if_block_26(ctx) {
   let t19;
   let mounted;
   let dispose;
-  let each_value_20 = ensure_array_like(
+  let each_value_21 = ensure_array_like(
     /*fskBaudOptions*/
-    ctx[69]
+    ctx[72]
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_20.length; i += 1) {
-    each_blocks_2[i] = create_each_block_20(get_each_context_20(ctx, each_value_20, i));
+  for (let i = 0; i < each_value_21.length; i += 1) {
+    each_blocks_2[i] = create_each_block_21(get_each_context_21(ctx, each_value_21, i));
   }
-  let each_value_19 = ensure_array_like(
+  let each_value_20 = ensure_array_like(
     /*fskDataBitsOptions*/
-    ctx[70]
+    ctx[73]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_19.length; i += 1) {
-    each_blocks_1[i] = create_each_block_19(get_each_context_19(ctx, each_value_19, i));
+  for (let i = 0; i < each_value_20.length; i += 1) {
+    each_blocks_1[i] = create_each_block_20(get_each_context_20(ctx, each_value_20, i));
   }
-  let each_value_18 = ensure_array_like(
+  let each_value_19 = ensure_array_like(
     /*fskStopBitsOptions*/
-    ctx[71]
+    ctx[74]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_18.length; i += 1) {
-    each_blocks[i] = create_each_block_18(get_each_context_18(ctx, each_value_18, i));
+  for (let i = 0; i < each_value_19.length; i += 1) {
+    each_blocks[i] = create_each_block_19(get_each_context_19(ctx, each_value_19, i));
   }
   let if_block0 = (
     /*hasPfsk*/
-    ctx[62] && create_if_block_28(ctx)
+    ctx[65] && create_if_block_29(ctx)
   );
   let if_block1 = (
     /*radioStatus*/
     ctx[8][`${/*activeSerial*/
-    ctx[0]}:fsk1`] && create_if_block_27(ctx)
+    ctx[0]}:fsk1`] && create_if_block_28(ctx)
   );
   return {
     c() {
@@ -25479,13 +25257,13 @@ function create_if_block_26(ctx) {
       attr(div10, "class", "label");
       attr(input0, "type", "checkbox");
       input0.checked = input0_checked_value = !!/*activeFsk1*/
-      ((_a = ctx[40]) == null ? void 0 : _a.rtscts);
+      ((_a = ctx[43]) == null ? void 0 : _a.rtscts);
       attr(div11, "class", "value");
       attr(div12, "class", "row");
       attr(div13, "class", "label");
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1InvertFsk"
@@ -25517,7 +25295,7 @@ function create_if_block_26(ctx) {
       select_option(
         select0,
         /*activeFsk1*/
-        (_a = ctx[40]) == null ? void 0 : _a.baud
+        (_a = ctx[43]) == null ? void 0 : _a.baud
       );
       append(div16, t4);
       append(div16, div6);
@@ -25533,7 +25311,7 @@ function create_if_block_26(ctx) {
       select_option(
         select1,
         /*activeFsk1*/
-        (_b = ctx[40]) == null ? void 0 : _b.databits
+        (_b = ctx[43]) == null ? void 0 : _b.databits
       );
       append(div16, t7);
       append(div16, div9);
@@ -25549,7 +25327,7 @@ function create_if_block_26(ctx) {
       select_option(
         select2,
         /*activeFsk1*/
-        (_c = ctx[40]) == null ? void 0 : _c.stopbits
+        (_c = ctx[43]) == null ? void 0 : _c.stopbits
       );
       append(div16, t10);
       append(div16, div12);
@@ -25576,37 +25354,37 @@ function create_if_block_26(ctx) {
             select0,
             "change",
             /*change_handler_32*/
-            ctx[222]
+            ctx[226]
           ),
           listen(
             select1,
             "change",
             /*change_handler_33*/
-            ctx[223]
+            ctx[227]
           ),
           listen(
             select2,
             "change",
             /*change_handler_34*/
-            ctx[224]
+            ctx[228]
           ),
           listen(
             input0,
             "change",
             /*change_handler_35*/
-            ctx[225]
+            ctx[229]
           ),
           listen(
             input1,
             "change",
             /*change_handler_36*/
-            ctx[226]
+            ctx[230]
           ),
           listen(
             button,
             "click",
-            /*click_handler_4*/
-            ctx[228]
+            /*click_handler_5*/
+            ctx[232]
           )
         ];
         mounted = true;
@@ -25615,18 +25393,18 @@ function create_if_block_26(ctx) {
     p(ctx2, dirty) {
       var _a, _b, _c, _d, _e, _f, _g;
       if (dirty[2] & /*fskBaudOptions*/
-      128) {
-        each_value_20 = ensure_array_like(
+      1024) {
+        each_value_21 = ensure_array_like(
           /*fskBaudOptions*/
-          ctx2[69]
+          ctx2[72]
         );
         let i;
-        for (i = 0; i < each_value_20.length; i += 1) {
-          const child_ctx = get_each_context_20(ctx2, each_value_20, i);
+        for (i = 0; i < each_value_21.length; i += 1) {
+          const child_ctx = get_each_context_21(ctx2, each_value_21, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_20(child_ctx);
+            each_blocks_2[i] = create_each_block_21(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select0, null);
           }
@@ -25634,31 +25412,31 @@ function create_if_block_26(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_20.length;
+        each_blocks_2.length = each_value_21.length;
       }
       if (dirty[1] & /*activeFsk1*/
-      512 | dirty[2] & /*fskBaudOptions*/
-      128 && select0_value_value !== (select0_value_value = /*activeFsk1*/
-      (_a = ctx2[40]) == null ? void 0 : _a.baud)) {
+      4096 | dirty[2] & /*fskBaudOptions*/
+      1024 && select0_value_value !== (select0_value_value = /*activeFsk1*/
+      (_a = ctx2[43]) == null ? void 0 : _a.baud)) {
         select_option(
           select0,
           /*activeFsk1*/
-          (_b = ctx2[40]) == null ? void 0 : _b.baud
+          (_b = ctx2[43]) == null ? void 0 : _b.baud
         );
       }
       if (dirty[2] & /*fskDataBitsOptions*/
-      256) {
-        each_value_19 = ensure_array_like(
+      2048) {
+        each_value_20 = ensure_array_like(
           /*fskDataBitsOptions*/
-          ctx2[70]
+          ctx2[73]
         );
         let i;
-        for (i = 0; i < each_value_19.length; i += 1) {
-          const child_ctx = get_each_context_19(ctx2, each_value_19, i);
+        for (i = 0; i < each_value_20.length; i += 1) {
+          const child_ctx = get_each_context_20(ctx2, each_value_20, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_19(child_ctx);
+            each_blocks_1[i] = create_each_block_20(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select1, null);
           }
@@ -25666,31 +25444,31 @@ function create_if_block_26(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_19.length;
+        each_blocks_1.length = each_value_20.length;
       }
       if (dirty[1] & /*activeFsk1*/
-      512 | dirty[2] & /*fskBaudOptions*/
-      128 && select1_value_value !== (select1_value_value = /*activeFsk1*/
-      (_c = ctx2[40]) == null ? void 0 : _c.databits)) {
+      4096 | dirty[2] & /*fskBaudOptions*/
+      1024 && select1_value_value !== (select1_value_value = /*activeFsk1*/
+      (_c = ctx2[43]) == null ? void 0 : _c.databits)) {
         select_option(
           select1,
           /*activeFsk1*/
-          (_d = ctx2[40]) == null ? void 0 : _d.databits
+          (_d = ctx2[43]) == null ? void 0 : _d.databits
         );
       }
       if (dirty[2] & /*fskStopBitsOptions*/
-      512) {
-        each_value_18 = ensure_array_like(
+      4096) {
+        each_value_19 = ensure_array_like(
           /*fskStopBitsOptions*/
-          ctx2[71]
+          ctx2[74]
         );
         let i;
-        for (i = 0; i < each_value_18.length; i += 1) {
-          const child_ctx = get_each_context_18(ctx2, each_value_18, i);
+        for (i = 0; i < each_value_19.length; i += 1) {
+          const child_ctx = get_each_context_19(ctx2, each_value_19, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_18(child_ctx);
+            each_blocks[i] = create_each_block_19(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select2, null);
           }
@@ -25698,28 +25476,28 @@ function create_if_block_26(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_18.length;
+        each_blocks.length = each_value_19.length;
       }
       if (dirty[1] & /*activeFsk1*/
-      512 | dirty[2] & /*fskBaudOptions*/
-      128 && select2_value_value !== (select2_value_value = /*activeFsk1*/
-      (_e = ctx2[40]) == null ? void 0 : _e.stopbits)) {
+      4096 | dirty[2] & /*fskBaudOptions*/
+      1024 && select2_value_value !== (select2_value_value = /*activeFsk1*/
+      (_e = ctx2[43]) == null ? void 0 : _e.stopbits)) {
         select_option(
           select2,
           /*activeFsk1*/
-          (_f = ctx2[40]) == null ? void 0 : _f.stopbits
+          (_f = ctx2[43]) == null ? void 0 : _f.stopbits
         );
       }
       if (dirty[1] & /*activeFsk1*/
-      512 | dirty[2] & /*fskBaudOptions*/
-      128 && input0_checked_value !== (input0_checked_value = !!/*activeFsk1*/
-      ((_g = ctx2[40]) == null ? void 0 : _g.rtscts))) {
+      4096 | dirty[2] & /*fskBaudOptions*/
+      1024 && input0_checked_value !== (input0_checked_value = !!/*activeFsk1*/
+      ((_g = ctx2[43]) == null ? void 0 : _g.rtscts))) {
         input0.checked = input0_checked_value;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1InvertFsk"
@@ -25728,12 +25506,12 @@ function create_if_block_26(ctx) {
       }
       if (
         /*hasPfsk*/
-        ctx2[62]
+        ctx2[65]
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_28(ctx2);
+          if_block0 = create_if_block_29(ctx2);
           if_block0.c();
           if_block0.m(div16, null);
         }
@@ -25749,7 +25527,7 @@ function create_if_block_26(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_27(ctx2);
+          if_block1 = create_if_block_28(ctx2);
           if_block1.c();
           if_block1.m(section, null);
         }
@@ -25772,11 +25550,11 @@ function create_if_block_26(ctx) {
     }
   };
 }
-function create_each_block_20(ctx) {
+function create_each_block_21(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489] + ""
+    ctx[498] + ""
   );
   let t;
   return {
@@ -25784,7 +25562,34 @@ function create_each_block_20(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489];
+      ctx[498];
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_20(ctx) {
+  let option;
+  let t_value = (
+    /*opt*/
+    ctx[498] + ""
+  );
+  let t;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = /*opt*/
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -25803,7 +25608,7 @@ function create_each_block_19(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489] + ""
+    ctx[498] + ""
   );
   let t;
   return {
@@ -25811,7 +25616,7 @@ function create_each_block_19(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -25826,34 +25631,7 @@ function create_each_block_19(ctx) {
     }
   };
 }
-function create_each_block_18(ctx) {
-  let option;
-  let t_value = (
-    /*opt*/
-    ctx[489] + ""
-  );
-  let t;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = /*opt*/
-      ctx[489];
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_if_block_28(ctx) {
+function create_if_block_29(ctx) {
   let div2;
   let div0;
   let t1;
@@ -25873,7 +25651,7 @@ function create_if_block_28(ctx) {
       attr(div0, "class", "label");
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "usePFsk"
@@ -25892,7 +25670,7 @@ function create_if_block_28(ctx) {
           input,
           "change",
           /*change_handler_37*/
-          ctx[227]
+          ctx[231]
         );
         mounted = true;
       }
@@ -25900,8 +25678,8 @@ function create_if_block_28(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "usePFsk"
@@ -25918,7 +25696,7 @@ function create_if_block_28(ctx) {
     }
   };
 }
-function create_if_block_27(ctx) {
+function create_if_block_28(ctx) {
   let div;
   let t_value = (
     /*radioStatus*/
@@ -25946,7 +25724,7 @@ function create_if_block_27(ctx) {
       ctx2[0]}:fsk1`].text + "")) set_data(t, t_value);
       if (dirty[0] & /*radioStatus, activeSerial*/
       257 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*radioStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*radioStatus*/
       ctx2[8][`${/*activeSerial*/
       ctx2[0]}:fsk1`].kind === "error" ? "error" : ""}`)) {
         attr(div, "class", div_class_value);
@@ -25959,7 +25737,7 @@ function create_if_block_27(ctx) {
     }
   };
 }
-function create_if_block_23(ctx) {
+function create_if_block_24(ctx) {
   let section;
   let div0;
   let t1;
@@ -26005,38 +25783,38 @@ function create_if_block_23(ctx) {
   let t19;
   let mounted;
   let dispose;
-  let each_value_17 = ensure_array_like(
+  let each_value_18 = ensure_array_like(
     /*fskBaudOptions*/
-    ctx[69]
+    ctx[72]
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_17.length; i += 1) {
-    each_blocks_2[i] = create_each_block_17(get_each_context_17(ctx, each_value_17, i));
+  for (let i = 0; i < each_value_18.length; i += 1) {
+    each_blocks_2[i] = create_each_block_18(get_each_context_18(ctx, each_value_18, i));
   }
-  let each_value_16 = ensure_array_like(
+  let each_value_17 = ensure_array_like(
     /*fskDataBitsOptions*/
-    ctx[70]
+    ctx[73]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_16.length; i += 1) {
-    each_blocks_1[i] = create_each_block_16(get_each_context_16(ctx, each_value_16, i));
+  for (let i = 0; i < each_value_17.length; i += 1) {
+    each_blocks_1[i] = create_each_block_17(get_each_context_17(ctx, each_value_17, i));
   }
-  let each_value_15 = ensure_array_like(
+  let each_value_16 = ensure_array_like(
     /*fskStopBitsOptions*/
-    ctx[71]
+    ctx[74]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_15.length; i += 1) {
-    each_blocks[i] = create_each_block_15(get_each_context_15(ctx, each_value_15, i));
+  for (let i = 0; i < each_value_16.length; i += 1) {
+    each_blocks[i] = create_each_block_16(get_each_context_16(ctx, each_value_16, i));
   }
   let if_block0 = (
     /*hasPfsk*/
-    ctx[62] && create_if_block_25(ctx)
+    ctx[65] && create_if_block_26(ctx)
   );
   let if_block1 = (
     /*radioStatus*/
     ctx[8][`${/*activeSerial*/
-    ctx[0]}:fsk2`] && create_if_block_24(ctx)
+    ctx[0]}:fsk2`] && create_if_block_25(ctx)
   );
   return {
     c() {
@@ -26113,13 +25891,13 @@ function create_if_block_23(ctx) {
       attr(div10, "class", "label");
       attr(input0, "type", "checkbox");
       input0.checked = input0_checked_value = !!/*activeFsk2*/
-      ((_a = ctx[39]) == null ? void 0 : _a.rtscts);
+      ((_a = ctx[42]) == null ? void 0 : _a.rtscts);
       attr(div11, "class", "value");
       attr(div12, "class", "row");
       attr(div13, "class", "label");
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r2InvertFsk"
@@ -26151,7 +25929,7 @@ function create_if_block_23(ctx) {
       select_option(
         select0,
         /*activeFsk2*/
-        (_a = ctx[39]) == null ? void 0 : _a.baud
+        (_a = ctx[42]) == null ? void 0 : _a.baud
       );
       append(div16, t4);
       append(div16, div6);
@@ -26167,7 +25945,7 @@ function create_if_block_23(ctx) {
       select_option(
         select1,
         /*activeFsk2*/
-        (_b = ctx[39]) == null ? void 0 : _b.databits
+        (_b = ctx[42]) == null ? void 0 : _b.databits
       );
       append(div16, t7);
       append(div16, div9);
@@ -26183,7 +25961,7 @@ function create_if_block_23(ctx) {
       select_option(
         select2,
         /*activeFsk2*/
-        (_c = ctx[39]) == null ? void 0 : _c.stopbits
+        (_c = ctx[42]) == null ? void 0 : _c.stopbits
       );
       append(div16, t10);
       append(div16, div12);
@@ -26210,37 +25988,37 @@ function create_if_block_23(ctx) {
             select0,
             "change",
             /*change_handler_38*/
-            ctx[229]
+            ctx[233]
           ),
           listen(
             select1,
             "change",
             /*change_handler_39*/
-            ctx[230]
+            ctx[234]
           ),
           listen(
             select2,
             "change",
             /*change_handler_40*/
-            ctx[231]
+            ctx[235]
           ),
           listen(
             input0,
             "change",
             /*change_handler_41*/
-            ctx[232]
+            ctx[236]
           ),
           listen(
             input1,
             "change",
             /*change_handler_42*/
-            ctx[233]
+            ctx[237]
           ),
           listen(
             button,
             "click",
-            /*click_handler_5*/
-            ctx[235]
+            /*click_handler_6*/
+            ctx[239]
           )
         ];
         mounted = true;
@@ -26249,18 +26027,18 @@ function create_if_block_23(ctx) {
     p(ctx2, dirty) {
       var _a, _b, _c, _d, _e, _f, _g;
       if (dirty[2] & /*fskBaudOptions*/
-      128) {
-        each_value_17 = ensure_array_like(
+      1024) {
+        each_value_18 = ensure_array_like(
           /*fskBaudOptions*/
-          ctx2[69]
+          ctx2[72]
         );
         let i;
-        for (i = 0; i < each_value_17.length; i += 1) {
-          const child_ctx = get_each_context_17(ctx2, each_value_17, i);
+        for (i = 0; i < each_value_18.length; i += 1) {
+          const child_ctx = get_each_context_18(ctx2, each_value_18, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_17(child_ctx);
+            each_blocks_2[i] = create_each_block_18(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select0, null);
           }
@@ -26268,31 +26046,31 @@ function create_if_block_23(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_17.length;
+        each_blocks_2.length = each_value_18.length;
       }
       if (dirty[1] & /*activeFsk2*/
-      256 | dirty[2] & /*fskBaudOptions*/
-      128 && select0_value_value !== (select0_value_value = /*activeFsk2*/
-      (_a = ctx2[39]) == null ? void 0 : _a.baud)) {
+      2048 | dirty[2] & /*fskBaudOptions*/
+      1024 && select0_value_value !== (select0_value_value = /*activeFsk2*/
+      (_a = ctx2[42]) == null ? void 0 : _a.baud)) {
         select_option(
           select0,
           /*activeFsk2*/
-          (_b = ctx2[39]) == null ? void 0 : _b.baud
+          (_b = ctx2[42]) == null ? void 0 : _b.baud
         );
       }
       if (dirty[2] & /*fskDataBitsOptions*/
-      256) {
-        each_value_16 = ensure_array_like(
+      2048) {
+        each_value_17 = ensure_array_like(
           /*fskDataBitsOptions*/
-          ctx2[70]
+          ctx2[73]
         );
         let i;
-        for (i = 0; i < each_value_16.length; i += 1) {
-          const child_ctx = get_each_context_16(ctx2, each_value_16, i);
+        for (i = 0; i < each_value_17.length; i += 1) {
+          const child_ctx = get_each_context_17(ctx2, each_value_17, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_16(child_ctx);
+            each_blocks_1[i] = create_each_block_17(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select1, null);
           }
@@ -26300,31 +26078,31 @@ function create_if_block_23(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_16.length;
+        each_blocks_1.length = each_value_17.length;
       }
       if (dirty[1] & /*activeFsk2*/
-      256 | dirty[2] & /*fskBaudOptions*/
-      128 && select1_value_value !== (select1_value_value = /*activeFsk2*/
-      (_c = ctx2[39]) == null ? void 0 : _c.databits)) {
+      2048 | dirty[2] & /*fskBaudOptions*/
+      1024 && select1_value_value !== (select1_value_value = /*activeFsk2*/
+      (_c = ctx2[42]) == null ? void 0 : _c.databits)) {
         select_option(
           select1,
           /*activeFsk2*/
-          (_d = ctx2[39]) == null ? void 0 : _d.databits
+          (_d = ctx2[42]) == null ? void 0 : _d.databits
         );
       }
       if (dirty[2] & /*fskStopBitsOptions*/
-      512) {
-        each_value_15 = ensure_array_like(
+      4096) {
+        each_value_16 = ensure_array_like(
           /*fskStopBitsOptions*/
-          ctx2[71]
+          ctx2[74]
         );
         let i;
-        for (i = 0; i < each_value_15.length; i += 1) {
-          const child_ctx = get_each_context_15(ctx2, each_value_15, i);
+        for (i = 0; i < each_value_16.length; i += 1) {
+          const child_ctx = get_each_context_16(ctx2, each_value_16, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_15(child_ctx);
+            each_blocks[i] = create_each_block_16(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select2, null);
           }
@@ -26332,28 +26110,28 @@ function create_if_block_23(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_15.length;
+        each_blocks.length = each_value_16.length;
       }
       if (dirty[1] & /*activeFsk2*/
-      256 | dirty[2] & /*fskBaudOptions*/
-      128 && select2_value_value !== (select2_value_value = /*activeFsk2*/
-      (_e = ctx2[39]) == null ? void 0 : _e.stopbits)) {
+      2048 | dirty[2] & /*fskBaudOptions*/
+      1024 && select2_value_value !== (select2_value_value = /*activeFsk2*/
+      (_e = ctx2[42]) == null ? void 0 : _e.stopbits)) {
         select_option(
           select2,
           /*activeFsk2*/
-          (_f = ctx2[39]) == null ? void 0 : _f.stopbits
+          (_f = ctx2[42]) == null ? void 0 : _f.stopbits
         );
       }
       if (dirty[1] & /*activeFsk2*/
-      256 | dirty[2] & /*fskBaudOptions*/
-      128 && input0_checked_value !== (input0_checked_value = !!/*activeFsk2*/
-      ((_g = ctx2[39]) == null ? void 0 : _g.rtscts))) {
+      2048 | dirty[2] & /*fskBaudOptions*/
+      1024 && input0_checked_value !== (input0_checked_value = !!/*activeFsk2*/
+      ((_g = ctx2[42]) == null ? void 0 : _g.rtscts))) {
         input0.checked = input0_checked_value;
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input1_checked_value !== (input1_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r2InvertFsk"
@@ -26362,12 +26140,12 @@ function create_if_block_23(ctx) {
       }
       if (
         /*hasPfsk*/
-        ctx2[62]
+        ctx2[65]
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_25(ctx2);
+          if_block0 = create_if_block_26(ctx2);
           if_block0.c();
           if_block0.m(div16, null);
         }
@@ -26383,7 +26161,7 @@ function create_if_block_23(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_24(ctx2);
+          if_block1 = create_if_block_25(ctx2);
           if_block1.c();
           if_block1.m(section, null);
         }
@@ -26406,11 +26184,11 @@ function create_if_block_23(ctx) {
     }
   };
 }
-function create_each_block_17(ctx) {
+function create_each_block_18(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489] + ""
+    ctx[498] + ""
   );
   let t;
   return {
@@ -26418,7 +26196,34 @@ function create_each_block_17(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489];
+      ctx[498];
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_17(ctx) {
+  let option;
+  let t_value = (
+    /*opt*/
+    ctx[498] + ""
+  );
+  let t;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = /*opt*/
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -26437,7 +26242,7 @@ function create_each_block_16(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489] + ""
+    ctx[498] + ""
   );
   let t;
   return {
@@ -26445,7 +26250,7 @@ function create_each_block_16(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -26460,34 +26265,7 @@ function create_each_block_16(ctx) {
     }
   };
 }
-function create_each_block_15(ctx) {
-  let option;
-  let t_value = (
-    /*opt*/
-    ctx[489] + ""
-  );
-  let t;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = /*opt*/
-      ctx[489];
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_if_block_25(ctx) {
+function create_if_block_26(ctx) {
   let div2;
   let div0;
   let t1;
@@ -26507,7 +26285,7 @@ function create_if_block_25(ctx) {
       attr(div0, "class", "label");
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "usePFsk"
@@ -26526,7 +26304,7 @@ function create_if_block_25(ctx) {
           input,
           "change",
           /*change_handler_43*/
-          ctx[234]
+          ctx[238]
         );
         mounted = true;
       }
@@ -26534,8 +26312,8 @@ function create_if_block_25(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "usePFsk"
@@ -26552,7 +26330,7 @@ function create_if_block_25(ctx) {
     }
   };
 }
-function create_if_block_24(ctx) {
+function create_if_block_25(ctx) {
   let div;
   let t_value = (
     /*radioStatus*/
@@ -26580,7 +26358,7 @@ function create_if_block_24(ctx) {
       ctx2[0]}:fsk2`].text + "")) set_data(t, t_value);
       if (dirty[0] & /*radioStatus, activeSerial*/
       257 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*radioStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*radioStatus*/
       ctx2[8][`${/*activeSerial*/
       ctx2[0]}:fsk2`].kind === "error" ? "error" : ""}`)) {
         attr(div, "class", div_class_value);
@@ -26593,7 +26371,7 @@ function create_if_block_24(ctx) {
     }
   };
 }
-function create_if_block_22(ctx) {
+function create_if_block_23(ctx) {
   let section;
   return {
     c() {
@@ -26611,7 +26389,7 @@ function create_if_block_22(ctx) {
     }
   };
 }
-function create_else_block_1(ctx) {
+function create_else_block_3(ctx) {
   let section;
   return {
     c() {
@@ -26630,7 +26408,7 @@ function create_else_block_1(ctx) {
     }
   };
 }
-function create_if_block_19(ctx) {
+function create_if_block_20(ctx) {
   let section;
   let div0;
   let t1;
@@ -26668,34 +26446,34 @@ function create_if_block_19(ctx) {
   let t15;
   let mounted;
   let dispose;
-  let each_value_14 = ensure_array_like(
+  let each_value_15 = ensure_array_like(
     /*radioBaudOptions*/
-    ctx[66]
+    ctx[69]
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_14.length; i += 1) {
-    each_blocks_2[i] = create_each_block_14(get_each_context_14(ctx, each_value_14, i));
+  for (let i = 0; i < each_value_15.length; i += 1) {
+    each_blocks_2[i] = create_each_block_15(get_each_context_15(ctx, each_value_15, i));
   }
-  let each_value_13 = ensure_array_like(
+  let each_value_14 = ensure_array_like(
     /*radioDataBitsOptions*/
-    ctx[67]
+    ctx[70]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_13.length; i += 1) {
-    each_blocks_1[i] = create_each_block_13(get_each_context_13(ctx, each_value_13, i));
+  for (let i = 0; i < each_value_14.length; i += 1) {
+    each_blocks_1[i] = create_each_block_14(get_each_context_14(ctx, each_value_14, i));
   }
-  let each_value_12 = ensure_array_like(
+  let each_value_13 = ensure_array_like(
     /*radioStopBitsOptions*/
-    ctx[68]
+    ctx[71]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_12.length; i += 1) {
-    each_blocks[i] = create_each_block_12(get_each_context_12(ctx, each_value_12, i));
+  for (let i = 0; i < each_value_13.length; i += 1) {
+    each_blocks[i] = create_each_block_13(get_each_context_13(ctx, each_value_13, i));
   }
   let if_block = (
     /*radioStatus*/
     ctx[8][`${/*activeSerial*/
-    ctx[0]}:aux`] && create_if_block_20(ctx)
+    ctx[0]}:aux`] && create_if_block_21(ctx)
   );
   return {
     c() {
@@ -26763,7 +26541,7 @@ function create_if_block_19(ctx) {
       attr(div10, "class", "label");
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = !!/*activeAux*/
-      ((_a = ctx[41]) == null ? void 0 : _a.rtscts);
+      ((_a = ctx[44]) == null ? void 0 : _a.rtscts);
       attr(div11, "class", "value");
       attr(div12, "class", "row");
       attr(div13, "class", "panel");
@@ -26791,7 +26569,7 @@ function create_if_block_19(ctx) {
       select_option(
         select0,
         /*activeAux*/
-        (_a = ctx[41]) == null ? void 0 : _a.baud
+        (_a = ctx[44]) == null ? void 0 : _a.baud
       );
       append(div13, t4);
       append(div13, div6);
@@ -26807,7 +26585,7 @@ function create_if_block_19(ctx) {
       select_option(
         select1,
         /*activeAux*/
-        (_b = ctx[41]) == null ? void 0 : _b.databits
+        (_b = ctx[44]) == null ? void 0 : _b.databits
       );
       append(div13, t7);
       append(div13, div9);
@@ -26823,7 +26601,7 @@ function create_if_block_19(ctx) {
       select_option(
         select2,
         /*activeAux*/
-        (_c = ctx[41]) == null ? void 0 : _c.stopbits
+        (_c = ctx[44]) == null ? void 0 : _c.stopbits
       );
       append(div13, t10);
       append(div13, div12);
@@ -26842,31 +26620,31 @@ function create_if_block_19(ctx) {
             select0,
             "change",
             /*change_handler_28*/
-            ctx[217]
+            ctx[221]
           ),
           listen(
             select1,
             "change",
             /*change_handler_29*/
-            ctx[218]
+            ctx[222]
           ),
           listen(
             select2,
             "change",
             /*change_handler_30*/
-            ctx[219]
+            ctx[223]
           ),
           listen(
             input,
             "change",
             /*change_handler_31*/
-            ctx[220]
+            ctx[224]
           ),
           listen(
             button,
             "click",
-            /*click_handler_3*/
-            ctx[221]
+            /*click_handler_4*/
+            ctx[225]
           )
         ];
         mounted = true;
@@ -26875,18 +26653,18 @@ function create_if_block_19(ctx) {
     p(ctx2, dirty) {
       var _a, _b, _c, _d, _e, _f, _g;
       if (dirty[2] & /*radioBaudOptions*/
-      16) {
-        each_value_14 = ensure_array_like(
+      128) {
+        each_value_15 = ensure_array_like(
           /*radioBaudOptions*/
-          ctx2[66]
+          ctx2[69]
         );
         let i;
-        for (i = 0; i < each_value_14.length; i += 1) {
-          const child_ctx = get_each_context_14(ctx2, each_value_14, i);
+        for (i = 0; i < each_value_15.length; i += 1) {
+          const child_ctx = get_each_context_15(ctx2, each_value_15, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_14(child_ctx);
+            each_blocks_2[i] = create_each_block_15(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select0, null);
           }
@@ -26894,31 +26672,31 @@ function create_if_block_19(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_14.length;
+        each_blocks_2.length = each_value_15.length;
       }
       if (dirty[1] & /*activeAux*/
-      1024 | dirty[2] & /*radioBaudOptions*/
-      16 && select0_value_value !== (select0_value_value = /*activeAux*/
-      (_a = ctx2[41]) == null ? void 0 : _a.baud)) {
+      8192 | dirty[2] & /*radioBaudOptions*/
+      128 && select0_value_value !== (select0_value_value = /*activeAux*/
+      (_a = ctx2[44]) == null ? void 0 : _a.baud)) {
         select_option(
           select0,
           /*activeAux*/
-          (_b = ctx2[41]) == null ? void 0 : _b.baud
+          (_b = ctx2[44]) == null ? void 0 : _b.baud
         );
       }
       if (dirty[2] & /*radioDataBitsOptions*/
-      32) {
-        each_value_13 = ensure_array_like(
+      256) {
+        each_value_14 = ensure_array_like(
           /*radioDataBitsOptions*/
-          ctx2[67]
+          ctx2[70]
         );
         let i;
-        for (i = 0; i < each_value_13.length; i += 1) {
-          const child_ctx = get_each_context_13(ctx2, each_value_13, i);
+        for (i = 0; i < each_value_14.length; i += 1) {
+          const child_ctx = get_each_context_14(ctx2, each_value_14, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_13(child_ctx);
+            each_blocks_1[i] = create_each_block_14(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select1, null);
           }
@@ -26926,31 +26704,31 @@ function create_if_block_19(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_13.length;
+        each_blocks_1.length = each_value_14.length;
       }
       if (dirty[1] & /*activeAux*/
-      1024 | dirty[2] & /*radioBaudOptions*/
-      16 && select1_value_value !== (select1_value_value = /*activeAux*/
-      (_c = ctx2[41]) == null ? void 0 : _c.databits)) {
+      8192 | dirty[2] & /*radioBaudOptions*/
+      128 && select1_value_value !== (select1_value_value = /*activeAux*/
+      (_c = ctx2[44]) == null ? void 0 : _c.databits)) {
         select_option(
           select1,
           /*activeAux*/
-          (_d = ctx2[41]) == null ? void 0 : _d.databits
+          (_d = ctx2[44]) == null ? void 0 : _d.databits
         );
       }
       if (dirty[2] & /*radioStopBitsOptions*/
-      64) {
-        each_value_12 = ensure_array_like(
+      512) {
+        each_value_13 = ensure_array_like(
           /*radioStopBitsOptions*/
-          ctx2[68]
+          ctx2[71]
         );
         let i;
-        for (i = 0; i < each_value_12.length; i += 1) {
-          const child_ctx = get_each_context_12(ctx2, each_value_12, i);
+        for (i = 0; i < each_value_13.length; i += 1) {
+          const child_ctx = get_each_context_13(ctx2, each_value_13, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_12(child_ctx);
+            each_blocks[i] = create_each_block_13(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select2, null);
           }
@@ -26958,22 +26736,22 @@ function create_if_block_19(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_12.length;
+        each_blocks.length = each_value_13.length;
       }
       if (dirty[1] & /*activeAux*/
-      1024 | dirty[2] & /*radioBaudOptions*/
-      16 && select2_value_value !== (select2_value_value = /*activeAux*/
-      (_e = ctx2[41]) == null ? void 0 : _e.stopbits)) {
+      8192 | dirty[2] & /*radioBaudOptions*/
+      128 && select2_value_value !== (select2_value_value = /*activeAux*/
+      (_e = ctx2[44]) == null ? void 0 : _e.stopbits)) {
         select_option(
           select2,
           /*activeAux*/
-          (_f = ctx2[41]) == null ? void 0 : _f.stopbits
+          (_f = ctx2[44]) == null ? void 0 : _f.stopbits
         );
       }
       if (dirty[1] & /*activeAux*/
-      1024 | dirty[2] & /*radioBaudOptions*/
-      16 && input_checked_value !== (input_checked_value = !!/*activeAux*/
-      ((_g = ctx2[41]) == null ? void 0 : _g.rtscts))) {
+      8192 | dirty[2] & /*radioBaudOptions*/
+      128 && input_checked_value !== (input_checked_value = !!/*activeAux*/
+      ((_g = ctx2[44]) == null ? void 0 : _g.rtscts))) {
         input.checked = input_checked_value;
       }
       if (
@@ -26984,7 +26762,7 @@ function create_if_block_19(ctx) {
         if (if_block) {
           if_block.p(ctx2, dirty);
         } else {
-          if_block = create_if_block_20(ctx2);
+          if_block = create_if_block_21(ctx2);
           if_block.c();
           if_block.m(section, null);
         }
@@ -27006,11 +26784,11 @@ function create_if_block_19(ctx) {
     }
   };
 }
-function create_each_block_14(ctx) {
+function create_each_block_15(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489] + ""
+    ctx[498] + ""
   );
   let t;
   return {
@@ -27018,7 +26796,34 @@ function create_each_block_14(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489];
+      ctx[498];
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_14(ctx) {
+  let option;
+  let t_value = (
+    /*opt*/
+    ctx[498] + ""
+  );
+  let t;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = /*opt*/
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -27037,7 +26842,7 @@ function create_each_block_13(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489] + ""
+    ctx[498] + ""
   );
   let t;
   return {
@@ -27045,7 +26850,7 @@ function create_each_block_13(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -27060,34 +26865,7 @@ function create_each_block_13(ctx) {
     }
   };
 }
-function create_each_block_12(ctx) {
-  let option;
-  let t_value = (
-    /*opt*/
-    ctx[489] + ""
-  );
-  let t;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = /*opt*/
-      ctx[489];
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_if_block_20(ctx) {
+function create_if_block_21(ctx) {
   let div;
   let t_value = (
     /*radioStatus*/
@@ -27115,7 +26893,7 @@ function create_if_block_20(ctx) {
       ctx2[0]}:aux`].text + "")) set_data(t, t_value);
       if (dirty[0] & /*radioStatus, activeSerial*/
       257 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*radioStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*radioStatus*/
       ctx2[8][`${/*activeSerial*/
       ctx2[0]}:aux`].kind === "error" ? "error" : ""}`)) {
         attr(div, "class", div_class_value);
@@ -27128,7 +26906,7 @@ function create_if_block_20(ctx) {
     }
   };
 }
-function create_if_block_15(ctx) {
+function create_if_block_16(ctx) {
   let section;
   let div0;
   let t1;
@@ -27163,7 +26941,7 @@ function create_if_block_15(ctx) {
   let t13;
   let show_if = (
     /*hasFlag*/
-    ctx[86](
+    ctx[89](
       /*activeSerial*/
       ctx[0],
       "HAS_R1_RADIO_SUPPORT"
@@ -27175,35 +26953,35 @@ function create_if_block_15(ctx) {
   let t16;
   let mounted;
   let dispose;
-  let each_value_11 = ensure_array_like(
+  let each_value_12 = ensure_array_like(
     /*radioBaudOptions*/
-    ctx[66]
+    ctx[69]
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_11.length; i += 1) {
-    each_blocks_2[i] = create_each_block_11(get_each_context_11(ctx, each_value_11, i));
+  for (let i = 0; i < each_value_12.length; i += 1) {
+    each_blocks_2[i] = create_each_block_12(get_each_context_12(ctx, each_value_12, i));
   }
-  let each_value_10 = ensure_array_like(
+  let each_value_11 = ensure_array_like(
     /*radioDataBitsOptions*/
-    ctx[67]
+    ctx[70]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_10.length; i += 1) {
-    each_blocks_1[i] = create_each_block_10(get_each_context_10(ctx, each_value_10, i));
+  for (let i = 0; i < each_value_11.length; i += 1) {
+    each_blocks_1[i] = create_each_block_11(get_each_context_11(ctx, each_value_11, i));
   }
-  let each_value_9 = ensure_array_like(
+  let each_value_10 = ensure_array_like(
     /*radioStopBitsOptions*/
-    ctx[68]
+    ctx[71]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_9.length; i += 1) {
-    each_blocks[i] = create_each_block_9(get_each_context_9(ctx, each_value_9, i));
+  for (let i = 0; i < each_value_10.length; i += 1) {
+    each_blocks[i] = create_each_block_10(get_each_context_10(ctx, each_value_10, i));
   }
-  let if_block0 = show_if && create_if_block_17(ctx);
+  let if_block0 = show_if && create_if_block_18(ctx);
   let if_block1 = (
     /*radioStatus*/
     ctx[8][`${/*activeSerial*/
-    ctx[0]}:r1`] && create_if_block_16(ctx)
+    ctx[0]}:r1`] && create_if_block_17(ctx)
   );
   return {
     c() {
@@ -27273,7 +27051,7 @@ function create_if_block_15(ctx) {
       attr(div10, "class", "label");
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = !!/*activeR1*/
-      ((_a = ctx[43]) == null ? void 0 : _a.rtscts);
+      ((_a = ctx[46]) == null ? void 0 : _a.rtscts);
       attr(div11, "class", "value");
       attr(div12, "class", "row");
       attr(div13, "class", "panel");
@@ -27301,7 +27079,7 @@ function create_if_block_15(ctx) {
       select_option(
         select0,
         /*activeR1*/
-        (_a = ctx[43]) == null ? void 0 : _a.baud
+        (_a = ctx[46]) == null ? void 0 : _a.baud
       );
       append(div13, t4);
       append(div13, div6);
@@ -27317,7 +27095,7 @@ function create_if_block_15(ctx) {
       select_option(
         select1,
         /*activeR1*/
-        (_b = ctx[43]) == null ? void 0 : _b.databits
+        (_b = ctx[46]) == null ? void 0 : _b.databits
       );
       append(div13, t7);
       append(div13, div9);
@@ -27333,7 +27111,7 @@ function create_if_block_15(ctx) {
       select_option(
         select2,
         /*activeR1*/
-        (_c = ctx[43]) == null ? void 0 : _c.stopbits
+        (_c = ctx[46]) == null ? void 0 : _c.stopbits
       );
       append(div13, t10);
       append(div13, div12);
@@ -27354,31 +27132,31 @@ function create_if_block_15(ctx) {
             select0,
             "change",
             /*change_handler_4*/
-            ctx[176]
+            ctx[184]
           ),
           listen(
             select1,
             "change",
             /*change_handler_5*/
-            ctx[177]
+            ctx[185]
           ),
           listen(
             select2,
             "change",
             /*change_handler_6*/
-            ctx[178]
+            ctx[186]
           ),
           listen(
             input,
             "change",
             /*change_handler_7*/
-            ctx[179]
+            ctx[187]
           ),
           listen(
             button,
             "click",
             /*click_handler*/
-            ctx[186]
+            ctx[194]
           )
         ];
         mounted = true;
@@ -27387,18 +27165,18 @@ function create_if_block_15(ctx) {
     p(ctx2, dirty) {
       var _a, _b, _c, _d, _e, _f, _g;
       if (dirty[2] & /*radioBaudOptions*/
-      16) {
-        each_value_11 = ensure_array_like(
+      128) {
+        each_value_12 = ensure_array_like(
           /*radioBaudOptions*/
-          ctx2[66]
+          ctx2[69]
         );
         let i;
-        for (i = 0; i < each_value_11.length; i += 1) {
-          const child_ctx = get_each_context_11(ctx2, each_value_11, i);
+        for (i = 0; i < each_value_12.length; i += 1) {
+          const child_ctx = get_each_context_12(ctx2, each_value_12, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_11(child_ctx);
+            each_blocks_2[i] = create_each_block_12(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select0, null);
           }
@@ -27406,31 +27184,31 @@ function create_if_block_15(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_11.length;
+        each_blocks_2.length = each_value_12.length;
       }
       if (dirty[1] & /*activeR1*/
-      4096 | dirty[2] & /*radioBaudOptions*/
-      16 && select0_value_value !== (select0_value_value = /*activeR1*/
-      (_a = ctx2[43]) == null ? void 0 : _a.baud)) {
+      32768 | dirty[2] & /*radioBaudOptions*/
+      128 && select0_value_value !== (select0_value_value = /*activeR1*/
+      (_a = ctx2[46]) == null ? void 0 : _a.baud)) {
         select_option(
           select0,
           /*activeR1*/
-          (_b = ctx2[43]) == null ? void 0 : _b.baud
+          (_b = ctx2[46]) == null ? void 0 : _b.baud
         );
       }
       if (dirty[2] & /*radioDataBitsOptions*/
-      32) {
-        each_value_10 = ensure_array_like(
+      256) {
+        each_value_11 = ensure_array_like(
           /*radioDataBitsOptions*/
-          ctx2[67]
+          ctx2[70]
         );
         let i;
-        for (i = 0; i < each_value_10.length; i += 1) {
-          const child_ctx = get_each_context_10(ctx2, each_value_10, i);
+        for (i = 0; i < each_value_11.length; i += 1) {
+          const child_ctx = get_each_context_11(ctx2, each_value_11, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_10(child_ctx);
+            each_blocks_1[i] = create_each_block_11(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select1, null);
           }
@@ -27438,31 +27216,31 @@ function create_if_block_15(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_10.length;
+        each_blocks_1.length = each_value_11.length;
       }
       if (dirty[1] & /*activeR1*/
-      4096 | dirty[2] & /*radioBaudOptions*/
-      16 && select1_value_value !== (select1_value_value = /*activeR1*/
-      (_c = ctx2[43]) == null ? void 0 : _c.databits)) {
+      32768 | dirty[2] & /*radioBaudOptions*/
+      128 && select1_value_value !== (select1_value_value = /*activeR1*/
+      (_c = ctx2[46]) == null ? void 0 : _c.databits)) {
         select_option(
           select1,
           /*activeR1*/
-          (_d = ctx2[43]) == null ? void 0 : _d.databits
+          (_d = ctx2[46]) == null ? void 0 : _d.databits
         );
       }
       if (dirty[2] & /*radioStopBitsOptions*/
-      64) {
-        each_value_9 = ensure_array_like(
+      512) {
+        each_value_10 = ensure_array_like(
           /*radioStopBitsOptions*/
-          ctx2[68]
+          ctx2[71]
         );
         let i;
-        for (i = 0; i < each_value_9.length; i += 1) {
-          const child_ctx = get_each_context_9(ctx2, each_value_9, i);
+        for (i = 0; i < each_value_10.length; i += 1) {
+          const child_ctx = get_each_context_10(ctx2, each_value_10, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_9(child_ctx);
+            each_blocks[i] = create_each_block_10(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select2, null);
           }
@@ -27470,27 +27248,27 @@ function create_if_block_15(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_9.length;
+        each_blocks.length = each_value_10.length;
       }
       if (dirty[1] & /*activeR1*/
-      4096 | dirty[2] & /*radioBaudOptions*/
-      16 && select2_value_value !== (select2_value_value = /*activeR1*/
-      (_e = ctx2[43]) == null ? void 0 : _e.stopbits)) {
+      32768 | dirty[2] & /*radioBaudOptions*/
+      128 && select2_value_value !== (select2_value_value = /*activeR1*/
+      (_e = ctx2[46]) == null ? void 0 : _e.stopbits)) {
         select_option(
           select2,
           /*activeR1*/
-          (_f = ctx2[43]) == null ? void 0 : _f.stopbits
+          (_f = ctx2[46]) == null ? void 0 : _f.stopbits
         );
       }
       if (dirty[1] & /*activeR1*/
-      4096 | dirty[2] & /*radioBaudOptions*/
-      16 && input_checked_value !== (input_checked_value = !!/*activeR1*/
-      ((_g = ctx2[43]) == null ? void 0 : _g.rtscts))) {
+      32768 | dirty[2] & /*radioBaudOptions*/
+      128 && input_checked_value !== (input_checked_value = !!/*activeR1*/
+      ((_g = ctx2[46]) == null ? void 0 : _g.rtscts))) {
         input.checked = input_checked_value;
       }
       if (dirty[0] & /*activeSerial*/
       1) show_if = /*hasFlag*/
-      ctx2[86](
+      ctx2[89](
         /*activeSerial*/
         ctx2[0],
         "HAS_R1_RADIO_SUPPORT"
@@ -27499,7 +27277,7 @@ function create_if_block_15(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_17(ctx2);
+          if_block0 = create_if_block_18(ctx2);
           if_block0.c();
           if_block0.m(section, t14);
         }
@@ -27515,7 +27293,7 @@ function create_if_block_15(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_16(ctx2);
+          if_block1 = create_if_block_17(ctx2);
           if_block1.c();
           if_block1.m(section, null);
         }
@@ -27538,11 +27316,11 @@ function create_if_block_15(ctx) {
     }
   };
 }
-function create_each_block_11(ctx) {
+function create_each_block_12(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489] + ""
+    ctx[498] + ""
   );
   let t;
   return {
@@ -27550,7 +27328,34 @@ function create_each_block_11(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489];
+      ctx[498];
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_11(ctx) {
+  let option;
+  let t_value = (
+    /*opt*/
+    ctx[498] + ""
+  );
+  let t;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = /*opt*/
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -27569,7 +27374,7 @@ function create_each_block_10(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489] + ""
+    ctx[498] + ""
   );
   let t;
   return {
@@ -27577,7 +27382,7 @@ function create_each_block_10(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -27592,34 +27397,7 @@ function create_each_block_10(ctx) {
     }
   };
 }
-function create_each_block_9(ctx) {
-  let option;
-  let t_value = (
-    /*opt*/
-    ctx[489] + ""
-  );
-  let t;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = /*opt*/
-      ctx[489];
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_if_block_17(ctx) {
+function create_if_block_18(ctx) {
   let div18;
   let div2;
   let div0;
@@ -27664,21 +27442,21 @@ function create_if_block_17(ctx) {
   let input3_checked_value;
   let mounted;
   let dispose;
-  let each_value_8 = ensure_array_like(
+  let each_value_9 = ensure_array_like(
     /*rigtypes*/
-    ctx[103]()
+    ctx[109]()
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_8.length; i += 1) {
-    each_blocks_1[i] = create_each_block_8(get_each_context_8(ctx, each_value_8, i));
+  for (let i = 0; i < each_value_9.length; i += 1) {
+    each_blocks_1[i] = create_each_block_9(get_each_context_9(ctx, each_value_9, i));
   }
-  let each_value_7 = ensure_array_like(
+  let each_value_8 = ensure_array_like(
     /*digitalOverVoiceOptions*/
-    ctx[80]
+    ctx[83]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_7.length; i += 1) {
-    each_blocks[i] = create_each_block_7(get_each_context_7(ctx, each_value_7, i));
+  for (let i = 0; i < each_value_8.length; i += 1) {
+    each_blocks[i] = create_each_block_8(get_each_context_8(ctx, each_value_8, i));
   }
   return {
     c() {
@@ -27739,13 +27517,13 @@ function create_if_block_17(ctx) {
       attr(input0, "class", "input");
       attr(input0, "type", "number");
       input0.value = input0_value_value = /*activeR1*/
-      (_a = ctx[43]) == null ? void 0 : _a.icomaddress;
+      (_a = ctx[46]) == null ? void 0 : _a.icomaddress;
       attr(div4, "class", "value");
       attr(div5, "class", "row");
       attr(div6, "class", "label");
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*activeR1*/
-      ((_b = ctx[43]) == null ? void 0 : _b.icomsimulateautoinfo);
+      ((_b = ctx[46]) == null ? void 0 : _b.icomsimulateautoinfo);
       attr(div7, "class", "value");
       attr(div8, "class", "row");
       attr(div9, "class", "label");
@@ -27755,13 +27533,13 @@ function create_if_block_17(ctx) {
       attr(div12, "class", "label");
       attr(input2, "type", "checkbox");
       input2.checked = input2_checked_value = !!/*activeR1*/
-      ((_c = ctx[43]) == null ? void 0 : _c.usedecoderifconnected);
+      ((_c = ctx[46]) == null ? void 0 : _c.usedecoderifconnected);
       attr(div13, "class", "value");
       attr(div14, "class", "row");
       attr(div15, "class", "label");
       attr(input3, "type", "checkbox");
       input3.checked = input3_checked_value = !!/*activeR1*/
-      ((_d = ctx[43]) == null ? void 0 : _d.dontinterfereusbcontrol);
+      ((_d = ctx[46]) == null ? void 0 : _d.dontinterfereusbcontrol);
       attr(div16, "class", "value");
       attr(div17, "class", "row");
       attr(div18, "class", "panel");
@@ -27783,7 +27561,7 @@ function create_if_block_17(ctx) {
       select_option(
         select0,
         /*activeR1*/
-        (_a = ctx[43]) == null ? void 0 : _a.rigtype
+        (_a = ctx[46]) == null ? void 0 : _a.rigtype
       );
       append(div18, t2);
       append(div18, div5);
@@ -27811,7 +27589,7 @@ function create_if_block_17(ctx) {
       select_option(
         select1,
         /*activeR1*/
-        (_b = ctx[43]) == null ? void 0 : _b.digitalovervoicerule
+        (_b = ctx[46]) == null ? void 0 : _b.digitalovervoicerule
       );
       append(div18, t11);
       append(div18, div14);
@@ -27831,37 +27609,37 @@ function create_if_block_17(ctx) {
             select0,
             "change",
             /*change_handler_8*/
-            ctx[180]
+            ctx[188]
           ),
           listen(
             input0,
             "input",
             /*input_handler*/
-            ctx[181]
+            ctx[189]
           ),
           listen(
             input1,
             "change",
             /*change_handler_9*/
-            ctx[182]
+            ctx[190]
           ),
           listen(
             select1,
             "change",
             /*change_handler_10*/
-            ctx[183]
+            ctx[191]
           ),
           listen(
             input2,
             "change",
             /*change_handler_11*/
-            ctx[184]
+            ctx[192]
           ),
           listen(
             input3,
             "change",
             /*change_handler_12*/
-            ctx[185]
+            ctx[193]
           )
         ];
         mounted = true;
@@ -27870,18 +27648,18 @@ function create_if_block_17(ctx) {
     p(ctx2, dirty) {
       var _a, _b, _c, _d, _e, _f, _g, _h;
       if (dirty[3] & /*rigtypes*/
-      1024) {
-        each_value_8 = ensure_array_like(
+      65536) {
+        each_value_9 = ensure_array_like(
           /*rigtypes*/
-          ctx2[103]()
+          ctx2[109]()
         );
         let i;
-        for (i = 0; i < each_value_8.length; i += 1) {
-          const child_ctx = get_each_context_8(ctx2, each_value_8, i);
+        for (i = 0; i < each_value_9.length; i += 1) {
+          const child_ctx = get_each_context_9(ctx2, each_value_9, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_8(child_ctx);
+            each_blocks_1[i] = create_each_block_9(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select0, null);
           }
@@ -27889,43 +27667,43 @@ function create_if_block_17(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_8.length;
+        each_blocks_1.length = each_value_9.length;
       }
       if (dirty[1] & /*activeR1*/
-      4096 | dirty[2] & /*radioBaudOptions*/
-      16 && select0_value_value !== (select0_value_value = /*activeR1*/
-      (_a = ctx2[43]) == null ? void 0 : _a.rigtype)) {
+      32768 | dirty[2] & /*radioBaudOptions*/
+      128 && select0_value_value !== (select0_value_value = /*activeR1*/
+      (_a = ctx2[46]) == null ? void 0 : _a.rigtype)) {
         select_option(
           select0,
           /*activeR1*/
-          (_b = ctx2[43]) == null ? void 0 : _b.rigtype
+          (_b = ctx2[46]) == null ? void 0 : _b.rigtype
         );
       }
       if (dirty[1] & /*activeR1*/
-      4096 | dirty[2] & /*radioBaudOptions*/
-      16 && input0_value_value !== (input0_value_value = /*activeR1*/
-      (_c = ctx2[43]) == null ? void 0 : _c.icomaddress) && input0.value !== input0_value_value) {
+      32768 | dirty[2] & /*radioBaudOptions*/
+      128 && input0_value_value !== (input0_value_value = /*activeR1*/
+      (_c = ctx2[46]) == null ? void 0 : _c.icomaddress) && input0.value !== input0_value_value) {
         input0.value = input0_value_value;
       }
       if (dirty[1] & /*activeR1*/
-      4096 | dirty[2] & /*radioBaudOptions*/
-      16 && input1_checked_value !== (input1_checked_value = !!/*activeR1*/
-      ((_d = ctx2[43]) == null ? void 0 : _d.icomsimulateautoinfo))) {
+      32768 | dirty[2] & /*radioBaudOptions*/
+      128 && input1_checked_value !== (input1_checked_value = !!/*activeR1*/
+      ((_d = ctx2[46]) == null ? void 0 : _d.icomsimulateautoinfo))) {
         input1.checked = input1_checked_value;
       }
       if (dirty[2] & /*digitalOverVoiceOptions*/
-      262144) {
-        each_value_7 = ensure_array_like(
+      2097152) {
+        each_value_8 = ensure_array_like(
           /*digitalOverVoiceOptions*/
-          ctx2[80]
+          ctx2[83]
         );
         let i;
-        for (i = 0; i < each_value_7.length; i += 1) {
-          const child_ctx = get_each_context_7(ctx2, each_value_7, i);
+        for (i = 0; i < each_value_8.length; i += 1) {
+          const child_ctx = get_each_context_8(ctx2, each_value_8, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_7(child_ctx);
+            each_blocks[i] = create_each_block_8(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select1, null);
           }
@@ -27933,28 +27711,28 @@ function create_if_block_17(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_7.length;
+        each_blocks.length = each_value_8.length;
       }
       if (dirty[1] & /*activeR1*/
-      4096 | dirty[2] & /*radioBaudOptions*/
-      16 && select1_value_value !== (select1_value_value = /*activeR1*/
-      (_e = ctx2[43]) == null ? void 0 : _e.digitalovervoicerule)) {
+      32768 | dirty[2] & /*radioBaudOptions*/
+      128 && select1_value_value !== (select1_value_value = /*activeR1*/
+      (_e = ctx2[46]) == null ? void 0 : _e.digitalovervoicerule)) {
         select_option(
           select1,
           /*activeR1*/
-          (_f = ctx2[43]) == null ? void 0 : _f.digitalovervoicerule
+          (_f = ctx2[46]) == null ? void 0 : _f.digitalovervoicerule
         );
       }
       if (dirty[1] & /*activeR1*/
-      4096 | dirty[2] & /*radioBaudOptions*/
-      16 && input2_checked_value !== (input2_checked_value = !!/*activeR1*/
-      ((_g = ctx2[43]) == null ? void 0 : _g.usedecoderifconnected))) {
+      32768 | dirty[2] & /*radioBaudOptions*/
+      128 && input2_checked_value !== (input2_checked_value = !!/*activeR1*/
+      ((_g = ctx2[46]) == null ? void 0 : _g.usedecoderifconnected))) {
         input2.checked = input2_checked_value;
       }
       if (dirty[1] & /*activeR1*/
-      4096 | dirty[2] & /*radioBaudOptions*/
-      16 && input3_checked_value !== (input3_checked_value = !!/*activeR1*/
-      ((_h = ctx2[43]) == null ? void 0 : _h.dontinterfereusbcontrol))) {
+      32768 | dirty[2] & /*radioBaudOptions*/
+      128 && input3_checked_value !== (input3_checked_value = !!/*activeR1*/
+      ((_h = ctx2[46]) == null ? void 0 : _h.dontinterfereusbcontrol))) {
         input3.checked = input3_checked_value;
       }
     },
@@ -27969,11 +27747,11 @@ function create_if_block_17(ctx) {
     }
   };
 }
-function create_each_block_8(ctx) {
+function create_each_block_9(ctx) {
   let option;
   let t_value = (
     /*rig*/
-    ctx[496].name + ""
+    ctx[510].name + ""
   );
   let t;
   return {
@@ -27981,7 +27759,7 @@ function create_each_block_8(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*rig*/
-      ctx[496].id;
+      ctx[510].id;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -27996,11 +27774,11 @@ function create_each_block_8(ctx) {
     }
   };
 }
-function create_each_block_7(ctx) {
+function create_each_block_8(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -28008,7 +27786,7 @@ function create_each_block_7(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -28023,7 +27801,7 @@ function create_each_block_7(ctx) {
     }
   };
 }
-function create_if_block_16(ctx) {
+function create_if_block_17(ctx) {
   let div;
   let t_value = (
     /*radioStatus*/
@@ -28051,7 +27829,7 @@ function create_if_block_16(ctx) {
       ctx2[0]}:r1`].text + "")) set_data(t, t_value);
       if (dirty[0] & /*radioStatus, activeSerial*/
       257 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*radioStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*radioStatus*/
       ctx2[8][`${/*activeSerial*/
       ctx2[0]}:r1`].kind === "error" ? "error" : ""}`)) {
         attr(div, "class", div_class_value);
@@ -28064,7 +27842,7 @@ function create_if_block_16(ctx) {
     }
   };
 }
-function create_if_block_12(ctx) {
+function create_if_block_13(ctx) {
   let section;
   let div0;
   let t1;
@@ -28099,7 +27877,7 @@ function create_if_block_12(ctx) {
   let t13;
   let show_if = (
     /*hasFlag*/
-    ctx[86](
+    ctx[89](
       /*activeSerial*/
       ctx[0],
       "HAS_R2_RADIO_SUPPORT"
@@ -28111,35 +27889,35 @@ function create_if_block_12(ctx) {
   let t16;
   let mounted;
   let dispose;
-  let each_value_6 = ensure_array_like(
+  let each_value_7 = ensure_array_like(
     /*radioBaudOptions*/
-    ctx[66]
+    ctx[69]
   );
   let each_blocks_2 = [];
-  for (let i = 0; i < each_value_6.length; i += 1) {
-    each_blocks_2[i] = create_each_block_6(get_each_context_6(ctx, each_value_6, i));
+  for (let i = 0; i < each_value_7.length; i += 1) {
+    each_blocks_2[i] = create_each_block_7(get_each_context_7(ctx, each_value_7, i));
   }
-  let each_value_5 = ensure_array_like(
+  let each_value_6 = ensure_array_like(
     /*radioDataBitsOptions*/
-    ctx[67]
+    ctx[70]
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_5.length; i += 1) {
-    each_blocks_1[i] = create_each_block_5(get_each_context_5(ctx, each_value_5, i));
+  for (let i = 0; i < each_value_6.length; i += 1) {
+    each_blocks_1[i] = create_each_block_6(get_each_context_6(ctx, each_value_6, i));
   }
-  let each_value_4 = ensure_array_like(
+  let each_value_5 = ensure_array_like(
     /*radioStopBitsOptions*/
-    ctx[68]
+    ctx[71]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_4.length; i += 1) {
-    each_blocks[i] = create_each_block_4(get_each_context_4(ctx, each_value_4, i));
+  for (let i = 0; i < each_value_5.length; i += 1) {
+    each_blocks[i] = create_each_block_5(get_each_context_5(ctx, each_value_5, i));
   }
-  let if_block0 = show_if && create_if_block_14(ctx);
+  let if_block0 = show_if && create_if_block_15(ctx);
   let if_block1 = (
     /*radioStatus*/
     ctx[8][`${/*activeSerial*/
-    ctx[0]}:r2`] && create_if_block_13(ctx)
+    ctx[0]}:r2`] && create_if_block_14(ctx)
   );
   return {
     c() {
@@ -28209,7 +27987,7 @@ function create_if_block_12(ctx) {
       attr(div10, "class", "label");
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = !!/*activeR2*/
-      ((_a = ctx[42]) == null ? void 0 : _a.rtscts);
+      ((_a = ctx[45]) == null ? void 0 : _a.rtscts);
       attr(div11, "class", "value");
       attr(div12, "class", "row");
       attr(div13, "class", "panel");
@@ -28237,7 +28015,7 @@ function create_if_block_12(ctx) {
       select_option(
         select0,
         /*activeR2*/
-        (_a = ctx[42]) == null ? void 0 : _a.baud
+        (_a = ctx[45]) == null ? void 0 : _a.baud
       );
       append(div13, t4);
       append(div13, div6);
@@ -28253,7 +28031,7 @@ function create_if_block_12(ctx) {
       select_option(
         select1,
         /*activeR2*/
-        (_b = ctx[42]) == null ? void 0 : _b.databits
+        (_b = ctx[45]) == null ? void 0 : _b.databits
       );
       append(div13, t7);
       append(div13, div9);
@@ -28269,7 +28047,7 @@ function create_if_block_12(ctx) {
       select_option(
         select2,
         /*activeR2*/
-        (_c = ctx[42]) == null ? void 0 : _c.stopbits
+        (_c = ctx[45]) == null ? void 0 : _c.stopbits
       );
       append(div13, t10);
       append(div13, div12);
@@ -28290,31 +28068,31 @@ function create_if_block_12(ctx) {
             select0,
             "change",
             /*change_handler_13*/
-            ctx[187]
+            ctx[195]
           ),
           listen(
             select1,
             "change",
             /*change_handler_14*/
-            ctx[188]
+            ctx[196]
           ),
           listen(
             select2,
             "change",
             /*change_handler_15*/
-            ctx[189]
+            ctx[197]
           ),
           listen(
             input,
             "change",
             /*change_handler_16*/
-            ctx[190]
+            ctx[198]
           ),
           listen(
             button,
             "click",
             /*click_handler_1*/
-            ctx[197]
+            ctx[205]
           )
         ];
         mounted = true;
@@ -28323,18 +28101,18 @@ function create_if_block_12(ctx) {
     p(ctx2, dirty) {
       var _a, _b, _c, _d, _e, _f, _g;
       if (dirty[2] & /*radioBaudOptions*/
-      16) {
-        each_value_6 = ensure_array_like(
+      128) {
+        each_value_7 = ensure_array_like(
           /*radioBaudOptions*/
-          ctx2[66]
+          ctx2[69]
         );
         let i;
-        for (i = 0; i < each_value_6.length; i += 1) {
-          const child_ctx = get_each_context_6(ctx2, each_value_6, i);
+        for (i = 0; i < each_value_7.length; i += 1) {
+          const child_ctx = get_each_context_7(ctx2, each_value_7, i);
           if (each_blocks_2[i]) {
             each_blocks_2[i].p(child_ctx, dirty);
           } else {
-            each_blocks_2[i] = create_each_block_6(child_ctx);
+            each_blocks_2[i] = create_each_block_7(child_ctx);
             each_blocks_2[i].c();
             each_blocks_2[i].m(select0, null);
           }
@@ -28342,31 +28120,31 @@ function create_if_block_12(ctx) {
         for (; i < each_blocks_2.length; i += 1) {
           each_blocks_2[i].d(1);
         }
-        each_blocks_2.length = each_value_6.length;
+        each_blocks_2.length = each_value_7.length;
       }
       if (dirty[1] & /*activeR2*/
-      2048 | dirty[2] & /*radioBaudOptions*/
-      16 && select0_value_value !== (select0_value_value = /*activeR2*/
-      (_a = ctx2[42]) == null ? void 0 : _a.baud)) {
+      16384 | dirty[2] & /*radioBaudOptions*/
+      128 && select0_value_value !== (select0_value_value = /*activeR2*/
+      (_a = ctx2[45]) == null ? void 0 : _a.baud)) {
         select_option(
           select0,
           /*activeR2*/
-          (_b = ctx2[42]) == null ? void 0 : _b.baud
+          (_b = ctx2[45]) == null ? void 0 : _b.baud
         );
       }
       if (dirty[2] & /*radioDataBitsOptions*/
-      32) {
-        each_value_5 = ensure_array_like(
+      256) {
+        each_value_6 = ensure_array_like(
           /*radioDataBitsOptions*/
-          ctx2[67]
+          ctx2[70]
         );
         let i;
-        for (i = 0; i < each_value_5.length; i += 1) {
-          const child_ctx = get_each_context_5(ctx2, each_value_5, i);
+        for (i = 0; i < each_value_6.length; i += 1) {
+          const child_ctx = get_each_context_6(ctx2, each_value_6, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_5(child_ctx);
+            each_blocks_1[i] = create_each_block_6(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select1, null);
           }
@@ -28374,31 +28152,31 @@ function create_if_block_12(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_5.length;
+        each_blocks_1.length = each_value_6.length;
       }
       if (dirty[1] & /*activeR2*/
-      2048 | dirty[2] & /*radioBaudOptions*/
-      16 && select1_value_value !== (select1_value_value = /*activeR2*/
-      (_c = ctx2[42]) == null ? void 0 : _c.databits)) {
+      16384 | dirty[2] & /*radioBaudOptions*/
+      128 && select1_value_value !== (select1_value_value = /*activeR2*/
+      (_c = ctx2[45]) == null ? void 0 : _c.databits)) {
         select_option(
           select1,
           /*activeR2*/
-          (_d = ctx2[42]) == null ? void 0 : _d.databits
+          (_d = ctx2[45]) == null ? void 0 : _d.databits
         );
       }
       if (dirty[2] & /*radioStopBitsOptions*/
-      64) {
-        each_value_4 = ensure_array_like(
+      512) {
+        each_value_5 = ensure_array_like(
           /*radioStopBitsOptions*/
-          ctx2[68]
+          ctx2[71]
         );
         let i;
-        for (i = 0; i < each_value_4.length; i += 1) {
-          const child_ctx = get_each_context_4(ctx2, each_value_4, i);
+        for (i = 0; i < each_value_5.length; i += 1) {
+          const child_ctx = get_each_context_5(ctx2, each_value_5, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_4(child_ctx);
+            each_blocks[i] = create_each_block_5(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select2, null);
           }
@@ -28406,27 +28184,27 @@ function create_if_block_12(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_4.length;
+        each_blocks.length = each_value_5.length;
       }
       if (dirty[1] & /*activeR2*/
-      2048 | dirty[2] & /*radioBaudOptions*/
-      16 && select2_value_value !== (select2_value_value = /*activeR2*/
-      (_e = ctx2[42]) == null ? void 0 : _e.stopbits)) {
+      16384 | dirty[2] & /*radioBaudOptions*/
+      128 && select2_value_value !== (select2_value_value = /*activeR2*/
+      (_e = ctx2[45]) == null ? void 0 : _e.stopbits)) {
         select_option(
           select2,
           /*activeR2*/
-          (_f = ctx2[42]) == null ? void 0 : _f.stopbits
+          (_f = ctx2[45]) == null ? void 0 : _f.stopbits
         );
       }
       if (dirty[1] & /*activeR2*/
-      2048 | dirty[2] & /*radioBaudOptions*/
-      16 && input_checked_value !== (input_checked_value = !!/*activeR2*/
-      ((_g = ctx2[42]) == null ? void 0 : _g.rtscts))) {
+      16384 | dirty[2] & /*radioBaudOptions*/
+      128 && input_checked_value !== (input_checked_value = !!/*activeR2*/
+      ((_g = ctx2[45]) == null ? void 0 : _g.rtscts))) {
         input.checked = input_checked_value;
       }
       if (dirty[0] & /*activeSerial*/
       1) show_if = /*hasFlag*/
-      ctx2[86](
+      ctx2[89](
         /*activeSerial*/
         ctx2[0],
         "HAS_R2_RADIO_SUPPORT"
@@ -28435,7 +28213,7 @@ function create_if_block_12(ctx) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
         } else {
-          if_block0 = create_if_block_14(ctx2);
+          if_block0 = create_if_block_15(ctx2);
           if_block0.c();
           if_block0.m(section, t14);
         }
@@ -28451,7 +28229,7 @@ function create_if_block_12(ctx) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_13(ctx2);
+          if_block1 = create_if_block_14(ctx2);
           if_block1.c();
           if_block1.m(section, null);
         }
@@ -28474,11 +28252,11 @@ function create_if_block_12(ctx) {
     }
   };
 }
-function create_each_block_6(ctx) {
+function create_each_block_7(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489] + ""
+    ctx[498] + ""
   );
   let t;
   return {
@@ -28486,7 +28264,34 @@ function create_each_block_6(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489];
+      ctx[498];
+      set_input_value(option, option.__value);
+    },
+    m(target, anchor) {
+      insert(target, option, anchor);
+      append(option, t);
+    },
+    p: noop,
+    d(detaching) {
+      if (detaching) {
+        detach(option);
+      }
+    }
+  };
+}
+function create_each_block_6(ctx) {
+  let option;
+  let t_value = (
+    /*opt*/
+    ctx[498] + ""
+  );
+  let t;
+  return {
+    c() {
+      option = element("option");
+      t = text(t_value);
+      option.__value = /*opt*/
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -28505,7 +28310,7 @@ function create_each_block_5(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489] + ""
+    ctx[498] + ""
   );
   let t;
   return {
@@ -28513,7 +28318,7 @@ function create_each_block_5(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489];
+      ctx[498];
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -28528,34 +28333,7 @@ function create_each_block_5(ctx) {
     }
   };
 }
-function create_each_block_4(ctx) {
-  let option;
-  let t_value = (
-    /*opt*/
-    ctx[489] + ""
-  );
-  let t;
-  return {
-    c() {
-      option = element("option");
-      t = text(t_value);
-      option.__value = /*opt*/
-      ctx[489];
-      set_input_value(option, option.__value);
-    },
-    m(target, anchor) {
-      insert(target, option, anchor);
-      append(option, t);
-    },
-    p: noop,
-    d(detaching) {
-      if (detaching) {
-        detach(option);
-      }
-    }
-  };
-}
-function create_if_block_14(ctx) {
+function create_if_block_15(ctx) {
   let div18;
   let div2;
   let div0;
@@ -28600,21 +28378,21 @@ function create_if_block_14(ctx) {
   let input3_checked_value;
   let mounted;
   let dispose;
-  let each_value_3 = ensure_array_like(
+  let each_value_4 = ensure_array_like(
     /*rigtypes*/
-    ctx[103]()
+    ctx[109]()
   );
   let each_blocks_1 = [];
-  for (let i = 0; i < each_value_3.length; i += 1) {
-    each_blocks_1[i] = create_each_block_3(get_each_context_3(ctx, each_value_3, i));
+  for (let i = 0; i < each_value_4.length; i += 1) {
+    each_blocks_1[i] = create_each_block_4(get_each_context_4(ctx, each_value_4, i));
   }
-  let each_value_2 = ensure_array_like(
+  let each_value_3 = ensure_array_like(
     /*digitalOverVoiceOptions*/
-    ctx[80]
+    ctx[83]
   );
   let each_blocks = [];
-  for (let i = 0; i < each_value_2.length; i += 1) {
-    each_blocks[i] = create_each_block_2(get_each_context_2(ctx, each_value_2, i));
+  for (let i = 0; i < each_value_3.length; i += 1) {
+    each_blocks[i] = create_each_block_3(get_each_context_3(ctx, each_value_3, i));
   }
   return {
     c() {
@@ -28675,13 +28453,13 @@ function create_if_block_14(ctx) {
       attr(input0, "class", "input");
       attr(input0, "type", "number");
       input0.value = input0_value_value = /*activeR2*/
-      (_a = ctx[42]) == null ? void 0 : _a.icomaddress;
+      (_a = ctx[45]) == null ? void 0 : _a.icomaddress;
       attr(div4, "class", "value");
       attr(div5, "class", "row");
       attr(div6, "class", "label");
       attr(input1, "type", "checkbox");
       input1.checked = input1_checked_value = !!/*activeR2*/
-      ((_b = ctx[42]) == null ? void 0 : _b.icomsimulateautoinfo);
+      ((_b = ctx[45]) == null ? void 0 : _b.icomsimulateautoinfo);
       attr(div7, "class", "value");
       attr(div8, "class", "row");
       attr(div9, "class", "label");
@@ -28691,13 +28469,13 @@ function create_if_block_14(ctx) {
       attr(div12, "class", "label");
       attr(input2, "type", "checkbox");
       input2.checked = input2_checked_value = !!/*activeR2*/
-      ((_c = ctx[42]) == null ? void 0 : _c.usedecoderifconnected);
+      ((_c = ctx[45]) == null ? void 0 : _c.usedecoderifconnected);
       attr(div13, "class", "value");
       attr(div14, "class", "row");
       attr(div15, "class", "label");
       attr(input3, "type", "checkbox");
       input3.checked = input3_checked_value = !!/*activeR2*/
-      ((_d = ctx[42]) == null ? void 0 : _d.dontinterfereusbcontrol);
+      ((_d = ctx[45]) == null ? void 0 : _d.dontinterfereusbcontrol);
       attr(div16, "class", "value");
       attr(div17, "class", "row");
       attr(div18, "class", "panel");
@@ -28719,7 +28497,7 @@ function create_if_block_14(ctx) {
       select_option(
         select0,
         /*activeR2*/
-        (_a = ctx[42]) == null ? void 0 : _a.rigtype
+        (_a = ctx[45]) == null ? void 0 : _a.rigtype
       );
       append(div18, t2);
       append(div18, div5);
@@ -28747,7 +28525,7 @@ function create_if_block_14(ctx) {
       select_option(
         select1,
         /*activeR2*/
-        (_b = ctx[42]) == null ? void 0 : _b.digitalovervoicerule
+        (_b = ctx[45]) == null ? void 0 : _b.digitalovervoicerule
       );
       append(div18, t11);
       append(div18, div14);
@@ -28767,37 +28545,37 @@ function create_if_block_14(ctx) {
             select0,
             "change",
             /*change_handler_17*/
-            ctx[191]
+            ctx[199]
           ),
           listen(
             input0,
             "input",
             /*input_handler_1*/
-            ctx[192]
+            ctx[200]
           ),
           listen(
             input1,
             "change",
             /*change_handler_18*/
-            ctx[193]
+            ctx[201]
           ),
           listen(
             select1,
             "change",
             /*change_handler_19*/
-            ctx[194]
+            ctx[202]
           ),
           listen(
             input2,
             "change",
             /*change_handler_20*/
-            ctx[195]
+            ctx[203]
           ),
           listen(
             input3,
             "change",
             /*change_handler_21*/
-            ctx[196]
+            ctx[204]
           )
         ];
         mounted = true;
@@ -28806,18 +28584,18 @@ function create_if_block_14(ctx) {
     p(ctx2, dirty) {
       var _a, _b, _c, _d, _e, _f, _g, _h;
       if (dirty[3] & /*rigtypes*/
-      1024) {
-        each_value_3 = ensure_array_like(
+      65536) {
+        each_value_4 = ensure_array_like(
           /*rigtypes*/
-          ctx2[103]()
+          ctx2[109]()
         );
         let i;
-        for (i = 0; i < each_value_3.length; i += 1) {
-          const child_ctx = get_each_context_3(ctx2, each_value_3, i);
+        for (i = 0; i < each_value_4.length; i += 1) {
+          const child_ctx = get_each_context_4(ctx2, each_value_4, i);
           if (each_blocks_1[i]) {
             each_blocks_1[i].p(child_ctx, dirty);
           } else {
-            each_blocks_1[i] = create_each_block_3(child_ctx);
+            each_blocks_1[i] = create_each_block_4(child_ctx);
             each_blocks_1[i].c();
             each_blocks_1[i].m(select0, null);
           }
@@ -28825,43 +28603,43 @@ function create_if_block_14(ctx) {
         for (; i < each_blocks_1.length; i += 1) {
           each_blocks_1[i].d(1);
         }
-        each_blocks_1.length = each_value_3.length;
+        each_blocks_1.length = each_value_4.length;
       }
       if (dirty[1] & /*activeR2*/
-      2048 | dirty[2] & /*radioBaudOptions*/
-      16 && select0_value_value !== (select0_value_value = /*activeR2*/
-      (_a = ctx2[42]) == null ? void 0 : _a.rigtype)) {
+      16384 | dirty[2] & /*radioBaudOptions*/
+      128 && select0_value_value !== (select0_value_value = /*activeR2*/
+      (_a = ctx2[45]) == null ? void 0 : _a.rigtype)) {
         select_option(
           select0,
           /*activeR2*/
-          (_b = ctx2[42]) == null ? void 0 : _b.rigtype
+          (_b = ctx2[45]) == null ? void 0 : _b.rigtype
         );
       }
       if (dirty[1] & /*activeR2*/
-      2048 | dirty[2] & /*radioBaudOptions*/
-      16 && input0_value_value !== (input0_value_value = /*activeR2*/
-      (_c = ctx2[42]) == null ? void 0 : _c.icomaddress) && input0.value !== input0_value_value) {
+      16384 | dirty[2] & /*radioBaudOptions*/
+      128 && input0_value_value !== (input0_value_value = /*activeR2*/
+      (_c = ctx2[45]) == null ? void 0 : _c.icomaddress) && input0.value !== input0_value_value) {
         input0.value = input0_value_value;
       }
       if (dirty[1] & /*activeR2*/
-      2048 | dirty[2] & /*radioBaudOptions*/
-      16 && input1_checked_value !== (input1_checked_value = !!/*activeR2*/
-      ((_d = ctx2[42]) == null ? void 0 : _d.icomsimulateautoinfo))) {
+      16384 | dirty[2] & /*radioBaudOptions*/
+      128 && input1_checked_value !== (input1_checked_value = !!/*activeR2*/
+      ((_d = ctx2[45]) == null ? void 0 : _d.icomsimulateautoinfo))) {
         input1.checked = input1_checked_value;
       }
       if (dirty[2] & /*digitalOverVoiceOptions*/
-      262144) {
-        each_value_2 = ensure_array_like(
+      2097152) {
+        each_value_3 = ensure_array_like(
           /*digitalOverVoiceOptions*/
-          ctx2[80]
+          ctx2[83]
         );
         let i;
-        for (i = 0; i < each_value_2.length; i += 1) {
-          const child_ctx = get_each_context_2(ctx2, each_value_2, i);
+        for (i = 0; i < each_value_3.length; i += 1) {
+          const child_ctx = get_each_context_3(ctx2, each_value_3, i);
           if (each_blocks[i]) {
             each_blocks[i].p(child_ctx, dirty);
           } else {
-            each_blocks[i] = create_each_block_2(child_ctx);
+            each_blocks[i] = create_each_block_3(child_ctx);
             each_blocks[i].c();
             each_blocks[i].m(select1, null);
           }
@@ -28869,28 +28647,28 @@ function create_if_block_14(ctx) {
         for (; i < each_blocks.length; i += 1) {
           each_blocks[i].d(1);
         }
-        each_blocks.length = each_value_2.length;
+        each_blocks.length = each_value_3.length;
       }
       if (dirty[1] & /*activeR2*/
-      2048 | dirty[2] & /*radioBaudOptions*/
-      16 && select1_value_value !== (select1_value_value = /*activeR2*/
-      (_e = ctx2[42]) == null ? void 0 : _e.digitalovervoicerule)) {
+      16384 | dirty[2] & /*radioBaudOptions*/
+      128 && select1_value_value !== (select1_value_value = /*activeR2*/
+      (_e = ctx2[45]) == null ? void 0 : _e.digitalovervoicerule)) {
         select_option(
           select1,
           /*activeR2*/
-          (_f = ctx2[42]) == null ? void 0 : _f.digitalovervoicerule
+          (_f = ctx2[45]) == null ? void 0 : _f.digitalovervoicerule
         );
       }
       if (dirty[1] & /*activeR2*/
-      2048 | dirty[2] & /*radioBaudOptions*/
-      16 && input2_checked_value !== (input2_checked_value = !!/*activeR2*/
-      ((_g = ctx2[42]) == null ? void 0 : _g.usedecoderifconnected))) {
+      16384 | dirty[2] & /*radioBaudOptions*/
+      128 && input2_checked_value !== (input2_checked_value = !!/*activeR2*/
+      ((_g = ctx2[45]) == null ? void 0 : _g.usedecoderifconnected))) {
         input2.checked = input2_checked_value;
       }
       if (dirty[1] & /*activeR2*/
-      2048 | dirty[2] & /*radioBaudOptions*/
-      16 && input3_checked_value !== (input3_checked_value = !!/*activeR2*/
-      ((_h = ctx2[42]) == null ? void 0 : _h.dontinterfereusbcontrol))) {
+      16384 | dirty[2] & /*radioBaudOptions*/
+      128 && input3_checked_value !== (input3_checked_value = !!/*activeR2*/
+      ((_h = ctx2[45]) == null ? void 0 : _h.dontinterfereusbcontrol))) {
         input3.checked = input3_checked_value;
       }
     },
@@ -28905,11 +28683,11 @@ function create_if_block_14(ctx) {
     }
   };
 }
-function create_each_block_3(ctx) {
+function create_each_block_4(ctx) {
   let option;
   let t_value = (
     /*rig*/
-    ctx[496].name + ""
+    ctx[510].name + ""
   );
   let t;
   return {
@@ -28917,7 +28695,7 @@ function create_each_block_3(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*rig*/
-      ctx[496].id;
+      ctx[510].id;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -28932,11 +28710,11 @@ function create_each_block_3(ctx) {
     }
   };
 }
-function create_each_block_2(ctx) {
+function create_each_block_3(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -28944,7 +28722,7 @@ function create_each_block_2(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -28959,7 +28737,7 @@ function create_each_block_2(ctx) {
     }
   };
 }
-function create_if_block_13(ctx) {
+function create_if_block_14(ctx) {
   let div;
   let t_value = (
     /*radioStatus*/
@@ -28987,7 +28765,7 @@ function create_if_block_13(ctx) {
       ctx2[0]}:r2`].text + "")) set_data(t, t_value);
       if (dirty[0] & /*radioStatus, activeSerial*/
       257 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*radioStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*radioStatus*/
       ctx2[8][`${/*activeSerial*/
       ctx2[0]}:r2`].kind === "error" ? "error" : ""}`)) {
         attr(div, "class", div_class_value);
@@ -29000,6 +28778,623 @@ function create_if_block_13(ctx) {
     }
   };
 }
+function create_else_block_2(ctx) {
+  let t;
+  return {
+    c() {
+      t = text("mhuxd polls hamlib's rigctld for frequency and mode. Applications connect to rigctld\n            instead of the keyer's CAT port.");
+    },
+    m(target, anchor) {
+      insert(target, t, anchor);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(t);
+      }
+    }
+  };
+}
+function create_if_block_12(ctx) {
+  let t;
+  return {
+    c() {
+      t = text(`mhuxd reads the CAT traffic between your applications and the radio and sets the
+            keyer mode from it. Applications keep using the keyer's CAT port (e.g. /dev/mhuxd/cat1),
+            no rigctld needed. Icom CI-V radios for now. mhuxd doesn't query the radio itself yet:
+            changes are seen while an application polls, or through CI-V transceive. Keep the
+            keyer option "Use decoder if connected" off.`);
+    },
+    m(target, anchor) {
+      insert(target, t, anchor);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(t);
+      }
+    }
+  };
+}
+function create_else_block_1(ctx) {
+  var _a;
+  let div2;
+  let div0;
+  let t1;
+  let div1;
+  let input0;
+  let input0_value_value;
+  let t2;
+  let div5;
+  let div3;
+  let t4;
+  let div4;
+  let input1;
+  let input1_value_value;
+  let t5;
+  let div8;
+  let div6;
+  let t7;
+  let div7;
+  let input2;
+  let input2_value_value;
+  let t8;
+  let div11;
+  let div9;
+  let t10;
+  let div10;
+  let input3;
+  let input3_value_value;
+  let t11;
+  let div14;
+  let div12;
+  let t13;
+  let div13;
+  let input4;
+  let input4_value_value;
+  let t14;
+  let div17;
+  let div15;
+  let t16;
+  let div16;
+  let input5;
+  let input5_checked_value;
+  let t17;
+  let if_block_anchor;
+  let mounted;
+  let dispose;
+  function input_handler_3(...args) {
+    return (
+      /*input_handler_3*/
+      ctx[213](
+        /*rk*/
+        ctx[503],
+        ...args
+      )
+    );
+  }
+  function input_handler_4(...args) {
+    return (
+      /*input_handler_4*/
+      ctx[214](
+        /*rk*/
+        ctx[503],
+        ...args
+      )
+    );
+  }
+  function input_handler_5(...args) {
+    return (
+      /*input_handler_5*/
+      ctx[215](
+        /*rk*/
+        ctx[503],
+        ...args
+      )
+    );
+  }
+  function input_handler_6(...args) {
+    return (
+      /*input_handler_6*/
+      ctx[216](
+        /*rk*/
+        ctx[503],
+        ...args
+      )
+    );
+  }
+  function input_handler_7(...args) {
+    return (
+      /*input_handler_7*/
+      ctx[217](
+        /*rk*/
+        ctx[503],
+        ...args
+      )
+    );
+  }
+  function change_handler_27(...args) {
+    return (
+      /*change_handler_27*/
+      ctx[218](
+        /*rk*/
+        ctx[503],
+        ...args
+      )
+    );
+  }
+  let if_block = (
+    /*rs*/
+    ((_a = ctx[504]) == null ? void 0 : _a.auto_start) && create_if_block_11(ctx)
+  );
+  return {
+    c() {
+      var _a2, _b, _c, _d, _e, _f;
+      div2 = element("div");
+      div0 = element("div");
+      div0.textContent = "Host:";
+      t1 = space();
+      div1 = element("div");
+      input0 = element("input");
+      t2 = space();
+      div5 = element("div");
+      div3 = element("div");
+      div3.textContent = "Port:";
+      t4 = space();
+      div4 = element("div");
+      input1 = element("input");
+      t5 = space();
+      div8 = element("div");
+      div6 = element("div");
+      div6.textContent = "Connect Timeout (ms):";
+      t7 = space();
+      div7 = element("div");
+      input2 = element("input");
+      t8 = space();
+      div11 = element("div");
+      div9 = element("div");
+      div9.textContent = "I/O Timeout (ms):";
+      t10 = space();
+      div10 = element("div");
+      input3 = element("input");
+      t11 = space();
+      div14 = element("div");
+      div12 = element("div");
+      div12.textContent = "Poll Interval (ms):";
+      t13 = space();
+      div13 = element("div");
+      input4 = element("input");
+      t14 = space();
+      div17 = element("div");
+      div15 = element("div");
+      div15.textContent = "Auto-start rigctld:";
+      t16 = space();
+      div16 = element("div");
+      input5 = element("input");
+      t17 = space();
+      if (if_block) if_block.c();
+      if_block_anchor = empty();
+      attr(div0, "class", "label");
+      attr(input0, "class", "input");
+      attr(input0, "type", "text");
+      input0.value = input0_value_value = /*rs*/
+      ((_a2 = ctx[504]) == null ? void 0 : _a2.host) ?? "127.0.0.1";
+      attr(div1, "class", "value");
+      attr(div2, "class", "row");
+      attr(div3, "class", "label");
+      attr(input1, "class", "input");
+      attr(input1, "type", "number");
+      attr(input1, "min", "1");
+      input1.value = input1_value_value = /*rs*/
+      ((_b = ctx[504]) == null ? void 0 : _b.port) ?? /*defPort*/
+      ctx[505];
+      attr(div4, "class", "value");
+      attr(div5, "class", "row");
+      attr(div6, "class", "label");
+      attr(input2, "class", "input");
+      attr(input2, "type", "number");
+      attr(input2, "min", "100");
+      input2.value = input2_value_value = /*rs*/
+      ((_c = ctx[504]) == null ? void 0 : _c.connect_timeout_ms) ?? 1500;
+      attr(div7, "class", "value");
+      attr(div8, "class", "row");
+      attr(div9, "class", "label");
+      attr(input3, "class", "input");
+      attr(input3, "type", "number");
+      attr(input3, "min", "100");
+      input3.value = input3_value_value = /*rs*/
+      ((_d = ctx[504]) == null ? void 0 : _d.io_timeout_ms) ?? 1500;
+      attr(div10, "class", "value");
+      attr(div11, "class", "row");
+      attr(div12, "class", "label");
+      attr(input4, "class", "input");
+      attr(input4, "type", "number");
+      attr(input4, "min", "100");
+      input4.value = input4_value_value = /*rs*/
+      ((_e = ctx[504]) == null ? void 0 : _e.poll_ms) ?? 500;
+      attr(div13, "class", "value");
+      attr(div14, "class", "row");
+      attr(div15, "class", "label");
+      attr(input5, "type", "checkbox");
+      input5.checked = input5_checked_value = !!/*rs*/
+      ((_f = ctx[504]) == null ? void 0 : _f.auto_start);
+      attr(div16, "class", "value");
+      attr(div17, "class", "row");
+    },
+    m(target, anchor) {
+      insert(target, div2, anchor);
+      append(div2, div0);
+      append(div2, t1);
+      append(div2, div1);
+      append(div1, input0);
+      insert(target, t2, anchor);
+      insert(target, div5, anchor);
+      append(div5, div3);
+      append(div5, t4);
+      append(div5, div4);
+      append(div4, input1);
+      insert(target, t5, anchor);
+      insert(target, div8, anchor);
+      append(div8, div6);
+      append(div8, t7);
+      append(div8, div7);
+      append(div7, input2);
+      insert(target, t8, anchor);
+      insert(target, div11, anchor);
+      append(div11, div9);
+      append(div11, t10);
+      append(div11, div10);
+      append(div10, input3);
+      insert(target, t11, anchor);
+      insert(target, div14, anchor);
+      append(div14, div12);
+      append(div14, t13);
+      append(div14, div13);
+      append(div13, input4);
+      insert(target, t14, anchor);
+      insert(target, div17, anchor);
+      append(div17, div15);
+      append(div17, t16);
+      append(div17, div16);
+      append(div16, input5);
+      insert(target, t17, anchor);
+      if (if_block) if_block.m(target, anchor);
+      insert(target, if_block_anchor, anchor);
+      if (!mounted) {
+        dispose = [
+          listen(input0, "input", input_handler_3),
+          listen(input1, "input", input_handler_4),
+          listen(input2, "input", input_handler_5),
+          listen(input3, "input", input_handler_6),
+          listen(input4, "input", input_handler_7),
+          listen(input5, "change", change_handler_27)
+        ];
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      var _a2, _b, _c, _d, _e, _f, _g;
+      ctx = new_ctx;
+      if (dirty[1] & /*activeRigModeSync, rigRadios*/
+      1536 && input0_value_value !== (input0_value_value = /*rs*/
+      ((_a2 = ctx[504]) == null ? void 0 : _a2.host) ?? "127.0.0.1") && input0.value !== input0_value_value) {
+        input0.value = input0_value_value;
+      }
+      if (dirty[1] & /*activeRigModeSync, rigRadios*/
+      1536 && input1_value_value !== (input1_value_value = /*rs*/
+      ((_b = ctx[504]) == null ? void 0 : _b.port) ?? /*defPort*/
+      ctx[505]) && input1.value !== input1_value_value) {
+        input1.value = input1_value_value;
+      }
+      if (dirty[1] & /*activeRigModeSync, rigRadios*/
+      1536 && input2_value_value !== (input2_value_value = /*rs*/
+      ((_c = ctx[504]) == null ? void 0 : _c.connect_timeout_ms) ?? 1500) && input2.value !== input2_value_value) {
+        input2.value = input2_value_value;
+      }
+      if (dirty[1] & /*activeRigModeSync, rigRadios*/
+      1536 && input3_value_value !== (input3_value_value = /*rs*/
+      ((_d = ctx[504]) == null ? void 0 : _d.io_timeout_ms) ?? 1500) && input3.value !== input3_value_value) {
+        input3.value = input3_value_value;
+      }
+      if (dirty[1] & /*activeRigModeSync, rigRadios*/
+      1536 && input4_value_value !== (input4_value_value = /*rs*/
+      ((_e = ctx[504]) == null ? void 0 : _e.poll_ms) ?? 500) && input4.value !== input4_value_value) {
+        input4.value = input4_value_value;
+      }
+      if (dirty[1] & /*activeRigModeSync, rigRadios*/
+      1536 && input5_checked_value !== (input5_checked_value = !!/*rs*/
+      ((_f = ctx[504]) == null ? void 0 : _f.auto_start))) {
+        input5.checked = input5_checked_value;
+      }
+      if (
+        /*rs*/
+        (_g = ctx[504]) == null ? void 0 : _g.auto_start
+      ) {
+        if (if_block) {
+          if_block.p(ctx, dirty);
+        } else {
+          if_block = create_if_block_11(ctx);
+          if_block.c();
+          if_block.m(if_block_anchor.parentNode, if_block_anchor);
+        }
+      } else if (if_block) {
+        if_block.d(1);
+        if_block = null;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div2);
+        detach(t2);
+        detach(div5);
+        detach(t5);
+        detach(div8);
+        detach(t8);
+        detach(div11);
+        detach(t11);
+        detach(div14);
+        detach(t14);
+        detach(div17);
+        detach(t17);
+        detach(if_block_anchor);
+      }
+      if (if_block) if_block.d(detaching);
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_if_block_9(ctx) {
+  var _a;
+  let div2;
+  let div0;
+  let t1;
+  let div1;
+  let select;
+  let option0;
+  let option1;
+  let select_value_value;
+  let t4;
+  let div5;
+  let div3;
+  let t6;
+  let div4;
+  let input0;
+  let input0_value_value;
+  let t7;
+  let div8;
+  let div6;
+  let t9;
+  let div7;
+  let input1;
+  let input1_checked_value;
+  let t10;
+  let span;
+  let t11;
+  let t12;
+  let t13;
+  let t14_value = (
+    /*rk*/
+    ctx[503] + ""
+  );
+  let t14;
+  let t15;
+  let t16;
+  let if_block_anchor;
+  let mounted;
+  let dispose;
+  function change_handler_25(...args) {
+    return (
+      /*change_handler_25*/
+      ctx[209](
+        /*rk*/
+        ctx[503],
+        ...args
+      )
+    );
+  }
+  function input_handler_2(...args) {
+    return (
+      /*input_handler_2*/
+      ctx[210](
+        /*rk*/
+        ctx[503],
+        ...args
+      )
+    );
+  }
+  function change_handler_26(...args) {
+    return (
+      /*change_handler_26*/
+      ctx[211](
+        /*rk*/
+        ctx[503],
+        ...args
+      )
+    );
+  }
+  let if_block = (
+    /*rs*/
+    (((_a = ctx[504]) == null ? void 0 : _a.monitor) || /*activeCatMonitor*/
+    ctx[38][
+      /*i*/
+      ctx[507]
+    ].length) && create_if_block_10(ctx)
+  );
+  return {
+    c() {
+      var _a2, _b;
+      div2 = element("div");
+      div0 = element("div");
+      div0.textContent = "Protocol:";
+      t1 = space();
+      div1 = element("div");
+      select = element("select");
+      option0 = element("option");
+      option0.textContent = "auto (from the CAT channel's radio type)";
+      option1 = element("option");
+      option1.textContent = "Icom CI-V";
+      t4 = space();
+      div5 = element("div");
+      div3 = element("div");
+      div3.textContent = "CI-V address (hex):";
+      t6 = space();
+      div4 = element("div");
+      input0 = element("input");
+      t7 = space();
+      div8 = element("div");
+      div6 = element("div");
+      div6.textContent = "CAT monitor:";
+      t9 = space();
+      div7 = element("div");
+      input1 = element("input");
+      t10 = space();
+      span = element("span");
+      t11 = text("also written to cat-");
+      t12 = text(
+        /*activeSerial*/
+        ctx[0]
+      );
+      t13 = text("-");
+      t14 = text(t14_value);
+      t15 = text(".trace in mhuxd's log directory");
+      t16 = space();
+      if (if_block) if_block.c();
+      if_block_anchor = empty();
+      attr(div0, "class", "label");
+      option0.__value = "auto";
+      set_input_value(option0, option0.__value);
+      option1.__value = "civ";
+      set_input_value(option1, option1.__value);
+      attr(select, "class", "select");
+      attr(div1, "class", "value");
+      attr(div2, "class", "row");
+      attr(div3, "class", "label");
+      attr(input0, "class", "input");
+      attr(input0, "type", "text");
+      attr(input0, "placeholder", "from CAT channel");
+      input0.value = input0_value_value = /*rs*/
+      ((_a2 = ctx[504]) == null ? void 0 : _a2.civ_address) ?? "";
+      attr(div4, "class", "value");
+      attr(div5, "class", "row");
+      attr(div6, "class", "label");
+      attr(input1, "type", "checkbox");
+      input1.checked = input1_checked_value = !!/*rs*/
+      ((_b = ctx[504]) == null ? void 0 : _b.monitor);
+      attr(span, "class", "placeholder");
+      attr(div7, "class", "value");
+      attr(div8, "class", "row");
+    },
+    m(target, anchor) {
+      var _a2;
+      insert(target, div2, anchor);
+      append(div2, div0);
+      append(div2, t1);
+      append(div2, div1);
+      append(div1, select);
+      append(select, option0);
+      append(select, option1);
+      select_option(
+        select,
+        /*rs*/
+        ((_a2 = ctx[504]) == null ? void 0 : _a2.protocol) ?? "auto"
+      );
+      insert(target, t4, anchor);
+      insert(target, div5, anchor);
+      append(div5, div3);
+      append(div5, t6);
+      append(div5, div4);
+      append(div4, input0);
+      insert(target, t7, anchor);
+      insert(target, div8, anchor);
+      append(div8, div6);
+      append(div8, t9);
+      append(div8, div7);
+      append(div7, input1);
+      append(div7, t10);
+      append(div7, span);
+      append(span, t11);
+      append(span, t12);
+      append(span, t13);
+      append(span, t14);
+      append(span, t15);
+      insert(target, t16, anchor);
+      if (if_block) if_block.m(target, anchor);
+      insert(target, if_block_anchor, anchor);
+      if (!mounted) {
+        dispose = [
+          listen(select, "change", change_handler_25),
+          listen(input0, "input", input_handler_2),
+          listen(input1, "change", change_handler_26)
+        ];
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      var _a2, _b, _c, _d, _e;
+      ctx = new_ctx;
+      if (dirty[1] & /*activeRigModeSync, rigRadios*/
+      1536 && select_value_value !== (select_value_value = /*rs*/
+      ((_a2 = ctx[504]) == null ? void 0 : _a2.protocol) ?? "auto")) {
+        select_option(
+          select,
+          /*rs*/
+          ((_b = ctx[504]) == null ? void 0 : _b.protocol) ?? "auto"
+        );
+      }
+      if (dirty[1] & /*activeRigModeSync, rigRadios*/
+      1536 && input0_value_value !== (input0_value_value = /*rs*/
+      ((_c = ctx[504]) == null ? void 0 : _c.civ_address) ?? "") && input0.value !== input0_value_value) {
+        input0.value = input0_value_value;
+      }
+      if (dirty[1] & /*activeRigModeSync, rigRadios*/
+      1536 && input1_checked_value !== (input1_checked_value = !!/*rs*/
+      ((_d = ctx[504]) == null ? void 0 : _d.monitor))) {
+        input1.checked = input1_checked_value;
+      }
+      if (dirty[0] & /*activeSerial*/
+      1) set_data(
+        t12,
+        /*activeSerial*/
+        ctx[0]
+      );
+      if (dirty[1] & /*rigRadios*/
+      512 && t14_value !== (t14_value = /*rk*/
+      ctx[503] + "")) set_data(t14, t14_value);
+      if (
+        /*rs*/
+        ((_e = ctx[504]) == null ? void 0 : _e.monitor) || /*activeCatMonitor*/
+        ctx[38][
+          /*i*/
+          ctx[507]
+        ].length
+      ) {
+        if (if_block) {
+          if_block.p(ctx, dirty);
+        } else {
+          if_block = create_if_block_10(ctx);
+          if_block.c();
+          if_block.m(if_block_anchor.parentNode, if_block_anchor);
+        }
+      } else if (if_block) {
+        if_block.d(1);
+        if_block = null;
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div2);
+        detach(t4);
+        detach(div5);
+        detach(t7);
+        detach(div8);
+        detach(t16);
+        detach(if_block_anchor);
+      }
+      if (if_block) if_block.d(detaching);
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
 function create_if_block_11(ctx) {
   let div2;
   let div0;
@@ -29009,9 +29404,19 @@ function create_if_block_11(ctx) {
   let input_value_value;
   let mounted;
   let dispose;
+  function input_handler_8(...args) {
+    return (
+      /*input_handler_8*/
+      ctx[219](
+        /*rk*/
+        ctx[503],
+        ...args
+      )
+    );
+  }
   return {
     c() {
-      var _a, _b;
+      var _a;
       div2 = element("div");
       div0 = element("div");
       div0.textContent = "rigctld options:";
@@ -29022,8 +29427,8 @@ function create_if_block_11(ctx) {
       attr(input, "class", "input");
       attr(input, "type", "text");
       attr(input, "placeholder", "-m 361 -r /dev/ttyUSB0");
-      input.value = input_value_value = /*activeRigModeSync*/
-      ((_b = (_a = ctx[38]) == null ? void 0 : _a.r1) == null ? void 0 : _b.rigctld_options) ?? "";
+      input.value = input_value_value = /*rs*/
+      ((_a = ctx[504]) == null ? void 0 : _a.rigctld_options) ?? "";
       attr(div1, "class", "value");
       attr(div2, "class", "row");
     },
@@ -29034,20 +29439,16 @@ function create_if_block_11(ctx) {
       append(div2, div1);
       append(div1, input);
       if (!mounted) {
-        dispose = listen(
-          input,
-          "input",
-          /*input_handler_7*/
-          ctx[207]
-        );
+        dispose = listen(input, "input", input_handler_8);
         mounted = true;
       }
     },
-    p(ctx2, dirty) {
-      var _a, _b;
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input_value_value !== (input_value_value = /*activeRigModeSync*/
-      ((_b = (_a = ctx2[38]) == null ? void 0 : _a.r1) == null ? void 0 : _b.rigctld_options) ?? "") && input.value !== input_value_value) {
+    p(new_ctx, dirty) {
+      var _a;
+      ctx = new_ctx;
+      if (dirty[1] & /*activeRigModeSync, rigRadios*/
+      1536 && input_value_value !== (input_value_value = /*rs*/
+      ((_a = ctx[504]) == null ? void 0 : _a.rigctld_options) ?? "") && input.value !== input_value_value) {
         input.value = input_value_value;
       }
     },
@@ -29060,391 +29461,270 @@ function create_if_block_11(ctx) {
     }
   };
 }
-function create_if_block_9(ctx) {
-  var _a, _b;
-  let div22;
-  let div0;
-  let t1;
-  let div3;
-  let div1;
-  let t3;
-  let div2;
-  let input0;
-  let input0_checked_value;
-  let t4;
-  let div6;
-  let div4;
-  let t6;
-  let div5;
-  let input1;
-  let input1_value_value;
-  let t7;
-  let div9;
-  let div7;
-  let t9;
-  let div8;
-  let input2;
-  let input2_value_value;
-  let t10;
-  let div12;
-  let div10;
-  let t12;
-  let div11;
-  let input3;
-  let input3_value_value;
-  let t13;
-  let div15;
-  let div13;
-  let t15;
-  let div14;
-  let input4;
-  let input4_value_value;
-  let t16;
-  let div18;
-  let div16;
-  let t18;
-  let div17;
-  let input5;
-  let input5_value_value;
-  let t19;
-  let div21;
-  let div19;
-  let t21;
-  let div20;
-  let input6;
-  let input6_checked_value;
-  let t22;
-  let mounted;
-  let dispose;
-  let if_block = (
-    /*activeRigModeSync*/
-    ((_b = (_a = ctx[38]) == null ? void 0 : _a.r2) == null ? void 0 : _b.auto_start) && create_if_block_10(ctx)
-  );
-  return {
-    c() {
-      var _a2, _b2, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n;
-      div22 = element("div");
-      div0 = element("div");
-      div0.textContent = "Radio 2 Endpoint";
-      t1 = space();
-      div3 = element("div");
-      div1 = element("div");
-      div1.textContent = "Enabled:";
-      t3 = space();
-      div2 = element("div");
-      input0 = element("input");
-      t4 = space();
-      div6 = element("div");
-      div4 = element("div");
-      div4.textContent = "Host:";
-      t6 = space();
-      div5 = element("div");
-      input1 = element("input");
-      t7 = space();
-      div9 = element("div");
-      div7 = element("div");
-      div7.textContent = "Port:";
-      t9 = space();
-      div8 = element("div");
-      input2 = element("input");
-      t10 = space();
-      div12 = element("div");
-      div10 = element("div");
-      div10.textContent = "Connect Timeout (ms):";
-      t12 = space();
-      div11 = element("div");
-      input3 = element("input");
-      t13 = space();
-      div15 = element("div");
-      div13 = element("div");
-      div13.textContent = "I/O Timeout (ms):";
-      t15 = space();
-      div14 = element("div");
-      input4 = element("input");
-      t16 = space();
-      div18 = element("div");
-      div16 = element("div");
-      div16.textContent = "Poll Interval (ms):";
-      t18 = space();
-      div17 = element("div");
-      input5 = element("input");
-      t19 = space();
-      div21 = element("div");
-      div19 = element("div");
-      div19.textContent = "Auto-start rigctld:";
-      t21 = space();
-      div20 = element("div");
-      input6 = element("input");
-      t22 = space();
-      if (if_block) if_block.c();
-      attr(div0, "class", "section-subtitle");
-      attr(div1, "class", "label");
-      attr(input0, "type", "checkbox");
-      input0.checked = input0_checked_value = !!/*activeRigModeSync*/
-      ((_b2 = (_a2 = ctx[38]) == null ? void 0 : _a2.r2) == null ? void 0 : _b2.enabled);
-      attr(div2, "class", "value");
-      attr(div3, "class", "row");
-      attr(div4, "class", "label");
-      attr(input1, "class", "input");
-      attr(input1, "type", "text");
-      input1.value = input1_value_value = /*activeRigModeSync*/
-      ((_d = (_c = ctx[38]) == null ? void 0 : _c.r2) == null ? void 0 : _d.host) ?? "127.0.0.1";
-      attr(div5, "class", "value");
-      attr(div6, "class", "row");
-      attr(div7, "class", "label");
-      attr(input2, "class", "input");
-      attr(input2, "type", "number");
-      attr(input2, "min", "1");
-      input2.value = input2_value_value = /*activeRigModeSync*/
-      ((_f = (_e = ctx[38]) == null ? void 0 : _e.r2) == null ? void 0 : _f.port) ?? 4533;
-      attr(div8, "class", "value");
-      attr(div9, "class", "row");
-      attr(div10, "class", "label");
-      attr(input3, "class", "input");
-      attr(input3, "type", "number");
-      attr(input3, "min", "100");
-      input3.value = input3_value_value = /*activeRigModeSync*/
-      ((_h = (_g = ctx[38]) == null ? void 0 : _g.r2) == null ? void 0 : _h.connect_timeout_ms) ?? 1500;
-      attr(div11, "class", "value");
-      attr(div12, "class", "row");
-      attr(div13, "class", "label");
-      attr(input4, "class", "input");
-      attr(input4, "type", "number");
-      attr(input4, "min", "100");
-      input4.value = input4_value_value = /*activeRigModeSync*/
-      ((_j = (_i = ctx[38]) == null ? void 0 : _i.r2) == null ? void 0 : _j.io_timeout_ms) ?? 1500;
-      attr(div14, "class", "value");
-      attr(div15, "class", "row");
-      attr(div16, "class", "label");
-      attr(input5, "class", "input");
-      attr(input5, "type", "number");
-      attr(input5, "min", "100");
-      input5.value = input5_value_value = /*activeRigModeSync*/
-      ((_l = (_k = ctx[38]) == null ? void 0 : _k.r2) == null ? void 0 : _l.poll_ms) ?? 500;
-      attr(div17, "class", "value");
-      attr(div18, "class", "row");
-      attr(div19, "class", "label");
-      attr(input6, "type", "checkbox");
-      input6.checked = input6_checked_value = !!/*activeRigModeSync*/
-      ((_n = (_m = ctx[38]) == null ? void 0 : _m.r2) == null ? void 0 : _n.auto_start);
-      attr(div20, "class", "value");
-      attr(div21, "class", "row");
-      attr(div22, "class", "panel");
-      set_style(div22, "margin-top", "12px");
-    },
-    m(target, anchor) {
-      insert(target, div22, anchor);
-      append(div22, div0);
-      append(div22, t1);
-      append(div22, div3);
-      append(div3, div1);
-      append(div3, t3);
-      append(div3, div2);
-      append(div2, input0);
-      append(div22, t4);
-      append(div22, div6);
-      append(div6, div4);
-      append(div6, t6);
-      append(div6, div5);
-      append(div5, input1);
-      append(div22, t7);
-      append(div22, div9);
-      append(div9, div7);
-      append(div9, t9);
-      append(div9, div8);
-      append(div8, input2);
-      append(div22, t10);
-      append(div22, div12);
-      append(div12, div10);
-      append(div12, t12);
-      append(div12, div11);
-      append(div11, input3);
-      append(div22, t13);
-      append(div22, div15);
-      append(div15, div13);
-      append(div15, t15);
-      append(div15, div14);
-      append(div14, input4);
-      append(div22, t16);
-      append(div22, div18);
-      append(div18, div16);
-      append(div18, t18);
-      append(div18, div17);
-      append(div17, input5);
-      append(div22, t19);
-      append(div22, div21);
-      append(div21, div19);
-      append(div21, t21);
-      append(div21, div20);
-      append(div20, input6);
-      append(div22, t22);
-      if (if_block) if_block.m(div22, null);
-      if (!mounted) {
-        dispose = [
-          listen(
-            input0,
-            "change",
-            /*change_handler_26*/
-            ctx[208]
-          ),
-          listen(
-            input1,
-            "input",
-            /*input_handler_8*/
-            ctx[209]
-          ),
-          listen(
-            input2,
-            "input",
-            /*input_handler_9*/
-            ctx[210]
-          ),
-          listen(
-            input3,
-            "input",
-            /*input_handler_10*/
-            ctx[211]
-          ),
-          listen(
-            input4,
-            "input",
-            /*input_handler_11*/
-            ctx[212]
-          ),
-          listen(
-            input5,
-            "input",
-            /*input_handler_12*/
-            ctx[213]
-          ),
-          listen(
-            input6,
-            "change",
-            /*change_handler_27*/
-            ctx[214]
-          )
-        ];
-        mounted = true;
-      }
-    },
-    p(ctx2, dirty) {
-      var _a2, _b2, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input0_checked_value !== (input0_checked_value = !!/*activeRigModeSync*/
-      ((_b2 = (_a2 = ctx2[38]) == null ? void 0 : _a2.r2) == null ? void 0 : _b2.enabled))) {
-        input0.checked = input0_checked_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input1_value_value !== (input1_value_value = /*activeRigModeSync*/
-      ((_d = (_c = ctx2[38]) == null ? void 0 : _c.r2) == null ? void 0 : _d.host) ?? "127.0.0.1") && input1.value !== input1_value_value) {
-        input1.value = input1_value_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input2_value_value !== (input2_value_value = /*activeRigModeSync*/
-      ((_f = (_e = ctx2[38]) == null ? void 0 : _e.r2) == null ? void 0 : _f.port) ?? 4533) && input2.value !== input2_value_value) {
-        input2.value = input2_value_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input3_value_value !== (input3_value_value = /*activeRigModeSync*/
-      ((_h = (_g = ctx2[38]) == null ? void 0 : _g.r2) == null ? void 0 : _h.connect_timeout_ms) ?? 1500) && input3.value !== input3_value_value) {
-        input3.value = input3_value_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input4_value_value !== (input4_value_value = /*activeRigModeSync*/
-      ((_j = (_i = ctx2[38]) == null ? void 0 : _i.r2) == null ? void 0 : _j.io_timeout_ms) ?? 1500) && input4.value !== input4_value_value) {
-        input4.value = input4_value_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input5_value_value !== (input5_value_value = /*activeRigModeSync*/
-      ((_l = (_k = ctx2[38]) == null ? void 0 : _k.r2) == null ? void 0 : _l.poll_ms) ?? 500) && input5.value !== input5_value_value) {
-        input5.value = input5_value_value;
-      }
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input6_checked_value !== (input6_checked_value = !!/*activeRigModeSync*/
-      ((_n = (_m = ctx2[38]) == null ? void 0 : _m.r2) == null ? void 0 : _n.auto_start))) {
-        input6.checked = input6_checked_value;
-      }
-      if (
-        /*activeRigModeSync*/
-        (_p = (_o = ctx2[38]) == null ? void 0 : _o.r2) == null ? void 0 : _p.auto_start
-      ) {
-        if (if_block) {
-          if_block.p(ctx2, dirty);
-        } else {
-          if_block = create_if_block_10(ctx2);
-          if_block.c();
-          if_block.m(div22, null);
-        }
-      } else if (if_block) {
-        if_block.d(1);
-        if_block = null;
-      }
-    },
-    d(detaching) {
-      if (detaching) {
-        detach(div22);
-      }
-      if (if_block) if_block.d();
-      mounted = false;
-      run_all(dispose);
-    }
-  };
-}
 function create_if_block_10(ctx) {
   let div2;
   let div0;
-  let t1;
+  let t0;
   let div1;
-  let input;
-  let input_value_value;
+  let pre;
+  let t1_value = (
+    /*activeCatMonitor*/
+    (ctx[38][
+      /*i*/
+      ctx[507]
+    ].join("\n") || "waiting for CAT traffic …") + ""
+  );
+  let t1;
+  let scrollToEnd_action;
+  let t2;
+  let button;
   let mounted;
   let dispose;
+  function click_handler_2() {
+    return (
+      /*click_handler_2*/
+      ctx[212](
+        /*i*/
+        ctx[507]
+      )
+    );
+  }
   return {
     c() {
-      var _a, _b;
       div2 = element("div");
       div0 = element("div");
-      div0.textContent = "rigctld options:";
-      t1 = space();
+      t0 = space();
       div1 = element("div");
-      input = element("input");
+      pre = element("pre");
+      t1 = text(t1_value);
+      t2 = space();
+      button = element("button");
+      button.textContent = "Clear";
       attr(div0, "class", "label");
-      attr(input, "class", "input");
-      attr(input, "type", "text");
-      attr(input, "placeholder", "-m 361 -r /dev/ttyUSB0");
-      input.value = input_value_value = /*activeRigModeSync*/
-      ((_b = (_a = ctx[38]) == null ? void 0 : _a.r2) == null ? void 0 : _b.rigctld_options) ?? "";
+      attr(pre, "class", "cat-monitor");
+      attr(button, "class", "btn");
+      attr(button, "type", "button");
       attr(div1, "class", "value");
       attr(div2, "class", "row");
     },
     m(target, anchor) {
       insert(target, div2, anchor);
       append(div2, div0);
-      append(div2, t1);
+      append(div2, t0);
       append(div2, div1);
-      append(div1, input);
+      append(div1, pre);
+      append(pre, t1);
+      append(div1, t2);
+      append(div1, button);
       if (!mounted) {
-        dispose = listen(
-          input,
-          "input",
-          /*input_handler_13*/
-          ctx[215]
-        );
+        dispose = [
+          action_destroyer(scrollToEnd_action = /*scrollToEnd*/
+          ctx[96].call(
+            null,
+            pre,
+            /*activeCatMonitor*/
+            ctx[38][
+              /*i*/
+              ctx[507]
+            ].length
+          )),
+          listen(button, "click", click_handler_2)
+        ];
         mounted = true;
       }
     },
-    p(ctx2, dirty) {
-      var _a, _b;
-      if (dirty[1] & /*activeRigModeSync*/
-      128 && input_value_value !== (input_value_value = /*activeRigModeSync*/
-      ((_b = (_a = ctx2[38]) == null ? void 0 : _a.r2) == null ? void 0 : _b.rigctld_options) ?? "") && input.value !== input_value_value) {
-        input.value = input_value_value;
-      }
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (dirty[1] & /*activeCatMonitor, rigRadios*/
+      640 && t1_value !== (t1_value = /*activeCatMonitor*/
+      (ctx[38][
+        /*i*/
+        ctx[507]
+      ].join("\n") || "waiting for CAT traffic …") + "")) set_data(t1, t1_value);
+      if (scrollToEnd_action && is_function(scrollToEnd_action.update) && dirty[1] & /*activeCatMonitor, rigRadios*/
+      640) scrollToEnd_action.update.call(
+        null,
+        /*activeCatMonitor*/
+        ctx[38][
+          /*i*/
+          ctx[507]
+        ].length
+      );
     },
     d(detaching) {
       if (detaching) {
         detach(div2);
       }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_each_block_2(key_1, ctx) {
+  var _a;
+  let div7;
+  let div0;
+  let t0;
+  let t1_value = (
+    /*i*/
+    ctx[507] + 1 + ""
+  );
+  let t1;
+  let t2_value = (
+    /*activeRigModeSync*/
+    ((_a = ctx[41]) == null ? void 0 : _a.backend) === "native" ? "" : " Endpoint"
+  );
+  let t2;
+  let t3;
+  let div3;
+  let div1;
+  let t5;
+  let div2;
+  let input;
+  let input_checked_value;
+  let t6;
+  let div6;
+  let div4;
+  let t8;
+  let div5;
+  let t9_value = (
+    /*radioInfoText*/
+    ctx[95](
+      /*activeRadioInfo*/
+      ctx[39][
+        /*i*/
+        ctx[507]
+      ]
+    ) + ""
+  );
+  let t9;
+  let t10;
+  let mounted;
+  let dispose;
+  function change_handler_24(...args) {
+    return (
+      /*change_handler_24*/
+      ctx[208](
+        /*rk*/
+        ctx[503],
+        ...args
+      )
+    );
+  }
+  function select_block_type_3(ctx2, dirty) {
+    var _a2;
+    if (
+      /*activeRigModeSync*/
+      ((_a2 = ctx2[41]) == null ? void 0 : _a2.backend) === "native"
+    ) return create_if_block_9;
+    return create_else_block_1;
+  }
+  let current_block_type = select_block_type_3(ctx);
+  let if_block = current_block_type(ctx);
+  return {
+    key: key_1,
+    first: null,
+    c() {
+      var _a2;
+      div7 = element("div");
+      div0 = element("div");
+      t0 = text("Radio ");
+      t1 = text(t1_value);
+      t2 = text(t2_value);
+      t3 = space();
+      div3 = element("div");
+      div1 = element("div");
+      div1.textContent = "Enabled:";
+      t5 = space();
+      div2 = element("div");
+      input = element("input");
+      t6 = space();
+      div6 = element("div");
+      div4 = element("div");
+      div4.textContent = "Radio state:";
+      t8 = space();
+      div5 = element("div");
+      t9 = text(t9_value);
+      t10 = space();
+      if_block.c();
+      attr(div0, "class", "section-subtitle");
+      attr(div1, "class", "label");
+      attr(input, "type", "checkbox");
+      input.checked = input_checked_value = !!/*rs*/
+      ((_a2 = ctx[504]) == null ? void 0 : _a2.enabled);
+      attr(div2, "class", "value");
+      attr(div3, "class", "row");
+      attr(div4, "class", "label");
+      attr(div5, "class", "value");
+      attr(div6, "class", "row");
+      attr(div7, "class", "panel");
+      set_style(div7, "margin-top", "12px");
+      this.first = div7;
+    },
+    m(target, anchor) {
+      insert(target, div7, anchor);
+      append(div7, div0);
+      append(div0, t0);
+      append(div0, t1);
+      append(div0, t2);
+      append(div7, t3);
+      append(div7, div3);
+      append(div3, div1);
+      append(div3, t5);
+      append(div3, div2);
+      append(div2, input);
+      append(div7, t6);
+      append(div7, div6);
+      append(div6, div4);
+      append(div6, t8);
+      append(div6, div5);
+      append(div5, t9);
+      append(div7, t10);
+      if_block.m(div7, null);
+      if (!mounted) {
+        dispose = listen(input, "change", change_handler_24);
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      var _a2, _b;
+      ctx = new_ctx;
+      if (dirty[1] & /*rigRadios*/
+      512 && t1_value !== (t1_value = /*i*/
+      ctx[507] + 1 + "")) set_data(t1, t1_value);
+      if (dirty[1] & /*activeRigModeSync*/
+      1024 && t2_value !== (t2_value = /*activeRigModeSync*/
+      ((_a2 = ctx[41]) == null ? void 0 : _a2.backend) === "native" ? "" : " Endpoint")) set_data(t2, t2_value);
+      if (dirty[1] & /*activeRigModeSync, rigRadios*/
+      1536 && input_checked_value !== (input_checked_value = !!/*rs*/
+      ((_b = ctx[504]) == null ? void 0 : _b.enabled))) {
+        input.checked = input_checked_value;
+      }
+      if (dirty[1] & /*activeRadioInfo, rigRadios*/
+      768 && t9_value !== (t9_value = /*radioInfoText*/
+      ctx[95](
+        /*activeRadioInfo*/
+        ctx[39][
+          /*i*/
+          ctx[507]
+        ]
+      ) + "")) set_data(t9, t9_value);
+      if (current_block_type === (current_block_type = select_block_type_3(ctx)) && if_block) {
+        if_block.p(ctx, dirty);
+      } else {
+        if_block.d(1);
+        if_block = current_block_type(ctx);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div7, null);
+        }
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div7);
+      }
+      if_block.d();
       mounted = false;
       dispose();
     }
@@ -29484,7 +29764,7 @@ function create_if_block_8(ctx) {
       ].text + "")) set_data(t, t_value);
       if (dirty[0] & /*rigModeSyncStatus, activeSerial*/
       513 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*rigModeSyncStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*rigModeSyncStatus*/
       ctx2[9][
         /*activeSerial*/
         ctx2[0]
@@ -29537,11 +29817,11 @@ function create_if_block_1$1(ctx) {
   let dispose;
   let if_block0 = (
     /*hasFollowTx*/
-    ctx[61] && create_if_block_6(ctx)
+    ctx[64] && create_if_block_6(ctx)
   );
   let each_value_1 = ensure_array_like(
     /*keyerModeOptions*/
-    ctx[65]
+    ctx[68]
   );
   let each_blocks = [];
   for (let i = 0; i < each_value_1.length; i += 1) {
@@ -29609,7 +29889,7 @@ function create_if_block_1$1(ctx) {
       select_option(
         select,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           "r1KeyerMode"
@@ -29625,7 +29905,7 @@ function create_if_block_1$1(ctx) {
           select,
           "change",
           /*change_handler_1*/
-          ctx[173]
+          ctx[181]
         );
         mounted = true;
       }
@@ -29633,7 +29913,7 @@ function create_if_block_1$1(ctx) {
     p(ctx2, dirty) {
       if (
         /*hasFollowTx*/
-        ctx2[61]
+        ctx2[64]
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
@@ -29647,10 +29927,10 @@ function create_if_block_1$1(ctx) {
         if_block0 = null;
       }
       if (dirty[2] & /*keyerModeOptions*/
-      8) {
+      64) {
         each_value_1 = ensure_array_like(
           /*keyerModeOptions*/
-          ctx2[65]
+          ctx2[68]
         );
         let i;
         for (i = 0; i < each_value_1.length; i += 1) {
@@ -29670,8 +29950,8 @@ function create_if_block_1$1(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select_value_value !== (select_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && select_value_value !== (select_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1KeyerMode"
@@ -29679,7 +29959,7 @@ function create_if_block_1$1(ctx) {
         select_option(
           select,
           /*keyerParam*/
-          ctx2[105](
+          ctx2[111](
             /*activeSerial*/
             ctx2[0],
             "r1KeyerMode"
@@ -29755,7 +30035,7 @@ function create_if_block_6(ctx) {
       attr(div0, "class", "label");
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r1FollowTxMode"
@@ -29774,7 +30054,7 @@ function create_if_block_6(ctx) {
           input,
           "change",
           /*change_handler*/
-          ctx[172]
+          ctx[180]
         );
         mounted = true;
       }
@@ -29782,8 +30062,8 @@ function create_if_block_6(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r1FollowTxMode"
@@ -29804,7 +30084,7 @@ function create_each_block_1(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -29812,7 +30092,7 @@ function create_each_block_1(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -29861,7 +30141,7 @@ function create_if_block_5$1(ctx) {
       ].text + "")) set_data(t, t_value);
       if (dirty[0] & /*keyerStatus, activeSerial*/
       129 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
       ctx2[7][
         /*activeSerial*/
         ctx2[0]
@@ -29893,11 +30173,11 @@ function create_if_block_2$1(ctx) {
   let dispose;
   let if_block0 = (
     /*hasFollowTx*/
-    ctx[61] && create_if_block_4$1(ctx)
+    ctx[64] && create_if_block_4$1(ctx)
   );
   let each_value = ensure_array_like(
     /*keyerModeOptions*/
-    ctx[65]
+    ctx[68]
   );
   let each_blocks = [];
   for (let i = 0; i < each_value.length; i += 1) {
@@ -29958,7 +30238,7 @@ function create_if_block_2$1(ctx) {
       select_option(
         select,
         /*keyerParam*/
-        ctx[105](
+        ctx[111](
           /*activeSerial*/
           ctx[0],
           "r2KeyerMode"
@@ -29971,7 +30251,7 @@ function create_if_block_2$1(ctx) {
           select,
           "change",
           /*change_handler_3*/
-          ctx[175]
+          ctx[183]
         );
         mounted = true;
       }
@@ -29979,7 +30259,7 @@ function create_if_block_2$1(ctx) {
     p(ctx2, dirty) {
       if (
         /*hasFollowTx*/
-        ctx2[61]
+        ctx2[64]
       ) {
         if (if_block0) {
           if_block0.p(ctx2, dirty);
@@ -29993,10 +30273,10 @@ function create_if_block_2$1(ctx) {
         if_block0 = null;
       }
       if (dirty[2] & /*keyerModeOptions*/
-      8) {
+      64) {
         each_value = ensure_array_like(
           /*keyerModeOptions*/
-          ctx2[65]
+          ctx2[68]
         );
         let i;
         for (i = 0; i < each_value.length; i += 1) {
@@ -30016,8 +30296,8 @@ function create_if_block_2$1(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && select_value_value !== (select_value_value = /*keyerParam*/
-      ctx2[105](
+      65536 && select_value_value !== (select_value_value = /*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r2KeyerMode"
@@ -30025,7 +30305,7 @@ function create_if_block_2$1(ctx) {
         select_option(
           select,
           /*keyerParam*/
-          ctx2[105](
+          ctx2[111](
             /*activeSerial*/
             ctx2[0],
             "r2KeyerMode"
@@ -30083,7 +30363,7 @@ function create_if_block_4$1(ctx) {
       attr(div0, "class", "label");
       attr(input, "type", "checkbox");
       input.checked = input_checked_value = !!/*keyerParam*/
-      ctx[105](
+      ctx[111](
         /*activeSerial*/
         ctx[0],
         "r2FollowTxMode"
@@ -30102,7 +30382,7 @@ function create_if_block_4$1(ctx) {
           input,
           "change",
           /*change_handler_2*/
-          ctx[174]
+          ctx[182]
         );
         mounted = true;
       }
@@ -30110,8 +30390,8 @@ function create_if_block_4$1(ctx) {
     p(ctx2, dirty) {
       if (dirty[0] & /*activeSerial*/
       1 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
-      ctx2[105](
+      65536 && input_checked_value !== (input_checked_value = !!/*keyerParam*/
+      ctx2[111](
         /*activeSerial*/
         ctx2[0],
         "r2FollowTxMode"
@@ -30132,7 +30412,7 @@ function create_each_block(ctx) {
   let option;
   let t_value = (
     /*opt*/
-    ctx[489].label + ""
+    ctx[498].label + ""
   );
   let t;
   return {
@@ -30140,7 +30420,7 @@ function create_each_block(ctx) {
       option = element("option");
       t = text(t_value);
       option.__value = /*opt*/
-      ctx[489].value;
+      ctx[498].value;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
@@ -30189,7 +30469,7 @@ function create_if_block_3$1(ctx) {
       ].text + "")) set_data(t, t_value);
       if (dirty[0] & /*keyerStatus, activeSerial*/
       129 | dirty[1] & /*activeAntsAndGroups*/
-      8192 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
+      65536 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatus*/
       ctx2[7][
         /*activeSerial*/
         ctx2[0]
@@ -30218,70 +30498,70 @@ function create_fragment$1(ctx) {
     if (
       /*activeMenuId*/
       ctx2[1] === "aux"
-    ) return create_if_block_18;
+    ) return create_if_block_19;
     if (
       /*activeMenuId*/
       ctx2[1] === "fsk"
-    ) return create_if_block_21;
+    ) return create_if_block_22;
     if (
       /*activeMenuId*/
       ctx2[1] === "ptt"
-    ) return create_if_block_29;
+    ) return create_if_block_30;
     if (
       /*activeMenuId*/
       ctx2[1] === "audio"
-    ) return create_if_block_44;
+    ) return create_if_block_45;
     if (
       /*activeMenuId*/
       ctx2[1] === "display"
-    ) return create_if_block_48;
-    if (
-      /*activeMenuId*/
-      ctx2[1] === "cw"
     ) return create_if_block_49;
     if (
       /*activeMenuId*/
+      ctx2[1] === "cw"
+    ) return create_if_block_50;
+    if (
+      /*activeMenuId*/
       ctx2[1] === "cw_messages"
-    ) return create_if_block_52;
+    ) return create_if_block_53;
     if (
       /*activeMenuId*/
       ctx2[1] === "sm_antsw_load_store"
-    ) return create_if_block_55;
+    ) return create_if_block_56;
     if (
       /*activeMenuId*/
       ctx2[1] === "sm_antsw_settings"
-    ) return create_if_block_57;
+    ) return create_if_block_58;
     if (
       /*activeMenuId*/
       ctx2[1] === "sm_antsw_outputs"
-    ) return create_if_block_60;
+    ) return create_if_block_61;
     if (
       /*activeMenuId*/
       ctx2[1] === "sm_antsw_ant_list"
-    ) return create_if_block_62;
+    ) return create_if_block_63;
     if (
       /*activeMenuId*/
       ctx2[1] === "sm_antsw_vr_list"
-    ) return create_if_block_69;
+    ) return create_if_block_70;
     if (
       /*activeMenuId*/
       ctx2[1] === "sm_antsw_grp_list"
-    ) return create_if_block_81;
+    ) return create_if_block_82;
     if (
       /*activeMenuId*/
       ctx2[1] === "sm_antsw_band_list"
-    ) return create_if_block_93;
+    ) return create_if_block_94;
     if (
       /*activeMenuId*/
       ctx2[1] === "all_params"
-    ) return create_if_block_119;
-    return create_else_block_22;
+    ) return create_if_block_120;
+    return create_else_block_24;
   }
   function select_block_ctx(ctx2, type) {
-    if (type === create_if_block_62) return get_if_ctx_2(ctx2);
-    if (type === create_if_block_69) return get_if_ctx_5(ctx2);
-    if (type === create_if_block_81) return get_if_ctx_8(ctx2);
-    if (type === create_if_block_93) return get_if_ctx_11(ctx2);
+    if (type === create_if_block_63) return get_if_ctx_2(ctx2);
+    if (type === create_if_block_70) return get_if_ctx_5(ctx2);
+    if (type === create_if_block_82) return get_if_ctx_8(ctx2);
+    if (type === create_if_block_94) return get_if_ctx_11(ctx2);
     return ctx2;
   }
   let current_block_type = select_block_type(ctx);
@@ -30348,6 +30628,9 @@ function instance$1($$self, $$props, $$invalidate) {
   let activeFsk1;
   let activeFsk2;
   let activeRigModeSync;
+  let rigRadios;
+  let activeRadioInfo;
+  let activeCatMonitor;
   let activePttR1;
   let activePttR2;
   const playMessage = (serial, messageNum) => {
@@ -30376,6 +30659,8 @@ function instance$1($$self, $$props, $$invalidate) {
   let rigModeSyncForm = {};
   let rigModeSyncStatus = {};
   let rigModeSyncStatusTimer = {};
+  let radioInfoLive = {};
+  let catMonitor = {};
   let pttForm = {};
   let pttFormGen = 0;
   let pttStatus = {};
@@ -30648,7 +30933,7 @@ function instance$1($$self, $$props, $$invalidate) {
     if (!serial) return;
     const perSerial = radioForm[serial] || {};
     if (!perSerial[chan]) {
-      $$invalidate(165, radioForm = {
+      $$invalidate(171, radioForm = {
         ...radioForm,
         [serial]: {
           ...perSerial,
@@ -30658,13 +30943,13 @@ function instance$1($$self, $$props, $$invalidate) {
     }
   };
   const resetRadioForms = () => {
-    $$invalidate(165, radioForm = {});
-    $$invalidate(166, radioFormGen++, radioFormGen);
+    $$invalidate(171, radioForm = {});
+    $$invalidate(172, radioFormGen++, radioFormGen);
   };
   const updateRadioForm = (serial, chan, key, value) => {
     const perSerial = radioForm[serial] || {};
     const perChan = perSerial[chan] || defaultRadioForm(serial, chan);
-    $$invalidate(165, radioForm = {
+    $$invalidate(171, radioForm = {
       ...radioForm,
       [serial]: {
         ...perSerial,
@@ -30673,51 +30958,47 @@ function instance$1($$self, $$props, $$invalidate) {
     });
   };
   const boolish = (v) => !!Number(v || 0) || v === true;
+  const defaultRigModeSyncRadio = (r, defPort) => ({
+    enabled: boolish(r == null ? void 0 : r.enabled),
+    // backend rigctld
+    host: (r == null ? void 0 : r.host) ?? "127.0.0.1",
+    port: Number((r == null ? void 0 : r.port) ?? defPort),
+    connect_timeout_ms: Number((r == null ? void 0 : r.connect_timeout_ms) ?? 1500),
+    io_timeout_ms: Number((r == null ? void 0 : r.io_timeout_ms) ?? 1500),
+    poll_ms: Number((r == null ? void 0 : r.poll_ms) ?? 500),
+    auto_start: boolish(r == null ? void 0 : r.auto_start),
+    rigctld_options: (r == null ? void 0 : r.rigctld_options) ?? "",
+    // backend native
+    protocol: (r == null ? void 0 : r.protocol) ?? "auto",
+    civ_address: (r == null ? void 0 : r.civ_address) ? Number(r.civ_address).toString(16).toUpperCase() : "",
+    monitor: boolish(r == null ? void 0 : r.monitor)
+  });
   const defaultRigModeSyncForm = (serial) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
     const cfg = keyerConfigForSerial(serial);
     const src = (cfg == null ? void 0 : cfg.rig_mode_sync) || {};
     const radios = src.radios || {};
     return {
       backend: src.backend ?? "rigctld",
       enabled: boolish(src.enabled),
-      r1: {
-        enabled: boolish((_a = radios == null ? void 0 : radios.r1) == null ? void 0 : _a.enabled),
-        host: ((_b = radios == null ? void 0 : radios.r1) == null ? void 0 : _b.host) ?? "127.0.0.1",
-        port: Number(((_c = radios == null ? void 0 : radios.r1) == null ? void 0 : _c.port) ?? 4532),
-        connect_timeout_ms: Number(((_d = radios == null ? void 0 : radios.r1) == null ? void 0 : _d.connect_timeout_ms) ?? 1500),
-        io_timeout_ms: Number(((_e = radios == null ? void 0 : radios.r1) == null ? void 0 : _e.io_timeout_ms) ?? 1500),
-        poll_ms: Number(((_f = radios == null ? void 0 : radios.r1) == null ? void 0 : _f.poll_ms) ?? 500),
-        auto_start: boolish((_g = radios == null ? void 0 : radios.r1) == null ? void 0 : _g.auto_start),
-        rigctld_options: ((_h = radios == null ? void 0 : radios.r1) == null ? void 0 : _h.rigctld_options) ?? ""
-      },
-      r2: {
-        enabled: boolish((_i = radios == null ? void 0 : radios.r2) == null ? void 0 : _i.enabled),
-        host: ((_j = radios == null ? void 0 : radios.r2) == null ? void 0 : _j.host) ?? "127.0.0.1",
-        port: Number(((_k = radios == null ? void 0 : radios.r2) == null ? void 0 : _k.port) ?? 4533),
-        connect_timeout_ms: Number(((_l = radios == null ? void 0 : radios.r2) == null ? void 0 : _l.connect_timeout_ms) ?? 1500),
-        io_timeout_ms: Number(((_m = radios == null ? void 0 : radios.r2) == null ? void 0 : _m.io_timeout_ms) ?? 1500),
-        poll_ms: Number(((_n = radios == null ? void 0 : radios.r2) == null ? void 0 : _n.poll_ms) ?? 500),
-        auto_start: boolish((_o = radios == null ? void 0 : radios.r2) == null ? void 0 : _o.auto_start),
-        rigctld_options: ((_p = radios == null ? void 0 : radios.r2) == null ? void 0 : _p.rigctld_options) ?? ""
-      }
+      r1: defaultRigModeSyncRadio(radios.r1, 4532),
+      r2: defaultRigModeSyncRadio(radios.r2, 4533)
     };
   };
   const ensureRigModeSyncForm = (serial) => {
     if (!serial) return;
     if (!rigModeSyncForm[serial]) {
-      $$invalidate(167, rigModeSyncForm = {
+      $$invalidate(173, rigModeSyncForm = {
         ...rigModeSyncForm,
         [serial]: defaultRigModeSyncForm(serial)
       });
     }
   };
   const resetRigModeSyncForms = () => {
-    $$invalidate(167, rigModeSyncForm = {});
+    $$invalidate(173, rigModeSyncForm = {});
   };
   const updateRigModeSyncTop = (serial, key, value) => {
     const form = rigModeSyncForm[serial] || defaultRigModeSyncForm(serial);
-    $$invalidate(167, rigModeSyncForm = {
+    $$invalidate(173, rigModeSyncForm = {
       ...rigModeSyncForm,
       [serial]: { ...form, [key]: value }
     });
@@ -30725,7 +31006,7 @@ function instance$1($$self, $$props, $$invalidate) {
   const updateRigModeSyncRadio = (serial, radio, key, value) => {
     const form = rigModeSyncForm[serial] || defaultRigModeSyncForm(serial);
     const cur = form[radio] || {};
-    $$invalidate(167, rigModeSyncForm = {
+    $$invalidate(173, rigModeSyncForm = {
       ...rigModeSyncForm,
       [serial]: {
         ...form,
@@ -30747,37 +31028,37 @@ function instance$1($$self, $$props, $$invalidate) {
       3e3
     );
   };
+  const rigModeSyncRadioPayload = (f, defPort) => {
+    const civText = String((f == null ? void 0 : f.civ_address) ?? "").trim().replace(/^0x/i, "");
+    const civ = civText === "" ? 0 : parseInt(civText, 16);
+    if (!/^[0-9a-f]*$/i.test(civText) || !(civ >= 0 && civ <= 223)) return null;
+    return {
+      enabled: (f == null ? void 0 : f.enabled) ? 1 : 0,
+      host: String((f == null ? void 0 : f.host) || "127.0.0.1").trim() || "127.0.0.1",
+      port: Number((f == null ? void 0 : f.port) || defPort),
+      connect_timeout_ms: Number((f == null ? void 0 : f.connect_timeout_ms) || 1500),
+      io_timeout_ms: Number((f == null ? void 0 : f.io_timeout_ms) || 1500),
+      poll_ms: Number((f == null ? void 0 : f.poll_ms) || 500),
+      auto_start: (f == null ? void 0 : f.auto_start) ? 1 : 0,
+      rigctld_options: String((f == null ? void 0 : f.rigctld_options) || ""),
+      protocol: (f == null ? void 0 : f.protocol) === "civ" ? "civ" : "auto",
+      civ_address: civ,
+      monitor: (f == null ? void 0 : f.monitor) ? 1 : 0
+    };
+  };
   const applyRigModeSync = async (serial) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
     const form = rigModeSyncForm[serial] || defaultRigModeSyncForm(serial);
+    const r1 = rigModeSyncRadioPayload(form.r1, 4532);
+    const r2 = hasR2 ? rigModeSyncRadioPayload(form.r2, 4533) : void 0;
+    if (!r1 || r2 === null) {
+      setRigModeSyncStatusMsg(serial, "CI-V address must be a hex number 01..DF, or empty.", "error");
+      return;
+    }
     const payload = {
       backend: form.backend || "rigctld",
       enabled: form.enabled ? 1 : 0,
-      radios: {
-        r1: {
-          enabled: ((_a = form.r1) == null ? void 0 : _a.enabled) ? 1 : 0,
-          host: String(((_b = form.r1) == null ? void 0 : _b.host) || "127.0.0.1").trim() || "127.0.0.1",
-          port: Number(((_c = form.r1) == null ? void 0 : _c.port) || 4532),
-          connect_timeout_ms: Number(((_d = form.r1) == null ? void 0 : _d.connect_timeout_ms) || 1500),
-          io_timeout_ms: Number(((_e = form.r1) == null ? void 0 : _e.io_timeout_ms) || 1500),
-          poll_ms: Number(((_f = form.r1) == null ? void 0 : _f.poll_ms) || 500),
-          auto_start: ((_g = form.r1) == null ? void 0 : _g.auto_start) ? 1 : 0,
-          rigctld_options: String(((_h = form.r1) == null ? void 0 : _h.rigctld_options) || "")
-        }
-      }
+      radios: r2 ? { r1, r2 } : { r1 }
     };
-    if (hasR2) {
-      payload.radios.r2 = {
-        enabled: ((_i = form.r2) == null ? void 0 : _i.enabled) ? 1 : 0,
-        host: String(((_j = form.r2) == null ? void 0 : _j.host) || "127.0.0.1").trim() || "127.0.0.1",
-        port: Number(((_k = form.r2) == null ? void 0 : _k.port) || 4533),
-        connect_timeout_ms: Number(((_l = form.r2) == null ? void 0 : _l.connect_timeout_ms) || 1500),
-        io_timeout_ms: Number(((_m = form.r2) == null ? void 0 : _m.io_timeout_ms) || 1500),
-        poll_ms: Number(((_n = form.r2) == null ? void 0 : _n.poll_ms) || 500),
-        auto_start: ((_o = form.r2) == null ? void 0 : _o.auto_start) ? 1 : 0,
-        rigctld_options: String(((_p = form.r2) == null ? void 0 : _p.rigctld_options) || "")
-      };
-    }
     try {
       const res = await fetch(`/api/v1/config/devices/${serial}`, {
         method: "PATCH",
@@ -30789,8 +31070,8 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
-      $$invalidate(167, rigModeSyncForm = {
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(173, rigModeSyncForm = {
         ...rigModeSyncForm,
         [serial]: defaultRigModeSyncForm(serial)
       });
@@ -30800,6 +31081,45 @@ function instance$1($$self, $$props, $$invalidate) {
       await refreshDeviceConfig(serial);
     }
   };
+  const unsubRadioInfo = onWsEvent("radio_info", (ev) => {
+    $$invalidate(174, radioInfoLive = {
+      ...radioInfoLive,
+      [`${ev.serial}:${ev.radio}`]: ev
+    });
+  });
+  const unsubCatMonitor = onWsEvent("cat_monitor", (ev) => {
+    const key = `${ev.serial}:${ev.radio}`;
+    $$invalidate(175, catMonitor = {
+      ...catMonitor,
+      [key]: [...catMonitor[key] || [], ev.line].slice(-300)
+    });
+  });
+  onDestroy(() => {
+    unsubRadioInfo();
+    unsubCatMonitor();
+  });
+  const clearCatMonitor = (serial, radioNum) => {
+    $$invalidate(175, catMonitor = {
+      ...catMonitor,
+      [`${serial}:${radioNum}`]: []
+    });
+  };
+  const fmtFreq = (hz) => String(hz).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const radioInfoText = (ri) => {
+    if (!ri || !ri.source) return "no data yet";
+    const parts = [];
+    if (ri.rxFreq) parts.push(`${fmtFreq(ri.rxFreq)} Hz`);
+    if (ri.txFreq && ri.txFreq !== ri.rxFreq) parts.push(`(TX ${fmtFreq(ri.txFreq)} Hz)`);
+    parts.push(ri.mode || "?");
+    if (ri.keyerMode) parts.push(`→ keyer ${ri.keyerMode}`);
+    const age = ri.valid ? "" : ", outdated: no update for 10 s";
+    return `${parts.join(" ")} — via ${ri.source}${age}`;
+  };
+  const scrollToEnd = (node) => ({
+    update() {
+      node.scrollTop = node.scrollHeight;
+    }
+  });
   const messageConfig = (serial, kind) => {
     const cfg = keyerConfigForSerial(serial);
     if (!cfg) return [];
@@ -30831,7 +31151,7 @@ function instance$1($$self, $$props, $$invalidate) {
   };
   const resetMessageForms = () => {
     $$invalidate(11, messageForm = {});
-    $$invalidate(170, messageFormGen++, messageFormGen);
+    $$invalidate(178, messageFormGen++, messageFormGen);
   };
   const updateMessageForm = (serial, kind, index, value) => {
     const perSerial = messageForm[serial] || {};
@@ -30888,7 +31208,7 @@ function instance$1($$self, $$props, $$invalidate) {
   };
   const resetAllParamForms = () => {
     $$invalidate(13, allParamForm = {});
-    $$invalidate(171, allParamFormGen++, allParamFormGen);
+    $$invalidate(179, allParamFormGen++, allParamFormGen);
   };
   const updateAllParamForm = (serial, key, value) => {
     const perSerial = allParamForm[serial] || defaultAllParamForm(serial);
@@ -30925,7 +31245,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       $$invalidate(13, allParamForm = {
         ...allParamForm,
         [serial]: defaultAllParamForm(serial)
@@ -30970,7 +31290,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       $$invalidate(11, messageForm = {
         ...messageForm,
         [serial]: {
@@ -31036,7 +31356,7 @@ function instance$1($$self, $$props, $$invalidate) {
     if (!serial) return;
     const perSerial = pttForm[serial] || {};
     if (!perSerial[chan]) {
-      $$invalidate(168, pttForm = {
+      $$invalidate(176, pttForm = {
         ...pttForm,
         [serial]: {
           ...perSerial,
@@ -31046,13 +31366,13 @@ function instance$1($$self, $$props, $$invalidate) {
     }
   };
   const resetPttForms = () => {
-    $$invalidate(168, pttForm = {});
-    $$invalidate(169, pttFormGen++, pttFormGen);
+    $$invalidate(176, pttForm = {});
+    $$invalidate(177, pttFormGen++, pttFormGen);
   };
   const updatePttForm = (serial, chan, key, value) => {
     const perSerial = pttForm[serial] || {};
     const perChan = perSerial[chan] || defaultPttForm(serial, chan);
-    $$invalidate(168, pttForm = {
+    $$invalidate(176, pttForm = {
       ...pttForm,
       [serial]: {
         ...perSerial,
@@ -31094,8 +31414,8 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
-      $$invalidate(168, pttForm = {
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(176, pttForm = {
         ...pttForm,
         [serial]: {
           ...pttForm[serial],
@@ -31157,8 +31477,8 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
-      $$invalidate(165, radioForm = {
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(171, radioForm = {
         ...radioForm,
         [serial]: {
           ...radioForm[serial],
@@ -31209,7 +31529,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       setKeyerStatusMsg(serial, "Keyer mode updated.", "success");
     } catch (err) {
       setKeyerStatusMsg(serial, (err == null ? void 0 : err.message) || "Failed to update keyer mode.", "error");
@@ -31228,7 +31548,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       setKeyerStatusMsg(serial, "Winkey settings updated.", "success");
     } catch (err) {
       setKeyerStatusMsg(serial, (err == null ? void 0 : err.message) || "Failed to update winkey settings.", "error");
@@ -31252,7 +31572,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       setKeyerStatusMsg(serial, msg, "success");
     } catch (err) {
       setKeyerStatusMsg(serial, (err == null ? void 0 : err.message) || "Failed to update settings.", "error");
@@ -31336,7 +31656,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       setKeyerStatusMsg(serial, "Setting updated.", "success");
     } catch (err) {
       setKeyerStatusMsg(serial, (err == null ? void 0 : err.message) || "Failed to update setting.", "error");
@@ -31362,7 +31682,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       setKeyerStatusMsg(serial, "Sequencer setting updated.", "success");
     } catch (err) {
       setKeyerStatusMsg(serial, (err == null ? void 0 : err.message) || "Failed to update sequencer setting.", "error");
@@ -31384,7 +31704,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       setKeyerStatusMsg(serial, "Output setting updated.", "success");
     } catch (err) {
       setKeyerStatusMsg(serial, (err == null ? void 0 : err.message) || "Failed to update output setting.", "error");
@@ -31455,7 +31775,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       $$invalidate(17, smAntMode = { ...smAntMode, [serial]: null });
       setKeyerStatusMsg(serial, "Antenna added.", "success");
     } catch (err) {
@@ -31484,7 +31804,7 @@ function instance$1($$self, $$props, $$invalidate) {
         });
         if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
         const updated = await res.json();
-        $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+        $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       }
       $$invalidate(17, smAntMode = { ...smAntMode, [serial]: null });
       setKeyerStatusMsg(serial, "Antennas updated.", "success");
@@ -31509,7 +31829,7 @@ function instance$1($$self, $$props, $$invalidate) {
         });
         if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
         const updated = await res.json();
-        $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+        $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       }
       $$invalidate(20, smAntSelected = { ...smAntSelected, [serial]: [] });
       setKeyerStatusMsg(serial, "Antenna(s) removed.", "success");
@@ -31601,7 +31921,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       $$invalidate(21, smVrMode = { ...smVrMode, [serial]: null });
       setKeyerStatusMsg(serial, "Virtual rotator added.", "success");
     } catch (err) {
@@ -31633,7 +31953,7 @@ function instance$1($$self, $$props, $$invalidate) {
         });
         if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
         const updated = await res.json();
-        $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+        $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       }
       $$invalidate(21, smVrMode = { ...smVrMode, [serial]: null });
       setKeyerStatusMsg(serial, "Virtual rotators updated.", "success");
@@ -31665,7 +31985,7 @@ function instance$1($$self, $$props, $$invalidate) {
         });
         if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
         const updated = await res.json();
-        $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+        $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       }
       for (const id of vrRemovals) {
         const payload = { action: "rem", id };
@@ -31679,7 +31999,7 @@ function instance$1($$self, $$props, $$invalidate) {
         });
         if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
         const updated = await res.json();
-        $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+        $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       }
       $$invalidate(24, smVrSelected = { ...smVrSelected, [serial]: [] });
       setKeyerStatusMsg(serial, "Item(s) removed.", "success");
@@ -31745,7 +32065,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       $$invalidate(25, smVrAddAnt = { ...smVrAddAnt, [serial]: null });
       setKeyerStatusMsg(serial, "Antenna reference added.", "success");
     } catch (err) {
@@ -31811,7 +32131,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       $$invalidate(26, smGrpMode = { ...smGrpMode, [serial]: null });
       setKeyerStatusMsg(serial, "Antenna group added.", "success");
     } catch (err) {
@@ -31843,7 +32163,7 @@ function instance$1($$self, $$props, $$invalidate) {
         });
         if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
         const updated = await res.json();
-        $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+        $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       }
       $$invalidate(26, smGrpMode = { ...smGrpMode, [serial]: null });
       setKeyerStatusMsg(serial, "Antenna groups updated.", "success");
@@ -31875,7 +32195,7 @@ function instance$1($$self, $$props, $$invalidate) {
         });
         if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
         const updated = await res.json();
-        $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+        $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       }
       for (const id of grpRemovals) {
         const payload = { action: "rem", id };
@@ -31889,7 +32209,7 @@ function instance$1($$self, $$props, $$invalidate) {
         });
         if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
         const updated = await res.json();
-        $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+        $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       }
       $$invalidate(29, smGrpSelected = { ...smGrpSelected, [serial]: [] });
       setKeyerStatusMsg(serial, "Item(s) removed.", "success");
@@ -31943,7 +32263,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       $$invalidate(30, smGrpAddAnt = { ...smGrpAddAnt, [serial]: null });
       setKeyerStatusMsg(serial, "Antenna reference added.", "success");
     } catch (err) {
@@ -32043,7 +32363,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       $$invalidate(31, smBndMode = { ...smBndMode, [serial]: null });
       setKeyerStatusMsg(serial, "Band added.", "success");
     } catch (err) {
@@ -32080,7 +32400,7 @@ function instance$1($$self, $$props, $$invalidate) {
         });
         if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
         const updated = await res.json();
-        $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+        $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       }
       $$invalidate(31, smBndMode = { ...smBndMode, [serial]: null });
       setKeyerStatusMsg(serial, "Bands updated.", "success");
@@ -32112,7 +32432,7 @@ function instance$1($$self, $$props, $$invalidate) {
         });
         if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
         const updated = await res.json();
-        $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+        $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       }
       for (const id of bndRemovals) {
         const payload = { action: "rem", id };
@@ -32126,7 +32446,7 @@ function instance$1($$self, $$props, $$invalidate) {
         });
         if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
         const updated = await res.json();
-        $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+        $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       }
       $$invalidate(34, smBndSelected = { ...smBndSelected, [serial]: [] });
       setKeyerStatusMsg(serial, "Item(s) removed.", "success");
@@ -32184,7 +32504,7 @@ function instance$1($$self, $$props, $$invalidate) {
       });
       if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
       const updated = await res.json();
-      $$invalidate(160, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
+      $$invalidate(166, configDevices = configDevices.map((d) => d.serial === serial ? updated : d));
       $$invalidate(35, smBndAddRef = { ...smBndAddRef, [serial]: null });
       setKeyerStatusMsg(serial, "Antenna/group reference added.", "success");
     } catch (err) {
@@ -32224,50 +32544,46 @@ function instance$1($$self, $$props, $$invalidate) {
   const click_handler_1 = () => applyRadioChannel(activeSerial, "r2");
   const change_handler_22 = (e) => updateRigModeSyncTop(activeSerial, "enabled", e.target.checked);
   const change_handler_23 = (e) => updateRigModeSyncTop(activeSerial, "backend", e.target.value);
-  const change_handler_24 = (e) => updateRigModeSyncRadio(activeSerial, "r1", "enabled", e.target.checked);
-  const input_handler_2 = (e) => updateRigModeSyncRadio(activeSerial, "r1", "host", e.target.value);
-  const input_handler_3 = (e) => updateRigModeSyncRadio(activeSerial, "r1", "port", Number(e.target.value));
-  const input_handler_4 = (e) => updateRigModeSyncRadio(activeSerial, "r1", "connect_timeout_ms", Number(e.target.value));
-  const input_handler_5 = (e) => updateRigModeSyncRadio(activeSerial, "r1", "io_timeout_ms", Number(e.target.value));
-  const input_handler_6 = (e) => updateRigModeSyncRadio(activeSerial, "r1", "poll_ms", Number(e.target.value));
-  const change_handler_25 = (e) => updateRigModeSyncRadio(activeSerial, "r1", "auto_start", e.target.checked);
-  const input_handler_7 = (e) => updateRigModeSyncRadio(activeSerial, "r1", "rigctld_options", e.target.value);
-  const change_handler_26 = (e) => updateRigModeSyncRadio(activeSerial, "r2", "enabled", e.target.checked);
-  const input_handler_8 = (e) => updateRigModeSyncRadio(activeSerial, "r2", "host", e.target.value);
-  const input_handler_9 = (e) => updateRigModeSyncRadio(activeSerial, "r2", "port", Number(e.target.value));
-  const input_handler_10 = (e) => updateRigModeSyncRadio(activeSerial, "r2", "connect_timeout_ms", Number(e.target.value));
-  const input_handler_11 = (e) => updateRigModeSyncRadio(activeSerial, "r2", "io_timeout_ms", Number(e.target.value));
-  const input_handler_12 = (e) => updateRigModeSyncRadio(activeSerial, "r2", "poll_ms", Number(e.target.value));
-  const change_handler_27 = (e) => updateRigModeSyncRadio(activeSerial, "r2", "auto_start", e.target.checked);
-  const input_handler_13 = (e) => updateRigModeSyncRadio(activeSerial, "r2", "rigctld_options", e.target.value);
-  const click_handler_2 = () => applyRigModeSync(activeSerial);
+  const change_handler_24 = (rk, e) => updateRigModeSyncRadio(activeSerial, rk, "enabled", e.target.checked);
+  const change_handler_25 = (rk, e) => updateRigModeSyncRadio(activeSerial, rk, "protocol", e.target.value);
+  const input_handler_2 = (rk, e) => updateRigModeSyncRadio(activeSerial, rk, "civ_address", e.target.value);
+  const change_handler_26 = (rk, e) => updateRigModeSyncRadio(activeSerial, rk, "monitor", e.target.checked);
+  const click_handler_2 = (i) => clearCatMonitor(activeSerial, i + 1);
+  const input_handler_3 = (rk, e) => updateRigModeSyncRadio(activeSerial, rk, "host", e.target.value);
+  const input_handler_4 = (rk, e) => updateRigModeSyncRadio(activeSerial, rk, "port", Number(e.target.value));
+  const input_handler_5 = (rk, e) => updateRigModeSyncRadio(activeSerial, rk, "connect_timeout_ms", Number(e.target.value));
+  const input_handler_6 = (rk, e) => updateRigModeSyncRadio(activeSerial, rk, "io_timeout_ms", Number(e.target.value));
+  const input_handler_7 = (rk, e) => updateRigModeSyncRadio(activeSerial, rk, "poll_ms", Number(e.target.value));
+  const change_handler_27 = (rk, e) => updateRigModeSyncRadio(activeSerial, rk, "auto_start", e.target.checked);
+  const input_handler_8 = (rk, e) => updateRigModeSyncRadio(activeSerial, rk, "rigctld_options", e.target.value);
+  const click_handler_3 = () => applyRigModeSync(activeSerial);
   const change_handler_28 = (e) => updateRadioForm(activeSerial, "aux", "baud", Number(e.target.value));
   const change_handler_29 = (e) => updateRadioForm(activeSerial, "aux", "databits", Number(e.target.value));
   const change_handler_30 = (e) => updateRadioForm(activeSerial, "aux", "stopbits", Number(e.target.value));
   const change_handler_31 = (e) => updateRadioForm(activeSerial, "aux", "rtscts", e.target.checked ? 1 : 0);
-  const click_handler_3 = () => applyRadioChannel(activeSerial, "aux");
+  const click_handler_4 = () => applyRadioChannel(activeSerial, "aux");
   const change_handler_32 = (e) => updateRadioForm(activeSerial, "fsk1", "baud", Number(e.target.value));
   const change_handler_33 = (e) => updateRadioForm(activeSerial, "fsk1", "databits", Number(e.target.value));
   const change_handler_34 = (e) => updateRadioForm(activeSerial, "fsk1", "stopbits", Number(e.target.value));
   const change_handler_35 = (e) => updateRadioForm(activeSerial, "fsk1", "rtscts", e.target.checked ? 1 : 0);
   const change_handler_36 = (e) => updateKeyerParam(activeSerial, "r1InvertFsk", e.target.checked ? 1 : 0);
   const change_handler_37 = (e) => updateKeyerParam(activeSerial, "usePFsk", e.target.checked ? 1 : 0);
-  const click_handler_4 = () => applyRadioChannel(activeSerial, "fsk1");
+  const click_handler_5 = () => applyRadioChannel(activeSerial, "fsk1");
   const change_handler_38 = (e) => updateRadioForm(activeSerial, "fsk2", "baud", Number(e.target.value));
   const change_handler_39 = (e) => updateRadioForm(activeSerial, "fsk2", "databits", Number(e.target.value));
   const change_handler_40 = (e) => updateRadioForm(activeSerial, "fsk2", "stopbits", Number(e.target.value));
   const change_handler_41 = (e) => updateRadioForm(activeSerial, "fsk2", "rtscts", e.target.checked ? 1 : 0);
   const change_handler_42 = (e) => updateKeyerParam(activeSerial, "r2InvertFsk", e.target.checked ? 1 : 0);
   const change_handler_43 = (e) => updateKeyerParam(activeSerial, "usePFsk", e.target.checked ? 1 : 0);
-  const click_handler_5 = () => applyRadioChannel(activeSerial, "fsk2");
+  const click_handler_6 = () => applyRadioChannel(activeSerial, "fsk2");
   const change_handler_44 = (e) => applyPttChange(activeSerial, "r1", "cw", e.target.value);
   const change_handler_45 = (e) => applyPttChange(activeSerial, "r1", "voice", e.target.value);
   const change_handler_46 = (e) => applyPttChange(activeSerial, "r1", "digital", e.target.value);
   const change_handler_47 = (e) => updateKeyerParam(activeSerial, "r1LnaPtt", e.target.checked ? 1 : 0);
   const change_handler_48 = (e) => updateKeyerParam(activeSerial, "r1PaPtt", e.target.checked ? 1 : 0);
-  const input_handler_14 = (e) => updateKeyerParam(activeSerial, "r1PaPttTail", Number(e.target.value));
-  const input_handler_15 = (e) => updateKeyerParam(activeSerial, "r1LnaPttTail", Number(e.target.value));
-  const input_handler_16 = (e) => updateKeyerParam(activeSerial, "r1PttDelay", Number(e.target.value));
+  const input_handler_9 = (e) => updateKeyerParam(activeSerial, "r1PaPttTail", Number(e.target.value));
+  const input_handler_10 = (e) => updateKeyerParam(activeSerial, "r1LnaPttTail", Number(e.target.value));
+  const input_handler_11 = (e) => updateKeyerParam(activeSerial, "r1PttDelay", Number(e.target.value));
   const change_handler_49 = (e) => updateKeyerParam(activeSerial, "r1AllowCwInVoice", e.target.checked ? 1 : 0);
   const change_handler_50 = (e) => updateKeyerParam(activeSerial, "useAutoPtt", e.target.checked ? 1 : 0);
   const change_handler_51 = (e) => updateKeyerParam(activeSerial, "downstreamOverFootSw", e.target.checked ? 1 : 0);
@@ -32276,9 +32592,9 @@ function instance$1($$self, $$props, $$invalidate) {
   const change_handler_54 = (e) => applyPttChange(activeSerial, "r2", "digital", e.target.value);
   const change_handler_55 = (e) => updateKeyerParam(activeSerial, "r2LnaPtt", e.target.checked ? 1 : 0);
   const change_handler_56 = (e) => updateKeyerParam(activeSerial, "r2PaPtt", e.target.checked ? 1 : 0);
-  const input_handler_17 = (e) => updateKeyerParam(activeSerial, "r2PaPttTail", Number(e.target.value));
-  const input_handler_18 = (e) => updateKeyerParam(activeSerial, "r2LnaPttTail", Number(e.target.value));
-  const input_handler_19 = (e) => updateKeyerParam(activeSerial, "r2PttDelay", Number(e.target.value));
+  const input_handler_12 = (e) => updateKeyerParam(activeSerial, "r2PaPttTail", Number(e.target.value));
+  const input_handler_13 = (e) => updateKeyerParam(activeSerial, "r2LnaPttTail", Number(e.target.value));
+  const input_handler_14 = (e) => updateKeyerParam(activeSerial, "r2PttDelay", Number(e.target.value));
   const change_handler_57 = (e) => updateKeyerParam(activeSerial, "r2AllowCwInVoice", e.target.checked ? 1 : 0);
   const change_handler_58 = (e) => updateKeyerParam(activeSerial, "muteCompCw", e.target.checked ? 1 : 0);
   const change_handler_59 = (e) => updateKeyerParam(activeSerial, "muteCompFsk", e.target.checked ? 1 : 0);
@@ -32304,8 +32620,8 @@ function instance$1($$self, $$props, $$invalidate) {
   const change_handler_67 = (e) => updateKeyerParam(activeSerial, "r1FrMpkExtra_Digital.onAirRecActive", e.target.checked ? 1 : 0);
   const change_handler_68 = (e) => updateKeyerParam(activeSerial, "r1FrMpkExtra_Voice.onAirRecControlByRouter", e.target.checked ? 1 : 0);
   const change_handler_69 = (e) => updateKeyerParam(activeSerial, "r1FrMpkExtra_Digital.onAirRecControlByRouter", e.target.checked ? 1 : 0);
-  const input_handler_20 = (e) => updateKeyerParam(activeSerial, "r1FrMpkExtra_Voice.pwmMonctr", Number(e.target.value));
-  const input_handler_21 = (e) => updateKeyerParam(activeSerial, "r1FrMpkExtra_Digital.pwmMonctr", Number(e.target.value));
+  const input_handler_15 = (e) => updateKeyerParam(activeSerial, "r1FrMpkExtra_Voice.pwmMonctr", Number(e.target.value));
+  const input_handler_16 = (e) => updateKeyerParam(activeSerial, "r1FrMpkExtra_Digital.pwmMonctr", Number(e.target.value));
   const change_handler_70 = (e) => updateKeyerParams(activeSerial, {
     micSelAuto: e.target.value === "auto" ? 1 : 0,
     micSelFront: e.target.value === "front" ? 1 : 0
@@ -32417,8 +32733,8 @@ function instance$1($$self, $$props, $$invalidate) {
     `r2FrMokExtra_${mode === "cw" ? "Cw" : mode === "voice" ? "Voice" : "Digital"}.voiceCodec`,
     Number(e.target.value)
   );
-  const input_handler_22 = (e) => updateKeyerParam(activeSerial, "pwmBlight", Number(e.target.value));
-  const input_handler_23 = (e) => updateKeyerParam(activeSerial, "pwmContrast", Number(e.target.value));
+  const input_handler_17 = (e) => updateKeyerParam(activeSerial, "pwmBlight", Number(e.target.value));
+  const input_handler_18 = (e) => updateKeyerParam(activeSerial, "pwmContrast", Number(e.target.value));
   const change_handler_94 = (e) => updateKeyerParam(activeSerial, "dispBg0", Number(e.target.value));
   const change_handler_95 = (e) => updateKeyerParam(activeSerial, "dispBg1", Number(e.target.value));
   const change_handler_96 = (opt, e) => updateKeyerParam(activeSerial, `dispEv.${opt.value}`, e.target.checked ? 1 : 0);
@@ -32426,31 +32742,31 @@ function instance$1($$self, $$props, $$invalidate) {
   const change_handler_98 = (e) => updateKeyerParam(activeSerial, "paddleOnlySideTone", e.target.checked ? 1 : 0);
   const change_handler_99 = (e) => updateWinkeyParam(activeSerial, "keyMode", Number(e.target.value));
   const change_handler_100 = (e) => updateWinkeyParam(activeSerial, "ultimaticMode", Number(e.target.value));
-  const input_handler_24 = (e) => updateWinkeyParam(activeSerial, "leadInTime", Number(e.target.value));
-  const input_handler_25 = (e) => updateWinkeyParam(activeSerial, "tailTime", Number(e.target.value));
-  const input_handler_26 = (e) => updateWinkeyParam(activeSerial, "hangTime", Number(e.target.value));
+  const input_handler_19 = (e) => updateWinkeyParam(activeSerial, "leadInTime", Number(e.target.value));
+  const input_handler_20 = (e) => updateWinkeyParam(activeSerial, "tailTime", Number(e.target.value));
+  const input_handler_21 = (e) => updateWinkeyParam(activeSerial, "hangTime", Number(e.target.value));
   const change_handler_101 = (e) => updateWinkeyParam(activeSerial, "paddleSwap", e.target.checked ? 1 : 0);
   const change_handler_102 = (e) => updateWinkeyParam(activeSerial, "autoSpace", e.target.checked ? 1 : 0);
   const change_handler_103 = (e) => updateWinkeyParam(activeSerial, "ctSpacing", e.target.checked ? 1 : 0);
   const change_handler_104 = (e) => updateWinkeyParam(activeSerial, "disablePaddleWatchdog", e.target.checked ? 1 : 0);
-  const input_handler_27 = (e) => updateWinkeyParam(activeSerial, "minWpm", Number(e.target.value));
-  const input_handler_28 = (e) => updateWinkeyParam(activeSerial, "wpmRange", Number(e.target.value));
-  const input_handler_29 = (e) => updateWinkeyParam(activeSerial, "farnsWpm", Number(e.target.value));
-  const input_handler_30 = (e) => updateWinkeyParam(activeSerial, "ditDahRatio", Number(e.target.value));
-  const input_handler_31 = (e) => updateWinkeyParam(activeSerial, "weight", Number(e.target.value));
-  const input_handler_32 = (e) => updateWinkeyParam(activeSerial, "1stExtension", Number(e.target.value));
-  const input_handler_33 = (e) => updateWinkeyParam(activeSerial, "keyComp", Number(e.target.value));
-  const input_handler_34 = (e) => updateWinkeyParam(activeSerial, "paddleSetpoint", Number(e.target.value));
+  const input_handler_22 = (e) => updateWinkeyParam(activeSerial, "minWpm", Number(e.target.value));
+  const input_handler_23 = (e) => updateWinkeyParam(activeSerial, "wpmRange", Number(e.target.value));
+  const input_handler_24 = (e) => updateWinkeyParam(activeSerial, "farnsWpm", Number(e.target.value));
+  const input_handler_25 = (e) => updateWinkeyParam(activeSerial, "ditDahRatio", Number(e.target.value));
+  const input_handler_26 = (e) => updateWinkeyParam(activeSerial, "weight", Number(e.target.value));
+  const input_handler_27 = (e) => updateWinkeyParam(activeSerial, "1stExtension", Number(e.target.value));
+  const input_handler_28 = (e) => updateWinkeyParam(activeSerial, "keyComp", Number(e.target.value));
+  const input_handler_29 = (e) => updateWinkeyParam(activeSerial, "paddleSetpoint", Number(e.target.value));
   const change_handler_105 = (e) => updateKeyerParam(activeSerial, "sideTone", Number(e.target.value));
   const change_handler_106 = (e) => updateKeyerParam(activeSerial, "paddleOnlySideTone", e.target.checked ? 1 : 0);
-  const input_handler_35 = (idx, e) => handleMessageInput(activeSerial, "cw", idx, e.target);
-  const click_handler_6 = (idx) => playMessage(activeSerial, idx);
-  const click_handler_7 = () => applyMessages(activeSerial, "cw");
-  const input_handler_36 = (idx, e) => handleMessageInput(activeSerial, "fsk", idx, e.target);
-  const click_handler_8 = (idx) => playMessage(activeSerial, idx);
-  const click_handler_9 = () => applyMessages(activeSerial, "fsk");
-  const click_handler_10 = () => smAction(activeSerial, "sm_load");
-  const click_handler_11 = () => smAction(activeSerial, "sm_store");
+  const input_handler_30 = (idx, e) => handleMessageInput(activeSerial, "cw", idx, e.target);
+  const click_handler_7 = (idx) => playMessage(activeSerial, idx);
+  const click_handler_8 = () => applyMessages(activeSerial, "cw");
+  const input_handler_31 = (idx, e) => handleMessageInput(activeSerial, "fsk", idx, e.target);
+  const click_handler_9 = (idx) => playMessage(activeSerial, idx);
+  const click_handler_10 = () => applyMessages(activeSerial, "fsk");
+  const click_handler_11 = () => smAction(activeSerial, "sm_load");
+  const click_handler_12 = () => smAction(activeSerial, "sm_store");
   const change_handler_107 = (e) => applySmFixed(activeSerial, "civFunc", e.target.value);
   const change_handler_108 = (e) => applySmFixed(activeSerial, "civBaudRate", e.target.value);
   const change_handler_109 = (e) => applySmFixed(activeSerial, "civAddress", e.target.value);
@@ -32465,11 +32781,11 @@ function instance$1($$self, $$props, $$invalidate) {
   const change_handler_118 = (output, e) => applySmSequencer(activeSerial, "tail", output, e.target.value);
   const change_handler_119 = (output, e) => applySmOutput(activeSerial, output, e.target.value);
   const change_handler_120 = (ant) => smAntToggleSelect(activeSerial, ant.id);
-  const input_handler_37 = (ant, e) => {
+  const input_handler_32 = (ant, e) => {
     $$invalidate(18, smAntEditForms[activeSerial][ant.id].label = e.target.value, smAntEditForms);
     $$invalidate(18, smAntEditForms);
   };
-  const input_handler_38 = (ant, e) => {
+  const input_handler_33 = (ant, e) => {
     $$invalidate(18, smAntEditForms[activeSerial][ant.id].display = e.target.value, smAntEditForms);
     $$invalidate(18, smAntEditForms);
   };
@@ -32481,7 +32797,7 @@ function instance$1($$self, $$props, $$invalidate) {
     $$invalidate(18, smAntEditForms[activeSerial][ant.id].rxonly = Number(e.target.value), smAntEditForms);
     $$invalidate(18, smAntEditForms);
   };
-  const input_handler_39 = (ant, e) => {
+  const input_handler_34 = (ant, e) => {
     $$invalidate(18, smAntEditForms[activeSerial][ant.id].pa_ant_number = Number(e.target.value), smAntEditForms);
     $$invalidate(18, smAntEditForms);
   };
@@ -32489,7 +32805,7 @@ function instance$1($$self, $$props, $$invalidate) {
     $$invalidate(18, smAntEditForms[activeSerial][ant.id].rotator = Number(e.target.value), smAntEditForms);
     $$invalidate(18, smAntEditForms);
   };
-  const input_handler_40 = (ant, e) => {
+  const input_handler_35 = (ant, e) => {
     $$invalidate(18, smAntEditForms[activeSerial][ant.id].rotator_offset = Number(e.target.value), smAntEditForms);
     $$invalidate(18, smAntEditForms);
   };
@@ -32529,29 +32845,29 @@ function instance$1($$self, $$props, $$invalidate) {
     smAntAddForm[activeSerial].output[oc] = select_value(this);
     $$invalidate(19, smAntAddForm);
   }
-  const click_handler_12 = () => smAntSaveAdd(activeSerial);
-  const click_handler_13 = () => smAntCancel(activeSerial);
-  const click_handler_14 = () => smAntSaveEdit(activeSerial);
-  const click_handler_15 = () => smAntCancel(activeSerial);
-  const click_handler_16 = () => smAntStartAdd(activeSerial);
-  const click_handler_17 = () => smAntStartEdit(activeSerial);
-  const click_handler_18 = () => smAntRemoveSelected(activeSerial);
+  const click_handler_13 = () => smAntSaveAdd(activeSerial);
+  const click_handler_14 = () => smAntCancel(activeSerial);
+  const click_handler_15 = () => smAntSaveEdit(activeSerial);
+  const click_handler_16 = () => smAntCancel(activeSerial);
+  const click_handler_17 = () => smAntStartAdd(activeSerial);
+  const click_handler_18 = () => smAntStartEdit(activeSerial);
+  const click_handler_19 = () => smAntRemoveSelected(activeSerial);
   const change_handler_125 = (vr) => smVrToggleSelect(activeSerial, vr.id);
-  const input_handler_41 = (vr, e) => {
+  const input_handler_36 = (vr, e) => {
     $$invalidate(23, smVrEditForms[activeSerial][vr.id].label = e.target.value, smVrEditForms);
     $$invalidate(23, smVrEditForms);
   };
-  const input_handler_42 = (vr, e) => {
+  const input_handler_37 = (vr, e) => {
     $$invalidate(23, smVrEditForms[activeSerial][vr.id].display = e.target.value, smVrEditForms);
     $$invalidate(23, smVrEditForms);
   };
-  const click_handler_19 = (vr) => smVrStartAddAnt(activeSerial, vr.id);
+  const click_handler_20 = (vr) => smVrStartAddAnt(activeSerial, vr.id);
   const change_handler_126 = (vr, ref) => smVrToggleSelect(activeSerial, `${vr.id}:${ref.id}`);
-  const input_handler_43 = (vr, ref, e) => {
+  const input_handler_38 = (vr, ref, e) => {
     $$invalidate(23, smVrEditForms[activeSerial][vr.id].refs[ref.id].min_azimuth = Number(e.target.value), smVrEditForms);
     $$invalidate(23, smVrEditForms);
   };
-  const input_handler_44 = (vr, ref, e) => {
+  const input_handler_39 = (vr, ref, e) => {
     $$invalidate(23, smVrEditForms[activeSerial][vr.id].refs[ref.id].max_azimuth = Number(e.target.value), smVrEditForms);
     $$invalidate(23, smVrEditForms);
   };
@@ -32562,17 +32878,17 @@ function instance$1($$self, $$props, $$invalidate) {
   function input0_input_handler_1() {
     smVrAddAnt[activeSerial].min_azimuth = to_number(this.value);
     $$invalidate(25, smVrAddAnt);
-    $$invalidate(49, activeAllObjs), $$invalidate(160, configDevices), $$invalidate(0, activeSerial);
+    $$invalidate(52, activeAllObjs), $$invalidate(166, configDevices), $$invalidate(0, activeSerial);
   }
   function input1_input_handler_1() {
     smVrAddAnt[activeSerial].max_azimuth = to_number(this.value);
     $$invalidate(25, smVrAddAnt);
-    $$invalidate(49, activeAllObjs), $$invalidate(160, configDevices), $$invalidate(0, activeSerial);
+    $$invalidate(52, activeAllObjs), $$invalidate(166, configDevices), $$invalidate(0, activeSerial);
   }
   function select_change_handler_1() {
     smVrAddAnt[activeSerial].dest_id = select_value(this);
     $$invalidate(25, smVrAddAnt);
-    $$invalidate(49, activeAllObjs), $$invalidate(160, configDevices), $$invalidate(0, activeSerial);
+    $$invalidate(52, activeAllObjs), $$invalidate(166, configDevices), $$invalidate(0, activeSerial);
   }
   function input0_input_handler_2() {
     smVrAddForm[activeSerial].label = this.value;
@@ -32582,25 +32898,25 @@ function instance$1($$self, $$props, $$invalidate) {
     smVrAddForm[activeSerial].display = this.value;
     $$invalidate(22, smVrAddForm);
   }
-  const click_handler_20 = () => smVrSaveAddAnt(activeSerial);
-  const click_handler_21 = () => smVrCancelAddAnt(activeSerial);
-  const click_handler_22 = () => smVrSaveAdd(activeSerial);
-  const click_handler_23 = () => smVrCancel(activeSerial);
-  const click_handler_24 = () => smVrSaveEdit(activeSerial);
-  const click_handler_25 = () => smVrCancel(activeSerial);
-  const click_handler_26 = () => smVrStartAdd(activeSerial);
-  const click_handler_27 = () => smVrStartEdit(activeSerial);
-  const click_handler_28 = () => smVrRemoveSelected(activeSerial);
+  const click_handler_21 = () => smVrSaveAddAnt(activeSerial);
+  const click_handler_22 = () => smVrCancelAddAnt(activeSerial);
+  const click_handler_23 = () => smVrSaveAdd(activeSerial);
+  const click_handler_24 = () => smVrCancel(activeSerial);
+  const click_handler_25 = () => smVrSaveEdit(activeSerial);
+  const click_handler_26 = () => smVrCancel(activeSerial);
+  const click_handler_27 = () => smVrStartAdd(activeSerial);
+  const click_handler_28 = () => smVrStartEdit(activeSerial);
+  const click_handler_29 = () => smVrRemoveSelected(activeSerial);
   const change_handler_128 = (grp) => smGrpToggleSelect(activeSerial, grp.id);
-  const input_handler_45 = (grp, e) => {
+  const input_handler_40 = (grp, e) => {
     $$invalidate(28, smGrpEditForms[activeSerial][grp.id].label = e.target.value, smGrpEditForms);
     $$invalidate(28, smGrpEditForms);
   };
-  const input_handler_46 = (grp, e) => {
+  const input_handler_41 = (grp, e) => {
     $$invalidate(28, smGrpEditForms[activeSerial][grp.id].display = e.target.value, smGrpEditForms);
     $$invalidate(28, smGrpEditForms);
   };
-  const click_handler_29 = (grp) => smGrpStartAddAnt(activeSerial, grp.id);
+  const click_handler_30 = (grp) => smGrpStartAddAnt(activeSerial, grp.id);
   const change_handler_129 = (grp, ref) => smGrpToggleSelect(activeSerial, `${grp.id}:${ref.id}`);
   const change_handler_130 = (grp, ref, e) => {
     $$invalidate(28, smGrpEditForms[activeSerial][grp.id].refs[ref.id].dest_id = Number(e.target.value), smGrpEditForms);
@@ -32609,7 +32925,7 @@ function instance$1($$self, $$props, $$invalidate) {
   function select_change_handler_2() {
     smGrpAddAnt[activeSerial].dest_id = select_value(this);
     $$invalidate(30, smGrpAddAnt);
-    $$invalidate(49, activeAllObjs), $$invalidate(160, configDevices), $$invalidate(0, activeSerial);
+    $$invalidate(52, activeAllObjs), $$invalidate(166, configDevices), $$invalidate(0, activeSerial);
   }
   function input0_input_handler_3() {
     smGrpAddForm[activeSerial].label = this.value;
@@ -32619,29 +32935,29 @@ function instance$1($$self, $$props, $$invalidate) {
     smGrpAddForm[activeSerial].display = this.value;
     $$invalidate(27, smGrpAddForm);
   }
-  const click_handler_30 = () => smGrpSaveAddAnt(activeSerial);
-  const click_handler_31 = () => smGrpCancelAddAnt(activeSerial);
-  const click_handler_32 = () => smGrpSaveAdd(activeSerial);
-  const click_handler_33 = () => smGrpCancel(activeSerial);
-  const click_handler_34 = () => smGrpSaveEdit(activeSerial);
-  const click_handler_35 = () => smGrpCancel(activeSerial);
-  const click_handler_36 = () => smGrpStartAdd(activeSerial);
-  const click_handler_37 = () => smGrpStartEdit(activeSerial);
-  const click_handler_38 = () => smGrpRemoveSelected(activeSerial);
+  const click_handler_31 = () => smGrpSaveAddAnt(activeSerial);
+  const click_handler_32 = () => smGrpCancelAddAnt(activeSerial);
+  const click_handler_33 = () => smGrpSaveAdd(activeSerial);
+  const click_handler_34 = () => smGrpCancel(activeSerial);
+  const click_handler_35 = () => smGrpSaveEdit(activeSerial);
+  const click_handler_36 = () => smGrpCancel(activeSerial);
+  const click_handler_37 = () => smGrpStartAdd(activeSerial);
+  const click_handler_38 = () => smGrpStartEdit(activeSerial);
+  const click_handler_39 = () => smGrpRemoveSelected(activeSerial);
   const change_handler_131 = (bnd) => smBndToggleSelect(activeSerial, bnd.id);
-  const input_handler_47 = (bnd, e) => {
+  const input_handler_42 = (bnd, e) => {
     $$invalidate(33, smBndEditForms[activeSerial][bnd.id].display = e.target.value, smBndEditForms);
     $$invalidate(33, smBndEditForms);
   };
-  const input_handler_48 = (bnd, e) => {
+  const input_handler_43 = (bnd, e) => {
     $$invalidate(33, smBndEditForms[activeSerial][bnd.id].low_freq = Number(e.target.value), smBndEditForms);
     $$invalidate(33, smBndEditForms);
   };
-  const input_handler_49 = (bnd, e) => {
+  const input_handler_44 = (bnd, e) => {
     $$invalidate(33, smBndEditForms[activeSerial][bnd.id].high_freq = Number(e.target.value), smBndEditForms);
     $$invalidate(33, smBndEditForms);
   };
-  const input_handler_50 = (bnd, e) => {
+  const input_handler_45 = (bnd, e) => {
     $$invalidate(33, smBndEditForms[activeSerial][bnd.id].bcd_code = Number(e.target.value), smBndEditForms);
     $$invalidate(33, smBndEditForms);
   };
@@ -32676,11 +32992,11 @@ function instance$1($$self, $$props, $$invalidate) {
   function select_change_handler_3() {
     smBndAddRef[activeSerial].dest_id = select_value(this);
     $$invalidate(35, smBndAddRef);
-    $$invalidate(44, activeAntsAndGroups), $$invalidate(160, configDevices), $$invalidate(0, activeSerial);
+    $$invalidate(47, activeAntsAndGroups), $$invalidate(166, configDevices), $$invalidate(0, activeSerial);
   }
-  const click_handler_39 = () => smBndSaveAddRef(activeSerial);
-  const click_handler_40 = () => smBndCancelAddRef(activeSerial);
-  const click_handler_41 = (bnd) => smBndStartAddRef(activeSerial, bnd.id);
+  const click_handler_40 = () => smBndSaveAddRef(activeSerial);
+  const click_handler_41 = () => smBndCancelAddRef(activeSerial);
+  const click_handler_42 = (bnd) => smBndStartAddRef(activeSerial, bnd.id);
   function input0_input_handler_4() {
     smBndAddForm[activeSerial].display = this.value;
     $$invalidate(32, smBndAddForm);
@@ -32705,175 +33021,189 @@ function instance$1($$self, $$props, $$invalidate) {
     smBndAddForm[activeSerial].keyout = this.checked;
     $$invalidate(32, smBndAddForm);
   }
-  const click_handler_42 = () => smBndSaveAdd(activeSerial);
-  const click_handler_43 = () => smBndCancel(activeSerial);
-  const click_handler_44 = () => smBndSaveEdit(activeSerial);
-  const click_handler_45 = () => smBndCancel(activeSerial);
-  const click_handler_46 = () => smBndStartAdd(activeSerial);
-  const click_handler_47 = () => smBndStartEdit(activeSerial);
-  const click_handler_48 = () => smBndRemoveSelected(activeSerial);
-  const input_handler_51 = (entry, e) => updateAllParamForm(activeSerial, entry[0], Number(e.target.value));
-  const click_handler_49 = () => applyAllParams(activeSerial);
+  const click_handler_43 = () => smBndSaveAdd(activeSerial);
+  const click_handler_44 = () => smBndCancel(activeSerial);
+  const click_handler_45 = () => smBndSaveEdit(activeSerial);
+  const click_handler_46 = () => smBndCancel(activeSerial);
+  const click_handler_47 = () => smBndStartAdd(activeSerial);
+  const click_handler_48 = () => smBndStartEdit(activeSerial);
+  const click_handler_49 = () => smBndRemoveSelected(activeSerial);
+  const input_handler_46 = (entry, e) => updateAllParamForm(activeSerial, entry[0], Number(e.target.value));
+  const click_handler_50 = () => applyAllParams(activeSerial);
   $$self.$$set = ($$props2) => {
     if ("activeSerial" in $$props2) $$invalidate(0, activeSerial = $$props2.activeSerial);
     if ("activeMenuId" in $$props2) $$invalidate(1, activeMenuId = $$props2.activeMenuId);
     if ("activeKeyer" in $$props2) $$invalidate(2, activeKeyer = $$props2.activeKeyer);
-    if ("activeKeyerFlags" in $$props2) $$invalidate(161, activeKeyerFlags = $$props2.activeKeyerFlags);
-    if ("configDevices" in $$props2) $$invalidate(160, configDevices = $$props2.configDevices);
-    if ("metadata" in $$props2) $$invalidate(162, metadata = $$props2.metadata);
-    if ("keyers" in $$props2) $$invalidate(163, keyers = $$props2.keyers);
-    if ("refreshDeviceConfig" in $$props2) $$invalidate(164, refreshDeviceConfig = $$props2.refreshDeviceConfig);
+    if ("activeKeyerFlags" in $$props2) $$invalidate(167, activeKeyerFlags = $$props2.activeKeyerFlags);
+    if ("configDevices" in $$props2) $$invalidate(166, configDevices = $$props2.configDevices);
+    if ("metadata" in $$props2) $$invalidate(168, metadata = $$props2.metadata);
+    if ("keyers" in $$props2) $$invalidate(169, keyers = $$props2.keyers);
+    if ("refreshDeviceConfig" in $$props2) $$invalidate(170, refreshDeviceConfig = $$props2.refreshDeviceConfig);
   };
   $$self.$$.update = () => {
     var _a, _b, _c, _d, _e, _f, _g;
     if ($$self.$$.dirty[5] & /*activeKeyerFlags*/
-    64) {
-      $$invalidate(63, hasKeyerMode = activeKeyerFlags.includes("HAS_KEYER_MODE"));
+    4096) {
+      $$invalidate(66, hasKeyerMode = activeKeyerFlags.includes("HAS_KEYER_MODE"));
     }
     if ($$self.$$.dirty[5] & /*activeKeyerFlags*/
-    64) {
+    4096) {
       $$invalidate(3, hasR2 = activeKeyerFlags.includes("HAS_R2"));
     }
     if ($$self.$$.dirty[5] & /*activeKeyerFlags*/
-    64) {
+    4096) {
       $$invalidate(6, hasAux = activeKeyerFlags.includes("HAS_AUX"));
     }
     if ($$self.$$.dirty[5] & /*activeKeyerFlags*/
-    64) {
+    4096) {
       $$invalidate(5, hasFsk1 = activeKeyerFlags.includes("HAS_FSK1"));
     }
     if ($$self.$$.dirty[5] & /*activeKeyerFlags*/
-    64) {
+    4096) {
       $$invalidate(4, hasFsk2 = activeKeyerFlags.includes("HAS_FSK2"));
     }
     if ($$self.$$.dirty[5] & /*activeKeyerFlags*/
-    64) {
-      $$invalidate(62, hasPfsk = activeKeyerFlags.includes("HAS_PFSK"));
+    4096) {
+      $$invalidate(65, hasPfsk = activeKeyerFlags.includes("HAS_PFSK"));
     }
     if ($$self.$$.dirty[5] & /*activeKeyerFlags*/
-    64) {
-      $$invalidate(61, hasFollowTx = activeKeyerFlags.includes("HAS_FOLLOW_TX_MODE"));
+    4096) {
+      $$invalidate(64, hasFollowTx = activeKeyerFlags.includes("HAS_FOLLOW_TX_MODE"));
     }
     if ($$self.$$.dirty[5] & /*activeKeyerFlags*/
-    64) {
-      $$invalidate(60, hasLnaPaPtt = activeKeyerFlags.includes("HAS_LNA_PA_PTT"));
+    4096) {
+      $$invalidate(63, hasLnaPaPtt = activeKeyerFlags.includes("HAS_LNA_PA_PTT"));
     }
     if ($$self.$$.dirty[5] & /*activeKeyerFlags*/
-    64) {
-      $$invalidate(59, hasLnaPaPttTail = activeKeyerFlags.includes("HAS_LNA_PA_PTT_TAIL"));
+    4096) {
+      $$invalidate(62, hasLnaPaPttTail = activeKeyerFlags.includes("HAS_LNA_PA_PTT_TAIL"));
     }
     if ($$self.$$.dirty[5] & /*activeKeyerFlags*/
-    64) {
-      $$invalidate(58, hasSoundcardPtt = activeKeyerFlags.includes("HAS_SOUNDCARD_PTT"));
+    4096) {
+      $$invalidate(61, hasSoundcardPtt = activeKeyerFlags.includes("HAS_SOUNDCARD_PTT"));
     }
     if ($$self.$$.dirty[5] & /*activeKeyerFlags*/
-    64) {
-      $$invalidate(57, hasCwInVoice = activeKeyerFlags.includes("HAS_CW_IN_VOICE"));
+    4096) {
+      $$invalidate(60, hasCwInVoice = activeKeyerFlags.includes("HAS_CW_IN_VOICE"));
     }
     if ($$self.$$.dirty[0] & /*activeKeyer*/
     4) {
-      $$invalidate(56, isAudioMk1 = (activeKeyer == null ? void 0 : activeKeyer.type) === 4);
+      $$invalidate(59, isAudioMk1 = (activeKeyer == null ? void 0 : activeKeyer.type) === 4);
     }
     if ($$self.$$.dirty[0] & /*activeKeyer*/
     4) {
-      $$invalidate(55, isAudioMk2 = (activeKeyer == null ? void 0 : activeKeyer.type) === 5 || (activeKeyer == null ? void 0 : activeKeyer.type) === 11);
+      $$invalidate(58, isAudioMk2 = (activeKeyer == null ? void 0 : activeKeyer.type) === 5 || (activeKeyer == null ? void 0 : activeKeyer.type) === 11);
     }
     if ($$self.$$.dirty[0] & /*activeKeyer*/
     4) {
-      $$invalidate(54, isAudioMk2R = (activeKeyer == null ? void 0 : activeKeyer.type) === 6 || (activeKeyer == null ? void 0 : activeKeyer.type) === 7);
+      $$invalidate(57, isAudioMk2R = (activeKeyer == null ? void 0 : activeKeyer.type) === 6 || (activeKeyer == null ? void 0 : activeKeyer.type) === 7);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*configDevices*/
-    32) {
-      $$invalidate(53, activeAnts = configDevices && activeSerial ? smAntennas(activeSerial) : []);
+    2048) {
+      $$invalidate(56, activeAnts = configDevices && activeSerial ? smAntennas(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*configDevices*/
-    32) {
-      $$invalidate(52, activeAntOutCols = configDevices && activeSerial ? smAntOutputColumns(activeSerial) : []);
+    2048) {
+      $$invalidate(55, activeAntOutCols = configDevices && activeSerial ? smAntOutputColumns(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*configDevices*/
-    32) {
-      $$invalidate(51, activeVrs = configDevices && activeSerial ? smVirtualRotators(activeSerial) : []);
+    2048) {
+      $$invalidate(54, activeVrs = configDevices && activeSerial ? smVirtualRotators(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*configDevices*/
-    32) {
-      $$invalidate(50, activeGrps = configDevices && activeSerial ? smGroups(activeSerial) : []);
+    2048) {
+      $$invalidate(53, activeGrps = configDevices && activeSerial ? smGroups(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*configDevices*/
-    32) {
-      $$invalidate(49, activeAllObjs = configDevices && activeSerial ? smAllObjects(activeSerial) : []);
+    2048) {
+      $$invalidate(52, activeAllObjs = configDevices && activeSerial ? smAllObjects(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*configDevices*/
-    32) {
-      $$invalidate(48, activeBnds = configDevices && activeSerial ? smBands(activeSerial) : []);
+    2048) {
+      $$invalidate(51, activeBnds = configDevices && activeSerial ? smBands(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*configDevices*/
-    32) {
-      $$invalidate(47, activeBpfOutputs = configDevices && activeSerial ? smBpfOutputs(activeSerial) : []);
+    2048) {
+      $$invalidate(50, activeBpfOutputs = configDevices && activeSerial ? smBpfOutputs(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*configDevices*/
-    32) {
-      $$invalidate(46, activeSeqOutputs = configDevices && activeSerial ? smSequencerOutputs(activeSerial) : []);
+    2048) {
+      $$invalidate(49, activeSeqOutputs = configDevices && activeSerial ? smSequencerOutputs(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*configDevices*/
-    32) {
-      $$invalidate(45, activeAntOutputs = configDevices && activeSerial ? smAntOutputs(activeSerial) : []);
+    2048) {
+      $$invalidate(48, activeAntOutputs = configDevices && activeSerial ? smAntOutputs(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*configDevices*/
-    32) {
-      $$invalidate(44, activeAntsAndGroups = configDevices && activeSerial ? smAntsAndGroups(activeSerial) : []);
+    2048) {
+      $$invalidate(47, activeAntsAndGroups = configDevices && activeSerial ? smAntsAndGroups(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*radioForm*/
-    1024) {
-      $$invalidate(43, activeR1 = activeSerial ? ((_a = radioForm[activeSerial]) == null ? void 0 : _a.r1) || defaultRadioForm(activeSerial, "r1") : null);
+    65536) {
+      $$invalidate(46, activeR1 = activeSerial ? ((_a = radioForm[activeSerial]) == null ? void 0 : _a.r1) || defaultRadioForm(activeSerial, "r1") : null);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*radioForm*/
-    1024) {
-      $$invalidate(42, activeR2 = activeSerial ? ((_b = radioForm[activeSerial]) == null ? void 0 : _b.r2) || defaultRadioForm(activeSerial, "r2") : null);
+    65536) {
+      $$invalidate(45, activeR2 = activeSerial ? ((_b = radioForm[activeSerial]) == null ? void 0 : _b.r2) || defaultRadioForm(activeSerial, "r2") : null);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*radioForm*/
-    1024) {
-      $$invalidate(41, activeAux = activeSerial ? ((_c = radioForm[activeSerial]) == null ? void 0 : _c.aux) || defaultRadioForm(activeSerial, "aux") : null);
+    65536) {
+      $$invalidate(44, activeAux = activeSerial ? ((_c = radioForm[activeSerial]) == null ? void 0 : _c.aux) || defaultRadioForm(activeSerial, "aux") : null);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*radioForm*/
-    1024) {
-      $$invalidate(40, activeFsk1 = activeSerial ? ((_d = radioForm[activeSerial]) == null ? void 0 : _d.fsk1) || defaultRadioForm(activeSerial, "fsk1") : null);
+    65536) {
+      $$invalidate(43, activeFsk1 = activeSerial ? ((_d = radioForm[activeSerial]) == null ? void 0 : _d.fsk1) || defaultRadioForm(activeSerial, "fsk1") : null);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*radioForm*/
-    1024) {
-      $$invalidate(39, activeFsk2 = activeSerial ? ((_e = radioForm[activeSerial]) == null ? void 0 : _e.fsk2) || defaultRadioForm(activeSerial, "fsk2") : null);
+    65536) {
+      $$invalidate(42, activeFsk2 = activeSerial ? ((_e = radioForm[activeSerial]) == null ? void 0 : _e.fsk2) || defaultRadioForm(activeSerial, "fsk2") : null);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*rigModeSyncForm*/
-    4096) {
-      $$invalidate(38, activeRigModeSync = activeSerial ? rigModeSyncForm[activeSerial] || defaultRigModeSyncForm(activeSerial) : null);
+    262144) {
+      $$invalidate(41, activeRigModeSync = activeSerial ? rigModeSyncForm[activeSerial] || defaultRigModeSyncForm(activeSerial) : null);
+    }
+    if ($$self.$$.dirty[0] & /*hasR2*/
+    8) {
+      $$invalidate(40, rigRadios = hasR2 ? ["r1", "r2"] : ["r1"]);
+    }
+    if ($$self.$$.dirty[0] & /*activeSerial, activeKeyer*/
+    5 | $$self.$$.dirty[5] & /*radioInfoLive*/
+    524288) {
+      $$invalidate(39, activeRadioInfo = [1, 2].map((n) => radioInfoLive[`${activeSerial}:${n}`] || ((activeKeyer == null ? void 0 : activeKeyer.radios) || []).find((r) => r.radio === n) || null));
+    }
+    if ($$self.$$.dirty[0] & /*activeSerial*/
+    1 | $$self.$$.dirty[5] & /*catMonitor*/
+    1048576) {
+      $$invalidate(38, activeCatMonitor = [1, 2].map((n) => catMonitor[`${activeSerial}:${n}`] || []));
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*pttForm*/
-    8192) {
+    2097152) {
       $$invalidate(37, activePttR1 = activeSerial ? ((_f = pttForm[activeSerial]) == null ? void 0 : _f.r1) || defaultPttForm(activeSerial, "r1") : null);
     }
     if ($$self.$$.dirty[0] & /*activeSerial*/
     1 | $$self.$$.dirty[5] & /*pttForm*/
-    8192) {
+    2097152) {
       $$invalidate(36, activePttR2 = activeSerial ? ((_g = pttForm[activeSerial]) == null ? void 0 : _g.r2) || defaultPttForm(activeSerial, "r2") : null);
     }
     if ($$self.$$.dirty[5] & /*configDevices*/
-    32) {
+    2048) {
       if (configDevices) {
         resetRadioForms();
         resetRigModeSyncForms();
@@ -32884,7 +33214,7 @@ function instance$1($$self, $$props, $$invalidate) {
     }
     if ($$self.$$.dirty[0] & /*activeSerial, hasR2, hasAux, hasFsk1, hasFsk2*/
     121 | $$self.$$.dirty[5] & /*configDevices, radioFormGen, pttFormGen, messageFormGen, allParamFormGen*/
-    116768) {
+    29493248) {
       if (activeSerial && configDevices) {
         ensureRadioForm(activeSerial, "r1");
         if (hasR2) ensureRadioForm(activeSerial, "r2");
@@ -32939,6 +33269,9 @@ function instance$1($$self, $$props, $$invalidate) {
     smBndAddRef,
     activePttR2,
     activePttR1,
+    activeCatMonitor,
+    activeRadioInfo,
+    rigRadios,
     activeRigModeSync,
     activeFsk2,
     activeFsk1,
@@ -32992,6 +33325,9 @@ function instance$1($$self, $$props, $$invalidate) {
     updateRigModeSyncTop,
     updateRigModeSyncRadio,
     applyRigModeSync,
+    clearCatMonitor,
+    radioInfoText,
+    scrollToEnd,
     handleMessageInput,
     updateAllParamForm,
     applyAllParams,
@@ -33069,6 +33405,8 @@ function instance$1($$self, $$props, $$invalidate) {
     radioForm,
     radioFormGen,
     rigModeSyncForm,
+    radioInfoLive,
+    catMonitor,
     pttForm,
     pttFormGen,
     messageFormGen,
@@ -33102,49 +33440,45 @@ function instance$1($$self, $$props, $$invalidate) {
     change_handler_22,
     change_handler_23,
     change_handler_24,
+    change_handler_25,
     input_handler_2,
+    change_handler_26,
+    click_handler_2,
     input_handler_3,
     input_handler_4,
     input_handler_5,
     input_handler_6,
-    change_handler_25,
     input_handler_7,
-    change_handler_26,
-    input_handler_8,
-    input_handler_9,
-    input_handler_10,
-    input_handler_11,
-    input_handler_12,
     change_handler_27,
-    input_handler_13,
-    click_handler_2,
+    input_handler_8,
+    click_handler_3,
     change_handler_28,
     change_handler_29,
     change_handler_30,
     change_handler_31,
-    click_handler_3,
+    click_handler_4,
     change_handler_32,
     change_handler_33,
     change_handler_34,
     change_handler_35,
     change_handler_36,
     change_handler_37,
-    click_handler_4,
+    click_handler_5,
     change_handler_38,
     change_handler_39,
     change_handler_40,
     change_handler_41,
     change_handler_42,
     change_handler_43,
-    click_handler_5,
+    click_handler_6,
     change_handler_44,
     change_handler_45,
     change_handler_46,
     change_handler_47,
     change_handler_48,
-    input_handler_14,
-    input_handler_15,
-    input_handler_16,
+    input_handler_9,
+    input_handler_10,
+    input_handler_11,
     change_handler_49,
     change_handler_50,
     change_handler_51,
@@ -33153,9 +33487,9 @@ function instance$1($$self, $$props, $$invalidate) {
     change_handler_54,
     change_handler_55,
     change_handler_56,
-    input_handler_17,
-    input_handler_18,
-    input_handler_19,
+    input_handler_12,
+    input_handler_13,
+    input_handler_14,
     change_handler_57,
     change_handler_58,
     change_handler_59,
@@ -33169,8 +33503,8 @@ function instance$1($$self, $$props, $$invalidate) {
     change_handler_67,
     change_handler_68,
     change_handler_69,
-    input_handler_20,
-    input_handler_21,
+    input_handler_15,
+    input_handler_16,
     change_handler_70,
     change_handler_71,
     change_handler_72,
@@ -33195,8 +33529,8 @@ function instance$1($$self, $$props, $$invalidate) {
     change_handler_91,
     change_handler_92,
     change_handler_93,
-    input_handler_22,
-    input_handler_23,
+    input_handler_17,
+    input_handler_18,
     change_handler_94,
     change_handler_95,
     change_handler_96,
@@ -33204,31 +33538,31 @@ function instance$1($$self, $$props, $$invalidate) {
     change_handler_98,
     change_handler_99,
     change_handler_100,
-    input_handler_24,
-    input_handler_25,
-    input_handler_26,
+    input_handler_19,
+    input_handler_20,
+    input_handler_21,
     change_handler_101,
     change_handler_102,
     change_handler_103,
     change_handler_104,
+    input_handler_22,
+    input_handler_23,
+    input_handler_24,
+    input_handler_25,
+    input_handler_26,
     input_handler_27,
     input_handler_28,
     input_handler_29,
-    input_handler_30,
-    input_handler_31,
-    input_handler_32,
-    input_handler_33,
-    input_handler_34,
     change_handler_105,
     change_handler_106,
-    input_handler_35,
-    click_handler_6,
+    input_handler_30,
     click_handler_7,
-    input_handler_36,
     click_handler_8,
+    input_handler_31,
     click_handler_9,
     click_handler_10,
     click_handler_11,
+    click_handler_12,
     change_handler_107,
     change_handler_108,
     change_handler_109,
@@ -33243,13 +33577,13 @@ function instance$1($$self, $$props, $$invalidate) {
     change_handler_118,
     change_handler_119,
     change_handler_120,
-    input_handler_37,
-    input_handler_38,
+    input_handler_32,
+    input_handler_33,
     change_handler_121,
     change_handler_122,
-    input_handler_39,
+    input_handler_34,
     change_handler_123,
-    input_handler_40,
+    input_handler_35,
     change_handler_124,
     input0_input_handler,
     input1_input_handler,
@@ -33259,27 +33593,26 @@ function instance$1($$self, $$props, $$invalidate) {
     select2_change_handler,
     input3_input_handler,
     select_change_handler,
-    click_handler_12,
     click_handler_13,
     click_handler_14,
     click_handler_15,
     click_handler_16,
     click_handler_17,
     click_handler_18,
-    change_handler_125,
-    input_handler_41,
-    input_handler_42,
     click_handler_19,
+    change_handler_125,
+    input_handler_36,
+    input_handler_37,
+    click_handler_20,
     change_handler_126,
-    input_handler_43,
-    input_handler_44,
+    input_handler_38,
+    input_handler_39,
     change_handler_127,
     input0_input_handler_1,
     input1_input_handler_1,
     select_change_handler_1,
     input0_input_handler_2,
     input1_input_handler_2,
-    click_handler_20,
     click_handler_21,
     click_handler_22,
     click_handler_23,
@@ -33288,16 +33621,16 @@ function instance$1($$self, $$props, $$invalidate) {
     click_handler_26,
     click_handler_27,
     click_handler_28,
-    change_handler_128,
-    input_handler_45,
-    input_handler_46,
     click_handler_29,
+    change_handler_128,
+    input_handler_40,
+    input_handler_41,
+    click_handler_30,
     change_handler_129,
     change_handler_130,
     select_change_handler_2,
     input0_input_handler_3,
     input1_input_handler_3,
-    click_handler_30,
     click_handler_31,
     click_handler_32,
     click_handler_33,
@@ -33306,11 +33639,12 @@ function instance$1($$self, $$props, $$invalidate) {
     click_handler_36,
     click_handler_37,
     click_handler_38,
+    click_handler_39,
     change_handler_131,
-    input_handler_47,
-    input_handler_48,
-    input_handler_49,
-    input_handler_50,
+    input_handler_42,
+    input_handler_43,
+    input_handler_44,
+    input_handler_45,
     change_handler_132,
     change_handler_133,
     change_handler_134,
@@ -33320,24 +33654,24 @@ function instance$1($$self, $$props, $$invalidate) {
     change_handler_138,
     func,
     select_change_handler_3,
-    click_handler_39,
     click_handler_40,
     click_handler_41,
+    click_handler_42,
     input0_input_handler_4,
     input1_input_handler_4,
     input2_input_handler_1,
     input3_input_handler_1,
     input4_change_handler,
     input5_change_handler,
-    click_handler_42,
     click_handler_43,
     click_handler_44,
     click_handler_45,
     click_handler_46,
     click_handler_47,
     click_handler_48,
-    input_handler_51,
-    click_handler_49
+    click_handler_49,
+    input_handler_46,
+    click_handler_50
   ];
 }
 class KeyerPage extends SvelteComponent {
@@ -33353,14 +33687,15 @@ class KeyerPage extends SvelteComponent {
         activeSerial: 0,
         activeMenuId: 1,
         activeKeyer: 2,
-        activeKeyerFlags: 161,
-        configDevices: 160,
-        metadata: 162,
-        keyers: 163,
-        refreshDeviceConfig: 164
+        activeKeyerFlags: 167,
+        configDevices: 166,
+        metadata: 168,
+        keyers: 169,
+        refreshDeviceConfig: 170
       },
       null,
       [
+        -1,
         -1,
         -1,
         -1,
@@ -34264,7 +34599,8 @@ function instance($$self, $$props, $$invalidate) {
           serial: cfg.serial,
           type: cfg.type,
           name: dev.name || cfg.serial,
-          status: dev.status || ""
+          status: dev.status || "",
+          radios: dev.radios || []
         };
       });
     }
@@ -34272,7 +34608,8 @@ function instance($$self, $$props, $$invalidate) {
       serial: dev.serial,
       type: null,
       name: dev.name || dev.serial,
-      status: dev.status || ""
+      status: dev.status || "",
+      radios: dev.radios || []
     }));
   };
   const keyerFlagsForSerial = (serial) => {

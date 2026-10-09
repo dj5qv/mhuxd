@@ -192,6 +192,7 @@ struct mh_control {
 	// radio info per radio, data, validity, stale timer
 	struct mhc_radio_info radio_info[2];
 	uint8_t  radio_info_valid[2];
+	char radio_info_source[2][16];
 	ev_timer radio_info_timer[2];       // timer to mark radio info as stale after some time without update.
 	uint8_t radio_info_freq_sent_success[2]; // radio qrg info successfully sent.
 	struct PGList radio_info_freq_free_list;
@@ -782,6 +783,16 @@ static void router_status_cb(struct mh_router *router, int status, void *user_da
 	}
 }
 
+static void publish_radio_info(struct mh_control *ctl, uint8_t radio) {
+	eventbus_publish(ctl->ebus, EV_RADIO_INFO, &(struct ev_radio_info) {
+		.serial = ctl->serial,
+		.radio = radio,
+		.valid = ctl->radio_info_valid[radio-1],
+		.source = ctl->radio_info_source[radio-1],
+		.info = &ctl->radio_info[radio-1],
+	});
+}
+
 static void radio_info_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, int revents) {
 	struct mh_control *ctl = w->data;
 	uint8_t radio = 255;
@@ -797,6 +808,7 @@ static void radio_info_timeout_cb (struct ev_loop *loop,  struct ev_timer *w, in
 	ctl->radio_info_valid[radio-1] = 0;
 	ev_timer_stop(ctl->loop, &ctl->radio_info_timer[radio-1]);
 	set_force_keyer_mode(ctl, radio, 1);
+	publish_radio_info(ctl, radio);
 }
 
 
@@ -832,6 +844,8 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	ev_timer_init(&ctl->cmd_timeout_timer, cmd_timeout_cb, CMD_TIMEOUT, 0.);
 	ctl->cmd_timeout_timer.data = ctl;
 
+	ctl->radio_info[0].mode = -1;	// nothing received yet
+	ctl->radio_info[1].mode = -1;
 	ev_init(&ctl->radio_info_timer[0], radio_info_timeout_cb);
 	ev_init(&ctl->radio_info_timer[1], radio_info_timeout_cb);
 	ctl->radio_info_timer[0].repeat = RADIO_INFO_TIMEOUT;
@@ -1935,6 +1949,13 @@ void mhc_update_radio_info(struct mh_control *ctl, const char *source, const str
 
 	/* force_mode_changed = */ set_force_keyer_mode(ctl, radio, 0);
 
+	// Tell listeners (REST/WebSocket) about new values, not about every refresh.
+	const struct mhc_radio_info *old = &ctl->radio_info[radio-1];
+	uint8_t notify = !ctl->radio_info_valid[radio-1] || old->mode != info->mode ||
+		freq_changed(&ctl->radio_info[radio-1], info) ||
+		strncmp(old->mode_str, info->mode_str, sizeof(old->mode_str)) ||
+		strncmp(ctl->radio_info_source[radio-1], source ? source : "", sizeof(ctl->radio_info_source[0]));
+
 	if(ctl->radio_info_valid[radio-1] == 0) {
 		ctl->radio_info_valid[radio-1] = 1;
 		dbg0("%s %s() r%d info now valid", ctl->serial, __func__, radio);
@@ -1974,5 +1995,19 @@ void mhc_update_radio_info(struct mh_control *ctl, const char *source, const str
 	}
 
 	memcpy(&ctl->radio_info[radio-1], info, sizeof(*info));
+	snprintf(ctl->radio_info_source[radio-1], sizeof(ctl->radio_info_source[0]), "%s", source ? source : "");
+
+	if(notify)
+		publish_radio_info(ctl, radio);
+}
+
+int mhc_get_radio_info(struct mh_control *ctl, uint8_t radio, struct mhc_radio_info *out, const char **source) {
+	if(!ctl || radio < 1 || radio > 2)
+		return 0;
+	if(out)
+		*out = ctl->radio_info[radio-1];
+	if(source)
+		*source = ctl->radio_info_source[radio-1];
+	return ctl->radio_info_valid[radio-1];
 }
 

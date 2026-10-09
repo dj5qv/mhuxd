@@ -13,12 +13,15 @@
 
 struct device;
 struct mh_router;
+struct mhc_radio_info;
 
 // Event Types
 enum app_event_type {
     EV_KEYER_STATE,       // Keyer lifecycle (ONLINE, OFFLINE, etc.)
     EV_KEYER_MODE,        // Radio mode changed (CW, VOICE, etc.)
     EV_CON_STATUS,        // Connector (TCP/VSP) status changed
+    EV_RADIO_INFO,        // Radio info (frequency, mode) from rig mode sync changed or timed out
+    EV_CAT_MONITOR,       // One line of the native CAT monitor
     EV_MAX                // Keep as last
 };
 
@@ -38,6 +41,20 @@ struct ev_keyer_mode {
 struct ev_con_status {
     int connector_id;
     int status;
+};
+
+struct ev_radio_info {
+    const char *serial;
+    uint8_t radio;                       // 1 or 2
+    uint8_t valid;                       // 0: timed out
+    const char *source;                  // module that sent it ("rigcl", "catn")
+    const struct mhc_radio_info *info;
+};
+
+struct ev_cat_monitor {
+    const char *serial;
+    uint8_t radio;
+    const char *line;                    // trace format, see tests/cat/README.md
 };
 
 #endif // EVENTS_H

@@ -6,12 +6,17 @@
  *  See the file COPYING
  */
 
+#include <errno.h>
 #include <ev.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "cat_native.h"
 #include "cat_civ.h"
 #include "cat_state.h"
+#include "cat_trace.h"
 #include "app_ctx.h"
 #include "channel.h"
 #include "device.h"
@@ -24,6 +29,7 @@
 #include "logger.h"
 
 #define MOD_ID "catn"
+#define CATN_SOURCE "native"	// rig mode sync backend name, shown in the API
 
 // Decoded frames of one burst (query/reply pairs, set + FB) are published together.
 #define CATN_PUBLISH_DELAY 0.2
@@ -39,6 +45,9 @@
 #define CATN_KEEPALIVE 5.0
 #endif
 
+// CAT monitor files (LOGDIR/cat-<serial>-r<n>.trace) stop growing at this size.
+#define CATN_MON_MAX_BYTES (20 * 1024 * 1024)
+
 // Rig types (keyer protocol keys, src/radiotypes.c) that need special handling.
 #define RIG_TYPE_IC735   0x08	// 4-byte frequencies
 #define RIG_TYPE_OMNI_VI 0x38	// Ten-Tec, speaks CI-V
@@ -52,6 +61,13 @@ struct cat_native {
 	int channel;
 	int protocol;
 	int civ_address;
+	eventbus_t *ebus;
+
+	// CAT monitor: trace lines to a file and to the event bus (WebSocket).
+	int monitor;
+	char *mon_path;
+	FILE *mon_file;
+	long mon_bytes;
 
 	// Decoder, set up from the channel configuration.
 	int rigtype;
@@ -83,6 +99,96 @@ int cat_native_protocol_from_str(const char *s) {
 
 static int is_civ_rig(int rigtype) {
 	return rtyp_get_icom_address(rigtype) != 0 || rigtype == RIG_TYPE_OMNI_VI;
+}
+
+/*
+ * CAT monitor
+ */
+
+static void catn_mon_line(struct cat_native *cn, const char *line) {
+	if(!cn->monitor)
+		return;
+
+	if(cn->mon_file) {
+		int r = fprintf(cn->mon_file, "%s\n", line);
+		if(r > 0)
+			cn->mon_bytes += r;
+		if(r < 0 || cn->mon_bytes >= CATN_MON_MAX_BYTES) {
+			if(r < 0)
+				warn("%s %s CAT monitor: write error on %s, file output stopped", cn->serial,
+				     radio_str(cn->radio), cn->mon_path);
+			else
+				warn("%s %s CAT monitor: %s reached %d MB, file output stopped", cn->serial,
+				     radio_str(cn->radio), cn->mon_path, CATN_MON_MAX_BYTES / (1024 * 1024));
+			fprintf(cn->mon_file, "# file size limit reached, monitor stopped\n");
+			fclose(cn->mon_file);
+			cn->mon_file = NULL;
+		}
+	}
+
+	eventbus_publish(cn->ebus, EV_CAT_MONITOR, &(struct ev_cat_monitor) {
+		.serial = cn->serial,
+		.radio = cn->radio,
+		.line = line,
+	});
+}
+
+static void catn_mon_comment(struct cat_native *cn, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+static void catn_mon_comment(struct cat_native *cn, const char *fmt, ...) {
+	char line[256];
+	va_list ap;
+
+	if(!cn->monitor)
+		return;
+	line[0] = '#';
+	line[1] = ' ';
+	va_start(ap, fmt);
+	vsnprintf(line + 2, sizeof(line) - 2, fmt, ap);
+	va_end(ap);
+	catn_mon_line(cn, line);
+}
+
+static void catn_mon_frame_cb(const struct cat_civ_frame *f, void *user_data) {
+	struct cat_native *cn = user_data;
+	char time_str[32], line[CAT_TRACE_LINE_MAX];
+	ev_tstamp now = ev_now(cn->loop);
+	time_t secs = (time_t)now;
+	struct tm tm;
+
+	localtime_r(&secs, &tm);
+	snprintf(time_str, sizeof(time_str), "%02d:%02d:%02d.%03d", tm.tm_hour, tm.tm_min, tm.tm_sec,
+		 (int)((now - (ev_tstamp)secs) * 1000.0));
+	cat_trace_civ_frame(line, sizeof(line), time_str, "H1", f, &cn->st);
+	catn_mon_line(cn, line);
+}
+
+static void catn_mon_open(struct cat_native *cn, const char *dir) {
+	size_t len = strlen(dir) + strlen(cn->serial) + 32;
+	char date[64];
+	time_t now = time(NULL);
+	struct tm tm;
+
+	cn->mon_path = w_malloc(len);
+	snprintf(cn->mon_path, len, "%s/cat-%s-%s.trace", dir, cn->serial, radio_str(cn->radio));
+
+	cn->mon_file = fopen(cn->mon_path, "ae");
+	if(cn->mon_file && ftell(cn->mon_file) >= CATN_MON_MAX_BYTES) {
+		// Too big from earlier sessions: start over.
+		fclose(cn->mon_file);
+		cn->mon_file = fopen(cn->mon_path, "we");
+	}
+	if(!cn->mon_file) {
+		warn_e(errno, "%s %s CAT monitor: can't open %s, monitor only via WebSocket", cn->serial,
+		       radio_str(cn->radio), cn->mon_path);
+		return;
+	}
+	setvbuf(cn->mon_file, NULL, _IOLBF, 0);
+	cn->mon_bytes = ftell(cn->mon_file);
+
+	localtime_r(&now, &tm);
+	strftime(date, sizeof(date), "%Y-%m-%d %H:%M:%S %z", &tm);
+	info("%s %s CAT monitor on, writing %s", cn->serial, radio_str(cn->radio), cn->mon_path);
+	catn_mon_comment(cn, "mhuxd CAT monitor, %s %s, started %s", cn->serial, radio_str(cn->radio), date);
 }
 
 static void catn_reset(struct cat_native *cn) {
@@ -133,6 +239,7 @@ static void catn_setup(struct cat_native *cn, int force) {
 	if(cn->protocol != CAT_NATIVE_PROTO_CIV && !is_civ_rig(rigtype)) {
 		info("%s %s native CAT: no decoder for rig type '%s' yet, use rigctld",
 		     cn->serial, radio_str(cn->radio), rtyp_get_name(rigtype));
+		catn_mon_comment(cn, "no decoder for rig type '%s'", rtyp_get_name(rigtype));
 		return;
 	}
 
@@ -147,6 +254,14 @@ static void catn_setup(struct cat_native *cn, int force) {
 	}
 	info("%s %s native CAT: CI-V, rig type '%s', radio address %02X%s", cn->serial,
 	     radio_str(cn->radio), rtyp_get_name(rigtype), addr, addr ? "" : " (learn)");
+
+	if(cn->monitor) {
+		char line[64];
+		cat_civ_set_frame_cb(cn->civ, catn_mon_frame_cb, cn);
+		catn_mon_comment(cn, "rig type '%s'", rtyp_get_name(rigtype));
+		cat_trace_civ_config(line, sizeof(line), &cc);
+		catn_mon_line(cn, line);
+	}
 }
 
 static int info_differs(const struct mhc_radio_info *a, const struct mhc_radio_info *b) {
@@ -183,7 +298,7 @@ static void catn_publish(struct cat_native *cn) {
 	}
 	cn->last_info = info;
 	cn->last_info_valid = 1;
-	mhc_update_radio_info(cn->ctl, MOD_ID, &info);
+	mhc_update_radio_info(cn->ctl, CATN_SOURCE, &info);
 	ev_timer_again(cn->loop, &cn->keepalive_timer);
 }
 
@@ -199,7 +314,7 @@ static void catn_keepalive_cb(struct ev_loop *loop, struct ev_timer *w, int reve
 	if(!cn->last_info_valid)
 		return;
 	dbg1("%s %s native CAT: no new data, sending the last state again", cn->serial, radio_str(cn->radio));
-	mhc_update_radio_info(cn->ctl, MOD_ID, &cn->last_info);
+	mhc_update_radio_info(cn->ctl, CATN_SOURCE, &cn->last_info);
 }
 
 static void catn_feed(struct cat_native *cn, enum cat_dir dir, unsigned const char *data, int len) {
@@ -243,6 +358,7 @@ static void catn_keyer_state_cb(enum app_event_type type, const void *data, void
 		return;
 
 	// Values decoded before the keyer went away may be outdated: start over.
+	catn_mon_comment(cn, "keyer %s, decoder starts over", mhc_state_str(ev->state));
 	cat_civ_destroy(cn->civ);
 	cn->civ = NULL;
 	cn->rigtype = -1;
@@ -265,6 +381,10 @@ struct cat_native *cat_native_create(struct app_ctx *ctx, struct device *dev, co
 	cn->channel = cn->radio == 2 ? MH_CHANNEL_R2 : MH_CHANNEL_R1;
 	cn->protocol = cfg->protocol;
 	cn->civ_address = cfg->civ_address;
+	cn->ebus = app_ctx_get_eventbus(ctx);
+	cn->monitor = cfg->monitor;
+	if(cn->monitor)
+		catn_mon_open(cn, cfg->monitor_dir ? cfg->monitor_dir : LOGDIR);
 	cn->rigtype = -1;
 	cn->civ_addr = -1;
 	cat_state_init(&cn->st);
@@ -278,8 +398,8 @@ struct cat_native *cat_native_create(struct app_ctx *ctx, struct device *dev, co
 	mhr_add_producer_tap_cb(cn->router, catn_host_cb, cn->channel, cn);
 	cn->kscb = eventbus_subscribe(app_ctx_get_eventbus(ctx), EV_KEYER_STATE, catn_keyer_state_cb, cn);
 
-	info("%s %s native CAT rig mode sync created (protocol %s)", cn->serial, radio_str(cn->radio),
-	     cn->protocol == CAT_NATIVE_PROTO_CIV ? "civ" : "auto");
+	info("%s %s native CAT rig mode sync created (protocol %s%s)", cn->serial, radio_str(cn->radio),
+	     cn->protocol == CAT_NATIVE_PROTO_CIV ? "civ" : "auto", cn->monitor ? ", monitor on" : "");
 	catn_setup(cn, 1);
 	return cn;
 }
@@ -295,6 +415,11 @@ void cat_native_destroy(struct cat_native *cn) {
 	ev_timer_stop(cn->loop, &cn->publish_timer);
 	ev_timer_stop(cn->loop, &cn->keepalive_timer);
 	cat_civ_destroy(cn->civ);
+	if(cn->mon_file) {
+		catn_mon_comment(cn, "monitor stopped");
+		fclose(cn->mon_file);
+	}
+	free(cn->mon_path);
 	info("%s %s native CAT rig mode sync destroyed", cn->serial, radio_str(cn->radio));
 	free(cn->serial);
 	free(cn);

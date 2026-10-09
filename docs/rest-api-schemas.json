@@ -118,7 +118,28 @@
         "verFwMajor": {"type": "integer"},
         "verFwMinor": {"type": "integer"},
         "verFwBeta": {"type": "boolean"},
-        "verWinkey": {"type": "integer"}
+        "verWinkey": {"type": "integer"},
+        "radios": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/RadioInfo"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "RadioInfo": {
+      "description": "What rig mode sync (rigctld or native) last reported for a radio. Also sent as WebSocket event type radio_info, with serial.",
+      "type": "object",
+      "required": ["radio", "valid"],
+      "properties": {
+        "radio": {"type": "integer", "minimum": 1, "maximum": 2},
+        "valid": {"type": "boolean", "description": "false: nothing received yet, or no update for 10 s"},
+        "source": {"type": ["string", "null"], "enum": ["rigctld", "native", null]},
+        "rxFreq": {"type": "integer"},
+        "txFreq": {"type": "integer"},
+        "vfoAFreq": {"type": "integer"},
+        "vfoBFreq": {"type": "integer"},
+        "mode": {"type": ["string", "null"], "description": "radio mode as rigctld names it: USB, PKTUSB, CW, ..."},
+        "keyerMode": {"type": ["string", "null"], "enum": ["CW", "VOICE", "FSK", "DIGITAL", null]}
       },
       "additionalProperties": false
     },
@@ -176,6 +197,13 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 223
+        },
+        "monitor": {
+          "description": "backend native: CAT monitor, LOGDIR/cat-<serial>-r<n>.trace and WebSocket events cat_monitor",
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
         }
       },
       "additionalProperties": false

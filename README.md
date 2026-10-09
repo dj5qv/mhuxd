@@ -23,6 +23,10 @@
 
 - WebUI and TCP connector support IPv6 now.
 
+- Native rig mode sync (Icom CI-V for now): mhuxd reads the CAT traffic of the applications
+  using the keyer's CAT port and keeps keyer mode and frequency in sync with the radio, without
+  rigctld. With a CAT monitor for troubleshooting.
+
 
 ---
 
@@ -231,8 +235,32 @@ serial ports provided by mhuxd. In that case, no other application can open thes
 
 ![WSJTX direct](images/WSJTX_direct.png)
 
-For this to work, "Rig mode sync" must be disabled. Otherwise /dev/mhuxd/cat1 would be occupied by 
-rigctld already.
+For this to work, "Rig mode sync" must be disabled or use the backend "native" (see below).
+Otherwise /dev/mhuxd/cat1 would be occupied by rigctld already.
+
+### Rig Mode Sync, backend "native"
+
+With backend "native", mhuxd doesn't need rigctld. It reads the CAT traffic between your
+applications and the radio on the keyer's CAT port, decodes frequency and mode, and sets the
+keyer mode (CW, VOICE, FSK, DIGITAL) from it. Applications keep using the virtual serial port
+directly, e.g. WSJTX configured like in the "WSJTX direct" example above.
+
+- Supported for now: Icom radios (the Ten-Tec OMNI VI speaks CI-V too, untested). For other radios
+  use rigctld. Kenwood, Elecraft and Yaesu are planned.
+- Select the radio type and CI-V address in the keyer's "Radio" section as usual. "Protocol:
+  auto" takes the protocol from the radio type, "CI-V address" overrides the channel's address.
+- Keep the keyer option "Use decoder if connected" off. The keyer's own CAT polls collide with
+  the applications' commands on the CI-V bus.
+- mhuxd doesn't send anything to the radio yet. Frequency and mode are known while an
+  application polls the radio (WSJTX, fldigi and loggers do), and from CI-V transceive
+  ("CI-V Transceive" on in the radio's menu, default on the IC-7300). When nobody polls,
+  the keyer keeps the last known mode.
+- "Radio state" shows what mhuxd sees, e.g. "14.074.000 Hz PKTUSB → keyer DIGITAL". That's
+  the first thing to check when the keyer mode doesn't follow the radio.
+- "CAT monitor" shows the decoded CAT traffic live and writes it to
+  `cat-<serial>-r1.trace` in mhuxd's log directory. If something isn't decoded right,
+  please send that file along with your report: it can be replayed by the tests in
+  `tests/cat/` as is.
 
 ## ACKNOWLEDGEMENTS
 
