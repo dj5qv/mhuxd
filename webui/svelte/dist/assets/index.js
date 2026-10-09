@@ -28800,7 +28800,8 @@ function create_if_block_12(ctx) {
     c() {
       t = text(`mhuxd reads the CAT traffic between your applications and the radio and sets the
             keyer mode from it. Applications keep using the keyer's CAT port (e.g. /dev/mhuxd/cat1),
-            no rigctld needed. Icom CI-V radios for now. mhuxd doesn't query the radio itself yet:
+            no rigctld needed. Icom, Kenwood, Elecraft, Flex/ANAN and the newer Yaesu radios (not
+            the older ones with binary CAT). mhuxd doesn't query the radio itself yet:
             changes are seen while an application polls, or through CI-V transceive. Keep the
             keyer option "Use decoder if connected" off.`);
     },
@@ -29151,33 +29152,37 @@ function create_if_block_9(ctx) {
   let select;
   let option0;
   let option1;
+  let option2;
+  let option3;
+  let option4;
+  let option5;
   let select_value_value;
-  let t4;
+  let t8;
   let div5;
   let div3;
-  let t6;
+  let t10;
   let div4;
   let input0;
   let input0_value_value;
-  let t7;
+  let t11;
   let div8;
   let div6;
-  let t9;
+  let t13;
   let div7;
   let input1;
   let input1_checked_value;
-  let t10;
+  let t14;
   let span;
-  let t11;
-  let t12;
-  let t13;
-  let t14_value = (
+  let t15;
+  let t16;
+  let t17;
+  let t18_value = (
     /*rk*/
     ctx[503] + ""
   );
-  let t14;
-  let t15;
-  let t16;
+  let t18;
+  let t19;
+  let t20;
   let if_block_anchor;
   let mounted;
   let dispose;
@@ -29232,31 +29237,39 @@ function create_if_block_9(ctx) {
       option0.textContent = "auto (from the CAT channel's radio type)";
       option1 = element("option");
       option1.textContent = "Icom CI-V";
-      t4 = space();
+      option2 = element("option");
+      option2.textContent = "Kenwood";
+      option3 = element("option");
+      option3.textContent = "Elecraft";
+      option4 = element("option");
+      option4.textContent = "Yaesu (FT-450, FT-950, FT-991, FTdx…)";
+      option5 = element("option");
+      option5.textContent = "Flex / PowerSDR / Thetis (ANAN)";
+      t8 = space();
       div5 = element("div");
       div3 = element("div");
-      div3.textContent = "CI-V address (hex):";
-      t6 = space();
+      div3.textContent = "CI-V address (hex, Icom):";
+      t10 = space();
       div4 = element("div");
       input0 = element("input");
-      t7 = space();
+      t11 = space();
       div8 = element("div");
       div6 = element("div");
       div6.textContent = "CAT monitor:";
-      t9 = space();
+      t13 = space();
       div7 = element("div");
       input1 = element("input");
-      t10 = space();
+      t14 = space();
       span = element("span");
-      t11 = text("also written to cat-");
-      t12 = text(
+      t15 = text("also written to cat-");
+      t16 = text(
         /*activeSerial*/
         ctx[0]
       );
-      t13 = text("-");
-      t14 = text(t14_value);
-      t15 = text(".trace in mhuxd's log directory");
-      t16 = space();
+      t17 = text("-");
+      t18 = text(t18_value);
+      t19 = text(".trace in mhuxd's log directory");
+      t20 = space();
       if (if_block) if_block.c();
       if_block_anchor = empty();
       attr(div0, "class", "label");
@@ -29264,6 +29277,14 @@ function create_if_block_9(ctx) {
       set_input_value(option0, option0.__value);
       option1.__value = "civ";
       set_input_value(option1, option1.__value);
+      option2.__value = "kenwood";
+      set_input_value(option2, option2.__value);
+      option3.__value = "elecraft";
+      set_input_value(option3, option3.__value);
+      option4.__value = "yaesu";
+      set_input_value(option4, option4.__value);
+      option5.__value = "flex";
+      set_input_value(option5, option5.__value);
       attr(select, "class", "select");
       attr(div1, "class", "value");
       attr(div2, "class", "row");
@@ -29292,31 +29313,35 @@ function create_if_block_9(ctx) {
       append(div1, select);
       append(select, option0);
       append(select, option1);
+      append(select, option2);
+      append(select, option3);
+      append(select, option4);
+      append(select, option5);
       select_option(
         select,
         /*rs*/
         ((_a2 = ctx[504]) == null ? void 0 : _a2.protocol) ?? "auto"
       );
-      insert(target, t4, anchor);
+      insert(target, t8, anchor);
       insert(target, div5, anchor);
       append(div5, div3);
-      append(div5, t6);
+      append(div5, t10);
       append(div5, div4);
       append(div4, input0);
-      insert(target, t7, anchor);
+      insert(target, t11, anchor);
       insert(target, div8, anchor);
       append(div8, div6);
-      append(div8, t9);
+      append(div8, t13);
       append(div8, div7);
       append(div7, input1);
-      append(div7, t10);
+      append(div7, t14);
       append(div7, span);
-      append(span, t11);
-      append(span, t12);
-      append(span, t13);
-      append(span, t14);
       append(span, t15);
-      insert(target, t16, anchor);
+      append(span, t16);
+      append(span, t17);
+      append(span, t18);
+      append(span, t19);
+      insert(target, t20, anchor);
       if (if_block) if_block.m(target, anchor);
       insert(target, if_block_anchor, anchor);
       if (!mounted) {
@@ -29352,13 +29377,13 @@ function create_if_block_9(ctx) {
       }
       if (dirty[0] & /*activeSerial*/
       1) set_data(
-        t12,
+        t16,
         /*activeSerial*/
         ctx[0]
       );
       if (dirty[1] & /*rigRadios*/
-      512 && t14_value !== (t14_value = /*rk*/
-      ctx[503] + "")) set_data(t14, t14_value);
+      512 && t18_value !== (t18_value = /*rk*/
+      ctx[503] + "")) set_data(t18, t18_value);
       if (
         /*rs*/
         ((_e = ctx[504]) == null ? void 0 : _e.monitor) || /*activeCatMonitor*/
@@ -29382,11 +29407,11 @@ function create_if_block_9(ctx) {
     d(detaching) {
       if (detaching) {
         detach(div2);
-        detach(t4);
+        detach(t8);
         detach(div5);
-        detach(t7);
+        detach(t11);
         detach(div8);
-        detach(t16);
+        detach(t20);
         detach(if_block_anchor);
       }
       if (if_block) if_block.d(detaching);
@@ -31041,7 +31066,7 @@ function instance$1($$self, $$props, $$invalidate) {
       poll_ms: Number((f == null ? void 0 : f.poll_ms) || 500),
       auto_start: (f == null ? void 0 : f.auto_start) ? 1 : 0,
       rigctld_options: String((f == null ? void 0 : f.rigctld_options) || ""),
-      protocol: (f == null ? void 0 : f.protocol) === "civ" ? "civ" : "auto",
+      protocol: ["civ", "kenwood", "elecraft", "yaesu", "flex"].includes(f == null ? void 0 : f.protocol) ? f.protocol : "auto",
       civ_address: civ,
       monitor: (f == null ? void 0 : f.monitor) ? 1 : 0
     };

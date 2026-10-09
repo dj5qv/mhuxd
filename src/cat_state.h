@@ -16,15 +16,9 @@
 #define CAT_STATE_H
 
 #include <stdint.h>
+#include "cat.h"
 
 struct mhc_radio_info;
-
-// Direction of CAT bytes. A trace tags them H1..H9 (client), M (mhuxd), R (radio).
-enum cat_dir {
-	CAT_DIR_HOST,	// client application -> radio
-	CAT_DIR_OWN,	// mhuxd's own query -> radio
-	CAT_DIR_RADIO,	// radio -> host (on Icom this includes the bus echo)
-};
 
 // Normalized modes, named like the rigctld mode tokens.
 enum cat_mode {

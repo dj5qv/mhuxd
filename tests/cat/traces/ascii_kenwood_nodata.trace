@@ -1,0 +1,8 @@
+# Kenwood without data mode (TS-2000 and older): USB is voice right away.
+@kenwood nodata
+R "MD2;"
+= mode=USB data=0 keyer=VOICE
+R "MD6;"
+= mode=RTTY keyer=FSK
+R "DA1;"
+= mode=RTTY

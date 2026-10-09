@@ -23,7 +23,7 @@
 
 - WebUI and TCP connector support IPv6 now.
 
-- Native rig mode sync (Icom CI-V for now): mhuxd reads the CAT traffic of the applications
+- Native rig mode sync (Icom, Kenwood, Elecraft, newer Yaesu, Flex/ANAN): mhuxd reads the CAT traffic of the applications
   using the keyer's CAT port and keeps keyer mode and frequency in sync with the radio, without
   rigctld. With a CAT monitor for troubleshooting.
 
@@ -245,15 +245,24 @@ applications and the radio on the keyer's CAT port, decodes frequency and mode, 
 keyer mode (CW, VOICE, FSK, DIGITAL) from it. Applications keep using the virtual serial port
 directly, e.g. WSJTX configured like in the "WSJTX direct" example above.
 
-- Supported for now: Icom radios (the Ten-Tec OMNI VI speaks CI-V too, untested). For other radios
-  use rigctld. Kenwood, Elecraft and Yaesu are planned.
-- Select the radio type and CI-V address in the keyer's "Radio" section as usual. "Protocol:
+- Supported: Icom (CI-V; the Ten-Tec OMNI VI speaks it too), Kenwood, Elecraft K2/K3, the
+  newer Yaesu radios with ASCII CAT (FT-450, FT-950, FT-991, FT-2000, FTdx1200/3000/5000/9000),
+  Flex, ANAN (PowerSDR/Thetis) and other SDRs emulating a TS-2000. Only Icom is tested on a
+  real radio so far, the others against Hamlib's simulators: reports welcome. Not supported:
+  the older Yaesu radios with binary CAT (FT-817/857/897, FT-1000MP, ...), Ten-Tec ORION/OMNI
+  VII, JRC, Hilberling: use rigctld for these.
+- Select the radio type (and CI-V address) in the keyer's "Radio" section as usual. "Protocol:
   auto" takes the protocol from the radio type, "CI-V address" overrides the channel's address.
-- Keep the keyer option "Use decoder if connected" off. The keyer's own CAT polls collide with
-  the applications' commands on the CI-V bus.
+- Kenwood: the data mode (USB-D, ...) is known on the TS-590, TS-950 and TS-990. The older
+  Kenwoods have none, so their USB counts as voice.
+- Elecraft K3: DATA A, PSK D and AFSK A count as digital, FSK D as FSK. Until the radio has
+  reported the data sub mode (DT), DATA counts as DATA A.
+- Keep the keyer option "Use decoder if connected" off. The keyer's own CAT polls interfere with
+  the applications' commands (measured with an IC-7300: collisions on the CI-V bus).
 - mhuxd doesn't send anything to the radio yet. Frequency and mode are known while an
-  application polls the radio (WSJTX, fldigi and loggers do), and from CI-V transceive
-  ("CI-V Transceive" on in the radio's menu, default on the IC-7300). When nobody polls,
+  application polls the radio (WSJTX, fldigi and loggers do), and from the radio's own
+  messages on changes: CI-V transceive on Icom ("CI-V Transceive", default on on the IC-7300),
+  Auto Information on the others when an application turned it on (AI). When nobody polls,
   the keyer keeps the last known mode.
 - "Radio state" shows what mhuxd sees, e.g. "14.074.000 Hz PKTUSB → keyer DIGITAL". That's
   the first thing to check when the keyer mode doesn't follow the radio.

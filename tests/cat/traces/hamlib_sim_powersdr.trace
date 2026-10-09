@@ -1,0 +1,152 @@
+# Hamlib client traffic against Hamlib's simulator: PowerSDR (rigctl -m 2048, simpowersdr), recorded with
+# rigctl -vvvvv, converted with hamlib2trace.py --text, written by cat_replay -v.
+# Hamlib reads and sets the mode with ZZMD. rigctl reported LSB, PKTUSB, USB, CW, CW (no RTTY
+# in the simulator). The simulator sends ZZMD with one digit and a 40 character IF, which is
+# rejected as bad.
+@flex
+0.000 H1 "PS;"  # cmd
+0.000 R "PS1;"  # reply
+0.000 H1 "ID;"  # cmd
+0.051 R "ID024;"  # reply
+0.051 H1 "IF;"  # cmd
+0.102 R "IF000140740000001000+0000000000030000000;"  # bad
+0.102 H1 "KS;"  # cmd
+0.103 R "KS020;"  # reply
+0.103 H1 "FA;"  # cmd
+0.104 R "FA00014074000;"  # reply, applied: rx=14074000 unsel=? mode=? split=? keyer=?
+= mode=? keyer=?
+0.104 H1 "FB;"  # cmd
+0.105 R "FB00140735000;"  # reply, applied: rx=14074000 unsel=140735000 mode=? split=? keyer=?
+0.105 H1 "ZZMD;"  # cmd
+0.106 R "ZZMD0;"  # reply, applied: rx=14074000 unsel=140735000 mode=LSB split=? keyer=VOICE
+= mode=LSB keyer=VOICE
+0.106 H1 "ZZFL;"  # cmd
+0.106 R "ZZFL+0100;"  # reply
+0.107 H1 "ZZFH;"  # cmd
+0.107 R "ZZFH+3500;"  # reply
+0.108 H1 "PS;"  # cmd
+0.108 R "PS1;"  # reply
+0.109 H1 "FA;"  # cmd
+0.109 R "FA00014074000;"  # reply, applied: rx=14074000 unsel=140735000 mode=LSB split=? keyer=VOICE
+0.110 H1 "ZZMD;"  # cmd
+0.110 R "ZZMD0;"  # reply, applied: rx=14074000 unsel=140735000 mode=LSB split=? keyer=VOICE
+0.110 H1 "ZZFL;"  # cmd
+0.110 R "ZZFL+0100;"  # reply
+0.111 H1 "ZZFH;"  # cmd
+0.111 R "ZZFH+3500;"  # reply
+0.112 H1 "FA;"  # cmd
+0.112 R "FA00014074000;"  # reply, applied: rx=14074000 unsel=140735000 mode=LSB split=? keyer=VOICE
+0.113 H1 "ZZMD07;"  # cmd, applied: rx=14074000 unsel=140735000 mode=PKTUSB split=? keyer=DIGITAL
+= mode=PKTUSB keyer=DIGITAL
+0.113 H1 "ID;"  # cmd
+0.163 R "ID024;"  # reply
+0.163 H1 "ZZFI07;"  # cmd
+0.163 H1 "ID;"  # cmd
+0.215 R "ID024;"  # reply
+0.215 H1 "ZZMD;"  # cmd
+0.215 R "ZZMD7;"  # reply, applied: rx=14074000 unsel=140735000 mode=PKTUSB split=? keyer=DIGITAL
+0.216 H1 "ZZFL;"  # cmd
+0.216 R "ZZFL+0100;"  # reply
+0.216 H1 "ZZFH;"  # cmd
+0.216 R "ZZFH+3500;"  # reply
+0.217 H1 "ZZMD01;"  # cmd, applied: rx=14074000 unsel=140735000 mode=USB split=? keyer=VOICE
+= mode=USB keyer=VOICE
+0.217 H1 "ID;"  # cmd
+0.267 R "ID024;"  # reply
+0.267 H1 "ZZFI07;"  # cmd
+0.267 H1 "ID;"  # cmd
+0.318 R "ID024;"  # reply
+0.318 H1 "ZZMD;"  # cmd
+0.318 R "ZZMD1;"  # reply, applied: rx=14074000 unsel=140735000 mode=USB split=? keyer=VOICE
+0.318 H1 "ZZFL;"  # cmd
+0.319 R "ZZFL+0100;"  # reply
+0.319 H1 "ZZFH;"  # cmd
+0.319 R "ZZFH+3500;"  # reply
+0.319 H1 "ZZMD04;"  # cmd, applied: rx=14074000 unsel=140735000 mode=CW split=? keyer=CW
+= mode=CW keyer=CW
+0.319 H1 "ID;"  # cmd
+0.371 R "ID024;"  # reply
+0.371 H1 "ZZFI07;"  # cmd
+0.371 H1 "ID;"  # cmd
+0.422 R "ID024;"  # reply
+0.422 H1 "ZZMD;"  # cmd
+0.423 R "ZZMD4;"  # reply, applied: rx=14074000 unsel=140735000 mode=CW split=? keyer=CW
+0.423 H1 "ZZFL;"  # cmd
+0.423 R "ZZFL+0100;"  # reply
+0.423 H1 "ZZFH;"  # cmd
+0.423 R "ZZFH+3500;"  # reply
+0.423 H1 "ZZMD;"  # cmd
+0.423 R "ZZMD4;"  # reply, applied: rx=14074000 unsel=140735000 mode=CW split=? keyer=CW
+0.423 H1 "ZZFL;"  # cmd
+0.423 R "ZZFL+0100;"  # reply
+0.424 H1 "ZZFH;"  # cmd
+0.424 R "ZZFH+3500;"  # reply
+0.424 H1 "FA;"  # cmd
+0.424 R "FA00014074000;"  # reply, applied: rx=14074000 unsel=140735000 mode=CW split=? keyer=CW
+0.424 H1 "FA00007074000;"  # cmd, applied: rx=7074000 unsel=140735000 mode=CW split=? keyer=CW
+0.424 H1 "ID;"  # cmd
+0.474 R "ID024;"  # reply
+0.526 H1 "FA;"  # cmd
+0.526 R "FA00007074000;"  # reply, applied: rx=7074000 unsel=140735000 mode=CW split=? keyer=CW
+1.879 H1 "PS;"  # cmd
+2.880 H1 "PS;"  # cmd
+2.880 R "PS1;"  # reply
+2.881 H1 "ID;"  # cmd
+2.931 R "ID024;"  # reply
+2.931 H1 "IF;"  # cmd
+2.982 R "IF000070740000001000+0000000000030000000;"  # bad
+2.982 H1 "KS;"  # cmd
+2.982 R "KS020;"  # reply
+2.983 H1 "FA;"  # cmd
+2.983 R "FA00007074000;"  # reply, applied: rx=7074000 unsel=140735000 mode=CW split=? keyer=CW
+2.983 H1 "FB;"  # cmd
+2.984 R "FB00140735000;"  # reply, applied: rx=7074000 unsel=140735000 mode=CW split=? keyer=CW
+2.984 H1 "ZZMD;"  # cmd
+2.984 R "ZZMD4;"  # reply, applied: rx=7074000 unsel=140735000 mode=CW split=? keyer=CW
+2.984 H1 "ZZFL;"  # cmd
+2.985 R "ZZFL+0100;"  # reply
+2.985 H1 "ZZFH;"  # cmd
+2.985 R "ZZFH+3500;"  # reply
+2.985 H1 "FR0;"  # cmd
+2.985 H1 "FT1;"  # cmd
+2.985 H1 "ID;"  # cmd
+3.036 R "ID024;"  # reply
+4.390 H1 "PS;"  # cmd
+5.391 H1 "PS;"  # cmd
+5.392 R "PS1;"  # reply
+5.392 H1 "ID;"  # cmd
+5.443 R "ID024;"  # reply
+5.444 H1 "IF;"  # cmd
+5.495 R "IF000070740000001000+0000000000030000000;"  # bad
+5.496 H1 "KS;"  # cmd
+5.496 R "KS020;"  # reply
+5.497 H1 "FA;"  # cmd
+5.497 R "FA00007074000;"  # reply, applied: rx=7074000 unsel=140735000 mode=CW split=? keyer=CW
+5.498 H1 "FB;"  # cmd
+5.498 R "FB00140735000;"  # reply, applied: rx=7074000 unsel=140735000 mode=CW split=? keyer=CW
+5.499 H1 "ZZMD;"  # cmd
+5.499 R "ZZMD4;"  # reply, applied: rx=7074000 unsel=140735000 mode=CW split=? keyer=CW
+5.500 H1 "ZZFL;"  # cmd
+5.500 R "ZZFL+0100;"  # reply
+5.500 H1 "ZZFH;"  # cmd
+5.501 R "ZZFH+3500;"  # reply
+6.856 H1 "PS;"  # cmd
+7.857 H1 "PS;"  # cmd
+7.857 R "PS1;"  # reply
+7.857 H1 "ID;"  # cmd
+7.909 R "ID024;"  # reply
+7.909 H1 "IF;"  # cmd
+7.959 R "IF000070740000001000+0000000000030000000;"  # bad
+7.959 H1 "KS;"  # cmd
+7.959 R "KS020;"  # reply
+7.960 H1 "FA;"  # cmd
+7.960 R "FA00007074000;"  # reply, applied: rx=7074000 unsel=140735000 mode=CW split=? keyer=CW
+7.960 H1 "FB;"  # cmd
+7.960 R "FB00140735000;"  # reply, applied: rx=7074000 unsel=140735000 mode=CW split=? keyer=CW
+7.961 H1 "ZZMD;"  # cmd
+7.961 R "ZZMD4;"  # reply, applied: rx=7074000 unsel=140735000 mode=CW split=? keyer=CW
+7.961 H1 "ZZFL;"  # cmd
+7.961 R "ZZFL+0100;"  # reply
+7.961 H1 "ZZFH;"  # cmd
+7.961 R "ZZFH+3500;"  # reply
+= rx=7074000 mode=CW

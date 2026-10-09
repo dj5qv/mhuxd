@@ -1,0 +1,150 @@
+# Hamlib client traffic against Hamlib's simulator: Yaesu FT-991 (rigctl -m 1035, simft991), recorded with
+# rigctl -vvvvv, converted with hamlib2trace.py --text, written by cat_replay -v.
+# Hamlib reads with MD0, IF, FT. rigctl reported PKTUSB, PKTUSB, USB, CW, RTTY and split on.
+# The simulator answers IF with a fixed frame (14.200 MHz CW-R), so the mode flips back and
+# forth here; a real radio keeps IF and MD consistent.
+@yaesu
+0.000 H1 "PS;"  # cmd
+0.003 R "PS1;"  # reply
+0.005 H1 "AI;"  # cmd
+0.055 R "AI0;"  # reply
+0.056 H1 "ID;"  # cmd
+0.106 R "ID0670;"  # reply
+0.106 H1 "EX0321;"  # cmd
+0.106 H1 "EX032;"  # cmd
+0.157 R "EX0321;"  # reply
+0.157 H1 "KS;"  # cmd
+0.159 R "KS20;"  # reply
+0.160 H1 "FA;"  # cmd
+0.162 R "FA014074000;"  # reply, applied: rx=14074000 unsel=? mode=? split=? keyer=?
+= mode=? keyer=?
+0.163 H1 "FB;"  # cmd
+0.165 R "FB014074500;"  # reply, applied: rx=14074000 unsel=14074500 mode=? split=? keyer=?
+0.166 H1 "FT;"  # cmd
+0.216 R "FT1;"  # reply, applied: rx=14074000 unsel=14074500 mode=? split=1 keyer=?
+0.216 H1 "IF;"  # cmd
+0.266 R "IF059014200000+000000700000;"  # reply, applied: rx=14200000 unsel=14074500 mode=CWR split=1 keyer=CW
+= mode=CWR keyer=CW
+0.266 H1 "MD0;"  # cmd
+0.318 R "MD0C;"  # reply, applied: rx=14200000 unsel=14074500 mode=PKTUSB split=1 keyer=DIGITAL
+= mode=PKTUSB keyer=DIGITAL
+0.318 H1 "SH0;"  # cmd
+0.321 R "SH017;"  # reply
+0.321 H1 "NA0;"  # cmd
+0.324 R "NA00;"  # reply
+0.324 H1 "MD0;"  # cmd
+0.376 R "MD0C;"  # reply, applied: rx=14200000 unsel=14074500 mode=PKTUSB split=1 keyer=DIGITAL
+0.376 H1 "SH0;"  # cmd
+0.379 R "SH017;"  # reply
+0.379 H1 "NA0;"  # cmd
+0.381 R "NA00;"  # reply
+0.381 H1 "PS;"  # cmd
+0.384 R "PS1;"  # reply
+0.384 H1 "FA;"  # cmd
+0.387 R "FA014074000;"  # reply, applied: rx=14074000 unsel=14074500 mode=PKTUSB split=1 keyer=DIGITAL
+0.388 H1 "MD0;"  # cmd
+0.438 R "MD0C;"  # reply, applied: rx=14074000 unsel=14074500 mode=PKTUSB split=1 keyer=DIGITAL
+0.438 H1 "SH0;"  # cmd
+0.441 R "SH017;"  # reply
+0.441 H1 "NA0;"  # cmd
+0.443 R "NA00;"  # reply
+0.448 H1 "IF;"  # cmd
+0.499 R "IF059014200000+000000700000;"  # reply, applied: rx=14200000 unsel=14074500 mode=CWR split=1 keyer=CW
+= mode=CWR keyer=CW
+0.500 H1 "FA;"  # cmd
+0.503 R "FA014074000;"  # reply, applied: rx=14074000 unsel=14074500 mode=CWR split=1 keyer=CW
+0.503 H1 "FA014074000;"  # cmd, applied: rx=14074000 unsel=14074500 mode=CWR split=1 keyer=CW
+0.507 H1 "FA;"  # cmd
+0.510 R "FA014074000;"  # reply, applied: rx=14074000 unsel=14074500 mode=CWR split=1 keyer=CW
+0.511 H1 "MD0C;"  # cmd, applied: rx=14074000 unsel=14074500 mode=PKTUSB split=1 keyer=DIGITAL
+= mode=PKTUSB keyer=DIGITAL
+0.514 H1 "NA01;"  # cmd
+0.518 H1 "ID;"  # cmd
+0.568 R "ID0670;"  # reply
+0.568 H1 "SH010;"  # cmd
+0.571 H1 "FT;"  # cmd
+0.622 R "FT1;"  # reply, applied: rx=14074000 unsel=14074500 mode=PKTUSB split=1 keyer=DIGITAL
+0.623 H1 "MD0;"  # cmd
+0.673 R "MD0C;"  # reply, applied: rx=14074000 unsel=14074500 mode=PKTUSB split=1 keyer=DIGITAL
+0.674 H1 "SH0;"  # cmd
+0.676 R "SH010;"  # reply
+0.676 H1 "NA0;"  # cmd
+0.679 R "NA01;"  # reply
+0.680 H1 "MD02;"  # cmd, applied: rx=14074000 unsel=14074500 mode=USB split=1 keyer=VOICE
+= mode=USB keyer=VOICE
+0.683 H1 "NA00;"  # cmd
+0.685 H1 "ID;"  # cmd
+0.735 R "ID0670;"  # reply
+0.735 H1 "SH014;"  # cmd
+0.738 H1 "FT;"  # cmd
+0.788 R "FT1;"  # reply, applied: rx=14074000 unsel=14074500 mode=USB split=1 keyer=VOICE
+0.788 H1 "IF;"  # cmd
+0.839 R "IF059014200000+000000700000;"  # reply, applied: rx=14200000 unsel=14074500 mode=CWR split=1 keyer=CW
+= mode=CWR keyer=CW
+0.840 H1 "MD0;"  # cmd
+0.890 R "MD02;"  # reply, applied: rx=14200000 unsel=14074500 mode=USB split=1 keyer=VOICE
+= mode=USB keyer=VOICE
+0.890 H1 "SH0;"  # cmd
+0.893 R "SH014;"  # reply
+0.893 H1 "NA0;"  # cmd
+0.895 R "NA00;"  # reply
+0.895 H1 "MD03;"  # cmd, applied: rx=14200000 unsel=14074500 mode=CW split=1 keyer=CW
+= mode=CW keyer=CW
+0.898 H1 "NA00;"  # cmd
+0.901 H1 "ID;"  # cmd
+0.952 R "ID0670;"  # reply
+0.952 H1 "SH016;"  # cmd
+0.956 H1 "FT;"  # cmd
+1.006 R "FT1;"  # reply, applied: rx=14200000 unsel=14074500 mode=CW split=1 keyer=CW
+1.006 H1 "IF;"  # cmd
+1.058 R "IF059014200000+000000700000;"  # reply, applied: rx=14200000 unsel=14074500 mode=CWR split=1 keyer=CW
+= mode=CWR keyer=CW
+1.058 H1 "MD0;"  # cmd
+1.109 R "MD03;"  # reply, applied: rx=14200000 unsel=14074500 mode=CW split=1 keyer=CW
+= mode=CW keyer=CW
+1.109 H1 "SH0;"  # cmd
+1.113 R "SH016;"  # reply
+1.113 H1 "NA0;"  # cmd
+1.116 R "NA00;"  # reply
+1.116 H1 "MD06;"  # cmd, applied: rx=14200000 unsel=14074500 mode=RTTY split=1 keyer=FSK
+= mode=RTTY keyer=FSK
+1.118 H1 "NA01;"  # cmd
+1.120 H1 "ID;"  # cmd
+1.171 R "ID0670;"  # reply
+1.171 H1 "SH010;"  # cmd
+1.175 H1 "FT;"  # cmd
+1.226 R "FT1;"  # reply, applied: rx=14200000 unsel=14074500 mode=RTTY split=1 keyer=FSK
+1.226 H1 "IF;"  # cmd
+1.277 R "IF059014200000+000000700000;"  # reply, applied: rx=14200000 unsel=14074500 mode=CWR split=1 keyer=CW
+= mode=CWR keyer=CW
+1.278 H1 "MD0;"  # cmd
+1.329 R "MD06;"  # reply, applied: rx=14200000 unsel=14074500 mode=RTTY split=1 keyer=FSK
+= mode=RTTY keyer=FSK
+1.329 H1 "SH0;"  # cmd
+1.331 R "SH010;"  # reply
+1.331 H1 "NA0;"  # cmd
+1.334 R "NA01;"  # reply
+1.334 H1 "IF;"  # cmd
+1.386 R "IF059014200000+000000700000;"  # reply, applied: rx=14200000 unsel=14074500 mode=CWR split=1 keyer=CW
+= mode=CWR keyer=CW
+1.386 H1 "FA;"  # cmd
+1.389 R "FA014074000;"  # reply, applied: rx=14074000 unsel=14074500 mode=CWR split=1 keyer=CW
+1.389 H1 "FT2;"  # cmd
+1.389 H1 "BS03;"  # cmd
+1.389 H1 "FA007074000;"  # cmd, applied: rx=7074000 unsel=14074500 mode=CWR split=1 keyer=CW
+1.389 H1 "FT3;"  # cmd
+1.391 H1 "FT;"  # cmd
+1.442 R "FT1;"  # reply, applied: rx=7074000 unsel=14074500 mode=CWR split=1 keyer=CW
+1.442 H1 "FA;"  # cmd
+1.444 R "FA007074000;"  # reply, applied: rx=7074000 unsel=14074500 mode=CWR split=1 keyer=CW
+1.444 H1 "FT;"  # cmd
+1.494 R "FT1;"  # reply, applied: rx=7074000 unsel=14074500 mode=CWR split=1 keyer=CW
+1.495 H1 "FT;"  # cmd
+1.545 R "FT1;"  # reply, applied: rx=7074000 unsel=14074500 mode=CWR split=1 keyer=CW
+1.545 H1 "FT2;"  # cmd
+1.547 H1 "FT;"  # cmd
+1.598 R "FT0;"  # reply, applied: rx=7074000 unsel=14074500 mode=CWR split=0 keyer=CW
+1.800 H1 "AI0;"  # cmd
+1.802 H1 "AI;"  # cmd
+1.902 R "AI0;"  # reply
+= rx=7074000 mode=CWR

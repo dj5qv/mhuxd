@@ -36,8 +36,11 @@ One item per line. `#` starts a comment, also at the end of a line.
 - **Bytes**: hex, with or without spaces (`fe fe 94` or `fefe94`), and quoted
   text with `\r`, `\n`, `\t`, `\xNN`, `\\`, `\"` escapes (`"FA;"`), for the
   ASCII protocols later.
+- **Protocol lines**: `@civ` (Icom), `@kenwood`, `@elecraft`, `@yaesu`, `@flex`
+  (the Kenwood-style ASCII dialects, `src/cat_ascii.h`).
 - **Options** for `@civ`: `addr=<hex>` radio address (`0` = learn from the
   traffic), `freq_len=<n>` BCD frequency bytes (default 5, 4 on IC-731/IC-735).
+  For `@kenwood`: `nodata`, the radio has no data mode (TS-2000 and older).
   A later `@civ` line starts the decoder over (state and counters), as mhuxd
   does when the keyer reconnects or the rig type changes.
 - **Time** stamps `HH:MM:SS.mmm` may wrap past midnight.
@@ -62,15 +65,22 @@ fixtures without conversion: add `=` lines and put the file in `traces/`.
 | `split` | `0`/`1` |
 | `vfo` | `A`/`B` |
 | `addr` | radio address (hex), e.g. after learning |
-| `frames`, `replies`, `applied`, `unmatched`, `bad`, `jams`, `dropped`, `foreign` | decoder counters |
+| `frames`, `replies`, `applied`, `unmatched`, `bad`, `jams`, `dropped`, `foreign`, `errors` | decoder counters |
 
 ## Traces
 
 - `civ_*.trace`: hand-written cases (queries, sets, transceive, VFO selection,
   framing, host tap, pipelining, address learning, 4-byte frequencies).
+- `ascii_*.trace`: hand-written cases for the ASCII dialects.
+- `hamlib_sim_*.trace`: Hamlib 4.6 talking to Hamlib's rig simulators
+  (`simulators/` in the Hamlib source: simts590, simelecraft, simft991,
+  simpowersdr), so the command sequences of the most common client library are
+  covered. The simulators answer some commands with canned frames, see the
+  comments in the files.
 - `ic7300_*.trace`: excerpts of real traffic, IC-7300 behind a DK2, recorded with
   `rigctl -Z -vvvvv` and converted with `hamlib2trace.py`:
 
 ```
 tests/cat/hamlib2trace.py --addr 94 --time 52.5:70 rigctl.log > excerpt.trace
+tests/cat/hamlib2trace.py --dialect kenwood --text rigctl.log > session.trace
 ```

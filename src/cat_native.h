@@ -24,7 +24,12 @@ struct cat_native;
 
 enum {
 	CAT_NATIVE_PROTO_AUTO,	// from the channel's rig type
-	CAT_NATIVE_PROTO_CIV,
+	CAT_NATIVE_PROTO_CIV,	// Icom CI-V
+	CAT_NATIVE_PROTO_KENWOOD,	// Kenwood-style ASCII dialects, see cat_ascii.h
+	CAT_NATIVE_PROTO_ELECRAFT,
+	CAT_NATIVE_PROTO_YAESU,
+	CAT_NATIVE_PROTO_FLEX,
+	CAT_NATIVE_PROTO_NONE,	// no decoder for the rig type
 };
 
 struct cat_native_cfg {
@@ -35,8 +40,10 @@ struct cat_native_cfg {
 	const char *monitor_dir;	// NULL = LOGDIR
 };
 
-// Protocol name from the configuration ("auto", "civ"), -1 if unknown.
+// Protocol name from the configuration ("auto", "civ", "kenwood", "elecraft", "yaesu",
+// "flex"), -1 if unknown.
 int cat_native_protocol_from_str(const char *s);
+const char *cat_native_protocol_str(int protocol);
 
 struct cat_native *cat_native_create(struct app_ctx *ctx, struct device *dev, const struct cat_native_cfg *cfg);
 void cat_native_destroy(struct cat_native *cn);

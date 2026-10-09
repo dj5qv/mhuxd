@@ -1,0 +1,88 @@
+# Kenwood (TS-590 style): replies name their command and carry the value,
+# so every well-formed frame from the radio counts, asked for or not.
+@kenwood
+= vfo=? rx=? mode=?
+
+H1 "FA;"
+R "FA00014074000;"
+= rx=14074000 replies=1
+H1 "FB;"
+R "FB00007074000;"
+= unsel=7074000
+
+# mode USB, the data flag (DA) is still unknown
+H1 "MD;"
+R "MD2;"
+= mode=USB data=? keyer=VOICE
+H1 "DA;"
+R "DA1;"
+= mode=PKTUSB data=1 keyer=DIGITAL
+# same base mode again: the data flag stays
+R "MD2;"
+= mode=PKTUSB
+# another base mode: data flag unknown again
+R "MD3;"
+= mode=CW data=? keyer=CW
+
+# IF: VFO B selected, CW, no split
+H1 "IF;"
+R "IF00007074000     +000000000031000000;"
+= vfo=B rx=7074000 unsel=14074000 mode=CW split=0
+# back to VFO A, USB
+R "IF00014074000     +000000000020000000;"
+= vfo=A rx=14074000 unsel=7074000 mode=USB
+
+# split from FR/FT: receive A, transmit B
+R "FR0;"
+R "FT1;"
+= split=1 tx=7074000
+R "FT0;"
+= split=0 tx=14074000
+# split from IF
+R "IF00014074000     +000000000020010000;"
+= split=1 tx=7074000
+# transmitting in split, IF shows the TX VFO: only the split flag is taken
+R "IF00007074000     +000000000121010000;"
+= vfo=A rx=14074000 split=1
+
+# client sets for frequency and mode are applied, there is no acknowledge
+H1 "FA00014080000;"
+= rx=14080000
+H1 "MD1;"
+= mode=LSB
+H1 "DA0;"
+= mode=LSB data=0
+# client VFO and split changes are not: the radio's answers tell
+H1 "FR1;"
+H1 "FT0;"
+= vfo=A split=1
+
+# auto information (AI): frames without a query
+R "FA00014075000;"
+R "MD4;"
+= rx=14075000 mode=FM
+
+# error replies
+H1 "XX;"
+R "?;"
+= errors=1
+
+# bad values are ignored
+R "FA1407400;"
+R "IF000;"
+R "MD8;"
+= rx=14075000 mode=FM bad=3
+
+# TS-990 OM, TS-890 SF: the data modes have codes of their own
+R "OM0D;"
+= mode=PKTUSB
+R "OM12;"
+= mode_unsel=USB
+R "SF000014074000C;"
+= rx=14074000 mode=PKTLSB
+# SF/OM have codes of their own for the data modes: 2 means USB with data off
+# (Hamlib 4.6 reads the TS-590 mode with SF0)
+R "SF000014074000D;"
+= mode=PKTUSB
+R "SF0000140740002;"
+= mode=USB data=0 keyer=VOICE

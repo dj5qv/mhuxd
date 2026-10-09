@@ -14,6 +14,7 @@
 #include <string.h>
 #include <time.h>
 #include "cat_native.h"
+#include "cat_ascii.h"
 #include "cat_civ.h"
 #include "cat_state.h"
 #include "cat_trace.h"
@@ -52,6 +53,65 @@
 #define RIG_TYPE_IC735   0x08	// 4-byte frequencies
 #define RIG_TYPE_OMNI_VI 0x38	// Ten-Tec, speaks CI-V
 
+// Rig types with a Kenwood-style ASCII protocol. Icom radios are recognized by their CI-V
+// address. Legacy Yaesu (binary), Ten-Tec, JRC, Hilberling, Perseus: no decoder yet.
+static const struct {
+	uint8_t key;
+	uint8_t protocol;
+	uint8_t no_data;	// Kenwood without data mode (no DA/DT)
+} rig_protocols[] = {
+	{ 0x4C, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 140
+	{ 0x15, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 440
+	{ 0x16, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 450
+	{ 0x47, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 480
+	{ 0x1A, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 570
+	{ 0x7D, CAT_NATIVE_PROTO_KENWOOD, 0 },	// TS 590: DA
+	{ 0x4D, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 680
+	{ 0x17, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 690
+	{ 0x4E, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 711
+	{ 0x4F, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 790
+	{ 0x50, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 811
+	{ 0x18, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 850
+	{ 0x1B, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 870
+	{ 0x51, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 940
+	{ 0x19, CAT_NATIVE_PROTO_KENWOOD, 0 },	// TS 950: DT
+	{ 0x7E, CAT_NATIVE_PROTO_KENWOOD, 0 },	// TS 990: DA, OM
+	{ 0x1C, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 2000
+	{ 0x44, CAT_NATIVE_PROTO_ELECRAFT, 0 },	// K2
+	{ 0x62, CAT_NATIVE_PROTO_ELECRAFT, 0 },	// K3
+	{ 0x75, CAT_NATIVE_PROTO_ELECRAFT, 0 },	// K3 (patched)
+	{ 0x7A, CAT_NATIVE_PROTO_ELECRAFT, 0 },	// K3 (patched 2)
+	{ 0x64, CAT_NATIVE_PROTO_YAESU, 0 },	// FT-450
+	{ 0x67, CAT_NATIVE_PROTO_YAESU, 0 },	// FT-950
+	{ 0x84, CAT_NATIVE_PROTO_YAESU, 0 },	// FT-991
+	{ 0x60, CAT_NATIVE_PROTO_YAESU, 0 },	// FT-2000
+	{ 0x72, CAT_NATIVE_PROTO_YAESU, 0 },	// FT-2000D
+	{ 0x81, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx1200
+	{ 0x7F, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx3000
+	{ 0x79, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx5000
+	{ 0x58, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx9000D
+	{ 0x68, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx9000D (patched)
+	{ 0x69, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx9000MP
+	{ 0x6A, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx9000MP (patched)
+	{ 0x6B, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx9000 Contest
+	{ 0x6C, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx9000 Contest (patched)
+	{ 0x8F, CAT_NATIVE_PROTO_FLEX, 0 },	// Apache Labs ANAN 100/200
+	{ 0x8C, CAT_NATIVE_PROTO_FLEX, 0 },	// Expert Electronics MB1
+	{ 0x8D, CAT_NATIVE_PROTO_FLEX, 0 },	// Flex 5000
+	{ 0x8E, CAT_NATIVE_PROTO_FLEX, 0 },	// Flex 6000 series
+	{ 0x83, CAT_NATIVE_PROTO_FLEX, 0 },	// TS 2000 compatible SDR
+};
+
+static const char *protocol_names[] = {
+	[CAT_NATIVE_PROTO_AUTO] = "auto",
+	[CAT_NATIVE_PROTO_CIV] = "civ",
+	[CAT_NATIVE_PROTO_KENWOOD] = "kenwood",
+	[CAT_NATIVE_PROTO_ELECRAFT] = "elecraft",
+	[CAT_NATIVE_PROTO_YAESU] = "yaesu",
+	[CAT_NATIVE_PROTO_FLEX] = "flex",
+	[CAT_NATIVE_PROTO_NONE] = "none",
+};
+
 struct cat_native {
 	struct ev_loop *loop;
 	struct mh_control *ctl;
@@ -72,7 +132,8 @@ struct cat_native {
 	// Decoder, set up from the channel configuration.
 	int rigtype;
 	int civ_addr;
-	struct cat_civ *civ;
+	struct cat_civ *civ;		// one of these, or none
+	struct cat_ascii *ascii;
 	struct cat_state st;
 	ev_tstamp cfg_checked;
 	int decoder_warned;
@@ -90,15 +151,46 @@ static const char *radio_str(uint8_t radio) {
 }
 
 int cat_native_protocol_from_str(const char *s) {
-	if(!s || !strcmp(s, "auto"))
+	if(!s)
 		return CAT_NATIVE_PROTO_AUTO;
-	if(!strcmp(s, "civ"))
-		return CAT_NATIVE_PROTO_CIV;
+	for(int i = CAT_NATIVE_PROTO_AUTO; i < CAT_NATIVE_PROTO_NONE; i++)
+		if(!strcmp(s, protocol_names[i]))
+			return i;
 	return -1;
 }
 
-static int is_civ_rig(int rigtype) {
-	return rtyp_get_icom_address(rigtype) != 0 || rigtype == RIG_TYPE_OMNI_VI;
+const char *cat_native_protocol_str(int protocol) {
+	if((unsigned)protocol > CAT_NATIVE_PROTO_NONE)
+		return "?";
+	return protocol_names[protocol];
+}
+
+static int protocol_of_rig(int rigtype, int *no_data) {
+	*no_data = 0;
+	if(rtyp_get_icom_address(rigtype) != 0 || rigtype == RIG_TYPE_OMNI_VI)
+		return CAT_NATIVE_PROTO_CIV;
+	for(size_t i = 0; i < sizeof(rig_protocols) / sizeof(rig_protocols[0]); i++) {
+		if(rig_protocols[i].key == rigtype) {
+			*no_data = rig_protocols[i].no_data;
+			return rig_protocols[i].protocol;
+		}
+	}
+	return CAT_NATIVE_PROTO_NONE;
+}
+
+static void catn_destroy_decoder(struct cat_native *cn) {
+	cat_civ_destroy(cn->civ);
+	cat_ascii_destroy(cn->ascii);
+	cn->civ = NULL;
+	cn->ascii = NULL;
+}
+
+static const struct cat_stats *catn_stats(const struct cat_native *cn) {
+	if(cn->civ)
+		return cat_civ_get_stats(cn->civ);
+	if(cn->ascii)
+		return cat_ascii_get_stats(cn->ascii);
+	return NULL;
 }
 
 /*
@@ -148,7 +240,7 @@ static void catn_mon_comment(struct cat_native *cn, const char *fmt, ...) {
 	catn_mon_line(cn, line);
 }
 
-static void catn_mon_frame_cb(const struct cat_civ_frame *f, void *user_data) {
+static void catn_mon_frame_cb(const struct cat_frame *f, void *user_data) {
 	struct cat_native *cn = user_data;
 	char time_str[32], line[CAT_TRACE_LINE_MAX];
 	ev_tstamp now = ev_now(cn->loop);
@@ -158,7 +250,7 @@ static void catn_mon_frame_cb(const struct cat_civ_frame *f, void *user_data) {
 	localtime_r(&secs, &tm);
 	snprintf(time_str, sizeof(time_str), "%02d:%02d:%02d.%03d", tm.tm_hour, tm.tm_min, tm.tm_sec,
 		 (int)((now - (ev_tstamp)secs) * 1000.0));
-	cat_trace_civ_frame(line, sizeof(line), time_str, "H1", f, &cn->st);
+	cat_trace_frame(line, sizeof(line), time_str, "H1", f, &cn->st);
 	catn_mon_line(cn, line);
 }
 
@@ -227,8 +319,7 @@ static void catn_setup(struct cat_native *cn, int force) {
 	cn->rigtype = rigtype;
 	cn->civ_addr = addr;
 
-	cat_civ_destroy(cn->civ);
-	cn->civ = NULL;
+	catn_destroy_decoder(cn);
 	catn_reset(cn);
 
 	if(rigtype < 0) {
@@ -236,30 +327,53 @@ static void catn_setup(struct cat_native *cn, int force) {
 		return;
 	}
 
-	if(cn->protocol != CAT_NATIVE_PROTO_CIV && !is_civ_rig(rigtype)) {
+	int no_data;
+	int protocol = protocol_of_rig(rigtype, &no_data);
+	if(cn->protocol != CAT_NATIVE_PROTO_AUTO)
+		protocol = cn->protocol;
+
+	char line[64];
+	if(protocol == CAT_NATIVE_PROTO_CIV) {
+		struct cat_civ_cfg cc = {
+			.radio_addr = addr,
+			.freq_len = rigtype == RIG_TYPE_IC735 ? 4 : 0,
+		};
+		cn->civ = cat_civ_create(&cc, &cn->st);
+		cat_trace_civ_config(line, sizeof(line), &cc);
+	} else if(protocol != CAT_NATIVE_PROTO_NONE) {
+		struct cat_ascii_cfg ac = {
+			.dialect = protocol == CAT_NATIVE_PROTO_ELECRAFT ? CAT_ASCII_ELECRAFT :
+				   protocol == CAT_NATIVE_PROTO_YAESU ? CAT_ASCII_YAESU :
+				   protocol == CAT_NATIVE_PROTO_FLEX ? CAT_ASCII_FLEX : CAT_ASCII_KENWOOD,
+			.no_data = no_data,
+		};
+		cn->ascii = cat_ascii_create(&ac, &cn->st);
+		cat_trace_ascii_config(line, sizeof(line), &ac);
+	} else {
 		info("%s %s native CAT: no decoder for rig type '%s' yet, use rigctld",
 		     cn->serial, radio_str(cn->radio), rtyp_get_name(rigtype));
 		catn_mon_comment(cn, "no decoder for rig type '%s'", rtyp_get_name(rigtype));
 		return;
 	}
 
-	struct cat_civ_cfg cc = {
-		.radio_addr = addr,
-		.freq_len = rigtype == RIG_TYPE_IC735 ? 4 : 0,
-	};
-	cn->civ = cat_civ_create(&cc, &cn->st);
-	if(!cn->civ) {
+	if(!cn->civ && !cn->ascii) {
 		err("%s %s native CAT: out of memory", cn->serial, radio_str(cn->radio));
 		return;
 	}
-	info("%s %s native CAT: CI-V, rig type '%s', radio address %02X%s", cn->serial,
-	     radio_str(cn->radio), rtyp_get_name(rigtype), addr, addr ? "" : " (learn)");
+	if(cn->civ)
+		info("%s %s native CAT: CI-V, rig type '%s', radio address %02X%s", cn->serial,
+		     radio_str(cn->radio), rtyp_get_name(rigtype), addr, addr ? "" : " (learn)");
+	else
+		info("%s %s native CAT: %s, rig type '%s'%s", cn->serial, radio_str(cn->radio),
+		     cat_native_protocol_str(protocol), rtyp_get_name(rigtype),
+		     no_data && protocol == CAT_NATIVE_PROTO_KENWOOD ? ", no data mode" : "");
 
 	if(cn->monitor) {
-		char line[64];
-		cat_civ_set_frame_cb(cn->civ, catn_mon_frame_cb, cn);
+		if(cn->civ)
+			cat_civ_set_frame_cb(cn->civ, catn_mon_frame_cb, cn);
+		else
+			cat_ascii_set_frame_cb(cn->ascii, catn_mon_frame_cb, cn);
 		catn_mon_comment(cn, "rig type '%s'", rtyp_get_name(rigtype));
-		cat_trace_civ_config(line, sizeof(line), &cc);
 		catn_mon_line(cn, line);
 	}
 }
@@ -319,13 +433,17 @@ static void catn_keepalive_cb(struct ev_loop *loop, struct ev_timer *w, int reve
 
 static void catn_feed(struct cat_native *cn, enum cat_dir dir, unsigned const char *data, int len) {
 	catn_setup(cn, 0);
-	if(!cn->civ || len <= 0)
+	const struct cat_stats *stats = catn_stats(cn);
+	if(!stats || len <= 0)
 		return;
 
-	uint32_t applied = cat_civ_get_stats(cn->civ)->applied;
+	uint32_t applied = stats->applied;
 	uint64_t t_ms = (uint64_t)(ev_now(cn->loop) * 1000.0);
-	cat_civ_feed(cn->civ, dir, data, len, t_ms);
-	if(cat_civ_get_stats(cn->civ)->applied == applied)
+	if(cn->civ)
+		cat_civ_feed(cn->civ, dir, data, len, t_ms);
+	else
+		cat_ascii_feed(cn->ascii, dir, data, len, t_ms);
+	if(stats->applied == applied)
 		return;
 
 	ev_timer *t = &cn->publish_timer;
@@ -359,8 +477,7 @@ static void catn_keyer_state_cb(enum app_event_type type, const void *data, void
 
 	// Values decoded before the keyer went away may be outdated: start over.
 	catn_mon_comment(cn, "keyer %s, decoder starts over", mhc_state_str(ev->state));
-	cat_civ_destroy(cn->civ);
-	cn->civ = NULL;
+	catn_destroy_decoder(cn);
 	cn->rigtype = -1;
 	cn->civ_addr = -1;
 	catn_reset(cn);
@@ -399,7 +516,7 @@ struct cat_native *cat_native_create(struct app_ctx *ctx, struct device *dev, co
 	cn->kscb = eventbus_subscribe(app_ctx_get_eventbus(ctx), EV_KEYER_STATE, catn_keyer_state_cb, cn);
 
 	info("%s %s native CAT rig mode sync created (protocol %s%s)", cn->serial, radio_str(cn->radio),
-	     cn->protocol == CAT_NATIVE_PROTO_CIV ? "civ" : "auto", cn->monitor ? ", monitor on" : "");
+	     cat_native_protocol_str(cn->protocol), cn->monitor ? ", monitor on" : "");
 	catn_setup(cn, 1);
 	return cn;
 }
@@ -414,7 +531,7 @@ void cat_native_destroy(struct cat_native *cn) {
 	mhr_rem_consumer_cb(cn->router, catn_radio_cb, cn->channel);
 	ev_timer_stop(cn->loop, &cn->publish_timer);
 	ev_timer_stop(cn->loop, &cn->keepalive_timer);
-	cat_civ_destroy(cn->civ);
+	catn_destroy_decoder(cn);
 	if(cn->mon_file) {
 		catn_mon_comment(cn, "monitor stopped");
 		fclose(cn->mon_file);

@@ -334,7 +334,7 @@
       poll_ms: Number(f?.poll_ms || 500),
       auto_start: f?.auto_start ? 1 : 0,
       rigctld_options: String(f?.rigctld_options || ''),
-      protocol: f?.protocol === 'civ' ? 'civ' : 'auto',
+      protocol: ['civ', 'kenwood', 'elecraft', 'yaesu', 'flex'].includes(f?.protocol) ? f.protocol : 'auto',
       civ_address: civ,
       monitor: f?.monitor ? 1 : 0
     };
@@ -1966,7 +1966,8 @@
           {#if activeRigModeSync?.backend === 'native'}
             mhuxd reads the CAT traffic between your applications and the radio and sets the
             keyer mode from it. Applications keep using the keyer's CAT port (e.g. /dev/mhuxd/cat1),
-            no rigctld needed. Icom CI-V radios for now. mhuxd doesn't query the radio itself yet:
+            no rigctld needed. Icom, Kenwood, Elecraft, Flex/ANAN and the newer Yaesu radios (not
+            the older ones with binary CAT). mhuxd doesn't query the radio itself yet:
             changes are seen while an application polls, or through CI-V transceive. Keep the
             keyer option "Use decoder if connected" off.
           {:else}
@@ -2009,11 +2010,15 @@
               >
                 <option value="auto">auto (from the CAT channel's radio type)</option>
                 <option value="civ">Icom CI-V</option>
+                <option value="kenwood">Kenwood</option>
+                <option value="elecraft">Elecraft</option>
+                <option value="yaesu">Yaesu (FT-450, FT-950, FT-991, FTdx…)</option>
+                <option value="flex">Flex / PowerSDR / Thetis (ANAN)</option>
               </select>
             </div>
           </div>
           <div class="row">
-            <div class="label">CI-V address (hex):</div>
+            <div class="label">CI-V address (hex, Icom):</div>
             <div class="value">
               <input
                 class="input"

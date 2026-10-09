@@ -190,7 +190,7 @@
         "protocol": {
           "description": "backend native: auto = from the CAT channel's rig type",
           "type": "string",
-          "enum": ["auto", "civ"]
+          "enum": ["auto", "civ", "kenwood", "elecraft", "yaesu", "flex"]
         },
         "civ_address": {
           "description": "backend native: radio CI-V address, 0 = the CAT channel's icomaddress",

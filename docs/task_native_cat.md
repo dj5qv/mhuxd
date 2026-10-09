@@ -1,11 +1,11 @@
 ### Native CAT support: decode, own polls, multi-client CAT port
 
-Status: phase 1 done for CI-V (2026-10-09): decoder, radio state, trace tests, the
-listen-only backend (`rig_mode_sync.backend: "native"`), CAT monitor, radio state in REST and
-WebSocket, web UI. `src/cat_civ.c`, `src/cat_state.c`, `src/cat_native.c`, `src/cat_trace.c`,
-`tests/cat/`. Backend tested with IC-7300 + DK2 and WSJT-X (keyer mode follows the radio,
-keepalive holds it after WSJT-X exits), monitor and UI as well.
-`cat_ascii.c` (Kenwood-style) is still open.
+Status: phase 1 done (2026-10-09): decoders for Icom CI-V and the Kenwood-style ASCII dialects
+(Kenwood, Elecraft, newer Yaesu, Flex/PowerSDR), radio state, trace tests, the listen-only
+backend (`rig_mode_sync.backend: "native"`), CAT monitor, radio state in REST and WebSocket,
+web UI. `src/cat*.c`, `tests/cat/`. Tested with IC-7300 + DK2 and WSJT-X (keyer mode follows
+the radio, keepalive holds it after WSJT-X exits, monitor, UI). The ASCII dialects are tested
+against the manuals, Hamlib's backends and Hamlib's rig simulators only, no real radio yet.
 Related: `docs/task_rigctld_support.md` (the current rig mode sync via rigctld).
 
 ## Reason
@@ -149,6 +149,34 @@ Decoder rules as implemented (`src/cat_civ.c`):
   mode, split in one answer on Kenwood/Elecraft/Yaesu), `FA;`, `FB;`, `MD;`/`MD0;`, data mode
   (`DA;` Kenwood, `DT;` Elecraft, DATA modes in `MD` on Yaesu), `FT;`/`FR;` (TX/RX VFO),
   `ZZFA;`/`ZZMD;`/`ZZIF;` (Flex/PowerSDR).
+
+Decoder rules as implemented (`src/cat_ascii.c`, dialect from the rig type):
+
+- Every well-formed frame from the radio is applied, reply or auto information: it names its
+  command and carries the full value, and RS232 has no bus collisions. Client frames that set
+  frequency, mode or data mode (`FA…`, `MD…`, `DA…`, `ZZMD…`) are applied too, there is no
+  acknowledge to wait for; the next reply corrects a rejected set. VFO selection and split are
+  only taken from the radio (an `FR` set also switches the TS-590 to simplex, `FT` to split).
+- Client data only tells replies from auto information apart (monitor), decoding doesn't
+  need it.
+- After a broken frame (binary byte, too long) the framer starts over right away: there is no
+  start marker to wait for, and so every byte stays in the CAT monitor.
+- VFOs are addressed as A/B (`FA`/`FB`, `IF` with its VFO field, `FR`/`VS`), VFO A is assumed
+  until the radio tells otherwise. Split from `IF`, `ST`, `ZZSP`, or `FR` ≠ `FT`.
+- Kenwood (`IF` 37 characters: frequency 2-12, TX 28, mode 29, VFO 30, split 32, TS-590
+  reference): `MD`/`IF` codes 1-9, the data flag from `DA` (TS-590, TS-990) or `DT` (TS-950).
+  The other Kenwoods have no data mode: their codes are final (`no_data`). TS-990 `OM` and
+  TS-890 `SF` have codes of their own for the data modes (C-F), so their 1-9 mean data off;
+  Hamlib 4.6 reads the TS-590 mode with `SF0`. While transmitting in split, `IF` shows the TX
+  VFO (Hamlib): only its split flag is taken then.
+- Elecraft K2/K3: `MD6`/`MD9` (DATA, DATA-REV) with the sub mode from `DT` as Hamlib maps it:
+  DATA A and PSK D → PKTUSB, AFSK A → PKTLSB, FSK D → RTTY. DATA A until `DT` is known.
+  `MD$`/`DT$` for VFO B.
+- Yaesu newcat: `FA`/`FB` with 8 or 9 digits, `MD0x`/`MD1x` (main/sub), codes with data
+  variants (8 DATA-LSB, C DATA-USB, A/F DATA-FM), `IF`/`OI` 26/27 characters (VFO A/B), `FT`
+  (TX VFO), `ST` (split), `VS` (VFO).
+- Flex/PowerSDR/Thetis/other SDRs: Kenwood with FSK/FSK-R codes as DIGL/DIGU (Hamlib's
+  emulation handling), plus `ZZFA`/`ZZFB`/`ZZMD`/`ZZME`/`ZZSP`, `ZZMD` codes as PowerSDR's.
 
 ### Ten-Tec (low priority)
 
@@ -385,8 +413,10 @@ Only an IC-7300 is available, so most coverage must come from traces and simulat
 
 ### Phase 1: listen only (no bytes sent to the radio)
 
-1. `cat_civ.c`, `cat_ascii.c`, `cat_state.c` + unit tests. Done for CI-V; `cat_ascii.c`
-   pending. `rigctld_client.c` uses the shared mode table in `cat_state.c`.
+1. `cat_civ.c`, `cat_ascii.c`, `cat_state.c` + unit tests. Done. `rigctld_client.c` uses the
+   shared mode table in `cat_state.c`. Frame types and counters shared by the decoders in
+   `cat.h`. ASCII test traces: hand-written, plus Hamlib 4.6 against Hamlib's simulators
+   (simts590, simelecraft, simft991, simpowersdr), which found the `SF` data semantics.
 2. Attach as a consumer callback on the CAT channel (radio → host) plus a read-only tap on the
    router's producer path (client → radio), so queries are known without relying on the CI-V
    echo. No change to the data path. Done: `src/cat_native.c`, `mhr_add_producer_tap_cb()`.

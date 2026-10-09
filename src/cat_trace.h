@@ -15,10 +15,11 @@
 #define CAT_TRACE_H
 
 #include <stddef.h>
+#include "cat_ascii.h"
 #include "cat_civ.h"
 #include "cat_state.h"
 
-#define CAT_TRACE_LINE_MAX (16 + 3 * CIV_MAX_FRAME + 160)
+#define CAT_TRACE_LINE_MAX 512
 
 // Keyer mode name (CW, VOICE, FSK, DIGITAL) or "?".
 const char *cat_trace_keyer_str(int keyer_mode);
@@ -26,12 +27,15 @@ const char *cat_trace_keyer_str(int keyer_mode);
 // "rx=14074000 unsel=? mode=PKTUSB split=0 keyer=DIGITAL"
 void cat_trace_state(char *buf, size_t sz, const struct cat_state *st);
 
-// "<time> <tag> fe fe ... fd  # <kind>[, applied: <state>]", no newline.
+// "<time> <tag> fe fe ... fd  # <kind>[, applied: <state>]", no newline. Frames of the
+// ASCII protocols are written as quoted text: "<time> <tag> \"FA00014074000;\"  # ...".
 // tag is used for host data; radio data is tagged R, mhuxd's own data M.
-void cat_trace_civ_frame(char *buf, size_t sz, const char *time, const char *host_tag,
-			 const struct cat_civ_frame *f, const struct cat_state *st);
+void cat_trace_frame(char *buf, size_t sz, const char *time, const char *host_tag,
+		     const struct cat_frame *f, const struct cat_state *st);
 
 // "@civ addr=94[ freq_len=4]"
 void cat_trace_civ_config(char *buf, size_t sz, const struct cat_civ_cfg *cfg);
+// "@kenwood[ nodata]", "@elecraft", "@yaesu", "@flex"
+void cat_trace_ascii_config(char *buf, size_t sz, const struct cat_ascii_cfg *cfg);
 
 #endif // CAT_TRACE_H

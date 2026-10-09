@@ -314,7 +314,7 @@ static int validate_rig_mode_sync_radio(const char *radio_name, json_t *radio_ob
     // backend "native"
     json_t *protocol = json_object_get(radio_obj, "protocol");
     if(protocol && (!json_is_string(protocol) || cat_native_protocol_from_str(json_string_value(protocol)) < 0)) {
-        warn("cfgmgrj: rig_mode_sync.%s.protocol must be \"auto\" or \"civ\"", radio_name);
+        warn("cfgmgrj: rig_mode_sync.%s.protocol must be auto, civ, kenwood, elecraft, yaesu or flex", radio_name);
         return -1;
     }
 

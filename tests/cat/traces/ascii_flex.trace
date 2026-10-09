@@ -1,0 +1,29 @@
+# Flex / PowerSDR / Thetis: Kenwood emulation with DIGL/DIGU on the FSK codes, ZZ commands.
+@flex
+R "MD6;"
+= mode=PKTLSB keyer=DIGITAL
+R "MD9;"
+= mode=PKTUSB keyer=DIGITAL
+R "MD2;"
+= mode=USB data=0 keyer=VOICE
+R "IF00014074000     +000000000090000000;"
+= rx=14074000 mode=PKTUSB
+# ZZ commands
+R "ZZFA00014076000;"
+R "ZZFB00007076000;"
+= rx=14076000 unsel=7076000
+R "ZZMD01;"
+= mode=USB data=0
+R "ZZMD07;"
+= mode=PKTUSB keyer=DIGITAL
+R "ZZME04;"
+= mode_unsel=CW
+R "ZZSP1;"
+= split=1 tx=7076000
+# client sets, ZZSP is not taken from the client
+H1 "ZZMD09;"
+= mode=PKTLSB
+H1 "ZZSP0;"
+= split=1
+R "ZZMD99;"
+= mode=PKTLSB bad=1

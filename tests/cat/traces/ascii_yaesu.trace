@@ -1,0 +1,45 @@
+# Yaesu newcat (FT-991 style): 9-digit frequencies, data modes have their own codes.
+@yaesu
+H1 "FA;"
+R "FA014074000;"
+H1 "FB;"
+R "FB007074000;"
+= rx=14074000 unsel=7074000
+# MD0 is the query of the main VFO
+H1 "MD0;"
+R "MD0C;"
+= mode=PKTUSB keyer=DIGITAL
+R "MD02;"
+= mode=USB data=0 keyer=VOICE
+R "MD06;"
+= mode=RTTY keyer=FSK
+R "MD18;"
+= mode_unsel=PKTLSB
+# IF: VFO A, OI: VFO B
+H1 "IF;"
+R "IF001014075000+000000C00000;"
+= rx=14075000 mode=PKTUSB
+R "OI001007075000+000000300000;"
+= unsel=7075000 mode_unsel=CW
+# FT-450: 8-digit frequencies
+R "IF00103573000+000000200000;"
+= rx=3573000 mode=USB
+# split: FT tells the TX VFO, ST the split state
+R "FT1;"
+= split=1 tx=7075000
+R "FT0;"
+= split=0
+R "ST1;"
+= split=1
+R "ST0;"
+= split=0
+# VS selects the VFO
+R "VS1;"
+= vfo=B rx=7075000 unsel=3573000
+R "VS0;"
+= vfo=A rx=3573000
+# client sets
+H1 "MD02;"
+= mode=USB
+H1 "FA014080000;"
+= rx=14080000

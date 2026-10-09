@@ -33,6 +33,8 @@
 
 #define RIG_IC7300 0x88
 #define RIG_K3     0x62
+#define RIG_TS590  0x7D
+#define RIG_FT817  0x29	// legacy Yaesu binary: no decoder yet
 
 static struct ev_loop *loop;
 static int failures;
@@ -222,6 +224,13 @@ static void host(const char *hex) {
 		host_cb(NULL, buf, n, host_channel, host_data);
 }
 
+// ASCII protocols: the radio's answer, as text.
+static void radio_text(const char *text) {
+	ev_now_update(loop);
+	for(size_t i = 0; text[i] && radio_cb; i++)
+		radio_cb(NULL, (const uint8_t *)&text[i], 1, radio_channel, radio_data);
+}
+
 // Command as Hamlib sends it: host data, then the bus echo.
 static void cmd(const char *hex) {
 	host(hex);
@@ -397,6 +406,27 @@ int main(int argc, char **argv) {
 	p = last_pub();
 	CHECK(p && p->radio == 2 && p->rxFreq == 14080000, "protocol civ, address 98 on a K3 channel");
 	CHECK(mon_lines == 0, "no monitor output unless enabled, got %d", mon_lines);
+	cat_native_destroy(cn);
+
+	// Kenwood TS-590: Kenwood-style ASCII, data mode via DA.
+	cfg = (struct cat_native_cfg){ .radio = 1 };
+	speed.rigtype = RIG_TS590;
+	cn = cat_native_create((app_ctx *)&dev, &dev, &cfg);
+	npub = 0;
+	radio_text("FA00014074000;MD2;DA1;");
+	run_for(0.3);
+	p = last_pub();
+	CHECK(p && p->rxFreq == 14074000 && p->mode == MOD_DIGITAL && !strcmp(p->mode_str, "PKTUSB"),
+	      "TS-590: 14074000 PKTUSB -> DIGITAL (mode_str '%s')", p ? p->mode_str : "");
+	cat_native_destroy(cn);
+
+	// Legacy Yaesu (binary protocol): no decoder.
+	speed.rigtype = RIG_FT817;
+	cn = cat_native_create((app_ctx *)&dev, &dev, &cfg);
+	npub = 0;
+	radio_text("FA00014074000;MD2;");
+	run_for(0.3);
+	CHECK(npub == 0, "no decoder for the FT-817, got %d publications", npub);
 	cat_native_destroy(cn);
 
 	// CAT monitor: trace lines to the event bus and to <dir>/cat-<serial>-r1.trace.

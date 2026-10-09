@@ -10,6 +10,27 @@
 #include "cat_trace.h"
 #include "mhcontrol.h"
 
+static const char *kind_str[] = {
+	[CAT_FRAME_CMD] = "cmd",
+	[CAT_FRAME_ECHO] = "echo",
+	[CAT_FRAME_REPLY] = "reply",
+	[CAT_FRAME_ACK] = "ack",
+	[CAT_FRAME_NAK] = "nak",
+	[CAT_FRAME_UNSOLICITED] = "unsolicited",
+	[CAT_FRAME_UNMATCHED] = "unmatched",
+	[CAT_FRAME_FOREIGN] = "foreign",
+	[CAT_FRAME_BAD] = "bad",
+	[CAT_FRAME_JAM] = "jam",
+	[CAT_FRAME_DROPPED] = "dropped",
+	[CAT_FRAME_ERROR] = "error",
+};
+
+const char *cat_frame_kind_str(enum cat_frame_kind kind) {
+	if((unsigned)kind > CAT_FRAME_ERROR)
+		return "?";
+	return kind_str[kind];
+}
+
 const char *cat_trace_keyer_str(int keyer_mode) {
 	switch(keyer_mode) {
 	case MOD_CW:      return "CW";
@@ -38,8 +59,8 @@ void cat_trace_state(char *buf, size_t sz, const struct cat_state *st) {
 		 m ? cat_mode_token(m) : "?", split, cat_trace_keyer_str(cat_mode_to_keyer(m)));
 }
 
-void cat_trace_civ_frame(char *buf, size_t sz, const char *time, const char *host_tag,
-			 const struct cat_civ_frame *f, const struct cat_state *st) {
+void cat_trace_frame(char *buf, size_t sz, const char *time, const char *host_tag,
+		     const struct cat_frame *f, const struct cat_state *st) {
 	const char *tag = f->dir == CAT_DIR_RADIO ? "R" : f->dir == CAT_DIR_OWN ? "M" : host_tag;
 	size_t n = 0;
 
@@ -54,15 +75,33 @@ void cat_trace_civ_frame(char *buf, size_t sz, const char *time, const char *hos
 		return;
 	buf[0] = '\0';
 	APPEND("%s %s", time, tag);
-	for(size_t i = 0; i < f->len; i++)
-		APPEND(" %02x", f->buf[i]);
-	APPEND("  # %s", cat_civ_kind_str(f->kind));
+	if(f->text) {
+		APPEND(" \"");
+		for(size_t i = 0; i < f->len; i++) {
+			uint8_t c = f->buf[i];
+			if(c == '"' || c == '\\')
+				APPEND("\\%c", c);
+			else if(c >= 0x20 && c < 0x7f)
+				APPEND("%c", c);
+			else
+				APPEND("\\x%02x", c);
+		}
+		APPEND("\"");
+	} else {
+		for(size_t i = 0; i < f->len; i++)
+			APPEND(" %02x", f->buf[i]);
+	}
+	APPEND("  # %s", cat_frame_kind_str(f->kind));
 	if(f->applied && st) {
 		char s[128];
 		cat_trace_state(s, sizeof(s), st);
 		APPEND(", applied: %s", s);
 	}
 #undef APPEND
+}
+
+void cat_trace_ascii_config(char *buf, size_t sz, const struct cat_ascii_cfg *cfg) {
+	snprintf(buf, sz, "@%s%s", cat_ascii_dialect_str(cfg->dialect), cfg->no_data ? " nodata" : "");
 }
 
 void cat_trace_civ_config(char *buf, size_t sz, const struct cat_civ_cfg *cfg) {

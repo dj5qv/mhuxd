@@ -1,0 +1,173 @@
+# Hamlib client traffic against Hamlib's simulator: Elecraft K3 (rigctl -m 2029, simelecraft), recorded with
+# rigctl -vvvvv, converted with hamlib2trace.py --text, written by cat_replay -v.
+# Hamlib sets DATA modes with MD6 + DT, reads them with MD + DT, VFO B with MD$. rigctl
+# reported USB, PKTUSB, USB, CW, RTTY. The simulator answers IF with a fixed frame (7.230 MHz
+# LSB).
+@elecraft
+0.000 H1 "PS;"  # cmd
+0.011 R "PS1;"  # reply
+0.011 H1 "ID;"  # cmd
+0.063 R "ID024;"  # reply
+0.063 H1 "K2;"  # cmd
+0.073 R "K20;"  # reply
+0.073 H1 "K22;"  # cmd
+0.284 H1 "OM;"  # cmd
+0.294 R "OM AP-S----4---;"  # reply
+0.294 H1 "K2;"  # cmd
+0.304 R "K20;"  # reply
+0.304 H1 "K3;"  # cmd
+0.315 R "K30;"  # reply
+0.315 H1 "RVM;"  # cmd
+0.325 R "RVM02.37;"  # reply
+0.325 H1 "RVD;"  # cmd
+0.335 R "RVD02.36;"  # reply
+0.336 H1 "AI;"  # cmd
+0.346 R "AI0;"  # reply
+0.346 H1 "AI0;"  # cmd
+0.356 H1 "ID;"  # cmd
+0.407 R "ID024;"  # reply
+0.407 H1 "FA;"  # cmd
+0.418 R "FA00014074000;"  # reply, applied: rx=14074000 unsel=? mode=? split=? keyer=?
+= mode=? keyer=?
+0.419 H1 "KS;"  # cmd
+0.430 R "KS020;"  # reply
+0.430 H1 "FA;"  # cmd
+0.440 R "FA00014074000;"  # reply, applied: rx=14074000 unsel=? mode=? split=? keyer=?
+0.440 H1 "FB;"  # cmd
+0.450 R "FB00014073500;"  # reply, applied: rx=14074000 unsel=14073500 mode=? split=? keyer=?
+0.450 H1 "IF;"  # cmd
+0.501 R "IF00007230000     -000000 0001000001 ;"  # reply, applied: rx=7230000 unsel=14073500 mode=LSB split=0 keyer=VOICE
+= mode=LSB keyer=VOICE
+0.501 H1 "MD;"  # cmd
+0.511 R "MD2;"  # reply, applied: rx=7230000 unsel=14073500 mode=USB split=0 keyer=VOICE
+= mode=USB keyer=VOICE
+0.511 H1 "BW;"  # cmd
+0.521 R "BW2200;"  # reply
+0.522 H1 "PS;"  # cmd
+0.533 R "PS1;"  # reply
+0.533 H1 "FA;"  # cmd
+0.544 R "FA00014074000;"  # reply, applied: rx=14074000 unsel=14073500 mode=USB split=0 keyer=VOICE
+0.544 H1 "MD;"  # cmd
+0.554 R "MD2;"  # reply, applied: rx=14074000 unsel=14073500 mode=USB split=0 keyer=VOICE
+0.555 H1 "BW;"  # cmd
+0.566 R "BW2200;"  # reply
+0.566 H1 "FA;"  # cmd
+0.577 R "FA00014074000;"  # reply, applied: rx=14074000 unsel=14073500 mode=USB split=0 keyer=VOICE
+0.577 H1 "FA;"  # cmd
+0.587 R "FA00014074000;"  # reply, applied: rx=14074000 unsel=14073500 mode=USB split=0 keyer=VOICE
+0.588 H1 "MD;"  # cmd
+0.599 R "MD2;"  # reply, applied: rx=14074000 unsel=14073500 mode=USB split=0 keyer=VOICE
+0.600 H1 "BW;"  # cmd
+0.610 R "BW2200;"  # reply
+0.610 H1 "MD$;"  # cmd
+0.620 R "MD$2;"  # reply, applied: rx=14074000 unsel=14073500 mode=USB split=0 keyer=VOICE
+0.620 H1 "BW$;"  # cmd
+0.631 R "BW$2400;"  # reply
+0.631 H1 "MD6;"  # cmd, applied: rx=14074000 unsel=14073500 mode=PKTUSB split=0 keyer=DIGITAL
+= mode=PKTUSB keyer=DIGITAL
+0.642 H1 "ID;"  # cmd
+0.692 R "ID024;"  # reply
+0.693 H1 "BW0200;"  # cmd
+0.703 H1 "ID;"  # cmd
+0.754 R "ID024;"  # reply
+0.754 H1 "DT0;"  # cmd, applied: rx=14074000 unsel=14073500 mode=PKTUSB split=0 keyer=DIGITAL
+0.764 H1 "ID;"  # cmd
+0.815 R "ID024;"  # reply
+0.816 H1 "MD;"  # cmd
+0.827 R "MD6;"  # reply, applied: rx=14074000 unsel=14073500 mode=PKTUSB split=0 keyer=DIGITAL
+0.827 H1 "DT;"  # cmd
+0.837 R "DT0;"  # reply, applied: rx=14074000 unsel=14073500 mode=PKTUSB split=0 keyer=DIGITAL
+0.837 H1 "BW;"  # cmd
+0.847 R "BW0200;"  # reply
+0.848 H1 "MD;"  # cmd
+0.858 R "MD6;"  # reply, applied: rx=14074000 unsel=14073500 mode=PKTUSB split=0 keyer=DIGITAL
+0.859 H1 "DT;"  # cmd
+0.869 R "DT0;"  # reply, applied: rx=14074000 unsel=14073500 mode=PKTUSB split=0 keyer=DIGITAL
+0.869 H1 "BW;"  # cmd
+0.879 R "BW0200;"  # reply
+0.879 H1 "MD$;"  # cmd
+0.890 R "MD$2;"  # reply, applied: rx=14074000 unsel=14073500 mode=PKTUSB split=0 keyer=DIGITAL
+0.890 H1 "BW$;"  # cmd
+0.900 R "BW$2400;"  # reply
+0.900 H1 "MD2;"  # cmd, applied: rx=14074000 unsel=14073500 mode=USB split=0 keyer=VOICE
+= mode=USB keyer=VOICE
+0.910 H1 "ID;"  # cmd
+0.961 R "ID024;"  # reply
+0.961 H1 "BW0270;"  # cmd
+0.971 H1 "ID;"  # cmd
+1.021 R "ID024;"  # reply
+1.022 H1 "MD;"  # cmd
+1.032 R "MD2;"  # reply, applied: rx=14074000 unsel=14073500 mode=USB split=0 keyer=VOICE
+1.032 H1 "BW;"  # cmd
+1.043 R "BW0270;"  # reply
+1.044 H1 "MD;"  # cmd
+1.054 R "MD2;"  # reply, applied: rx=14074000 unsel=14073500 mode=USB split=0 keyer=VOICE
+1.055 H1 "BW;"  # cmd
+1.066 R "BW0270;"  # reply
+1.066 H1 "MD$;"  # cmd
+1.076 R "MD$2;"  # reply, applied: rx=14074000 unsel=14073500 mode=USB split=0 keyer=VOICE
+1.077 H1 "BW$;"  # cmd
+1.087 R "BW$2400;"  # reply
+1.087 H1 "MD3;"  # cmd, applied: rx=14074000 unsel=14073500 mode=CW split=0 keyer=CW
+= mode=CW keyer=CW
+1.097 H1 "ID;"  # cmd
+1.148 R "ID024;"  # reply
+1.148 H1 "BW0100;"  # cmd
+1.158 H1 "ID;"  # cmd
+1.209 R "ID024;"  # reply
+1.210 H1 "MD;"  # cmd
+1.220 R "MD3;"  # reply, applied: rx=14074000 unsel=14073500 mode=CW split=0 keyer=CW
+1.220 H1 "BW;"  # cmd
+1.231 R "BW0100;"  # reply
+1.232 H1 "MD;"  # cmd
+1.243 R "MD3;"  # reply, applied: rx=14074000 unsel=14073500 mode=CW split=0 keyer=CW
+1.243 H1 "BW;"  # cmd
+1.253 R "BW0100;"  # reply
+1.253 H1 "MD$;"  # cmd
+1.263 R "MD$2;"  # reply, applied: rx=14074000 unsel=14073500 mode=CW split=0 keyer=CW
+1.264 H1 "BW$;"  # cmd
+1.275 R "BW$2400;"  # reply
+1.275 H1 "MD6;"  # cmd, applied: rx=14074000 unsel=14073500 mode=PKTUSB split=0 keyer=DIGITAL
+= mode=PKTUSB keyer=DIGITAL
+1.285 H1 "ID;"  # cmd
+1.336 R "ID024;"  # reply
+1.336 H1 "BW0200;"  # cmd
+1.346 H1 "ID;"  # cmd
+1.396 R "ID024;"  # reply
+1.397 H1 "DT2;"  # cmd, applied: rx=14074000 unsel=14073500 mode=RTTY split=0 keyer=FSK
+= mode=RTTY keyer=FSK
+1.408 H1 "ID;"  # cmd
+1.458 R "ID024;"  # reply
+1.459 H1 "MD;"  # cmd
+1.469 R "MD6;"  # reply, applied: rx=14074000 unsel=14073500 mode=RTTY split=0 keyer=FSK
+1.469 H1 "DT;"  # cmd
+1.479 R "DT2;"  # reply, applied: rx=14074000 unsel=14073500 mode=RTTY split=0 keyer=FSK
+1.479 H1 "BW;"  # cmd
+1.490 R "BW0200;"  # reply
+1.490 H1 "FA;"  # cmd
+1.502 R "FA00014074000;"  # reply, applied: rx=14074000 unsel=14073500 mode=RTTY split=0 keyer=FSK
+1.502 H1 "FA;"  # cmd
+1.512 R "FA00014074000;"  # reply, applied: rx=14074000 unsel=14073500 mode=RTTY split=0 keyer=FSK
+1.513 H1 "FA00007074000;"  # cmd, applied: rx=7074000 unsel=14073500 mode=RTTY split=0 keyer=FSK
+1.523 H1 "ID;"  # cmd
+1.573 R "ID024;"  # reply
+1.824 H1 "FA;"  # cmd
+1.836 R "FA00007074000;"  # reply, applied: rx=7074000 unsel=14073500 mode=RTTY split=0 keyer=FSK
+1.836 H1 "IF;"  # cmd
+1.886 R "IF00007230000     -000000 0001000001 ;"  # reply, applied: rx=7230000 unsel=14073500 mode=LSB split=0 keyer=VOICE
+= mode=LSB keyer=VOICE
+1.888 H1 "FR0;"  # cmd
+1.888 H1 "FT1;"  # cmd
+1.898 H1 "ID;"  # cmd
+1.949 R "ID024;"  # reply
+1.949 H1 "FB;"  # cmd
+1.961 R "FB00014073500;"  # reply, applied: rx=7230000 unsel=14073500 mode=LSB split=0 keyer=VOICE
+1.961 H1 "FB;"  # cmd
+1.971 R "FB00014073500;"  # reply, applied: rx=7230000 unsel=14073500 mode=LSB split=0 keyer=VOICE
+1.971 H1 "FB00007074000;"  # cmd, applied: rx=7230000 unsel=7074000 mode=LSB split=0 keyer=VOICE
+1.982 H1 "ID;"  # cmd
+2.033 R "ID024;"  # reply
+2.486 H1 "K20;"  # cmd
+2.496 H1 "ID;"  # cmd
+2.547 R "ID024;"  # reply
+= rx=7230000 mode=LSB

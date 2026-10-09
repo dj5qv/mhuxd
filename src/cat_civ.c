@@ -48,7 +48,7 @@ struct civ_pending {
 struct cat_civ {
 	struct cat_civ_cfg cfg;
 	struct cat_state *st;
-	cat_civ_frame_cb cb;
+	cat_frame_cb cb;
 	void *cb_data;
 	struct civ_rx rx[CAT_DIR_RADIO + 1];
 	struct civ_pending pend[PEND_MAX];
@@ -57,7 +57,7 @@ struct cat_civ {
 	uint8_t last[CIV_MAX_FRAME];
 	size_t last_len;
 	enum cat_dir last_dir;
-	struct cat_civ_stats stats;
+	struct cat_stats stats;
 };
 
 #define F_TO(f)   ((f)[2])
@@ -65,26 +65,6 @@ struct cat_civ {
 #define F_CMD(f)  ((f)[4])
 #define F_DATA(f) ((f) + CIV_HDR_LEN)
 #define F_DLEN(n) ((n) - CIV_MIN_LEN)
-
-static const char *kind_str[] = {
-	[CIV_CMD] = "cmd",
-	[CIV_ECHO] = "echo",
-	[CIV_REPLY] = "reply",
-	[CIV_ACK] = "ack",
-	[CIV_NAK] = "nak",
-	[CIV_UNSOLICITED] = "unsolicited",
-	[CIV_UNMATCHED] = "unmatched",
-	[CIV_FOREIGN] = "foreign",
-	[CIV_BAD] = "bad",
-	[CIV_JAM] = "jam",
-	[CIV_DROPPED] = "dropped",
-};
-
-const char *cat_civ_kind_str(enum cat_civ_kind kind) {
-	if((unsigned)kind > CIV_DROPPED)
-		return "?";
-	return kind_str[kind];
-}
 
 struct cat_civ *cat_civ_create(const struct cat_civ_cfg *cfg, struct cat_state *st) {
 	struct cat_civ *civ = calloc(1, sizeof(*civ));
@@ -102,7 +82,7 @@ void cat_civ_destroy(struct cat_civ *civ) {
 	free(civ);
 }
 
-void cat_civ_set_frame_cb(struct cat_civ *civ, cat_civ_frame_cb cb, void *user_data) {
+void cat_civ_set_frame_cb(struct cat_civ *civ, cat_frame_cb cb, void *user_data) {
 	civ->cb = cb;
 	civ->cb_data = user_data;
 }
@@ -111,26 +91,26 @@ uint8_t cat_civ_radio_addr(const struct cat_civ *civ) {
 	return civ->cfg.radio_addr;
 }
 
-const struct cat_civ_stats *cat_civ_get_stats(const struct cat_civ *civ) {
+const struct cat_stats *cat_civ_get_stats(const struct cat_civ *civ) {
 	return &civ->stats;
 }
 
-static void emit(struct cat_civ *civ, enum cat_civ_kind kind, enum cat_dir dir,
+static void emit(struct cat_civ *civ, enum cat_frame_kind kind, enum cat_dir dir,
 		 const uint8_t *buf, size_t len, int applied, uint64_t t_ms) {
 	switch(kind) {
-	case CIV_REPLY:     civ->stats.replies++; break;
-	case CIV_UNMATCHED: civ->stats.unmatched++; break;
-	case CIV_BAD:       civ->stats.bad++; break;
-	case CIV_JAM:       civ->stats.jams++; break;
-	case CIV_DROPPED:   civ->stats.dropped++; break;
-	case CIV_FOREIGN:   civ->stats.foreign++; break;
+	case CAT_FRAME_REPLY:     civ->stats.replies++; break;
+	case CAT_FRAME_UNMATCHED: civ->stats.unmatched++; break;
+	case CAT_FRAME_BAD:       civ->stats.bad++; break;
+	case CAT_FRAME_JAM:       civ->stats.jams++; break;
+	case CAT_FRAME_DROPPED:   civ->stats.dropped++; break;
+	case CAT_FRAME_FOREIGN:   civ->stats.foreign++; break;
 	default: break;
 	}
 	if(applied)
 		civ->stats.applied++;
 
 	if(civ->cb) {
-		struct cat_civ_frame f = {
+		struct cat_frame f = {
 			.kind = kind, .dir = dir, .t_ms = t_ms,
 			.buf = buf, .len = len, .applied = applied,
 		};
@@ -440,7 +420,7 @@ static void process_radio_frame(struct cat_civ *civ, const uint8_t *f, size_t le
 	if(F_FROM(f) == ra && F_TO(f) != ra) {
 		if(F_TO(f) == CIV_BCAST) {
 			r = apply_unsolicited(civ, f, len, t);
-			emit(civ, r < 0 ? CIV_BAD : CIV_UNSOLICITED, dir, f, len, r > 0, t);
+			emit(civ, r < 0 ? CAT_FRAME_BAD : CAT_FRAME_UNSOLICITED, dir, f, len, r > 0, t);
 			return;
 		}
 
@@ -453,18 +433,18 @@ static void process_radio_frame(struct cat_civ *civ, const uint8_t *f, size_t le
 					r = apply_set(civ, civ->pend[i].buf, civ->pend[i].len, t);
 				pend_consume(civ, i);
 			}
-			emit(civ, ok ? CIV_ACK : CIV_NAK, dir, f, len, r > 0, t);
+			emit(civ, ok ? CAT_FRAME_ACK : CAT_FRAME_NAK, dir, f, len, r > 0, t);
 			return;
 		}
 
 		i = pend_find_query(civ, f, len);
 		if(i < 0) {
-			emit(civ, CIV_UNMATCHED, dir, f, len, 0, t);
+			emit(civ, CAT_FRAME_UNMATCHED, dir, f, len, 0, t);
 			return;
 		}
 		pend_consume(civ, i);
 		r = apply_reply(civ, f, len, t);
-		emit(civ, r < 0 ? CIV_BAD : CIV_REPLY, dir, f, len, r > 0, t);
+		emit(civ, r < 0 ? CAT_FRAME_BAD : CAT_FRAME_REPLY, dir, f, len, r > 0, t);
 		return;
 	}
 
@@ -472,16 +452,16 @@ static void process_radio_frame(struct cat_civ *civ, const uint8_t *f, size_t le
 		i = pend_find_echo(civ, f, len);
 		if(i >= 0) {
 			civ->pend[i].echoed = 1;
-			emit(civ, CIV_ECHO, dir, f, len, 0, t);
+			emit(civ, CAT_FRAME_ECHO, dir, f, len, 0, t);
 		} else {
 			// Only seen on the bus: no host tap, or another controller.
 			pend_add(civ, f, len, 0, t);
-			emit(civ, CIV_CMD, dir, f, len, 0, t);
+			emit(civ, CAT_FRAME_CMD, dir, f, len, 0, t);
 		}
 		return;
 	}
 
-	emit(civ, CIV_FOREIGN, dir, f, len, 0, t);
+	emit(civ, CAT_FRAME_FOREIGN, dir, f, len, 0, t);
 }
 
 static void process_frame(struct cat_civ *civ, enum cat_dir dir, const uint8_t *f, size_t len, uint64_t t) {
@@ -492,14 +472,14 @@ static void process_frame(struct cat_civ *civ, enum cat_dir dir, const uint8_t *
 		learn_addr(civ, dir, f, t);
 
 	if(!civ->cfg.radio_addr) {
-		emit(civ, CIV_FOREIGN, dir, f, len, 0, t);
+		emit(civ, CAT_FRAME_FOREIGN, dir, f, len, 0, t);
 	} else if(dir == CAT_DIR_RADIO) {
 		process_radio_frame(civ, f, len, t);
 	} else if(F_TO(f) == civ->cfg.radio_addr && F_FROM(f) != CIV_BCAST) {
 		pend_add(civ, f, len, 1, t);
-		emit(civ, CIV_CMD, dir, f, len, 0, t);
+		emit(civ, CAT_FRAME_CMD, dir, f, len, 0, t);
 	} else {
-		emit(civ, CIV_FOREIGN, dir, f, len, 0, t);
+		emit(civ, CAT_FRAME_FOREIGN, dir, f, len, 0, t);
 	}
 
 	memcpy(civ->last, f, len);
@@ -513,14 +493,14 @@ static void process_frame(struct cat_civ *civ, enum cat_dir dir, const uint8_t *
 
 static void rx_drop(struct cat_civ *civ, enum cat_dir dir, struct civ_rx *rx, uint64_t t) {
 	if(rx->len > 2)
-		emit(civ, CIV_DROPPED, dir, rx->buf, rx->len, 0, t);
+		emit(civ, CAT_FRAME_DROPPED, dir, rx->buf, rx->len, 0, t);
 	rx->len = 0;
 }
 
 static void rx_jam(struct cat_civ *civ, enum cat_dir dir, struct civ_rx *rx, uint64_t t) {
 	static const uint8_t col = CIV_COL;
 	rx_drop(civ, dir, rx, t);
-	emit(civ, CIV_JAM, dir, &col, 1, 0, t);
+	emit(civ, CAT_FRAME_JAM, dir, &col, 1, 0, t);
 	rx->state = RX_IDLE;
 }
 

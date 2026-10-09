@@ -1,0 +1,32 @@
+# Elecraft K3: DATA (MD6) and DATA-REV (MD9), the sub mode from DT.
+@elecraft
+# DT not known yet: DATA A assumed
+R "MD6;"
+= mode=PKTUSB keyer=DIGITAL
+R "DT2;"
+= mode=RTTY keyer=FSK
+R "MD9;"
+= mode=RTTYR keyer=FSK
+R "DT1;"
+= mode=PKTLSB keyer=DIGITAL
+R "DT3;"
+= mode=PKTUSB
+# a voice mode: no data
+R "MD2;"
+= mode=USB data=0 keyer=VOICE
+# DATA again: the sub mode is remembered
+R "MD6;"
+= mode=PKTUSB
+# VFO B: MD$, DT$
+R "MD$3;"
+= mode_unsel=CW mode=PKTUSB
+R "DT$2;"
+R "MD$6;"
+= mode_unsel=RTTY
+# IF with mode 6, sub mode of VFO A
+R "DT1;"
+R "IF00007040000     +000000000060000000;"
+= rx=7040000 mode=PKTLSB
+# DA has no meaning here
+R "DA1;"
+= mode=PKTLSB

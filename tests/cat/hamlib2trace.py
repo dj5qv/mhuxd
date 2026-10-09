@@ -5,12 +5,14 @@ Hamlib's TX dumps become host data (H1), its RX dumps radio data (R). Time
 stamps are made relative to the first converted line. Bytes Hamlib never read
 (flushed or still in the buffer when it timed out) are not in the log.
 
-  hamlib2trace.py [--lines FIRST:LAST] [--time FROM:TO] [--addr 94] rigctl.log > out.trace
+  hamlib2trace.py [--lines FIRST:LAST] [--time FROM:TO] [--addr 94 | --dialect kenwood]
+                  [--text] rigctl.log > out.trace
 
 --lines restricts the conversion to a range of log lines (1-based, inclusive).
 --time keeps only bytes between FROM and TO seconds (relative to the first
 converted line; time stamps keep that origin).
---addr writes a '@civ addr=..' header line.
+--addr writes a '@civ addr=..' header line, --dialect a '@kenwood' (elecraft, yaesu,
+flex) one. --text writes the bytes as quoted text, for the ASCII protocols.
 """
 import argparse
 import os
@@ -26,7 +28,20 @@ def seconds(m):
     return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
 
 
-def convert(path, first, last, t_from, t_to, out):
+def text_of(data):
+    out = ''
+    for b in data:
+        c = chr(b)
+        if c in '"\\':
+            out += '\\' + c
+        elif 0x20 <= b < 0x7f:
+            out += c
+        else:
+            out += '\\x%02x' % b
+    return '"' + out + '"'
+
+
+def convert(path, first, last, t_from, t_to, text, out):
     t0 = None
     t_prev = 0.0
     replay = False
@@ -43,7 +58,8 @@ def convert(path, first, last, t_from, t_to, out):
         t_prev = rel
         if rel < t_from or (t_to and rel > t_to):
             return
-        out.write(f'{rel:.3f} {tag} {" ".join(f"{b:02x}" for b in data)}\n')
+        payload = text_of(data) if text else " ".join(f"{b:02x}" for b in data)
+        out.write(f'{rel:.3f} {tag} {payload}\n')
 
     with open(path, errors='replace') as f:
         for n, line in enumerate(f, 1):
@@ -93,6 +109,8 @@ def main():
     ap.add_argument('--lines', default='1:0', help='FIRST:LAST log lines (LAST 0 = end)')
     ap.add_argument('--time', default='0:0', help='FROM:TO seconds (TO 0 = end)')
     ap.add_argument('--addr', help='CI-V address of the radio (hex)')
+    ap.add_argument('--dialect', help='ASCII protocol: kenwood, elecraft, yaesu, flex')
+    ap.add_argument('--text', action='store_true', help='write the bytes as quoted text')
     ap.add_argument('log')
     args = ap.parse_args()
     first, last = (int(x or 0) for x in args.lines.split(':'))
@@ -103,7 +121,9 @@ def main():
               f'seconds {args.time}\n')
     if args.addr:
         out.write(f'@civ addr={args.addr}\n')
-    convert(args.log, max(first, 1), last, t_from, t_to, out)
+    if args.dialect:
+        out.write(f'@{args.dialect}\n')
+    convert(args.log, max(first, 1), last, t_from, t_to, args.text, out)
 
 
 if __name__ == '__main__':

@@ -11,8 +11,9 @@ SRCDIR   ?= ../../src
 CPPFLAGS += -I$(SRCDIR) -D_GNU_SOURCE
 CFLAGS   ?= -g -O2 -Wall -Wextra
 
-CAT_SRCS = $(SRCDIR)/cat_civ.c $(SRCDIR)/cat_state.c $(SRCDIR)/cat_trace.c
-CAT_HDRS = $(SRCDIR)/cat_civ.h $(SRCDIR)/cat_state.h $(SRCDIR)/cat_trace.h $(SRCDIR)/mhcontrol.h
+CAT_SRCS = $(SRCDIR)/cat_civ.c $(SRCDIR)/cat_ascii.c $(SRCDIR)/cat_state.c $(SRCDIR)/cat_trace.c
+CAT_HDRS = $(SRCDIR)/cat.h $(SRCDIR)/cat_civ.h $(SRCDIR)/cat_ascii.h $(SRCDIR)/cat_state.h \
+	   $(SRCDIR)/cat_trace.h $(SRCDIR)/mhcontrol.h
 
 all: cat_replay native_test
 

@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include "cat_ascii.h"
 #include "cat_civ.h"
 #include "cat_state.h"
 #include "cat_trace.h"
@@ -36,8 +37,12 @@ struct replay {
 	int verbose;
 	int failures;
 	int asserts;
+	// Decoder: CI-V, or one of the ASCII dialects (ascii_cfg.dialect) if ascii is set.
+	int use_ascii;
 	struct cat_civ_cfg civ_cfg;
+	struct cat_ascii_cfg ascii_cfg;
 	struct cat_civ *civ;
+	struct cat_ascii *ascii;
 	struct cat_state st;
 	uint64_t t_ms;
 	uint64_t day_ms;	// added to HH:MM:SS times after midnight
@@ -51,7 +56,7 @@ static void fmt_freq(char *buf, size_t sz, const struct cat_item *it) {
 		snprintf(buf, sz, "?");
 }
 
-static void frame_cb(const struct cat_civ_frame *f, void *user_data) {
+static void frame_cb(const struct cat_frame *f, void *user_data) {
 	struct replay *rp = user_data;
 	char time[32], line[CAT_TRACE_LINE_MAX];
 	if(!rp->verbose)
@@ -59,7 +64,7 @@ static void frame_cb(const struct cat_civ_frame *f, void *user_data) {
 
 	snprintf(time, sizeof(time), "%llu.%03llu", (unsigned long long)(f->t_ms / 1000),
 		 (unsigned long long)(f->t_ms % 1000));
-	cat_trace_civ_frame(line, sizeof(line), time, rp->tag, f, &rp->st);
+	cat_trace_frame(line, sizeof(line), time, rp->tag, f, &rp->st);
 	printf("%s\n", line);
 }
 
@@ -74,16 +79,38 @@ static void fail(struct replay *rp, const char *fmt, ...) {
 	rp->failures++;
 }
 
+static int have_decoder(const struct replay *rp) {
+	return rp->civ || rp->ascii;
+}
+
 static int ensure_decoder(struct replay *rp) {
-	if(rp->civ)
+	if(have_decoder(rp))
 		return 0;
-	rp->civ = cat_civ_create(&rp->civ_cfg, &rp->st);
-	if(!rp->civ) {
+	if(rp->use_ascii) {
+		rp->ascii = cat_ascii_create(&rp->ascii_cfg, &rp->st);
+		if(rp->ascii)
+			cat_ascii_set_frame_cb(rp->ascii, frame_cb, rp);
+	} else {
+		rp->civ = cat_civ_create(&rp->civ_cfg, &rp->st);
+		if(rp->civ)
+			cat_civ_set_frame_cb(rp->civ, frame_cb, rp);
+	}
+	if(!have_decoder(rp)) {
 		fail(rp, "out of memory");
 		return -1;
 	}
-	cat_civ_set_frame_cb(rp->civ, frame_cb, rp);
 	return 0;
+}
+
+static void destroy_decoder(struct replay *rp) {
+	cat_civ_destroy(rp->civ);
+	cat_ascii_destroy(rp->ascii);
+	rp->civ = NULL;
+	rp->ascii = NULL;
+}
+
+static const struct cat_stats *decoder_stats(const struct replay *rp) {
+	return rp->ascii ? cat_ascii_get_stats(rp->ascii) : cat_civ_get_stats(rp->civ);
 }
 
 // Strip a trailing comment ('#' outside of quotes) and trailing white space.
@@ -237,38 +264,51 @@ static void data_line(struct replay *rp, char *line) {
 
 	if(parse_payload(rp, p ? p : "", buf, &len) || ensure_decoder(rp))
 		return;
-	cat_civ_feed(rp->civ, dir, buf, len, rp->t_ms);
+	if(rp->ascii)
+		cat_ascii_feed(rp->ascii, dir, buf, len, rp->t_ms);
+	else
+		cat_civ_feed(rp->civ, dir, buf, len, rp->t_ms);
 }
 
 static void config_line(struct replay *rp, char *line) {
 	char *p = line + 1, *tok;
+	char buf[64];
+	int dialect;
 
 	tok = strsep(&p, " \t");
-	if(strcmp(tok, "civ")) {
+	dialect = cat_ascii_dialect_from_str(tok);
+	if(strcmp(tok, "civ") && dialect < 0) {
 		fail(rp, "unknown protocol '%s'", tok);
 		return;
 	}
-	if(rp->civ) {
-		// The CAT monitor writes the configuration whenever the decoder starts over.
-		cat_civ_destroy(rp->civ);
-		rp->civ = NULL;
+	// The CAT monitor writes the configuration whenever the decoder starts over.
+	if(have_decoder(rp)) {
+		destroy_decoder(rp);
 		cat_state_init(&rp->st);
 	}
 	memset(&rp->civ_cfg, 0, sizeof(rp->civ_cfg));
+	memset(&rp->ascii_cfg, 0, sizeof(rp->ascii_cfg));
+	rp->use_ascii = dialect >= 0;
+	rp->ascii_cfg.dialect = dialect >= 0 ? dialect : 0;
+
 	while((tok = strsep(&p, " \t"))) {
 		unsigned v;
 		if(!*tok)
 			continue;
-		if(sscanf(tok, "addr=%x", &v) == 1 && v <= 0xff)
+		if(!rp->use_ascii && sscanf(tok, "addr=%x", &v) == 1 && v <= 0xff)
 			rp->civ_cfg.radio_addr = v;
-		else if(sscanf(tok, "freq_len=%u", &v) == 1 && v >= 3 && v <= 6)
+		else if(!rp->use_ascii && sscanf(tok, "freq_len=%u", &v) == 1 && v >= 3 && v <= 6)
 			rp->civ_cfg.freq_len = v;
+		else if(rp->use_ascii && !strcmp(tok, "nodata"))
+			rp->ascii_cfg.no_data = 1;
 		else
-			fail(rp, "bad civ option '%s'", tok);
+			fail(rp, "bad option '%s'", tok);
 	}
 	if(rp->verbose) {
-		char buf[64];
-		cat_trace_civ_config(buf, sizeof(buf), &rp->civ_cfg);
+		if(rp->use_ascii)
+			cat_trace_ascii_config(buf, sizeof(buf), &rp->ascii_cfg);
+		else
+			cat_trace_civ_config(buf, sizeof(buf), &rp->civ_cfg);
 		printf("%s\n", buf);
 	}
 }
@@ -298,7 +338,7 @@ static void assert_line(struct replay *rp, char *line) {
 		return;
 
 	const struct cat_state *st = &rp->st;
-	const struct cat_civ_stats *stats = cat_civ_get_stats(rp->civ);
+	const struct cat_stats *stats = decoder_stats(rp);
 
 	while((tok = strsep(&p, " \t"))) {
 		char *val, got[32];
@@ -334,7 +374,7 @@ static void assert_line(struct replay *rp, char *line) {
 		} else if(!strcmp(tok, "vfo")) {
 			check(rp, tok, val, st->vfo_ab.valid ? (st->vfo_ab.val ? "B" : "A") : "?");
 		} else if(!strcmp(tok, "addr")) {
-			snprintf(got, sizeof(got), "%02x", cat_civ_radio_addr(rp->civ));
+			snprintf(got, sizeof(got), "%02x", rp->civ ? cat_civ_radio_addr(rp->civ) : 0);
 			check(rp, tok, val, got);
 		} else if(!strcmp(tok, "frames")) {
 			check_u32(rp, tok, val, stats->frames);
@@ -352,6 +392,8 @@ static void assert_line(struct replay *rp, char *line) {
 			check_u32(rp, tok, val, stats->dropped);
 		} else if(!strcmp(tok, "foreign")) {
 			check_u32(rp, tok, val, stats->foreign);
+		} else if(!strcmp(tok, "errors")) {
+			check_u32(rp, tok, val, stats->errors);
 		} else {
 			fail(rp, "unknown key '%s'", tok);
 		}
@@ -389,12 +431,12 @@ static int replay_file(const char *path, int verbose) {
 	free(line);
 	fclose(f);
 
-	if(rp.civ) {
-		const struct cat_civ_stats *s = cat_civ_get_stats(rp.civ);
+	if(have_decoder(&rp)) {
+		const struct cat_stats *s = decoder_stats(&rp);
 		printf("%s %s: %d assertions, %u frames, %u applied, %u unmatched, %u bad, %u jams, %u dropped\n",
 		       rp.failures ? "FAIL" : "ok  ", path, rp.asserts, s->frames, s->applied,
 		       s->unmatched, s->bad, s->jams, s->dropped);
-		cat_civ_destroy(rp.civ);
+		destroy_decoder(&rp);
 	} else {
 		printf("%s %s: no data\n", rp.failures ? "FAIL" : "ok  ", path);
 	}
