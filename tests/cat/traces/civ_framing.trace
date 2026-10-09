@@ -1,0 +1,53 @@
+# Framer robustness.
+@civ addr=94
+
+# extra preamble byte
+R fe fe fe 94 e0 03 fd
+R fe fe e0 94 03 00 40 07 14 00 fd
+= rx=14074000 frames=2
+
+# garbage between frames
+R 00 11 22 fe fe 94 e0 03 fd 33
+R fe fe e0 94 03 00 00 08 14 00 fd
+= rx=14080000
+
+# frames split across reads, two frames in one read
+R fe fe 94
+R e0 25 00 fd fe fe e0 94 25
+R 00 00 00 07 07 00 fd
+= rx=7070000
+
+# collision code inside a frame: the frame is dropped
+R fe fe 94 e0 25 00 fd fe fe e0 94 25 00 00 fc
+R fc fc
+= rx=7070000 jams=3 dropped=1
+
+# a frame starts before the previous one ended
+R fe fe 94 e0 25 00 fd fe fe e0 94 25 00 00 fe fe e0 94 25 00 00 40 07 14 00 fd
+= rx=14074000 dropped=2
+
+# merged frames from the DK2 recordings: wrong length for the command
+R fe fe 94 e0 25 01 fd
+R fe fe e0 94 25 01 30 31 15 19 25 00 fd
+R fe fe 94 e0 26 00 fd
+R fe fe e0 94 26 00 03 00 06 25 00 fd
+= bad=2 unsel=? mode=?
+
+# overlong frame (scope data) is dropped, framing recovers
+R fe fe e0 94 27 00 00 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 11 fd
+R fe fe 94 e0 03 fd
+R fe fe e0 94 03 00 40 07 21 00 fd
+= rx=21074000 dropped=3
+
+# other devices on the bus
+R fe fe 98 e0 03 fd
+R fe fe e0 98 03 00 40 07 14 00 fd
+= rx=21074000 foreign=2
+
+# reply without a query
+R fe fe e0 94 03 00 40 07 14 00 fd
+= rx=21074000 unmatched=1
+
+# frame too short
+R fe fe 94 fd
+= dropped=4

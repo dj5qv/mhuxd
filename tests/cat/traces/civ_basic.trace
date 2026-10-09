@@ -1,0 +1,75 @@
+# Query/reply pairs as Hamlib sends them to an IC-7300 behind the keyer:
+# the radio stream carries the bus echo, then the reply.
+@civ addr=94
+
+= rx=? mode=? keyer=? split=?
+
+# 03: frequency
+R fe fe 94 e0 03 fd
+R fe fe e0 94 03 00 40 07 14 00 fd
+= rx=14074000 tx=14074000
+
+# 04: mode USB, FIL1
+R fe fe 94 e0 04 fd
+R fe fe e0 94 04 01 01 fd
+= mode=USB keyer=VOICE data=?
+
+# 1A 06: data mode D1
+R fe fe 94 e0 1a 06 fd
+R fe fe e0 94 1a 06 01 01 fd
+= mode=PKTUSB keyer=DIGITAL data=1
+
+# 25 00 / 25 01: selected / unselected VFO frequency
+R fe fe 94 e0 25 00 fd
+R fe fe e0 94 25 00 00 40 07 07 00 fd
+R fe fe 94 e0 25 01 fd
+R fe fe e0 94 25 01 00 00 08 14 00 fd
+= rx=7074000 unsel=14080000
+
+# 26 00: selected VFO CW, data off, FIL2
+R fe fe 94 e0 26 00 fd
+R fe fe e0 94 26 00 03 00 02 fd
+= mode=CW keyer=CW data=0
+
+# 26 01: unselected VFO LSB-D2
+R fe fe 94 e0 26 01 fd
+R fe fe e0 94 26 01 00 02 01 fd
+= mode_unsel=PKTLSB mode=CW
+
+# 0F: split on / off, TX on the unselected VFO
+R fe fe 94 e0 0f fd
+R fe fe e0 94 0f 01 fd
+= split=1 rx=7074000 tx=14080000
+R fe fe 94 e0 0f fd
+R fe fe e0 94 0f 00 fd
+= split=0 tx=7074000
+
+# Replies to commands that are not decoded still close their transaction.
+R fe fe 94 e0 14 0c fd
+R fe fe e0 94 14 0c 01 44 fd
+R fe fe 94 e0 1a 03 fd
+R fe fe e0 94 1a 03 34 fd
+= replies=11 applied=9 unmatched=0 bad=0
+
+# Other modes
+R fe fe 94 e0 04 fd
+R fe fe e0 94 04 04 01 fd
+= mode=RTTY keyer=FSK
+R fe fe 94 e0 04 fd
+R fe fe e0 94 04 08 01 fd
+= mode=RTTYR keyer=FSK
+R fe fe 94 e0 04 fd
+R fe fe e0 94 04 07 01 fd
+= mode=CWR keyer=CW
+R fe fe 94 e0 04 fd
+R fe fe e0 94 04 02 01 fd
+= mode=AM keyer=VOICE
+R fe fe 94 e0 26 00 fd
+R fe fe e0 94 26 00 05 01 01 fd
+= mode=PKTFM keyer=DIGITAL
+R fe fe 94 e0 04 fd
+R fe fe e0 94 04 17 01 fd    # DV: no keyer mode
+= mode=OTHER keyer=?
+R fe fe 94 e0 04 fd
+R fe fe e0 94 04 12 01 fd    # PSK, unsupported like with rigctld
+= mode=PSK keyer=?

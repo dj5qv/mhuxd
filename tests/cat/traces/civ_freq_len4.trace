@@ -1,0 +1,11 @@
+# IC-731/IC-735: 4-byte frequencies.
+@civ addr=04 freq_len=4
+
+R fe fe 04 e0 03 fd
+R fe fe e0 04 03 00 40 07 14 fd
+= rx=14074000
+R fe fe 00 04 00 00 00 08 14 fd
+= rx=14080000
+R fe fe 04 e0 03 fd
+R fe fe e0 04 03 00 40 07 14 00 fd
+= rx=14080000 bad=1

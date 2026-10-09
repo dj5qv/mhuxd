@@ -1,0 +1,59 @@
+# IC-7300 behind a DK2 in USB-D1, keyer CAT decoder off (cat_decoder_off, 0-0.6 s):
+# rig_open, then back-to-back get_mode (26 00 and 1A 03 filter width).
+# converted from cat_decoder_off.log, log lines 1:0, seconds 0:0.6
+@civ addr=94
+0.000 H1 fe fe 94 e0 03 fd
+0.021 R fe fe 94 e0 03 fd
+0.047 R fe fe e0 94 03 00 50 57 03 00 fd
+0.047 H1 fe fe 94 e0 25 00 fd
+0.070 R fe fe 94 e0 25 00 fd
+0.086 R fe fe e0 94 25 00 00 50 57 03 00 fd
+0.086 H1 fe fe 94 e0 03 fd
+0.097 R fe fe 94 e0 03 fd
+0.115 R fe fe e0 94 03 00 50 57 03 00 fd
+0.116 H1 fe fe 94 e0 25 00 fd
+0.129 R fe fe 94 e0 25 00 fd
+0.148 R fe fe e0 94 25 00 00 50 57 03 00 fd
+0.148 H1 fe fe 94 e0 14 0c fd
+0.161 R fe fe 94 e0 14 0c fd
+0.178 R fe fe e0 94 14 0c 01 44 fd
+0.178 H1 fe fe 94 e0 25 00 fd
+0.193 R fe fe 94 e0 25 00 fd
+0.212 R fe fe e0 94 25 00 00 50 57 03 00 fd
+0.212 H1 fe fe 94 e0 25 01 fd
+0.226 R fe fe 94 e0 25 01 fd
+0.244 R fe fe e0 94 25 01 30 31 15 28 00 fd
+0.244 H1 fe fe 94 e0 0f fd
+0.257 R fe fe 94 e0 0f fd
+0.274 R fe fe e0 94 0f 00 fd
+0.274 H1 fe fe 94 e0 26 00 fd
+0.290 R fe fe 94 e0 26 00 fd
+0.309 R fe fe e0 94 26 00 01 01 01 fd
+0.310 H1 fe fe 94 e0 25 00 fd
+0.323 R fe fe 94 e0 25 00 fd
+0.342 R fe fe e0 94 25 00 00 50 57 03 00 fd
+0.342 H1 fe fe 94 e0 26 00 fd
+0.354 R fe fe 94 e0 26 00 fd
+0.372 R fe fe e0 94 26 00 01 01 01 fd
+0.372 H1 fe fe 94 e0 1a 03 fd
+0.386 R fe fe 94 e0 1a 03 fd
+0.420 R fe fe e0 94 1a 03 34 fd
+0.422 H1 fe fe 94 e0 26 00 fd
+0.438 R fe fe 94 e0 26 00 fd
+0.453 R fe fe e0 94 26 00 01 01 01 fd
+0.453 H1 fe fe 94 e0 1a 03 fd
+0.466 R fe fe 94 e0 1a 03 fd
+0.482 R fe fe e0 94 1a 03 34 fd
+0.482 H1 fe fe 94 e0 26 00 fd
+0.497 R fe fe 94 e0 26 00 fd
+0.515 R fe fe e0 94 26 00 01 01 01 fd
+0.515 H1 fe fe 94 e0 1a 03 fd
+0.530 R fe fe 94 e0 1a 03 fd
+0.547 R fe fe e0 94 1a 03 34 fd
+0.548 H1 fe fe 94 e0 26 00 fd
+0.563 R fe fe 94 e0 26 00 fd
+0.582 R fe fe e0 94 26 00 01 01 01 fd
+0.582 H1 fe fe 94 e0 1a 03 fd
+0.595 R fe fe 94 e0 1a 03 fd
+= rx=3575000 unsel=28153130 split=0 mode=PKTUSB keyer=DIGITAL
+= unmatched=0 bad=0 jams=0 dropped=0

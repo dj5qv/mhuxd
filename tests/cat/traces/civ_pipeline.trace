@@ -1,0 +1,36 @@
+# Several queries before the first reply (possible on USB CI-V).
+@civ addr=94
+
+H1 fe fe 94 e0 25 00 fd
+H1 fe fe 94 e0 26 00 fd
+R fe fe e0 94 25 00 00 40 07 14 00 fd
+R fe fe e0 94 26 00 01 00 01 fd
+= rx=14074000 mode=USB replies=2
+
+# a lost reply: the reply to the next query also closes the older one
+H1 fe fe 94 e0 03 fd
+H1 fe fe 94 e0 04 fd
+R fe fe e0 94 04 03 01 fd
+= mode=CW
+R fe fe e0 94 03 00 40 07 07 00 fd
+= rx=14074000 unmatched=1
+
+# pending queries expire after 2 s
+10.000 H1 fe fe 94 e0 03 fd
+12.500 R fe fe e0 94 03 00 00 08 14 00 fd
+= rx=14074000 unmatched=2
+
+# FB never answers a query: it acknowledges the set. The radio works in order,
+# so the older query lost its reply; a late reply is unmatched.
+13.000 H1 fe fe 94 e0 03 fd
+H1 fe fe 94 e0 05 00 00 08 14 00 fd
+R fe fe e0 94 fb fd
+= rx=14080000
+R fe fe e0 94 03 00 00 07 14 00 fd
+= rx=14080000 replies=3 unmatched=3
+
+# FA answers an unsupported query
+H1 fe fe 94 e0 25 00 fd
+R fe fe e0 94 fa fd
+R fe fe e0 94 25 00 00 40 07 14 00 fd
+= rx=14080000 unmatched=4

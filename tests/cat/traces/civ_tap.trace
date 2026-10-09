@@ -1,0 +1,38 @@
+# Host data and radio data (phase 1 step 4 adds a tap on the host side):
+# a command is seen twice, as host data and as bus echo.
+@civ addr=94
+
+H1 fe fe 94 e0 25 00 fd
+R fe fe 94 e0 25 00 fd
+R fe fe e0 94 25 00 00 40 07 14 00 fd
+= rx=14074000 replies=1
+
+# echo lost: the host data alone opens the transaction
+H1 fe fe 94 e0 26 00 fd
+R fe fe e0 94 26 00 01 01 01 fd
+= mode=PKTUSB
+
+# mhuxd's own query, with its own controller address
+M fe fe 94 e5 25 01 fd
+R fe fe 94 e5 25 01 fd
+R fe fe e5 94 25 01 00 00 05 14 00 fd
+= unsel=14050000
+
+# a reply addressed to another controller does not answer E0's query
+H1 fe fe 94 e0 03 fd
+R fe fe 94 e0 03 fd
+R fe fe e5 94 03 00 40 07 07 00 fd
+= rx=14074000 unmatched=1
+R fe fe e0 94 03 00 40 07 07 00 fd
+= rx=7074000 unmatched=1
+
+# a set seen as host data and echo, then acknowledged
+H1 fe fe 94 e0 05 00 00 08 14 00 fd
+R fe fe 94 e0 05 00 00 08 14 00 fd
+R fe fe e0 94 fb fd
+= rx=14080000
+
+# a command from another controller on the bus (no host data)
+R fe fe 94 e2 26 00 fd
+R fe fe e2 94 26 00 03 00 01 fd
+= mode=CW unmatched=1

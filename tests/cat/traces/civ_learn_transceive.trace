@@ -1,0 +1,6 @@
+# Radio address unknown: learned from a transceive broadcast.
+@civ addr=0
+
+R fe fe 94 e0 03 fd                    # not known yet: ignored
+R fe fe 00 98 00 00 40 07 14 00 fd
+= addr=98 rx=14074000 foreign=1

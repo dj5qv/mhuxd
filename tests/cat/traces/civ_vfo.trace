@@ -1,0 +1,54 @@
+# VFO selection (07) moves values between the selected/unselected slots.
+@civ addr=94
+
+R fe fe 94 e0 25 00 fd
+R fe fe e0 94 25 00 00 40 07 14 00 fd
+R fe fe 94 e0 25 01 fd
+R fe fe e0 94 25 01 00 00 05 14 00 fd
+= rx=14074000 unsel=14050000 vfo=?
+
+# select VFO A while the selection is unknown: slot contents unknown
+R fe fe 94 e0 07 00 fd
+R fe fe e0 94 fb fd
+= vfo=A rx=? unsel=?
+R fe fe 94 e0 25 00 fd
+R fe fe e0 94 25 00 00 40 07 14 00 fd
+R fe fe 94 e0 25 01 fd
+R fe fe e0 94 25 01 00 00 05 14 00 fd
+R fe fe 94 e0 26 00 fd
+R fe fe e0 94 26 00 03 00 01 fd
+R fe fe 94 e0 26 01 fd
+R fe fe e0 94 26 01 01 01 01 fd
+= rx=14074000 unsel=14050000 mode=CW mode_unsel=PKTUSB
+
+# select B: the slots swap
+R fe fe 94 e0 07 01 fd
+R fe fe e0 94 fb fd
+= vfo=B rx=14050000 unsel=14074000 mode=PKTUSB mode_unsel=CW
+
+# select B again: no change
+R fe fe 94 e0 07 01 fd
+R fe fe e0 94 fb fd
+= vfo=B rx=14050000 unsel=14074000
+
+# A<>B: contents swap, selection stays
+R fe fe 94 e0 07 b0 fd
+R fe fe e0 94 fb fd
+= vfo=B rx=14074000 unsel=14050000 mode=CW
+
+# A=B
+R fe fe 94 e0 07 a0 fd
+R fe fe e0 94 fb fd
+= rx=14074000 unsel=14074000 mode_unsel=CW
+
+# split, TX on the unselected VFO
+R fe fe 94 e0 25 01 00 00 05 14 00 fd
+R fe fe e0 94 fb fd
+R fe fe 94 e0 0f 01 fd
+R fe fe e0 94 fb fd
+= split=1 rx=14074000 tx=14050000
+
+# main/sub band selection is not tracked
+R fe fe 94 e0 07 d1 fd
+R fe fe e0 94 fb fd
+= vfo=B rx=14074000

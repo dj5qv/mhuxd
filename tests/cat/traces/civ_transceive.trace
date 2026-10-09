@@ -1,0 +1,24 @@
+# CI-V transceive: the radio broadcasts changes to address 00.
+@civ addr=94
+
+R fe fe 00 94 00 00 40 07 14 00 fd
+= rx=14074000
+R fe fe 00 94 01 01 01 fd
+= mode=USB keyer=VOICE
+
+# data mode on, then a filter change broadcast: the data flag stays
+R fe fe 94 e0 1a 06 01 01 fd
+R fe fe e0 94 fb fd
+R fe fe 00 94 01 01 02 fd
+= mode=PKTUSB
+
+# a mode change broadcast: data flag unknown
+R fe fe 00 94 01 03 01 fd
+= mode=CW keyer=CW data=?
+
+# other broadcasts are ignored, bad values rejected
+R fe fe 00 94 1a 05 00 01 fd
+R fe fe 00 94 00 00 4a 07 14 00 fd     # not BCD
+R fe fe 00 94 00 00 40 07 14 fd        # 4 bytes, radio uses 5
+R fe fe 00 94 01 99 fd                 # unknown mode
+= rx=14074000 mode=CW bad=3

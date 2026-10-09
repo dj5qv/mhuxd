@@ -1,0 +1,68 @@
+# Sets are applied once the radio acknowledged them with FB.
+@civ addr=94
+
+R fe fe 94 e0 25 00 fd
+R fe fe e0 94 25 00 00 40 07 14 00 fd
+R fe fe 94 e0 26 00 fd
+R fe fe e0 94 26 00 01 01 01 fd
+= rx=14074000 mode=PKTUSB
+
+# 05: set frequency, acknowledged
+R fe fe 94 e0 05 00 00 08 14 00 fd
+= rx=14074000
+R fe fe e0 94 fb fd
+= rx=14080000
+
+# rejected (FA)
+R fe fe 94 e0 05 00 00 00 07 00 fd
+R fe fe e0 94 fa fd
+= rx=14080000
+
+# no acknowledge (collision), the next transaction closes it
+R fe fe 94 e0 05 00 00 00 07 00 fd
+R fc
+R fe fe 94 e0 25 00 fd
+R fe fe e0 94 25 00 00 00 08 14 00 fd
+R fe fe e0 94 fb fd                # late FB with nothing pending
+= rx=14080000 jams=1
+
+# 25 01: set the unselected VFO
+R fe fe 94 e0 25 01 00 00 05 14 00 fd
+R fe fe e0 94 fb fd
+= unsel=14050000
+
+# 06: a different base mode leaves the data flag unknown (counts as off)
+R fe fe 94 e0 06 00 01 fd
+R fe fe e0 94 fb fd
+= mode=LSB data=? keyer=VOICE
+
+# Hamlib set_mode PKTUSB: 06 01 01, then 1A 06 01 01
+R fe fe 94 e0 06 01 01 fd
+R fe fe e0 94 fb fd
+= mode=USB
+R fe fe 94 e0 1a 06 01 01 fd
+R fe fe e0 94 fb fd
+= mode=PKTUSB keyer=DIGITAL
+
+# 06 with the same base mode (filter change) keeps the data flag
+R fe fe 94 e0 06 01 02 fd
+R fe fe e0 94 fb fd
+= mode=PKTUSB
+
+# 26 without data byte means DATA OFF
+R fe fe 94 e0 26 00 01 fd
+R fe fe e0 94 fb fd
+= mode=USB data=0
+R fe fe 94 e0 26 00 04 00 01 fd
+R fe fe e0 94 fb fd
+= mode=RTTY keyer=FSK
+
+# 0F 01: split on
+R fe fe 94 e0 0f 01 fd
+R fe fe e0 94 fb fd
+= split=1 tx=14050000
+
+# a set with invalid data is acknowledged by the radio but not applied
+R fe fe 94 e0 05 00 00 0a 14 00 fd
+R fe fe e0 94 fb fd
+= rx=14080000 unmatched=0 bad=0

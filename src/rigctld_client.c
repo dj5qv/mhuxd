@@ -13,13 +13,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <sys/prctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include "rigctld_client.h"
+#include "cat_state.h"
 #include "app_ctx.h"
 #include "mhcontrol.h"
 #include "mhinfo.h"
@@ -438,27 +438,9 @@ static void rigcl_reset_io(struct rigctld_client *client) {
 		fd_close(&client->fd);
 }
 
+// Same mode table as native CAT (cat_state.c).
 static int mode_from_rigctld_token(const char *token) {
-	if(!token || !*token)
-		return -1;
-
-	if(!strcasecmp(token, "CW") || !strcasecmp(token, "CWR"))
-		return MOD_CW;
-
-	if(!strcasecmp(token, "USB") || !strcasecmp(token, "LSB") ||
-	   !strcasecmp(token, "AM") || !strcasecmp(token, "FM") ||
-	   !strcasecmp(token, "WFM") || !strcasecmp(token, "AMS"))
-		return MOD_VOICE;
-
-	if(!strcasecmp(token, "RTTY") || !strcasecmp(token, "RTTYR"))
-		return MOD_FSK;
-
-	if(!strcasecmp(token, "PKTUSB") || !strcasecmp(token, "PKTLSB") ||
-	   !strcasecmp(token, "PKTFM") || !strcasecmp(token, "PKTAM") ||
-	   !strcasecmp(token, "FAX"))
-		return MOD_DIGITAL;
-
-	return -1;
+	return cat_mode_to_keyer(cat_mode_from_token(token));
 }
 
 static int parse_mode_token(const char *line, char *token, size_t token_sz) {

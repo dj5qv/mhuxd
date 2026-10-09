@@ -1,0 +1,117 @@
+# IC-7300 behind a DK2, keyer CAT decoder on (cat_paced_on_longer_ival, 52.5-70 s).
+# Host commands collide with the keyer's own polls: merged and truncated frames,
+# collision codes (FC), replies addressed to E0 for queries Hamlib never sent.
+# None of it may change the decoded state.
+# converted from cat_paced_on_longer_ival.log, log lines 1:0, seconds 52.5:70
+@civ addr=94
+53.351 H1 fe fe 94 e0 25 00 fd
+53.376 R fe fe e0 94 25 01 30 31 15 28 fe 94 e0 25 00 fd
+53.429 R fc
+53.430 R fc
+53.430 R fc
+53.431 R fc
+53.431 R fc
+53.432 R fe fe e0 94 25 01 30 31 15 28 00 fd
+56.804 H1 fe fe 94 e0 25 00 fd
+56.821 R fe fe 94 e0 25 00 fd
+56.837 R fe fe e0 94 25 00 00 50 57 03 00 fd
+56.837 H1 fe fe 94 e0 03 fd
+56.852 R fe fe 94 e0 03 fd
+56.868 R fe fe e0 94 03 00 50 57 03 00 fd
+56.869 H1 fe fe 94 e0 25 00 fd
+56.884 R fe fe 94 e0 25 00 fd
+56.900 R fe fe e0 94 25 00 00 50 57 03 00 fd
+56.901 H1 fe fe 94 e0 14 0c fd
+56.916 R fe fe 94 e0 14 0c fd
+56.932 R fe fe e0 94 14 0c 01 44 fd
+56.933 H1 fe fe 94 e0 25 00 fd
+56.948 R fe fe 94 e0 25 00 fd
+56.964 R fe fe e0 94 25 00 00 50 57 03 00 fd
+56.965 H1 fe fe 94 e0 25 01 fd
+56.980 R fe fe 94 e0 25 01 fd
+56.996 R fe fe e0 94 25 01 30 31 15 28 00 fd
+56.996 H1 fe fe 94 e0 0f fd
+57.012 R fe fe 94 e0 0f fd
+57.028 R fe fe e0 94 0f 00 fd
+57.029 H1 fe fe 94 e0 26 00 fd
+57.044 R fe fe 94 e0 26 00 fd
+57.060 R fe fe e0 94 26 00 03 00 01 fd
+57.062 H1 fe fe 94 e0 26 00 fd
+57.076 R fe fe 94 e0 26 00 fd
+57.092 R fe fe e0 94 26 00 03 00 01 fd
+57.093 H1 fe fe 94 e0 1a 03 fd
+57.108 R fe fe 94 e0 1a 03 fd
+57.123 R fe fe e0 94 1a 03 16 fd
+57.124 H1 fe fe 94 e0 25 00 fd
+57.139 R fe fe 94 e0 25 00 fd
+57.155 R fe fe e0 94 25 00 00 50 57 03 00 fd
+57.155 H1 fe fe 94 e0 26 00 fd
+57.155 R fe fe 94 e0 26 00 fd
+57.187 R fe fe e0 94 26 00 03 00 01 fd
+57.187 H1 fe fe 94 e0 1a 03 fd
+57.203 R fe fe 94 e0 1a 03 fd
+57.219 R fe fe e0 94 1a 03 16 fd
+57.815 H1 fe fe 94 e0 25 00 fd
+57.828 R fe fe 94 e0 25 00 fd
+57.844 R fe fe e0 94 25 00 00 50 57 03 00 fd
+57.845 H1 fe fe 94 e0 26 00 fd
+57.859 R fe fe 94 e0 26 00 fd
+57.876 R fe fe e0 94 26 00 03 00 01 fd
+57.877 H1 fe fe 94 e0 1a 03 fd
+57.891 R fe fe 94 e0 1a 03 fd
+57.907 R fe fe e0 94 1a 03 16 fd
+59.540 H1 fe fe 94 e0 25 00 fd
+59.555 R fe fe 94 e0 25 00 fd
+59.571 R fe fe e0 94 25 00 00 50 57 03 00 fd
+59.572 H1 fe fe 94 e0 26 00 fd
+59.587 R fe fe 94 e0 26 00 fd
+59.603 R fe fe e0 94 26 00 03 00 01 fd
+59.603 H1 fe fe 94 e0 1a 03 fd
+59.618 R fe fe 94 e0 1a 03 fd
+59.634 R fe fe e0 94 1a 03 16 fd
+62.970 H1 fe fe 94 e0 25 00 fd
+62.992 R fe fe 94 e0 25 00 fd
+63.008 R fe fe e0 94 25 00 00 50 57 03 00 fd
+63.009 H1 fe fe 94 e0 26 00 fd
+63.024 R fe fe 94 e0 26 00 fd
+63.042 R fe fe e0 94 26 00 03 00 01 fd
+63.042 H1 fe fe 94 e0 1a 03 fd
+63.057 R fe fe 94 e0 1a 03 fd
+63.072 R fe fe e0 94 1a 03 16 fd
+64.796 H1 fe fe 94 e0 25 00 fd
+64.816 R fe fe 94 e0 25 00 fd
+64.833 R fe fe e0 94 25 00 00 50 57 03 00 fd
+64.834 H1 fe fe 94 e0 26 00 fd
+64.848 R fe fe 94 e0 26 00 fd
+64.864 R fe fe e0 94 26 00 03 00 01 fd
+64.864 H1 fe fe 94 e0 1a 03 fd
+64.879 R fe fe 94 e0 1a 03 fd
+64.896 R fe fe e0 94 1a 03 16 fd
+66.365 H1 fe fe 94 e0 25 00 fd
+66.383 R fe fe 94 e0 25 00 fd
+66.399 R fe fe e0 94 25 00 00 50 57 03 00 fd
+66.400 H1 fe fe 94 e0 26 00 fd
+66.415 R fe fe 94 e0 26 00 fd
+66.431 R fe fe e0 94 26 00 03 00 01 fd
+66.432 H1 fe fe 94 e0 1a 03 fd
+66.447 R fe fe 94 e0 1a 03 fd
+66.462 R fe fe e0 94 1a 03 16 fd
+69.485 H1 fe fe 94 e0 25 00 fd
+69.500 R fe fe 94 e0 25 00 fd
+69.516 R fe fe e0 94 25 00 00 50 54 94 e0 26 01 fd
+69.516 H1 fe fe 94 e0 26 00 fd
+69.564 R fc
+69.564 H1 fe fe 94 e0 26 00 fd
+69.585 R fc
+69.686 H1 fe fe 94 e0 26 00 fd
+69.687 R 94 26 00 03 00 01 fd
+69.788 H1 fe fe 94 e0 26 00 fd
+69.789 R fe fe 94 e0 26 00 fd
+69.789 R fe fe e0 94 26 00 03 00 01 fd
+69.790 H1 fe fe 94 e0 1a 03 fd
+69.809 R fe fe 94 e0 26 00 fd
+69.810 R fe fe 94 e0 1a 03 fd
+69.826 R fe fe e0 94 1a 03 16 fd
+= rx=3575000 mode=CW keyer=CW
+# 53.38 s truncated reply (dropped), 53.43 s reply for a query never seen, 69.52 s merged reply
+= dropped=1 unmatched=1 bad=1 jams=7

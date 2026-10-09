@@ -1,0 +1,9 @@
+# Radio address unknown: learned from the first command/reply pair.
+@civ addr=0
+
+R fe fe 94 e0 03 fd                    # address not known yet: counted as foreign
+R fe fe e0 94 03 00 40 07 14 00 fd     # the pair reveals it, the command is queued
+= addr=94 rx=14074000 foreign=1 replies=1
+R fe fe 98 e0 03 fd
+R fe fe e0 98 03 00 00 08 14 00 fd
+= rx=14074000 foreign=3

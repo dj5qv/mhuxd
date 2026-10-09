@@ -13,14 +13,15 @@ mhuxd_SOURCES = buffer.c demux.c devmgr.c kcfg.c linux_udev.c logger.c main.c \
 		daemon.c http_parser.c http_server.c restapi.c cfgnod.c version.c \
 		http_parse_query.c radiotypes.c wkman.c proc_mcp.c proc_rotator.c mhmk2r.c \
 		mhmk2.c mhsm.c citem.c dbuf.c cfgmgrj.c rigctld_client.c ws.c \
-		app_ctx.c eventbus.c \
+		app_ctx.c eventbus.c cat_civ.c cat_state.c \
 		buffer.h demux.h devmgr.h kcfg.h linux_udev.h logger.h \
 		mhcontrol.h mhinfo.h mhrouter.h mux.h net.h opts.h pglist.h tty.h util.h \
 		conmgr.h con_vsp.h con_tcp.h linux_termios.h channel.h cfgmgr.h \
 		daemon.h http_parser.h http_server.h http_codes.h restapi.h obuf.h cfgnod.h \
 		version.h http_parse_query.h radiotypes.h wkman.h mhflags.h proc_mcp.h \
 	    proc_rotator.h mhmk2r.h mhmk2.h mhsm.h citem.h mhsm_sim.h dbuf.h cfgmgrj.h rigctld_client.h \
-	    ws.h http_server_int.h app_ctx.h eventbus.h events.h device.h ptt_byte.h
+	    ws.h http_server_int.h app_ctx.h eventbus.h events.h device.h ptt_byte.h \
+	    cat_civ.h cat_state.h
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(STATEDIR) $(DESTDIR)$(LOGDIR) $(DESTDIR)$(RUNDIR)

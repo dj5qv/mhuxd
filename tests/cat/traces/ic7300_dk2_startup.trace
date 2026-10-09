@@ -1,0 +1,41 @@
+# IC-7300 behind a DK2 (fw 3.14), keyer CAT decoder on, recorded 2026-10-09 with
+# rigctl -m 3073 (Hamlib 4.6.2): rig_open and the first get_freq/get_mode.
+# The radio stream carries the bus echo of every command.
+# converted from cat_paced_on.log, log lines 1:0, seconds 0:0.35
+@civ addr=94
+0.000 H1 fe fe 94 e0 03 fd
+0.010 R fe fe 94 e0 03 fd
+0.026 R fe fe e0 94 03 00 50 57 03 00 fd
+0.027 H1 fe fe 94 e0 25 00 fd
+0.042 R fe fe 94 e0 25 00 fd
+0.059 R fe fe e0 94 25 00 00 50 57 03 00 fd
+0.060 H1 fe fe 94 e0 03 fd
+0.075 R fe fe 94 e0 03 fd
+0.091 R fe fe e0 94 03 00 50 57 03 00 fd
+0.091 H1 fe fe 94 e0 25 00 fd
+0.106 R fe fe 94 e0 25 00 fd
+0.122 R fe fe e0 94 25 00 00 50 57 03 00 fd
+0.122 H1 fe fe 94 e0 14 0c fd
+0.138 R fe fe 94 e0 14 0c fd
+0.154 R fe fe e0 94 14 0c 01 44 fd
+0.154 H1 fe fe 94 e0 25 00 fd
+0.170 R fe fe 94 e0 25 00 fd
+0.186 R fe fe e0 94 25 00 00 50 57 03 00 fd
+0.186 H1 fe fe 94 e0 25 01 fd
+0.202 R fe fe 94 e0 25 01 fd
+0.217 R fe fe e0 94 25 01 30 31 15 28 00 fd
+0.218 H1 fe fe 94 e0 0f fd
+0.233 R fe fe 94 e0 0f fd
+0.250 R fe fe e0 94 0f 00 fd
+0.250 H1 fe fe 94 e0 26 00 fd
+0.266 R fe fe 94 e0 26 00 fd
+0.282 R fe fe e0 94 26 00 03 00 01 fd
+0.282 H1 fe fe 94 e0 25 00 fd
+0.298 R fe fe 94 e0 25 00 fd
+0.314 R fe fe e0 94 25 00 00 50 57 03 00 fd
+0.314 H1 fe fe 94 e0 25 00 fd
+0.330 R fe fe 94 e0 25 00 fd
+0.346 R fe fe e0 94 25 00 00 50 57 03 00 fd
+0.346 H1 fe fe 94 e0 26 00 fd
+= rx=3575000 tx=3575000 unsel=28153130 split=0 mode=CW keyer=CW
+= replies=11 unmatched=0 bad=0 jams=0 dropped=0
