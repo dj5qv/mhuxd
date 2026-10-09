@@ -1,0 +1,428 @@
+### Native CAT support: decode, own polls, multi-client CAT port
+
+Status: phase 1 started (2026-10-09). CI-V decoder, radio state and trace tests are in
+(`src/cat_civ.c`, `src/cat_state.c`, `tests/cat/`), not yet wired into mhuxd.
+Related: `docs/task_rigctld_support.md` (the current rig mode sync via rigctld).
+
+## Reason
+
+- Keyer mode (CW/VOICE/FSK/DIGITAL) and the keyer's frequency info should follow the radio,
+  like the microHAM Windows Router does.
+- Today this is done with hamlib's rigctld (`rig_mode_sync`, `src/rigctld_client.c`). It works,
+  but:
+  - beginners struggle with the setup (rig model number, rigctld options, PTT port, applications
+    configured for "Hamlib NET rigctl" instead of the serial port),
+  - rigctld occupies the CAT port, so applications can't use `/dev/mhuxd/cat1` directly anymore,
+  - troubleshooting spans three programs (application, rigctld, mhuxd).
+- The keyer's own CAT decoder (`usedecoderifconnected`) is not an alternative while a computer
+  is connected. Measured with DK2 fw 3.14 + IC-7300 (2026-10-09):
+  - with `usedecoderifconnected=1` the keyer polls the radio after ~0.96 s of CAT idle and then
+    every ~1.05 s while idle, each poll taking ~150 ms,
+  - it does **not** hold back host data meanwhile, so host commands collide on the CI-V bus
+    (radio answers `FC`); host commands sent in those windows failed 50-87 %,
+  - `dontinterfereusbcontrol=1` made no difference,
+  - with the decoder off: 0 failures.
+  - Clients that never leave the line idle for ~1 s (fldigi, most loggers) are not affected,
+    WSJT-X with its 1 s poll is.
+  - Conclusion: the keyer decoder is meant for stand-alone use. With a computer connected,
+    the host side (Windows Router, mhuxd) has to do the work, and it has to hold client data
+    while its own query is in flight.
+
+## What the Windows Router does (public MK3 manual, "CAT Port" / "2nd CAT Port")
+
+- The radio is selected in Router (radio type, baud rate, CI-V address).
+- Router monitors the application's CAT traffic and polls the radio only for information the
+  application doesn't request ("Disable router queries" turns that off while the port is open;
+  with the virtual port closed Router always polls).
+- While Router's own poll is in flight, application data is buffered and sent after the
+  response arrived. If a response doesn't come or isn't understood: "oldest query discarded",
+  but all data is still forwarded to the application.
+- "2nd CAT" is a managed software Y-connector: polls/commands of both applications are processed
+  alternately, responses go only to the application that sent the command. Unsolicited data
+  (Icom transceive, Kenwood/Elecraft/Yaesu auto-information) can be forwarded per port
+  ("Forward autoinformation to CAT port").
+- A CAT monitor shows host traffic (H1/H2) and Router's own traffic (R) in different colors.
+- "SDR tracking": a further port that emulates a TS-2000 (or Perseus) for SDR software,
+  read-only.
+
+## Scope
+
+mhuxd does **not** need to control the radio. It needs to:
+
+1. frame the byte stream and find transaction boundaries (which response belongs to which
+   request),
+2. decode frequency, mode and data flag (and split) from the traffic,
+3. generate a few queries of its own when no client asks for that information.
+
+Frequency/mode commands are the most stable part of every CAT protocol. Everything else
+(menus, extended commands) is passed through without being understood.
+
+rigctld stays supported. Native CAT becomes another `rig_mode_sync` backend and the default for
+the protocol families it supports; rigctld remains the fallback for everything else.
+
+## Protocol families
+
+Derived from the radio types the keyers know (`src/radiotypes.c`):
+
+| Family | Radios (`rig_types`) | Framing | Phase |
+|---|---|---|---|
+| Icom CI-V | all Icom, Ten-Tec OMNI VI (CI-V, address `04`) | `FE FE <to> <from> <cmd> [sub] [data] FD`, addressed | 1 |
+| Kenwood-style ASCII | Kenwood, Elecraft, Yaesu FT-450/950/991/2000/dx1200/dx3000/dx5000/dx9000, Flex, ANAN, Expert MB1, "TS 2000 compatible SDR" | terminated by `;` | 1 |
+| Legacy Yaesu binary | FT-757GXII/767/817/840/847/857/890/897/900/920/990/1000/1000MP | 5-byte commands, response length depends on opcode and model | 4 |
+| Ten-Tec ASCII | ORION, ORION II, OMNI VII, JUPITER, ARGONAUT V | terminated by CR, but some replies carry 4-byte binary values | 4 (low priority) |
+| Others | JRC, Hilberling, Perseus | various | rigctld only |
+
+The family (and Icom CI-V address) defaults from the CAT channel's `rigtype` / `icomaddress`,
+which users already configure. Newer radios missing from the keyer's list (IC-705, IC-9700,
+FTdx10, FTdx101, TS-890, K4, ...) are configured as a compatible type, so an mhuxd-side
+`protocol` override is useful (see Configuration).
+
+### Icom CI-V
+
+- Self-delimiting frames; collision jam `FC`; `FB` = OK, `FA` = NG.
+- Transceive broadcasts: `to = 00`, cmd `00` (frequency) / `01` (mode).
+- Reads to decode: `03` (frequency), `04` (mode/filter), `1A 06` (data mode, newer models),
+  `0F` (split), `25 00/01` (selected/unselected VFO frequency), `26 00/01` (selected/unselected
+  VFO mode + data + filter). Hamlib 4 uses `25`/`26` where available. The keyer decodes `26`
+  answers too.
+- Sets to decode once the radio answered `FB`: `05`, `06`, `25`, `26`, `1A 06`.
+- **Echo:** the keyer talks to the radio's CI-V jack, a single-wire bus. The DK2 trace confirmed
+  that command echoes reach the host on the CAT channel. Hamlib relies on that: with echo
+  expected and none arriving it returns `RIG_BUSERROR` immediately
+  (`rigs/icom/frame.c`, `icom_one_transaction`). Consequences for the broker:
+  - an echo goes to the client that sent the frame, never to another client,
+  - echoes of mhuxd's own queries are swallowed,
+  - Hamlib also flushes and resends when it sees a reply addressed to a different controller,
+    so mhuxd's own replies must never leak to clients.
+- **Echo off:** Icom's "CI-V USB Echo Back" setting covers the radio's USB ports only. The
+  keyers' CI-V port is an open-collector bus (DK2 and MK3 specifications), so there the echo
+  comes from the wiring. Still, mhuxd must not depend on it: keyer radio ports can be
+  jumpered to TTL/RS232, and other keyers are not checked yet. Other projects:
+  - Hamlib detects the echo once in `rig_open()` (`icom_get_usb_echo_off()`: sends a command
+    and checks whether its own frame comes back) and then expects that state. Its dynamic
+    re-detection is disabled (`#if 0` in `rigs/icom/frame.c`, broke IC-706 + WSJT-X).
+  - flrig: user option "Echo" (`serial_echo`), adds the command length to the expected reply.
+  - wfview: classifies frames by address (to = radio: echo, to = itself: reply, to = 00:
+    transceive), so the echo does not matter.
+  - OmniRig: the ini files count the echo in `ReplyLength` and switch USB echo on in `[INIT]`.
+
+  mhuxd does as wfview: the decoder classifies frames by address and also gets the client data
+  (host tap, phase 1 step 2), so a query is known with or without its echo. The broker
+  (phase 2) never waits for an echo and swallows the echoes of its own queries when they come.
+- Data mode: the keyer needs USB vs. USB-D (VOICE vs. DIGITAL). On CI-V that is `1A 06` or the
+  data byte of `26`, not part of `04`.
+
+Decoder rules as implemented (`src/cat_civ.c`):
+
+- A reply is only accepted for a pending query from the same controller (same cmd, same sub
+  command), seen as host data or as bus echo. Replies are in order: a reply also closes older
+  queries of that controller. Pending queries expire after 2 s.
+- A set is applied only after the radio's `FB`. `FB` never answers a query, `FA` may.
+- Strict layout checks: frequency length (5 BCD bytes, 4 on IC-731/IC-735), BCD digits, known
+  mode bytes, data byte 0-3. In the DK2 recordings every frame damaged by a collision was
+  rejected this way, none changed the state.
+- Replies to the keyer's own polls (`26 01`, `25 01` with `usedecoderifconnected=1`) reach the
+  host, addressed to `E0` like Hamlib's. Without a matching query they are rejected.
+- Data flag: a mode change without data byte (`06`, transceive `01`) leaves the data flag
+  unknown (counts as off) when the base mode changes, and keeps it when only the filter
+  changes. `26` without data byte means DATA OFF (Icom manual).
+- `07 00/01` (VFO A/B) swap the selected/unselected slots, `07 B0` exchanges, `07 A0`
+  equalizes. Main/sub band radios (IC-7610, IC-7851, IC-9700, IC-7760: `07 D0/D1`, `25`/`26`
+  address main/sub) are not modeled yet.
+- The radio address comes from the configuration; with address 0 it is learned from a
+  transceive frame, `FB`/`FA`, or a command/reply pair.
+
+### Kenwood-style ASCII
+
+- Frames end at `;`. Error replies: `?;` (also `E;`, `O;` on Kenwood).
+- Replies carry the command prefix (`FA00014074000;`): 2 letters, 4 for `ZZxx` (PowerSDR/Flex).
+- Set commands produce no reply. A query usually has no parameters, but many Yaesu reads take
+  one (`MD0;`, `AG0;`), so "has parameters" does not mean "is a set".
+- Hamlib follows every set with a verify query (`ID;`, `FA;` or `;` depending on the rig,
+  `rigs/kenwood/kenwood.c`), so Hamlib clients never leave a set "open". Other applications may.
+- Auto-information (AI) frames look exactly like replies.
+- Reads to decode (to verify per model against manuals and Hamlib backends): `IF;` (frequency,
+  mode, split in one answer on Kenwood/Elecraft/Yaesu), `FA;`, `FB;`, `MD;`/`MD0;`, data mode
+  (`DA;` Kenwood, `DT;` Elecraft, DATA modes in `MD` on Yaesu), `FT;`/`FR;` (TX/RX VFO),
+  `ZZFA;`/`ZZMD;`/`ZZIF;` (Flex/PowerSDR).
+
+### Ten-Tec (low priority)
+
+An ORION is available for testing once it has been repaired.
+
+- OMNI VI speaks CI-V and comes with the Icom codec.
+- ORION/ORION II (programmer's reference 565prg Rev 1.2): commands are 2-3 characters plus data,
+  terminated by CR. `*` = set (no reply), `?` = query, `@` = reply (`?RMM` → `@RMM<mode>`),
+  `Z!<first 2 chars>` = error. 57600 Bd.
+- Not purely text: `?A`/`?B` answer with a 4-byte binary frequency, which may contain `0D`. So
+  CR alone is not a safe frame end; those replies need a fixed length. The ORION also offers
+  ASCII alternatives (`?AF` → `@AF14200000`), preferable for own queries.
+- OMNI VII replies without the `@` prefix (`?A` → `A` + 4 bytes + CR, per OmniRig).
+  JUPITER/ARGONAUT V use the older Jupiter command set (to check against Hamlib's `tentec`
+  backends).
+- The ORION reference warns that firmware can be reprogrammed and the command set may change:
+  query the firmware version. Unsolicited `ORION START` after a restart.
+
+### Mode mapping
+
+Family codecs map raw modes to a normalized mode (the same tokens rigctld uses), then reuse one
+mapping to the keyer mode, shared with `mode_from_rigctld_token()` in `src/rigctld_client.c`:
+
+| Keyer mode | normalized modes |
+|---|---|
+| CW | CW, CWR |
+| VOICE | USB, LSB, AM, FM, WFM, AMS |
+| FSK | RTTY, RTTYR |
+| DIGITAL | PKTUSB, PKTLSB, PKTFM, PKTAM, FAX |
+
+## Reference material
+
+Local copies, not in the repo:
+
+- Vendor manuals, `~/Devel/hamradio/docs/CAT_Protocols/`:
+  - Icom: `IC-7760_CI-V_reference_guide_2024.pdf` (current CI-V command set), IC-78 manual,
+    `CI-V manual.pdf` (2004 general CI-V reference; scanned, no text layer, needs OCR to search).
+  - Kenwood: TS-2000 user manual (includes the PC command reference), `ts_590_g_pc_command_e.pdf`.
+  - Yaesu: FT-1000MP Mark-V user manual (legacy binary CAT).
+  - Ten-Tec: `565prg_Rev_1.2.pdf` (ORION), `tt_599_program_ref_v1.001.pdf` (Eagle).
+- Hamlib source, `~/Src/Hamlib`: the backends (`rigs/icom`, `rigs/kenwood`, `rigs/yaesu`,
+  `rigs/tentec`) show how the most common client library actually talks. `simulators/` for
+  tests.
+- OmniRig, `~/Devel/hamradio/OmniRig/`: source (Pascal, MIT license) and ~170 rig ini files.
+
+### What OmniRig offers
+
+- OmniRig owns the port. It is a poller like rigctld, not a sniffer. Its engine (`CustRig.pas`)
+  is strict and simple: one command at a time; a reply is complete by fixed `ReplyLength` or by
+  the `ReplyEnd` terminator; timeout; unexpected bytes are purged before the next command. That
+  is the discipline the broker needs for its own queries.
+- The per-model ini files describe exactly what mhuxd's own queries need: `[STATUSn]` sections
+  with the command bytes, reply length or terminator, a `Validate` mask, and field positions and
+  formats (`Value=offset|len|vfBcdLU|...`, `Flag=mask|value|param`). Most valuable where the
+  protocol has no framing: legacy Yaesu (FT-1000MP: `00000002.10`, 16-byte reply) and Ten-Tec.
+- For Icom, `ReplyLength` includes the echo (the ini files switch USB CI-V echo on). That
+  matches the CI-V bus behind the keyer.
+
+Limits:
+
+- OmniRig's mode set (`CW_U/L`, `SSB_U/L`, `DIG_U/L`, `AM`, `FM`) folds RTTY and data into
+  `DIG`, and the meaning depends on the ini variant: in `IC-7300.ini` DIG means RTTY, in
+  `IC-7300-DATA.ini` both RTTY and USB-D/LSB-D map to DIG. The keyer needs FSK vs. DIGITAL, so
+  mhuxd decodes the raw fields with its own mode tables and uses OmniRig only to learn where the
+  fields are.
+- Only the `[STATUSn]` (read) sections are relevant. `[INITn]` and the `pm*` write sections
+  change radio settings (`IC-7300.ini` switches CI-V transceive off and sets the CW sideband)
+  and must never be sent by mhuxd.
+- License: the source is MIT. The ini files are contributions of various authors without a
+  stated license. Don't copy them into the repo; derive mhuxd's own tables, cross-checked with
+  the vendor manuals and Hamlib. Option for the long tail (phase 4+): load user-supplied OmniRig
+  ini files at runtime for own queries.
+
+## Architecture
+
+### Where it sits in the data path
+
+Today each connector gets a socketpair; conmgr hands the router side to the router with
+`mhr_add_endpoint_fd()` (`src/conmgr.c`). Several connectors on the same CAT channel already
+"work": the router sends radio data to all of them and interleaves their writes, with no
+arbitration.
+
+With native CAT enabled for a channel (`MH_CHANNEL_R1` / `MH_CHANNEL_R2`):
+
+```
+ client A ── VSP cat1   ──┐
+ client B ── VSP cat1_2 ──┼── cat broker ──(mhr_send_in / consumer cb)── mhrouter ── keyer ── radio
+ client C ── TCP :7001  ──┘        │
+                                   └── decoded state ──> mhc_update_radio_info(ctl, "cat", &info)
+```
+
+- conmgr hands the connector's router-side fd to the broker instead of the router
+  (`catb_add_client()` vs. `mhr_add_endpoint_fd()`).
+- The broker registers one consumer callback on the channel (radio → host) and writes with
+  `mhr_send_in()` (host → radio). It must respect `mhr_send_in()`'s buffer limits and the channel
+  bps limit. On data channels the consumer callback delivers one byte per call, so the framers
+  are incremental. `src/wkman.c` is a precedent for a module sending its own commands on a data
+  channel this way.
+- PTT via RTS/DTR uses a separate socketpair (`s_fd_ptt`) and is not affected.
+- One broker per CAT channel; on MK2R/U2R the radio number (1/2) comes from the channel.
+- `rigtype` "none", an unsupported family, or native CAT disabled: no broker, today's direct
+  wiring, no behavior change.
+- **Client granularity is the connector:** all sessions of one VSP or TCP connector share one
+  `fd_data`. With `maxcon > 1` the broker cannot tell them apart. A second application gets its
+  own connector (`cat1_2`, or a TCP connector), mirroring the Router's "2nd CAT". Validation:
+  warn (or reject) `maxcon > 1` on a brokered channel.
+- A TCP connector on the channel gives network CAT with arbitration for free.
+
+### Output: existing sinks
+
+- `mhc_update_radio_info(ctl, source, info)` (`src/mhcontrol.c`) is source-agnostic: it sets the
+  keyer mode when it changes and sends frequency info when frequencies change. rigctld is one
+  source, the broker is another. Per radio only one of them is active.
+- Frequency info reaches only keyers with `MHF_HAS_CAT_CMD` (`src/mhinfo.c`: MK2, MK3,
+  MK2R/MK2R+, SM/SMD). DK2 and U2R get mode sync only, same as with rigctld today.
+
+### Module split
+
+All protocol code is pure (no libev, no I/O) so it can be tested with byte arrays and recorded
+traces:
+
+- `cat_civ.c`, `cat_ascii.c`: incremental framers and decoders. Input: bytes plus direction
+  (host→radio / radio→host). Output: frames, transaction hints (expects reply / is reply / is
+  echo / is unsolicited), decoded values.
+- `cat_state.c`: normalized radio state (rx/tx frequency, VFO A/B, mode, data flag, split) with
+  per-item age. Fills `struct mhc_radio_info`.
+- `cat_broker.c`: client sessions, transaction arbitration, own queries, forwarding rules. Talks
+  to the radio through a small interface (write bytes / bytes-received callback), bound to
+  mhrouter in mhuxd and to a pty in the test harness.
+- `cat_mon.c`: CAT monitor (log + WebSocket stream) in the trace format used by the tests.
+
+### Broker behavior
+
+- **Fast path:** one active client and no own query pending: data is forwarded immediately in
+  both directions without waiting for frame boundaries. The parsers only listen. No added
+  latency.
+- **Transactions:** one at a time. A client transaction starts when the client sends a frame and
+  ends when
+  - the matching reply (CI-V: same cmd/sub from the radio address, or `FB`/`FA`; ASCII: the
+    prefix of the last query in the burst, or an error reply) arrived, or
+  - nothing is expected and the line was quiet for a short gap, or
+  - a timeout fires (reply expected but not received): log "oldest query discarded", release the
+    line.
+- **Holding:** data from other clients, and from the owner after its transaction ended while
+  mhuxd's own query is in flight, is queued (bounded). Queues are served round-robin, as the
+  Router does ("neither port has priority").
+- **Routing (radio → host):**
+  - echoes and replies → transaction owner only,
+  - replies to own queries → consumed, decoded,
+  - unsolicited (CI-V `to = 00`, ASCII AI frames outside a transaction) → each client with
+    `forward_unsolicited` set,
+  - anything unparseable → owner if there is one, otherwise all clients (fail open).
+- **Known ambiguity (ASCII):** an AI frame with the same prefix as an outstanding query is taken
+  as the reply; the real reply then counts as unsolicited. Both carry valid values. mhuxd never
+  enables AI itself.
+
+### Own queries
+
+- Every decoded value (from client replies, acknowledged sets, transceive/AI, own queries)
+  refreshes the item's age.
+- No client connected: poll every `poll_ms`.
+- Clients connected: query only items older than `stale_ms`, only when no transaction is open
+  and the line was idle for `idle_gap_ms`. WSJT-X, which polls frequency and mode every second,
+  then never triggers an own query.
+- `own_queries: never` matches the Router's "Disable router queries".
+- Query sets per family (to verify per model):
+  - CI-V: `25 00`, `25 01`, `26 00` where supported, else `03`, `04`, `1A 06`, `0F`.
+  - Kenwood/Elecraft/Yaesu: `IF;` plus the family's data-mode query; `FB;` where `IF;` lacks it.
+  - Flex/PowerSDR: `ZZIF;` or `ZZFA;` + `ZZMD;`.
+- Cost of one CI-V poll: a few frames of ~10 bytes each way at 9600-19200 Bd plus keyer USB
+  latency, i.e. tens of ms. Hamlib's Icom timeouts are in the order of a second.
+- With native CAT active and `usedecoderifconnected=1` on the same channel there would be a
+  third party on the line: warn in log and UI (or force it off, see Open decisions).
+
+## Configuration proposal
+
+Extend the existing device-level `rig_mode_sync` with a new backend value:
+
+```json
+"rig_mode_sync": {
+  "enabled": true,
+  "backend": "native",
+  "radios": {
+    "r1": {
+      "enabled": true,
+      "protocol": "auto",
+      "own_queries": "auto",
+      "poll_ms": 1000,
+      "stale_ms": 2000,
+      "idle_gap_ms": 100,
+      "monitor": false
+    }
+  }
+}
+```
+
+- `protocol`: `auto` (from `rigtype`) | `civ` | `kenwood` | `yaesu` | `elecraft` | `flex` |
+  `tentec`.
+- CI-V address: from the channel's `icomaddress` (or the `rig_types` default), optional override.
+- `own_queries`: `auto` | `never` (`never` = Router's "Disable router queries").
+- Per connector (connector config): `forward_unsolicited` (default true, which preserves today's
+  behavior of forwarding everything).
+- Missing `backend` keeps meaning `rigctld` (backward compatible).
+
+UI and REST:
+- Keyer radio page: backend selector (Native / rigctld / off), decoded state shown live
+  ("14.074.000 USB-D → DIGITAL"). That is the first troubleshooting step for beginners: "does
+  mhuxd see my radio?".
+- REST: GET decoded radio state; WebSocket: CAT monitor stream (H1/H2/... for clients, M for
+  mhuxd's own traffic, R for radio).
+
+## Testing
+
+Only an IC-7300 is available, so most coverage must come from traces and simulators.
+
+1. **Unit tests on traces** (`tests/cat/`, `make -C tests/cat check`): framers, decoders and the
+   broker state machine are fed recorded byte streams. Trace format = CAT monitor format
+   (timestamp, direction tag, hex or quoted text, `=` assertion lines; `tests/cat/README.md`),
+   so traces from users with other radios become test fixtures without conversion.
+   `tests/cat/hamlib2trace.py` converts `rigctl -Z -vvvvv` logs.
+2. **Simulator integration:** Hamlib ships rig simulators (`simulators/` in the Hamlib source:
+   `simic7300`, `simic7610`, `simts590`, `simts990`, `simft991`, `simftdx101`, `simelecraft`,
+   `simflex`, `simpowersdr`, `simft817`, ...). They open a serial port given on the command line.
+   Harness: simulator ↔ pty ↔ broker radio side; clients (`rigctl`/`rigctld` with the matching
+   model, plus a raw-bytes client) on broker client ptys or TCP. To check: whether the Icom
+   simulators emulate CI-V bus echo; if not, the harness adds it.
+3. **Real hardware:** IC-7300 via DK2 and MK3, with WSJT-X, fldigi and QLog, plus the paced
+   `rigctl` stress runs already used for the keyer decoder investigation (note: `rigctl` 4.6
+   needs `-C poll_interval=0,cache_timeout=0` or it answers from its cache). ORION for the
+   Ten-Tec family once it is repaired.
+4. **Community:** users with Kenwood/Yaesu/Elecraft radios enable the monitor and send traces.
+
+## Phases (implementation order)
+
+### Phase 1: listen only (no bytes sent to the radio)
+
+1. `cat_civ.c`, `cat_ascii.c`, `cat_state.c` + unit tests. Done for CI-V; `cat_ascii.c`
+   pending. `rigctld_client.c` uses the shared mode table in `cat_state.c`.
+2. Attach as a consumer callback on the CAT channel (radio → host) plus a read-only tap on the
+   router's producer path (client → radio), so queries are known without relying on the CI-V
+   echo. No change to the data path.
+3. Feed `mhc_update_radio_info(ctl, "cat", ...)`. Debounce changes (~200 ms): Hamlib sets a
+   data mode with `06` and then `1A 06`, and in between the data flag is unknown.
+4. CAT monitor: log + WebSocket stream in the trace format, fed from the same two taps.
+5. Config: `backend: "native"`, mutually exclusive with rigctld per radio. REST state, UI.
+
+Result: no rigctld needed whenever an application polls (WSJT-X, fldigi, loggers), and the
+application keeps `/dev/mhuxd/cat1`.
+
+### Phase 2: own queries
+
+1. Move CAT connectors behind the broker (conmgr wiring), fast path for a single client.
+2. Transaction tracking, holding client data during own queries, timeouts.
+3. Tell the broker when applications open/close a port: `EV_CON_STATUS` exists in
+   `src/events.h` but nothing publishes it yet. VSP/TCP connectors publish open-count changes.
+4. Poll policy: closed port → periodic, open port → stale items only.
+
+### Phase 3: multiple clients (software Y-connector)
+
+1. Several connectors per brokered channel, round-robin, reply routing, `forward_unsolicited`.
+2. `maxcon > 1` validation on brokered channels.
+
+### Phase 4: extensions
+
+- Legacy Yaesu binary (per-model response length tables; the OmniRig ini files list them).
+- Ten-Tec ASCII, ORION first (low priority).
+- Optional: own queries from user-supplied OmniRig ini files for radios without a built-in
+  codec.
+- SDR tracking port: read-only TS-2000 emulation built on the decoded state.
+- Expose the decoded frequency via MCP / REST for other tools.
+
+## Open decisions
+
+- mhuxd's own CI-V controller address: distinct (e.g. `0xE5`, readable in traces) or the same as
+  the application's.
+- Keyer `usedecoderifconnected` with native CAT active: warn only, or force off while connected.
+- Interplay with keyer options `icomsimulateautoinfo` and `digitalovervoicerule`: to test.
+- Bounds for queued client data and maximum hold time.
+- Quiet-gap and timeout defaults per family (to be measured: keyer USB frame latency, radio
+  response times at 9600/19200/38400/115200 Bd).
+- First MK3 trace with the IC-7300: confirm echo behavior matches the DK2.
