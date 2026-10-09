@@ -158,7 +158,25 @@
         "port": {"type": "integer", "minimum": 1, "maximum": 65535},
         "connect_timeout_ms": {"type": "integer", "minimum": 100},
         "io_timeout_ms": {"type": "integer", "minimum": 100},
-        "poll_ms": {"type": "integer", "minimum": 100}
+        "poll_ms": {"type": "integer", "minimum": 100},
+        "auto_start": {
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        },
+        "rigctld_options": {"type": "string"},
+        "protocol": {
+          "description": "backend native: auto = from the CAT channel's rig type",
+          "type": "string",
+          "enum": ["auto", "civ"]
+        },
+        "civ_address": {
+          "description": "backend native: radio CI-V address, 0 = the CAT channel's icomaddress",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 223
+        }
       },
       "additionalProperties": false
     },
@@ -167,7 +185,7 @@
       "properties": {
         "backend": {
           "type": "string",
-          "enum": ["rigctld"]
+          "enum": ["rigctld", "native"]
         },
         "enabled": {
           "oneOf": [

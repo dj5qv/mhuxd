@@ -42,6 +42,11 @@ void mhr_rem_producer(struct mh_router *router, int fd, int channel);
 void mhr_rem_endpoint_fd(struct mh_router *router, int fd, int channel);
 void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback, int channel);
 
+// Read-only tap: called with the data that producers (connectors) send to the keyer on a
+// channel, as it is read. Removal matches callback and user_data.
+void mhr_add_producer_tap_cb(struct mh_router *router, MHRConsumerCallback, int channel, void *user_data);
+void mhr_rem_producer_tap_cb(struct mh_router *router, MHRConsumerCallback, int channel, void *user_data);
+
 // processor interface (deprecated)
 void mhr_add_processor_cb(struct mh_router *router, MHRProcessorCallback callback, int channel, void *user_data);
 void mhr_rem_processor_cb(struct mh_router *router, MHRProcessorCallback callback, int channel);

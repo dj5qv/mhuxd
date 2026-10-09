@@ -5,9 +5,14 @@ Replays CAT traces through the native CAT decoders (`src/cat_civ.c`,
 libev, no I/O), so no keyer, radio or mhuxd build is needed.
 
 ```
-make -C tests/cat check            # all traces in traces/
+make -C tests/cat check            # all traces in traces/, then native_test
 tests/cat/cat_replay -v some.trace # every frame with classification and state
 ```
+
+`native_test` checks the glue between decoder and mhcontrol (`src/cat_native.c`:
+publish delay, waiting for the data flag, keepalive, rig type changes, keyer
+state) with router, mhcontrol and event bus stubbed. It needs libev and runs
+for about 9 s.
 
 See `docs/task_native_cat.md` for the design.
 

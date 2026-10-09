@@ -1,7 +1,10 @@
 ### Native CAT support: decode, own polls, multi-client CAT port
 
-Status: phase 1 started (2026-10-09). CI-V decoder, radio state and trace tests are in
-(`src/cat_civ.c`, `src/cat_state.c`, `tests/cat/`), not yet wired into mhuxd.
+Status: phase 1 in progress (2026-10-09). CI-V decoder, radio state, trace tests and the
+listen-only backend (`rig_mode_sync.backend: "native"`) are in: `src/cat_civ.c`,
+`src/cat_state.c`, `src/cat_native.c`, `tests/cat/`. Tested with IC-7300 + DK2 and WSJT-X
+(keyer mode follows the radio, keepalive holds it after WSJT-X exits). No CAT monitor, REST
+state or UI yet.
 Related: `docs/task_rigctld_support.md` (the current rig mode sync via rigctld).
 
 ## Reason
@@ -385,11 +388,32 @@ Only an IC-7300 is available, so most coverage must come from traces and simulat
    pending. `rigctld_client.c` uses the shared mode table in `cat_state.c`.
 2. Attach as a consumer callback on the CAT channel (radio → host) plus a read-only tap on the
    router's producer path (client → radio), so queries are known without relying on the CI-V
-   echo. No change to the data path.
-3. Feed `mhc_update_radio_info(ctl, "cat", ...)`. Debounce changes (~200 ms): Hamlib sets a
-   data mode with `06` and then `1A 06`, and in between the data flag is unknown.
+   echo. No change to the data path. Done: `src/cat_native.c`, `mhr_add_producer_tap_cb()`.
+3. Feed `mhc_update_radio_info(ctl, "catn", ...)`. Done:
+   - Decoded frames are published 200 ms after the first one of a burst, so continuous
+     polling publishes five times a second at most and is never starved.
+   - Hamlib sets a data mode with `06` and then `1A 06`; in between the data flag is unknown.
+     While it is unknown on LSB/USB/AM/FM the keyer mode is kept (mode -1) for up to 1 s,
+     then the mode counts as without data. An application that never asks for the data flag
+     (only `04`) therefore yields VOICE for USB-D until phase 2 adds own queries.
+   - The channel's `rigtype`/`icomaddress` are rechecked at most once a second on incoming
+     data and when the keyer comes online (the channel configuration is applied after
+     `rig_mode_sync` at startup). Keyer state changes reset the decoder and the state.
+   - Warns in the log while the channel's `usedecoderifconnected` is on.
+   - Keepalive: the last decoded state is sent again every 5 s. mhcontrol drops radio info after
+     10 s without an update (`RADIO_INFO_TIMEOUT`) and sets `r1ForceKeyerMode=1` again: the
+     keyer then pins its mode to the configured `r1KeyerMode`, ignores SET KEYER MODE and
+     manual switching. With rigctld that only happens when rigctld dies; listening only, it
+     would happen whenever no application polls (seen in the first test with WSJT-X closed),
+     and every application start/stop would rewrite the keyer settings. The keepalive stops
+     when the backend is removed, the keyer goes offline or the rig type changes, so the
+     fallback still works then. Without polling, front panel changes are only seen through
+     CI-V transceive (IC-7300 default: on); phase 2's own queries close that gap.
 4. CAT monitor: log + WebSocket stream in the trace format, fed from the same two taps.
-5. Config: `backend: "native"`, mutually exclusive with rigctld per radio. REST state, UI.
+5. Config: `backend: "native"` (device level, so per keyer either rigctld or native), per
+   radio `enabled`, `protocol` (`auto` from the rig type, or `civ`) and `civ_address` (0 = the
+   channel's `icomaddress`). Done in `src/cfgmgrj.c` and `docs/rest-api-schemas.json`.
+   Pending: REST state, UI (backend selector, decoded state), README.
 
 Result: no rigctld needed whenever an application polls (WSJT-X, fldigi, loggers), and the
 application keeps `/dev/mhuxd/cat1`.

@@ -28,6 +28,7 @@
 #include "conmgr.h"
 #include "con_vsp.h"
 #include "rigctld_client.h"
+#include "cat_native.h"
 
 #define CFGFILE STATEDIR "/mhuxd-state.json"
 #define MOD_ID "cfgmgrj"
@@ -47,7 +48,8 @@ struct rig_client_binding {
     struct PGNode node;
     char *serial;
     uint8_t radio;
-    struct rigctld_client *client;
+    struct rigctld_client *client;  // backend "rigctld"
+    struct cat_native *native;      // backend "native"
 };
 
 static json_t *build_speed_obj(const struct mhc_speed_cfg *cfg);
@@ -94,9 +96,19 @@ static int json_has_key(json_t *obj, const char *key) {
 static int is_supported_rig_mode_backend(const char *backend) {
     if(!backend || !*backend)
         return 0;
-    if(!strcmp(backend, "rigctld"))
+    if(!strcmp(backend, "rigctld") || !strcmp(backend, "native"))
         return 1;
     return 0;
+}
+
+static void destroy_rig_client_binding(struct rig_client_binding *b) {
+    if(b->client)
+        rigctld_client_destroy(b->client);
+    if(b->native)
+        cat_native_destroy(b->native);
+    if(b->serial)
+        free(b->serial);
+    free(b);
 }
 
 static void remove_rig_client_bindings(struct cfgmgrj *cfgmgrj, const char *serial, int radio) {
@@ -121,10 +133,7 @@ static void remove_rig_client_bindings(struct cfgmgrj *cfgmgrj, const char *seri
             break;
 
         PG_Remove(&match->node);
-        rigctld_client_destroy(match->client);
-        if(match->serial)
-            free(match->serial);
-        free(match);
+        destroy_rig_client_binding(match);
     }
 }
 
@@ -177,6 +186,28 @@ static int start_rig_mode_sync_clients(struct cfgmgrj *cfgmgrj, struct mh_contro
 
         if(!json_get_boolish(defs[i].obj, "enabled", 0))
             continue;
+
+        if(!strcmp(backend, "native")) {
+            struct device *dev = app_ctx_get_device(cfgmgrj->ctx, serial);
+            struct cat_native_cfg ncfg = {
+                .radio = defs[i].radio,
+                .protocol = cat_native_protocol_from_str(json_get_str_or(defs[i].obj, "protocol", "auto")),
+                .civ_address = json_get_int(defs[i].obj, "civ_address", 0),
+            };
+            struct cat_native *native = cat_native_create(cfgmgrj->ctx, dev, &ncfg);
+            if(!native) {
+                warn("cfgmgrj: unable to create native CAT rig mode sync for %s %s", serial,
+                     defs[i].radio == 2 ? "r2" : "r1");
+                continue;
+            }
+
+            struct rig_client_binding *b = w_calloc(1, sizeof(*b));
+            b->serial = w_strdup(serial);
+            b->radio = defs[i].radio;
+            b->native = native;
+            PG_AddTail(&cfgmgrj->rig_clients, &b->node);
+            continue;
+        }
 
         struct rigctld_client_cfg cfg = { 0 };
         cfg.serial = serial;
@@ -277,6 +308,22 @@ static int validate_rig_mode_sync_radio(const char *radio_name, json_t *radio_ob
     if(rigctld_options && !json_is_string(rigctld_options)) {
         warn("cfgmgrj: rig_mode_sync.%s.rigctld_options must be string", radio_name);
         return -1;
+    }
+
+    // backend "native"
+    json_t *protocol = json_object_get(radio_obj, "protocol");
+    if(protocol && (!json_is_string(protocol) || cat_native_protocol_from_str(json_string_value(protocol)) < 0)) {
+        warn("cfgmgrj: rig_mode_sync.%s.protocol must be \"auto\" or \"civ\"", radio_name);
+        return -1;
+    }
+
+    json_t *civ_address = json_object_get(radio_obj, "civ_address");
+    if(civ_address) {
+        if(!json_is_integer(civ_address) || json_integer_value(civ_address) < 0 ||
+           json_integer_value(civ_address) > 0xdf) {
+            warn("cfgmgrj: rig_mode_sync.%s.civ_address must be integer 0..0xdf (0 = channel's icomaddress)", radio_name);
+            return -1;
+        }
     }
 
     return 0;
@@ -1423,10 +1470,7 @@ struct cfgmgrj *cfgmgrj_create(struct app_ctx *app_ctx) {
 
     while((b = (void *)PG_FIRSTENTRY(&cfgmgrj->rig_clients))) {
         PG_Remove(&b->node);
-        rigctld_client_destroy(b->client);
-        if(b->serial)
-            free(b->serial);
-        free(b);
+        destroy_rig_client_binding(b);
     }
 
     if(cfgmgrj->connectors)

@@ -93,6 +93,7 @@ struct mh_router {
 	struct PGList consumer_list[ALL_NUM_CHANNELS];
 	struct PGList producer_list[ALL_NUM_CHANNELS];
 	struct PGList consumer_cb_list[ALL_NUM_CHANNELS];
+	struct PGList tap_cb_list[ALL_NUM_CHANNELS];	// data from producers, read only
 	struct PGList processor_cb_list[ALL_NUM_CHANNELS];
 	struct PGList status_cb_list;
 	struct buffer channel_buf_out[ALL_NUM_CHANNELS];
@@ -333,6 +334,11 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 		if(ch_is_ptt_channel(prd->channel))
 			process_ptt_producer(prd, b);
 
+		struct ConsumerCb *tap;
+		PG_SCANLIST(&router->tap_cb_list[prd->channel], tap) {
+			tap->callback(router, b->data + b->size - r, r, prd->channel, tap->user_data);
+		}
+
 		PG_SCANLIST(&router->processor_cb_list[prd->channel], prc) {
 			prc->callback(router, b, prc->user_data);
 		}
@@ -518,6 +524,7 @@ struct mh_router *mhr_create(struct ev_loop *loop, const char *serial, uint8_t h
 		PG_NewList(&router->consumer_list[i]);
 		PG_NewList(&router->producer_list[i]);
 		PG_NewList(&router->consumer_cb_list[i]);
+		PG_NewList(&router->tap_cb_list[i]);
 		PG_NewList(&router->processor_cb_list[i]);
 	}
 
@@ -547,6 +554,9 @@ void mhr_destroy(struct mh_router *router) {
 		}
 		while((cnc = (void *)PG_FIRSTENTRY(&router->consumer_cb_list[i]))) {
 			mhr_rem_consumer_cb(router, cnc->callback, i);
+		}
+		while((cnc = (void *)PG_FIRSTENTRY(&router->tap_cb_list[i]))) {
+			mhr_rem_producer_tap_cb(router, cnc->callback, i, cnc->user_data);
 		}
 	}
 
@@ -672,6 +682,23 @@ void mhr_add_consumer_cb(struct mh_router *router, MHRConsumerCallback callback,
 	PG_AddTail(&router->consumer_cb_list[channel], &cnc->node);
 }
 
+void mhr_add_producer_tap_cb(struct mh_router *router, MHRConsumerCallback callback, int channel,
+			     void *user_data) {
+	struct ConsumerCb *tap;
+
+	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
+		return;
+
+	dbg1("%s %s() %s", router->serial, __func__, ch_channel2str(channel));
+
+	tap = w_calloc(1, sizeof(*tap));
+	tap->callback = callback;
+	tap->router = router;
+	tap->channel = channel;
+	tap->user_data = user_data;
+	PG_AddTail(&router->tap_cb_list[channel], &tap->node);
+}
+
 void mhr_add_status_cb(struct mh_router *router, MHRStatusCallback callback, void *user_data) {
 	struct StatusCb *stc;
 
@@ -779,6 +806,25 @@ void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback callback,
 		if(cnc->callback == callback) {
 			PG_Remove(&cnc->node);
 			free(cnc);
+			return;
+		}
+	}
+	warn("(mhr) %s() callback not found", __func__);
+}
+
+void mhr_rem_producer_tap_cb(struct mh_router *router, MHRConsumerCallback callback, int channel,
+			     void *user_data) {
+	struct ConsumerCb *tap;
+
+	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
+		return;
+
+	dbg1("%s %s() %s", router->serial, __func__, ch_channel2str(channel));
+
+	PG_SCANLIST(&router->tap_cb_list[channel], tap) {
+		if(tap->callback == callback && tap->user_data == user_data) {
+			PG_Remove(&tap->node);
+			free(tap);
 			return;
 		}
 	}
