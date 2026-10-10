@@ -408,6 +408,8 @@ static void assert_line(struct replay *rp, char *line) {
 			check_u32(rp, tok, val, stats->errors);
 		} else if(!strcmp(tok, "own")) {
 			check_u32(rp, tok, val, stats->own);
+		} else if(!strcmp(tok, "lost")) {
+			check_u32(rp, tok, val, rp->civ ? (uint32_t)cat_civ_lost(rp->civ) : 0);
 		} else if(!strcmp(tok, "client")) {
 			check(rp, tok, val, rp->last_radio[0] ? rp->last_radio : "-");
 		} else if(!strcmp(tok, "busy")) {

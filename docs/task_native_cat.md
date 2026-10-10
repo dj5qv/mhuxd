@@ -620,6 +620,27 @@ as phase 2, not with a broker owning the connector sockets:
     auto information and is held back as well. `router_test`: a polling client without
     transceive gets none of 10 broadcasts and all its answers while the state follows the
     broadcasts; two clients, one with and one without.
+12. **CI-V collision resend** (per radio `civ_collision_resend`, default true, web UI "Resend
+    after collisions"). Hardware test with transceive on and the VFO knob turned (a broadcast
+    every 30-50 ms): commands of WSJT-X and QLog collided with broadcasts on the CI-V bus; the
+    IC-7300 drops the command, the keyer delivers the cut-off broadcast and five FC. Hamlib
+    4.6 never reaches its collision retry (`rigs/icom/frame.c`): the cut-off broadcast with
+    the first FC reads as an async frame (`to = 00`), the lone FCs fail its command check
+    against a stale buffer byte, so it times out ("CI-V interface is not echoing", -13 after
+    2 s) without resending. Now the decoder marks commands from a client or mhuxd that weren't
+    echoed and are followed by a jam within 150 ms as lost (`cat_civ_lost()`); cat_native
+    sends the oldest one again (`cat_civ_resend()`: same bytes, same pending entry, at most 3
+    times) right after the radio's next complete frame, or after 60 ms without radio data
+    (longer than the broadcast interval while tuning, so the next broadcast's end triggers it).
+    The jam and the cut-off frame go nowhere; the client just sees its echo and answer later.
+    Radio data is routed all the time while the option is on (CI-V only), also with one
+    connector. Safe for the radio: it dropped the command, and an echoed command is never
+    resent. Tests: `traces/civ_collision.trace` (from the user's trace, `lost=` assertion);
+    `router_test`: the emulated radio cuts a broadcast and sends five FC when a command
+    arrives while a broadcast is on the bus; two clients polling every 100 ms while tuning for
+    4 s: about 65 collisions, no timeout, nothing of them at the clients, resends never
+    collided; the same without the option: every collision a timeout. In that emulation the
+    first sends collide often, as the fixed answer delay locks them to the broadcast period.
 
 ### Phase 4: extensions
 

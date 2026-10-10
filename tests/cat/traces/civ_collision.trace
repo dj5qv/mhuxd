@@ -1,0 +1,30 @@
+# CI-V bus collisions (IC-7300 behind a DK2, transceive on, VFO knob turned: a broadcast
+# every 30-50 ms). A command that collides with a broadcast is destroyed: no echo, the radio
+# sends FC. Commands sent shortly before a jam (CIV_COLLISION_MS) and not echoed count as
+# lost; mhuxd sends them again (civ_collision_resend), the replay doesn't.
+@civ addr=94
+14:23:02.141 R  fe fe 00 94 00 30 84 06 21 00 fd
+14:23:02.174 H2 fe fe 94 e0 25 00 fd
+= lost=0 busy=H2
+14:23:02.189 R  fe fe 00 94 00 70 84 06 21
+14:23:02.221 R  fc fc fc fc fc
+= lost=1 jams=5 dropped=1 busy=H2 rx=21068430
+# mhuxd sends the command again after the next broadcast: echo and reply as usual
+14:23:02.237 R  fe fe 00 94 00 00 85 06 21 00 fd
+14:23:02.250 R  fe fe 94 e0 25 00 fd
+= client=H2
+14:23:02.266 R  fe fe e0 94 25 00 00 85 06 21 00 fd
+= client=H2 busy=none lost=0 rx=21068500
+
+# An echoed command isn't lost when a jam follows
+14:23:03.000 H1 fe fe 94 e0 03 fd
+14:23:03.015 R  fe fe 94 e0 03 fd
+14:23:03.020 R  fc
+= lost=0 busy=H1
+14:23:03.040 R  fe fe e0 94 03 00 85 06 21 00 fd
+= busy=none
+
+# A jam long after a command (echo off on this bus, say) doesn't make it lost
+14:23:04.000 H1 fe fe 94 e0 04 fd
+14:23:04.300 R  fc
+= lost=0

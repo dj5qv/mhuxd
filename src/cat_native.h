@@ -39,6 +39,7 @@ struct cat_native_cfg {
 	int protocol;		// CAT_NATIVE_PROTO_*
 	int civ_address;	// 0 = the channel's icomaddress
 	int own_queries;	// ask the radio when no application does
+	int civ_resend;		// CI-V: send commands destroyed in a bus collision again
 	int monitor;		// CAT monitor: trace file + EV_CAT_MONITOR events
 	const char *monitor_dir;	// NULL = LOGDIR
 };

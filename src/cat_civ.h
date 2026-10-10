@@ -50,6 +50,15 @@ unsigned cat_civ_pending(const struct cat_civ *civ, uint64_t t_ms);
 int cat_civ_client_busy(const struct cat_civ *civ, int client, uint64_t t_ms);
 // Forgets the client's commands waiting for an answer and its partly received frame.
 void cat_civ_client_discard(struct cat_civ *civ, int client);
+
+// Bus collisions: a command from a client or mhuxd that wasn't echoed and is followed by a
+// jam (FC) within CIV_COLLISION_MS is lost, the radio dropped it.
+#define CIV_COLLISION_MS 150
+int cat_civ_lost(const struct cat_civ *civ);
+// Takes the oldest lost command to send it again: returns its length (0 if none) and copies
+// it to buf (CIV_MAX_FRAME). It stays pending and waits for its echo and answer as if sent at
+// t_ms. After max resends a lost command is not returned any more, it just stays pending.
+size_t cat_civ_resend(struct cat_civ *civ, int max, uint64_t t_ms, uint8_t *buf, int *client, int *own);
 const struct cat_stats *cat_civ_get_stats(const struct cat_civ *civ);
 
 #endif // CAT_CIV_H

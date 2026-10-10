@@ -290,6 +290,12 @@ directly, e.g. WSJTX configured like in the "WSJTX direct" example above.
   commands. Hamlib and rigctld don't cope well with transceive messages between their
   commands, so this lets the radio's CI-V transceive stay on for the other applications (and
   for mhuxd, which still follows the radio from them). Works with a single port too.
+- "Resend after collisions" (Icom, on by default): with CI-V transceive on, an application's
+  command can collide with the radio's transceive message on the CI-V bus, especially while
+  the VFO knob turns (a message every 30-50 ms). The radio then drops the command and answers
+  with FC. Hamlib doesn't recover from that and reports a "Communication bus error" after 2 s.
+  mhuxd sends such a command again itself once the bus is free, and the application only
+  sees its answer a few ten ms later.
 - When the radio doesn't answer for 10 s (switched off), its state expires and the keyer goes
   back to its configured mode, as with rigctld.
 - "Radio state" shows what mhuxd sees, e.g. "14.074.000 Hz PKTUSB → keyer DIGITAL". That's

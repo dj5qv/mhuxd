@@ -74,6 +74,8 @@ static size_t civ_rx_len;
 static int own_cmds, client_cmds;	// commands the radio got from mhuxd and the clients
 static int collisions;			// commands while the radio's answer was still due
 static ev_tstamp answer_due;
+static int jams;			// commands destroyed by a transceive broadcast (radio sent FC)
+static ev_timer tune_timer;		// VFO knob turned: a transceive broadcast every 30 ms
 
 // Radio output, sent when due.
 #define OUTQ_MAX 32
@@ -118,7 +120,40 @@ static void radio_frame(uint8_t to, uint8_t cmd, const uint8_t *data, size_t n) 
 	memcpy(f + 5, data, n);
 	f[5 + n] = 0xfd;
 	radio_out(RADIO_DELAY, f, 6 + n);
-	answer_due = ev_now(loop) + RADIO_DELAY;
+	if(to != 0x00)
+		answer_due = ev_now(loop) + RADIO_DELAY;
+}
+
+// A broadcast reaches the host when due; it was on the bus from 10 to 4 ms before. A command
+// that arrives meanwhile collides with it: the broadcast is cut off, the radio sends FC five
+// times and drops the command (as an IC-7300 behind a DK2 does).
+static int radio_collision(void) {
+	ev_tstamp now = ev_now(loop);
+	for(int i = 0; i < noutq; i++) {
+		if(outq[i].buf[2] != 0x00 || outq[i].due <= now || outq[i].due > now + 0.010)
+			continue;
+		if(noutq == OUTQ_MAX)
+			return 0;
+		outq[i].len = 9;
+		memmove(&outq[i + 2], &outq[i + 1], (noutq - i - 1) * sizeof(outq[0]));
+		noutq++;
+		outq[i + 1].due = outq[i].due;
+		memset(outq[i + 1].buf, 0xfc, 5);
+		outq[i + 1].len = 5;
+		jams++;
+		return 1;
+	}
+	return 0;
+}
+
+static void bcd_freq(uint32_t hz, uint8_t *p);
+
+static void tune_cb(struct ev_loop *l, struct ev_timer *w, int revents) {
+	uint8_t r[5];
+	(void)l; (void)w; (void)revents;
+	rig.freq += 10;
+	bcd_freq(rig.freq, r);
+	radio_frame(0x00, 0x00, r, 5);
 }
 
 static void bcd_freq(uint32_t hz, uint8_t *p) {
@@ -137,6 +172,8 @@ static void radio_cmd(const uint8_t *f, size_t len) {
 	// On the single-wire bus a command sent while the radio answers collides.
 	if(ev_now(loop) < answer_due)
 		collisions++;
+	if(radio_collision())
+		return;
 	radio_out(0.002, f, len);
 	if(f[2] != RADIO_ADDR || rig.off)
 		return;
@@ -686,9 +723,79 @@ static void test_two_clients(struct mh_router *router) {
 	run_for(0.3);
 }
 
+// The VFO knob turned with transceive on: commands collide with the broadcasts.
+static void test_collisions(struct device *dev, struct cat_native **cn) {
+	struct client *a = &cl[0], *b = &cl[1];
+	struct cat_native_cfg cfg = { .radio = 1, .own_queries = 1, .civ_resend = 1 };
+	const struct mhc_radio_info *p;
+	int n;
+
+	// B on a new connector next to A, both polling every 100 ms like Hamlib.
+	ev_timer_stop(loop, &b->timer);
+	close(b->fd[1]);
+	b->busy = 0;
+	b->rx_len = 0;
+	if(client_init(b)) {
+		CHECK(0, "socketpair");
+		return;
+	}
+	client_set_poll(b, (const uint8_t[]){ 0x04 }, 1);
+	client_add_poll(b, (const uint8_t[]){ 0x1a, 0x06 }, 2);
+	mhr_add_endpoint_fd(dev->router, b->fd[0], MH_CHANNEL_R1, "cat1_3");
+	client_poll(a, 0.1);
+	client_poll(b, 0.1);
+	run_for(0.3);
+
+	// Collision resend on: the destroyed commands are sent again, the clients see neither the
+	// jam nor a timeout.
+	rig.transceive = 1;
+	collisions = jams = 0;
+	client_reset(a);
+	client_reset(b);
+	ev_timer_init(&tune_timer, tune_cb, 0.03, 0.03);
+	ev_timer_start(loop, &tune_timer);
+	run_for(4.0);
+	ev_timer_stop(loop, &tune_timer);
+	// The last broadcast may have been cut off: the clients' next polls tell the frequency.
+	run_for(1.0);
+	p = last_pub();
+	CHECK(jams >= 4, "tuning: %d collisions with broadcasts", jams);
+	CHECK(!a->timeouts && !b->timeouts && a->done >= 30 && b->done >= 30,
+	      "resend: %d and %d answered, %d and %d timeouts", a->done, b->done, a->timeouts, b->timeouts);
+	CHECK_CLEAN(a, "resend, client A");
+	CHECK_CLEAN(b, "resend, client B");
+	CHECK(!collisions, "resend: %d commands while an answer was due", collisions);
+	CHECK(p && p->rxFreq == rig.freq, "resend: frequency followed the knob, %u vs %u", p ? p->rxFreq : 0,
+	      rig.freq);
+
+	// Resend off: the same collisions make the clients time out.
+	cat_native_destroy(*cn);
+	cfg.civ_resend = 0;
+	*cn = cat_native_create((app_ctx *)dev, dev, &cfg);
+	run_for(0.3);
+	jams = 0;
+	client_reset(a);
+	client_reset(b);
+	ev_timer_start(loop, &tune_timer);
+	run_for(4.0);
+	ev_timer_stop(loop, &tune_timer);
+	run_for(1.2);
+	n = jams;
+	CHECK(n >= 4 && a->timeouts + b->timeouts >= n / 2,
+	      "no resend: %d collisions, %d and %d timeouts", n, a->timeouts, b->timeouts);
+
+	cat_native_destroy(*cn);
+	cfg.civ_resend = 1;
+	*cn = cat_native_create((app_ctx *)dev, dev, &cfg);
+	rig.transceive = 0;
+	client_poll(a, -1);
+	client_poll(b, -1);
+	run_for(1.2);
+}
+
 int main(void) {
 	struct device dev = { .ctl = (struct mh_control *)&dev, .serial = "TEST0001" };
-	struct cat_native_cfg cfg = { .radio = 1, .own_queries = 1 };
+	struct cat_native_cfg cfg = { .radio = 1, .own_queries = 1, .civ_resend = 1 };
 
 	loop = ev_default_loop(0);
 	if(nonblock_pair(kfd) || client_init(&cl[0]) || client_init(&cl[1])) {
@@ -715,6 +822,7 @@ int main(void) {
 
 	test_own_queries(dev.router);
 	test_two_clients(dev.router);
+	test_collisions(&dev, &cn);
 
 	cat_native_destroy(cn);
 	mhr_destroy(dev.router);

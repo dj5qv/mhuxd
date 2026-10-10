@@ -51,6 +51,8 @@ struct civ_pending {
 	uint8_t echoed;		// seen on the radio stream
 	uint8_t own;		// mhuxd's own query
 	uint8_t client;		// the client that sent it, 0 if only seen on the bus
+	uint8_t lost;		// destroyed in a bus collision, not sent again yet
+	uint8_t resends;
 };
 
 struct cat_civ {
@@ -358,6 +360,8 @@ static void pend_add(struct cat_civ *civ, const uint8_t *f, size_t len, enum cat
 	p->echoed = dir == CAT_DIR_RADIO;
 	p->own = dir == CAT_DIR_OWN;
 	p->client = dir == CAT_DIR_HOST ? client : 0;
+	p->lost = 0;
+	p->resends = 0;
 }
 
 // Remove the pending commands of a controller (and client) up to and including index i:
@@ -521,8 +525,19 @@ static void rx_drop(struct cat_civ *civ, enum cat_dir dir, int client, struct ci
 	rx->len = 0;
 }
 
+// A jam on the bus: commands sent shortly before and not echoed were destroyed.
+static void mark_lost(struct cat_civ *civ, uint64_t t) {
+	for(int i = 0; i < civ->npend; i++) {
+		struct civ_pending *p = &civ->pend[i];
+		if(p->from_host && !p->echoed && p->t_ms + CIV_COLLISION_MS >= t)
+			p->lost = 1;
+	}
+}
+
 static void rx_jam(struct cat_civ *civ, enum cat_dir dir, int client, struct civ_rx *rx, uint64_t t) {
 	static const uint8_t col = CIV_COL;
+	if(dir == CAT_DIR_RADIO)
+		mark_lost(civ, t);
 	rx_drop(civ, dir, client, rx, t);
 	emit(civ, CAT_FRAME_JAM, dir, &col, 1, 0, dir == CAT_DIR_OWN, client, t);
 	rx->state = RX_IDLE;
@@ -619,6 +634,31 @@ void cat_civ_client_discard(struct cat_civ *civ, int client) {
 	for(int i = civ->npend - 1; i >= 0; i--)
 		if(civ->pend[i].client == client)
 			pend_remove(civ, i);
+}
+
+int cat_civ_lost(const struct cat_civ *civ) {
+	int n = 0;
+	for(int i = 0; i < civ->npend; i++)
+		n += civ->pend[i].lost;
+	return n;
+}
+
+size_t cat_civ_resend(struct cat_civ *civ, int max, uint64_t t_ms, uint8_t *buf, int *client, int *own) {
+	for(int i = 0; i < civ->npend; i++) {
+		struct civ_pending *p = &civ->pend[i];
+		if(!p->lost)
+			continue;
+		p->lost = 0;
+		if(p->resends >= max)
+			continue;
+		p->resends++;
+		p->t_ms = t_ms;
+		memcpy(buf, p->buf, p->len);
+		*client = p->client;
+		*own = p->own;
+		return p->len;
+	}
+	return 0;
 }
 
 void cat_civ_feed(struct cat_civ *civ, enum cat_dir dir, int client, const uint8_t *buf, size_t len,

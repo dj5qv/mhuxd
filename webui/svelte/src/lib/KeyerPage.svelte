@@ -271,6 +271,7 @@
     protocol: r?.protocol ?? 'auto',
     civ_address: r?.civ_address ? Number(r.civ_address).toString(16).toUpperCase() : '',
     own_queries: r?.own_queries !== 'never',
+    civ_collision_resend: r?.civ_collision_resend == null ? true : boolish(r.civ_collision_resend),
     monitor: boolish(r?.monitor)
   });
 
@@ -338,6 +339,7 @@
       protocol: ['civ', 'kenwood', 'elecraft', 'yaesu', 'flex'].includes(f?.protocol) ? f.protocol : 'auto',
       civ_address: civ,
       own_queries: f?.own_queries === false ? 'never' : 'auto',
+      civ_collision_resend: f?.civ_collision_resend === false ? 0 : 1,
       monitor: f?.monitor ? 1 : 0
     };
   };
@@ -2041,6 +2043,19 @@
               />
               <span class="placeholder">
                 when no application does (front panel changes, data mode)
+              </span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="label">Resend after collisions:</div>
+            <div class="value">
+              <input
+                type="checkbox"
+                checked={rs?.civ_collision_resend !== false}
+                on:change={(e) => updateRigModeSyncRadio(activeSerial, rk, 'civ_collision_resend', e.target.checked)}
+              />
+              <span class="placeholder">
+                Icom: a command that collides with the radio's transceive messages on the CI-V bus
               </span>
             </div>
           </div>

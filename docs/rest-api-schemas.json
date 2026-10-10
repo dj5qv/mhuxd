@@ -203,6 +203,13 @@
           "type": "string",
           "enum": ["auto", "never"]
         },
+        "civ_collision_resend": {
+          "description": "backend native, Icom CI-V: send a command destroyed in a collision on the CI-V bus (radio answers FC) again, keep the debris from the applications (default true)",
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        },
         "monitor": {
           "description": "backend native: CAT monitor, LOGDIR/cat-<serial>-r<n>.trace and WebSocket events cat_monitor",
           "oneOf": [

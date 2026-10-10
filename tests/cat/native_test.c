@@ -394,6 +394,24 @@ static int file_contains(const char *path, const char *needle) {
 	return n;
 }
 
+// Comment lines "# HH:MM:SS.mmm <text>".
+static int file_comment(const char *path, const char *text) {
+	char line[512];
+	unsigned h, m, s, ms;
+	int n = 0, off = 0;
+	FILE *f = fopen(path, "r");
+	if(!f)
+		return -1;
+	while(fgets(line, sizeof(line), f)) {
+		line[strcspn(line, "\n")] = '\0';
+		if(sscanf(line, "# %2u:%2u:%2u.%3u %n", &h, &m, &s, &ms, &off) == 4 && off &&
+		   !strcmp(line + off, text))
+			n++;
+	}
+	fclose(f);
+	return n;
+}
+
 int main(int argc, char **argv) {
 	struct device dev = {
 		.router = (struct mh_router *)&dev,	// only compared, never dereferenced
@@ -587,10 +605,10 @@ int main(int argc, char **argv) {
 		CHECK(file_contains(path, " H1 fe fe 94 e0 25 00 fd  # cmd") == 1, "host data tagged H1");
 		CHECK(file_contains(path, " R fe fe 94 e0 25 00 fd  # H1 echo") == 1, "echo classified");
 		CHECK(file_contains(path, "# H1 reply, applied: rx=14074000 unsel=? mode=PKTUSB") == 1, "reply with state");
-		CHECK(file_contains(path, "# H1: connector cat1") == 1, "client named");
+		CHECK(file_comment(path, "H1: connector cat1") == 1, "client named, with time");
 		CHECK(file_contains(path, " R fc  # jam") == 1, "collision");
-		CHECK(file_contains(path, "# keyer OFFLINE, decoder starts over") == 1, "keyer state comment");
-		CHECK(file_contains(path, "# monitor stopped") == 1, "closing comment");
+		CHECK(file_comment(path, "keyer OFFLINE, decoder starts over") == 1, "keyer state comment");
+		CHECK(file_comment(path, "monitor stopped") == 1, "closing comment");
 	}
 
 	printf("%s native_test\n", failures ? "FAIL" : "ok  ");
