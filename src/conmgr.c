@@ -48,6 +48,7 @@ struct connector {
 	struct proc_mcp *mcp;
 	struct proc_rotator *rot;
 	char *devname;
+	char *tag;		// router owner tag: VSP device name, "tcp:<port>"
 	int maxcon;
 	int ptt_rts;
 	int ptt_dtr;
@@ -167,6 +168,14 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 		ctr->remote_access = cfg->tcp.remote_access;
 	}
 
+	if(ctr->type == CON_TCP) {
+		size_t len = strlen(ctr->devname ? ctr->devname : "") + 8;
+		ctr->tag = w_malloc(len);
+		snprintf(ctr->tag, len, "tcp:%s", ctr->devname ? ctr->devname : "");
+	} else {
+		ctr->tag = w_strdup(ctr->devname);
+	}
+
 	// create the data sockets
 	// SOCK_CLOEXEC: keep the sockets out of child processes (rigctld), they would keep
 	// the router endpoint alive after the connector has been destroyed.
@@ -184,7 +193,7 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 	}
 	ctr->s_fd_data = sodat[0];
 	cspec.fd_data = sodat[1];
-	mhr_add_endpoint_fd(ctr->dev->router, sodat[0], ctr->channel, serial);
+	mhr_add_endpoint_fd(ctr->dev->router, sodat[0], ctr->channel, ctr->tag);
 	ctr->router_owns_data = 1;
 
 	cspec.vsp = cfg->vsp;
@@ -213,7 +222,7 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 				}
 				ctr->s_fd_ptt = soptt[0];
 				cspec.fd_ptt = soptt[1];
-				mhr_add_endpoint_fd(ctr->dev->router, soptt[0], ctr->ptt_channel, serial);
+				mhr_add_endpoint_fd(ctr->dev->router, soptt[0], ctr->ptt_channel, ctr->tag);
 				ctr->router_owns_ptt = 1;
 			} else {
 				err("Could not determine ptt channel for channel %s", ch_channel2str_new(ctr->channel, mhc_get_mhinfo(ctr->dev->ctl)));
@@ -279,6 +288,7 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 	{
 		if(ctr->devname)
 			free(ctr->devname);
+		free(ctr->tag);
 		free(ctr);
 	}
 	return 0;
@@ -332,6 +342,7 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 			PG_Remove(&ctr->node);
 			if(ctr->devname)
 				free(ctr->devname);
+			free(ctr->tag);
 			free(ctr);
 			return 0;
 		}

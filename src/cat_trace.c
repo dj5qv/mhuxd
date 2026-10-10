@@ -59,10 +59,13 @@ void cat_trace_state(char *buf, size_t sz, const struct cat_state *st) {
 		 m ? cat_mode_token(m) : "?", split, cat_trace_keyer_str(cat_mode_to_keyer(m)));
 }
 
-void cat_trace_frame(char *buf, size_t sz, const char *time, const char *host_tag,
-		     const struct cat_frame *f, const struct cat_state *st) {
+void cat_trace_frame(char *buf, size_t sz, const char *time, const struct cat_frame *f,
+		     const struct cat_state *st) {
+	char host_tag[16];
 	const char *tag = f->dir == CAT_DIR_RADIO ? "R" : f->dir == CAT_DIR_OWN ? "M" : host_tag;
 	size_t n = 0;
+
+	snprintf(host_tag, sizeof(host_tag), "H%d", f->client > 0 ? f->client : 1);
 
 #define APPEND(...) do { \
 		if(n < sz) { \
@@ -91,8 +94,14 @@ void cat_trace_frame(char *buf, size_t sz, const char *time, const char *host_ta
 		for(size_t i = 0; i < f->len; i++)
 			APPEND(" %02x", f->buf[i]);
 	}
-	// Frames answering an own query (tag M) are marked, so the M lines' answers stand out.
-	APPEND("  # %s%s", f->own && f->dir == CAT_DIR_RADIO ? "own " : "", cat_frame_kind_str(f->kind));
+	// Radio frames answering an own query (tag M) or a client's command name it: "# own reply",
+	// "# H2 reply".
+	APPEND("  # ");
+	if(f->dir == CAT_DIR_RADIO && f->own)
+		APPEND("own ");
+	else if(f->dir == CAT_DIR_RADIO && f->client)
+		APPEND("H%d ", f->client);
+	APPEND("%s", cat_frame_kind_str(f->kind));
 	if(f->applied && st) {
 		char s[128];
 		cat_trace_state(s, sizeof(s), st);

@@ -23,12 +23,15 @@
 4.000 R  "FA00007074000;"
 = own=3 replies=3
 
-# A set gets no answer: it counts as pending until it expires (2 s)
+# A set gets no answer: it counts as pending for 200 ms only (a read with parameters, Yaesu
+# "MD0;", is answered by then)
 5.000 H1 "FA00014074000;"
 = pending=client
-6.900 M  "IF;"
+5.150 M  "IF;"
 = pending=both
-6.950 R  "IF00014074000     +000000000021000000;"
+5.190 R  "IF00014074000     +000000000021000000;"
 = own=4 pending=client mode=USB
-7.100 R  "DA1;"
-= pending=none mode=PKTUSB own=4
+5.210 M  "DA;"
+= pending=own
+5.250 R  "DA1;"
+= pending=none mode=PKTUSB own=5

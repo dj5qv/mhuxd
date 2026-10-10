@@ -1,0 +1,60 @@
+# Two applications (H1, H2) on a Kenwood TS-590, each on a connector of its own. Replies are
+# tied to the client whose query they answer (client=), by prefix and in order.
+@kenwood
+0.000 H1 "FA;"
+= busy=H1
+0.030 R  "FA00014074000;"
+= client=H1 busy=none rx=14074000
+0.100 H2 "MD;"
+= busy=H2
+0.130 R  "MD2;"
+= client=H2 busy=none mode=USB
+
+# The same query from both: answered in order
+0.200 H1 "FA;"
+0.205 H2 "FA;"
+= busy=H1,H2
+0.230 R  "FA00014074000;"
+= client=H1 busy=H2
+0.250 R  "FA00014074000;"
+= client=H2 busy=none
+
+# A set gets no answer. It counts for 200 ms (CAT_ASCII_SET_WAIT_MS), so mhuxd gives the line
+# to the next application after that at the latest. A query sent meanwhile gets the reply,
+# even from another client.
+1.000 H1 "FA00007074000;"
+= busy=H1 rx=7074000
+1.050 H2 "FA;"
+= busy=H1,H2
+1.090 R  "FA00007074000;"
+= client=H2 busy=H1
+1.210 R  "IF00007074000     +000000000021000000;"
+= busy=none client=-
+
+# With auto information on, the radio repeats a set: that is no answer, all clients get it
+2.000 H1 "MD3;"
+2.030 R  "MD3;"
+= client=- busy=none mode=CW
+
+# A read with parameters (Yaesu style "MD0;" -> "MD02;") still gets its reply
+3.000 H2 "SF0;"
+= busy=H2
+3.040 R  "SF000007074000C;"
+= client=H2 busy=none
+
+# An error reply goes to the oldest query, not to a set
+4.000 H1 "FA00007080000;"
+4.010 H2 "XX;"
+4.040 R  "?;"
+= client=H2 errors=1
+
+# Each client has a framer of its own
+5.000 H1 "F"
+5.001 H2 "M"
+= busy=H1,H2
+5.002 H1 "A;"
+5.003 H2 "D;"
+5.030 R  "FA00007080000;"
+= client=H1 busy=H2
+5.050 R  "MD2;"
+= client=H2 busy=none mode=USB

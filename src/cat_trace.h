@@ -29,9 +29,10 @@ void cat_trace_state(char *buf, size_t sz, const struct cat_state *st);
 
 // "<time> <tag> fe fe ... fd  # <kind>[, applied: <state>]", no newline. Frames of the
 // ASCII protocols are written as quoted text: "<time> <tag> \"FA00014074000;\"  # ...".
-// tag is used for host data; radio data is tagged R, mhuxd's own data M.
-void cat_trace_frame(char *buf, size_t sz, const char *time, const char *host_tag,
-		     const struct cat_frame *f, const struct cat_state *st);
+// Host data is tagged with the client number (H1..H9), radio data R, mhuxd's own data M.
+// Radio frames that belong to a client's command name it: "# H2 reply".
+void cat_trace_frame(char *buf, size_t sz, const char *time, const struct cat_frame *f,
+		     const struct cat_state *st);
 
 // "@civ addr=94[ freq_len=4]"
 void cat_trace_civ_config(char *buf, size_t sz, const struct cat_civ_cfg *cfg);

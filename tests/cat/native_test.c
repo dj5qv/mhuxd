@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cat_native.h"
+#include "cat_ascii.h"
 #include "app_ctx.h"
 #include "device.h"
 #include "eventbus.h"
@@ -37,7 +38,10 @@
  * Router stubs
  */
 
-static MHRConsumerCallback radio_cb, host_cb;
+#define CLIENT_FD 42	// the connector the test client is on
+
+static MHRConsumerCallback radio_cb;
+static MHRTapCallback host_cb;
 static void *radio_data, *host_data;
 static int radio_channel, host_channel;
 
@@ -54,14 +58,14 @@ void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback cb, int c
 		radio_cb = NULL;
 }
 
-void mhr_add_producer_tap_cb(struct mh_router *router, MHRConsumerCallback cb, int channel, void *user_data) {
+void mhr_add_producer_tap_cb(struct mh_router *router, MHRTapCallback cb, int channel, void *user_data) {
 	(void)router;
 	host_cb = cb;
 	host_data = user_data;
 	host_channel = channel;
 }
 
-void mhr_rem_producer_tap_cb(struct mh_router *router, MHRConsumerCallback cb, int channel, void *user_data) {
+void mhr_rem_producer_tap_cb(struct mh_router *router, MHRTapCallback cb, int channel, void *user_data) {
 	(void)router;
 	if(cb == host_cb && channel == host_channel && user_data == host_data)
 		host_cb = NULL;
@@ -96,9 +100,30 @@ static void to_client(const uint8_t *data, size_t len) {
 	}
 }
 
-void mhr_pass_out(struct mh_router *router, const uint8_t *data, unsigned int len, int channel) {
+void mhr_pass_out(struct mh_router *router, const uint8_t *data, unsigned int len, int channel, int fd) {
 	(void)router; (void)channel;
+	CHECK(fd == MHR_ALL || fd == CLIENT_FD, "radio data passed to connector %d", fd);
 	to_client(data, len);
+}
+
+// A single connector: no turns.
+void mhr_set_producer_turn(struct mh_router *router, int channel, int fd) {
+	(void)router; (void)channel; (void)fd;
+}
+
+int mhr_next_waiting_producer(struct mh_router *router, int channel, int fd) {
+	(void)router; (void)channel; (void)fd;
+	return -1;
+}
+
+int mhr_count_producers(struct mh_router *router, int channel) {
+	(void)router; (void)channel;
+	return 1;
+}
+
+const char *mhr_get_producer_tag(struct mh_router *router, int channel, int fd) {
+	(void)router; (void)channel;
+	return fd == CLIENT_FD ? "cat1" : NULL;
 }
 
 void mhr_intercept_consumers(struct mh_router *router, int channel, int intercept) {
@@ -114,7 +139,7 @@ static void release_cb(struct ev_loop *l, struct ev_timer *w, int revents) {
 	size_t n = nheld_host;
 	nheld_host = 0;
 	if(host_cb)
-		host_cb(NULL, held_host, n, host_channel, host_data);
+		host_cb(NULL, held_host, n, host_channel, CLIENT_FD, host_data);
 }
 
 void mhr_hold_producers(struct mh_router *router, int channel, int hold) {
@@ -153,7 +178,7 @@ static void host_bytes(const uint8_t *buf, size_t n) {
 		memcpy(held_host + nheld_host, buf, n);
 		nheld_host += n;
 	} else if(host_cb) {
-		host_cb(NULL, buf, n, host_channel, host_data);
+		host_cb(NULL, buf, n, host_channel, CLIENT_FD, host_data);
 	}
 }
 
@@ -253,11 +278,11 @@ static void test_own_queries(struct device *dev) {
 	radio("fe fe e0 94 04 01 01 fd");
 	CHECK(client_got("fe fe 94 e0 04 fd fe fe e0 94 04 01 01 fd"), "client gets its echo and reply");
 
-	// USB, data flag unknown: 26 00 after an idle gap. A transceive frame between echo and
-	// answer goes to the client.
+	// USB, data flag unknown: 26 00 as soon as the client's command is answered, the line is
+	// free until its next one. A transceive frame between echo and answer goes to the client.
+	CHECK(nsends == 2 && sent_is("fe fe 94 e5 26 00 fd") && held && intercepted,
+	      "own mode query right after the client's answer");
 	nclient_rx = 0;
-	t = wait_query(0.5);
-	CHECK(t >= 0.1 && sent_is("fe fe 94 e5 26 00 fd"), "own mode query after an idle gap (%.2f s)", t);
 	radio("fe fe 94 e5 26 00 fd");
 	radio("fe fe 00 94 00 00 00 08 14 00 fd");
 	radio("fe fe e5 94 26 00 01 01 01 fd");
@@ -336,11 +361,13 @@ static void test_own_queries(struct device *dev) {
 	CHECK(p && p->rxFreq == 14074000 && p->mode == MOD_DIGITAL, "TS-590: 14074000 PKTUSB from own queries");
 	CHECK(nclient_rx == 0 && !held && !intercepted, "TS-590: answers taken out, %zu bytes", nclient_rx);
 
-	// A client set has no answer: it blocks own queries until it expires.
+	// A client set has no answer: it blocks own queries for CAT_ASCII_SET_WAIT_MS only.
 	host_text("FA00014080000;");
 	nsends = 0;
+	t = wait_query(CAT_ASCII_SET_WAIT_MS / 1000.0 - 0.02);
+	CHECK(t < 0, "no own query right after a client set");
 	t = wait_query(1.5);
-	CHECK(t < 0, "no own query within 1.5 s after a client set");
+	CHECK(t >= 0 && sent_text_is("IF;"), "own queries again after a client set");
 	cat_native_destroy(cn);
 }
 
@@ -552,8 +579,9 @@ int main(int argc, char **argv) {
 		CHECK(mon_lines >= 12, "monitor lines published: %d", mon_lines);
 		CHECK(file_contains(path, "@civ addr=94") == 2, "config line at start and after the reset");
 		CHECK(file_contains(path, " H1 fe fe 94 e0 25 00 fd  # cmd") == 1, "host data tagged H1");
-		CHECK(file_contains(path, " R fe fe 94 e0 25 00 fd  # echo") == 1, "echo classified");
-		CHECK(file_contains(path, "# reply, applied: rx=14074000 unsel=? mode=PKTUSB") == 1, "reply with state");
+		CHECK(file_contains(path, " R fe fe 94 e0 25 00 fd  # H1 echo") == 1, "echo classified");
+		CHECK(file_contains(path, "# H1 reply, applied: rx=14074000 unsel=? mode=PKTUSB") == 1, "reply with state");
+		CHECK(file_contains(path, "# H1: connector cat1") == 1, "client named");
 		CHECK(file_contains(path, " R fc  # jam") == 1, "collision");
 		CHECK(file_contains(path, "# keyer OFFLINE, decoder starts over") == 1, "keyer state comment");
 		CHECK(file_contains(path, "# monitor stopped") == 1, "closing comment");

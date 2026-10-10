@@ -19,10 +19,14 @@
 
 // Direction of CAT bytes. A trace tags them H1..H9 (client), M (mhuxd), R (radio).
 enum cat_dir {
-	CAT_DIR_HOST,	// client application -> radio
+	CAT_DIR_HOST,	// client application -> radio, with a client number
 	CAT_DIR_OWN,	// mhuxd's own query -> radio
 	CAT_DIR_RADIO,	// radio -> host (on Icom this includes the bus echo)
 };
+
+// Client applications are numbered 1..CAT_MAX_CLIENTS (trace tags H1..H9). Each has a
+// framer of its own, and the radio frames answering a client's command carry its number.
+#define CAT_MAX_CLIENTS 9
 
 enum cat_frame_kind {
 	CAT_FRAME_CMD,		// controller -> radio
@@ -48,6 +52,8 @@ struct cat_frame {
 	int applied;		// the frame updated cat_state
 	int text;		// ASCII protocol: shown as quoted text in traces
 	int own;		// part of mhuxd's own query: the query, its echo, reply or acknowledge
+	int client;		// 1..CAT_MAX_CLIENTS: the client that sent the command, or whose command
+				// the radio frame answers (echo, reply, acknowledge, error); 0: none
 };
 
 typedef void (*cat_frame_cb)(const struct cat_frame *frame, void *user_data);

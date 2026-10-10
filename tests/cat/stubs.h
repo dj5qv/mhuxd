@@ -17,6 +17,7 @@
 #include <ev.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "conmgr.h"
 #include "eventbus.h"
 #include "mhcontrol.h"
 
@@ -43,7 +44,7 @@ extern int speed_valid;
 // mhc_get_state()
 extern uint8_t keyer_state_val;
 
-// mhc_update_radio_info() calls
+// mhc_update_radio_info() calls, the last MAX_PUB
 #define MAX_PUB 64
 extern struct mhc_radio_info pub[MAX_PUB];
 extern int npub;
@@ -52,6 +53,11 @@ const struct mhc_radio_info *last_pub(void);
 // EV_CAT_MONITOR events
 extern int mon_lines;
 extern char mon_last[256];
+
+// conmgr_foreach()
+#define MAX_CONNECTORS 4
+extern struct con_info test_connectors[MAX_CONNECTORS];
+extern int ntest_connectors;
 
 // EV_KEYER_STATE subscriber
 extern event_cb_fn keyer_state_cb;

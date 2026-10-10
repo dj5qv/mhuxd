@@ -37,6 +37,11 @@ struct civ_rx {
 	uint64_t t_ms;		// last byte
 };
 
+// A framer per source: one per client (index client - 1), mhuxd's own queries, the radio.
+#define RX_OWN   CAT_MAX_CLIENTS
+#define RX_RADIO (CAT_MAX_CLIENTS + 1)
+#define RX_NUM   (CAT_MAX_CLIENTS + 2)
+
 // A command seen as host data or as bus echo, waiting for its reply or FB/FA.
 struct civ_pending {
 	uint8_t buf[CIV_MAX_FRAME];
@@ -45,6 +50,7 @@ struct civ_pending {
 	uint8_t from_host;	// seen as host/own data
 	uint8_t echoed;		// seen on the radio stream
 	uint8_t own;		// mhuxd's own query
+	uint8_t client;		// the client that sent it, 0 if only seen on the bus
 };
 
 struct cat_civ {
@@ -52,13 +58,14 @@ struct cat_civ {
 	struct cat_state *st;
 	cat_frame_cb cb;
 	void *cb_data;
-	struct civ_rx rx[CAT_DIR_RADIO + 1];
+	struct civ_rx rx[RX_NUM];
 	struct civ_pending pend[PEND_MAX];
 	int npend;
 	// previous frame, to learn the radio address from a command/reply pair
 	uint8_t last[CIV_MAX_FRAME];
 	size_t last_len;
 	enum cat_dir last_dir;
+	int last_client;
 	struct cat_stats stats;
 };
 
@@ -98,7 +105,7 @@ const struct cat_stats *cat_civ_get_stats(const struct cat_civ *civ) {
 }
 
 static void emit(struct cat_civ *civ, enum cat_frame_kind kind, enum cat_dir dir,
-		 const uint8_t *buf, size_t len, int applied, int own, uint64_t t_ms) {
+		 const uint8_t *buf, size_t len, int applied, int own, int client, uint64_t t_ms) {
 	switch(kind) {
 	case CAT_FRAME_REPLY:     civ->stats.replies++; break;
 	case CAT_FRAME_UNMATCHED: civ->stats.unmatched++; break;
@@ -116,7 +123,7 @@ static void emit(struct cat_civ *civ, enum cat_frame_kind kind, enum cat_dir dir
 	if(civ->cb) {
 		struct cat_frame f = {
 			.kind = kind, .dir = dir, .t_ms = t_ms,
-			.buf = buf, .len = len, .applied = applied, .own = own,
+			.buf = buf, .len = len, .applied = applied, .own = own, .client = client,
 		};
 		civ->cb(&f, civ->cb_data);
 	}
@@ -339,7 +346,8 @@ static void pend_expire(struct cat_civ *civ, uint64_t t) {
 		pend_remove(civ, 0);
 }
 
-static void pend_add(struct cat_civ *civ, const uint8_t *f, size_t len, enum cat_dir dir, uint64_t t) {
+static void pend_add(struct cat_civ *civ, const uint8_t *f, size_t len, enum cat_dir dir, int client,
+		     uint64_t t) {
 	if(civ->npend == PEND_MAX)
 		pend_remove(civ, 0);
 	struct civ_pending *p = &civ->pend[civ->npend++];
@@ -349,13 +357,15 @@ static void pend_add(struct cat_civ *civ, const uint8_t *f, size_t len, enum cat
 	p->from_host = dir != CAT_DIR_RADIO;
 	p->echoed = dir == CAT_DIR_RADIO;
 	p->own = dir == CAT_DIR_OWN;
+	p->client = dir == CAT_DIR_HOST ? client : 0;
 }
 
-// Remove all pending commands of a controller up to and including index i.
+// Remove the pending commands of a controller (and client) up to and including index i:
+// the radio answers in order.
 static void pend_consume(struct cat_civ *civ, int i) {
-	uint8_t ctrl = F_FROM(civ->pend[i].buf);
+	uint8_t ctrl = F_FROM(civ->pend[i].buf), client = civ->pend[i].client;
 	for(int j = i; j >= 0; j--)
-		if(F_FROM(civ->pend[j].buf) == ctrl)
+		if(F_FROM(civ->pend[j].buf) == ctrl && civ->pend[j].client == client)
 			pend_remove(civ, j);
 }
 
@@ -413,46 +423,48 @@ static void learn_addr(struct cat_civ *civ, enum cat_dir dir, const uint8_t *f, 
 		  F_CMD(l) == F_CMD(f)) {
 		// Command and its reply: the replying side is the radio.
 		civ->cfg.radio_addr = F_FROM(f);
-		pend_add(civ, l, civ->last_len, civ->last_dir, t);
+		pend_add(civ, l, civ->last_len, civ->last_dir, civ->last_client, t);
 	}
 }
 
 static void process_radio_frame(struct cat_civ *civ, const uint8_t *f, size_t len, uint64_t t) {
 	uint8_t ra = civ->cfg.radio_addr;
 	enum cat_dir dir = CAT_DIR_RADIO;
-	int i, r, own;
+	int i, r, own, client;
 
 	if(F_FROM(f) == ra && F_TO(f) != ra) {
 		if(F_TO(f) == CIV_BCAST) {
 			r = apply_unsolicited(civ, f, len, t);
-			emit(civ, r < 0 ? CAT_FRAME_BAD : CAT_FRAME_UNSOLICITED, dir, f, len, r > 0, 0, t);
+			emit(civ, r < 0 ? CAT_FRAME_BAD : CAT_FRAME_UNSOLICITED, dir, f, len, r > 0, 0, 0, t);
 			return;
 		}
 
 		if(F_CMD(f) == CIV_OK || F_CMD(f) == CIV_NG) {
 			int ok = F_CMD(f) == CIV_OK;
 			r = 0;
-			own = 0;
+			own = client = 0;
 			i = pend_find_ack(civ, F_TO(f), ok);
 			if(i >= 0) {
 				if(ok && is_query(civ->pend[i].buf, civ->pend[i].len) == 0)
 					r = apply_set(civ, civ->pend[i].buf, civ->pend[i].len, t);
 				own = civ->pend[i].own;
+				client = civ->pend[i].client;
 				pend_consume(civ, i);
 			}
-			emit(civ, ok ? CAT_FRAME_ACK : CAT_FRAME_NAK, dir, f, len, r > 0, own, t);
+			emit(civ, ok ? CAT_FRAME_ACK : CAT_FRAME_NAK, dir, f, len, r > 0, own, client, t);
 			return;
 		}
 
 		i = pend_find_query(civ, f, len);
 		if(i < 0) {
-			emit(civ, CAT_FRAME_UNMATCHED, dir, f, len, 0, 0, t);
+			emit(civ, CAT_FRAME_UNMATCHED, dir, f, len, 0, 0, 0, t);
 			return;
 		}
 		own = civ->pend[i].own;
+		client = civ->pend[i].client;
 		pend_consume(civ, i);
 		r = apply_reply(civ, f, len, t);
-		emit(civ, r < 0 ? CAT_FRAME_BAD : CAT_FRAME_REPLY, dir, f, len, r > 0, own, t);
+		emit(civ, r < 0 ? CAT_FRAME_BAD : CAT_FRAME_REPLY, dir, f, len, r > 0, own, client, t);
 		return;
 	}
 
@@ -460,19 +472,22 @@ static void process_radio_frame(struct cat_civ *civ, const uint8_t *f, size_t le
 		i = pend_find_echo(civ, f, len);
 		if(i >= 0) {
 			civ->pend[i].echoed = 1;
-			emit(civ, CAT_FRAME_ECHO, dir, f, len, 0, civ->pend[i].own, t);
+			emit(civ, CAT_FRAME_ECHO, dir, f, len, 0, civ->pend[i].own, civ->pend[i].client, t);
 		} else {
 			// Only seen on the bus: no host tap, or another controller.
-			pend_add(civ, f, len, CAT_DIR_RADIO, t);
-			emit(civ, CAT_FRAME_CMD, dir, f, len, 0, 0, t);
+			pend_add(civ, f, len, CAT_DIR_RADIO, 0, t);
+			emit(civ, CAT_FRAME_CMD, dir, f, len, 0, 0, 0, t);
 		}
 		return;
 	}
 
-	emit(civ, CAT_FRAME_FOREIGN, dir, f, len, 0, 0, t);
+	emit(civ, CAT_FRAME_FOREIGN, dir, f, len, 0, 0, 0, t);
 }
 
-static void process_frame(struct cat_civ *civ, enum cat_dir dir, const uint8_t *f, size_t len, uint64_t t) {
+static void process_frame(struct cat_civ *civ, enum cat_dir dir, int client, const uint8_t *f, size_t len,
+			  uint64_t t) {
+	int own = dir == CAT_DIR_OWN;
+
 	civ->stats.frames++;
 	pend_expire(civ, t);
 
@@ -480,45 +495,45 @@ static void process_frame(struct cat_civ *civ, enum cat_dir dir, const uint8_t *
 		learn_addr(civ, dir, f, t);
 
 	if(!civ->cfg.radio_addr) {
-		emit(civ, CAT_FRAME_FOREIGN, dir, f, len, 0, dir == CAT_DIR_OWN, t);
+		emit(civ, CAT_FRAME_FOREIGN, dir, f, len, 0, own, client, t);
 	} else if(dir == CAT_DIR_RADIO) {
 		process_radio_frame(civ, f, len, t);
 	} else if(F_TO(f) == civ->cfg.radio_addr && F_FROM(f) != CIV_BCAST) {
-		pend_add(civ, f, len, dir, t);
-		emit(civ, CAT_FRAME_CMD, dir, f, len, 0, dir == CAT_DIR_OWN, t);
+		pend_add(civ, f, len, dir, client, t);
+		emit(civ, CAT_FRAME_CMD, dir, f, len, 0, own, client, t);
 	} else {
-		emit(civ, CAT_FRAME_FOREIGN, dir, f, len, 0, dir == CAT_DIR_OWN, t);
+		emit(civ, CAT_FRAME_FOREIGN, dir, f, len, 0, own, client, t);
 	}
 
 	memcpy(civ->last, f, len);
 	civ->last_len = len;
 	civ->last_dir = dir;
+	civ->last_client = client;
 }
 
 /*
  * Framer
  */
 
-static void rx_drop(struct cat_civ *civ, enum cat_dir dir, struct civ_rx *rx, uint64_t t) {
+static void rx_drop(struct cat_civ *civ, enum cat_dir dir, int client, struct civ_rx *rx, uint64_t t) {
 	if(rx->len > 2)
-		emit(civ, CAT_FRAME_DROPPED, dir, rx->buf, rx->len, 0, dir == CAT_DIR_OWN, t);
+		emit(civ, CAT_FRAME_DROPPED, dir, rx->buf, rx->len, 0, dir == CAT_DIR_OWN, client, t);
 	rx->len = 0;
 }
 
-static void rx_jam(struct cat_civ *civ, enum cat_dir dir, struct civ_rx *rx, uint64_t t) {
+static void rx_jam(struct cat_civ *civ, enum cat_dir dir, int client, struct civ_rx *rx, uint64_t t) {
 	static const uint8_t col = CIV_COL;
-	rx_drop(civ, dir, rx, t);
-	emit(civ, CAT_FRAME_JAM, dir, &col, 1, 0, dir == CAT_DIR_OWN, t);
+	rx_drop(civ, dir, client, rx, t);
+	emit(civ, CAT_FRAME_JAM, dir, &col, 1, 0, dir == CAT_DIR_OWN, client, t);
 	rx->state = RX_IDLE;
 }
 
-static void rx_byte(struct cat_civ *civ, enum cat_dir dir, uint8_t b, uint64_t t) {
-	struct civ_rx *rx = &civ->rx[dir];
-
+static void rx_byte(struct cat_civ *civ, enum cat_dir dir, int client, struct civ_rx *rx, uint8_t b,
+		    uint64_t t) {
 	rx->t_ms = t;
 
 	if(b == CIV_COL) {
-		rx_jam(civ, dir, rx, t);
+		rx_jam(civ, dir, client, rx, t);
 		return;
 	}
 
@@ -540,23 +555,23 @@ static void rx_byte(struct cat_civ *civ, enum cat_dir dir, uint8_t b, uint64_t t
 		if(b == CIV_PRE) {
 			if(rx->len > 2) {
 				// A new frame starts before this one ended.
-				rx_drop(civ, dir, rx, t);
+				rx_drop(civ, dir, client, rx, t);
 				rx->state = RX_PRE;
 			}
 			// else: extra preamble byte
 		} else if(b == CIV_EOM) {
 			if(rx->len + 1 >= CIV_MIN_LEN) {
 				rx->buf[rx->len++] = b;
-				process_frame(civ, dir, rx->buf, rx->len, t);
+				process_frame(civ, dir, client, rx->buf, rx->len, t);
 				rx->len = 0;
 			} else {
-				rx_drop(civ, dir, rx, t);
+				rx_drop(civ, dir, client, rx, t);
 			}
 			rx->state = RX_IDLE;
 		} else if(rx->len + 1 < CIV_MAX_FRAME) {
 			rx->buf[rx->len++] = b;
 		} else {
-			rx_drop(civ, dir, rx, t);
+			rx_drop(civ, dir, client, rx, t);
 			rx->state = RX_SKIP;
 		}
 		break;
@@ -569,21 +584,64 @@ static void rx_byte(struct cat_civ *civ, enum cat_dir dir, uint8_t b, uint64_t t
 	}
 }
 
+static int rx_partial(const struct civ_rx *rx, uint64_t t_ms) {
+	return rx->state != RX_IDLE && rx->t_ms + PEND_TIMEOUT_MS >= t_ms;
+}
+
 unsigned cat_civ_pending(const struct cat_civ *civ, uint64_t t_ms) {
-	const struct civ_rx *rx = &civ->rx[CAT_DIR_HOST];
 	unsigned r = 0;
 
-	if(rx->state != RX_IDLE && rx->t_ms + PEND_TIMEOUT_MS >= t_ms)
-		r |= CAT_PENDING_CLIENT;
+	for(int c = 0; c < CAT_MAX_CLIENTS; c++)
+		if(rx_partial(&civ->rx[c], t_ms))
+			r |= CAT_PENDING_CLIENT;
 	for(int i = 0; i < civ->npend; i++)
 		if(civ->pend[i].t_ms + PEND_TIMEOUT_MS >= t_ms)
 			r |= civ->pend[i].own ? CAT_PENDING_OWN : CAT_PENDING_CLIENT;
 	return r;
 }
 
-void cat_civ_feed(struct cat_civ *civ, enum cat_dir dir, const uint8_t *buf, size_t len, uint64_t t_ms) {
-	if(dir > CAT_DIR_RADIO)
+int cat_civ_client_busy(const struct cat_civ *civ, int client, uint64_t t_ms) {
+	if(client < 1 || client > CAT_MAX_CLIENTS)
+		return 0;
+	if(rx_partial(&civ->rx[client - 1], t_ms))
+		return 1;
+	for(int i = 0; i < civ->npend; i++)
+		if(civ->pend[i].client == client && civ->pend[i].t_ms + PEND_TIMEOUT_MS >= t_ms)
+			return 1;
+	return 0;
+}
+
+void cat_civ_client_discard(struct cat_civ *civ, int client) {
+	if(client < 1 || client > CAT_MAX_CLIENTS)
 		return;
+	civ->rx[client - 1].len = 0;
+	civ->rx[client - 1].state = RX_IDLE;
+	for(int i = civ->npend - 1; i >= 0; i--)
+		if(civ->pend[i].client == client)
+			pend_remove(civ, i);
+}
+
+void cat_civ_feed(struct cat_civ *civ, enum cat_dir dir, int client, const uint8_t *buf, size_t len,
+		  uint64_t t_ms) {
+	struct civ_rx *rx;
+
+	switch(dir) {
+	case CAT_DIR_HOST:
+		if(client < 1 || client > CAT_MAX_CLIENTS)
+			return;
+		rx = &civ->rx[client - 1];
+		break;
+	case CAT_DIR_OWN:
+		rx = &civ->rx[RX_OWN];
+		client = 0;
+		break;
+	case CAT_DIR_RADIO:
+		rx = &civ->rx[RX_RADIO];
+		client = 0;
+		break;
+	default:
+		return;
+	}
 	for(size_t i = 0; i < len; i++)
-		rx_byte(civ, dir, buf[i], t_ms);
+		rx_byte(civ, dir, client, rx, buf[i], t_ms);
 }

@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
+#include <sys/ioctl.h>
 #include <ev.h>
 #include "mhrouter.h"
 #include "mhflags.h"
@@ -65,6 +66,12 @@ struct ConsumerCb {
 	void *user_data;
 };
 
+struct TapCb {
+	struct PGNode node;
+	MHRTapCallback callback;
+	void *user_data;
+};
+
 struct StatusCb {
 	struct PGNode node;
 	struct mh_router *router;
@@ -109,6 +116,7 @@ struct mh_router {
 	uint8_t rflag[2];
 #endif
 	uint8_t hold[ALL_NUM_CHANNELS];		// don't read from producers
+	int turn[ALL_NUM_CHANNELS];		// read only from this producer fd, -1: from all
 	uint8_t intercept[ALL_NUM_CHANNELS];	// keyer data to consumer callbacks only
 	uint8_t wflag;
 	uint8_t has_flags_channel;
@@ -133,6 +141,12 @@ static int has_producer_fd(struct mh_router *router, int fd, int channel) {
 	return 0;
 }
 
+// The producer may be read: its channel isn't held and it has the turn.
+static int producer_may_read(struct mh_router *router, struct Producer *prd) {
+	int turn = router->turn[prd->channel];
+	return !router->hold[prd->channel] && (turn == -1 || turn == prd->fd);
+}
+
 static void lb_cb(struct ev_loop *loop,  struct ev_timer *w, int revents) {
 	(void)loop; (void)revents;
 	struct LeakyBucket *lb = w->data;
@@ -150,9 +164,8 @@ static void lb_cb(struct ev_loop *loop,  struct ev_timer *w, int revents) {
 
 	lb->avail_this_ival = LB_BYTES_PER_IVAL + (lb->avail_this_ival > LB_CARRY_OVER ? LB_CARRY_OVER : lb->avail_this_ival);
 
-	if(router->hold[channel])
-		return;
 	PG_SCANLIST(&router->producer_list[channel], prd)
+		if(producer_may_read(router, prd))
 			ev_io_start(router->loop, &prd->w);
 }
 
@@ -195,10 +208,9 @@ static void switch_producer_events(struct mh_router *router, int active) {
 		active ? ev_io_start : ev_io_stop;
 
 	for(i=0; i<ALL_NUM_CHANNELS; i++) {
-		if(active && router->hold[i])
-			continue;
 		PG_SCANLIST(&router->producer_list[i], prd) {
-			set_func(router->loop, &prd->w);
+			if(!active || producer_may_read(router, prd))
+				set_func(router->loop, &prd->w);
 		}
 	}
 }
@@ -304,7 +316,7 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	if(!(revents & EV_READ))
 		return;
 
-	if(router->hold[prd->channel]) {
+	if(!producer_may_read(router, prd)) {
 		ev_io_stop(loop, &prd->w);
 		return;
 	}
@@ -345,9 +357,9 @@ static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 		if(ch_is_ptt_channel(prd->channel))
 			process_ptt_producer(prd, b);
 
-		struct ConsumerCb *tap;
+		struct TapCb *tap;
 		PG_SCANLIST(&router->tap_cb_list[prd->channel], tap) {
-			tap->callback(router, b->data + b->size - r, r, prd->channel, tap->user_data);
+			tap->callback(router, b->data + b->size - r, r, prd->channel, prd->fd, tap->user_data);
 		}
 
 		PG_SCANLIST(&router->processor_cb_list[prd->channel], prc) {
@@ -540,6 +552,7 @@ struct mh_router *mhr_create(struct ev_loop *loop, const char *serial, uint8_t h
 		PG_NewList(&router->consumer_cb_list[i]);
 		PG_NewList(&router->tap_cb_list[i]);
 		PG_NewList(&router->processor_cb_list[i]);
+		router->turn[i] = -1;
 	}
 
 	PG_NewList(&router->status_cb_list);
@@ -551,6 +564,7 @@ void mhr_destroy(struct mh_router *router) {
 	struct Consumer *cns;
 	struct Producer *prd;
 	struct ConsumerCb *cnc;
+	struct TapCb *tap;
 	struct StatusCb *stc;
 	int i;
 
@@ -569,8 +583,8 @@ void mhr_destroy(struct mh_router *router) {
 		while((cnc = (void *)PG_FIRSTENTRY(&router->consumer_cb_list[i]))) {
 			mhr_rem_consumer_cb(router, cnc->callback, i);
 		}
-		while((cnc = (void *)PG_FIRSTENTRY(&router->tap_cb_list[i]))) {
-			mhr_rem_producer_tap_cb(router, cnc->callback, i, cnc->user_data);
+		while((tap = (void *)PG_FIRSTENTRY(&router->tap_cb_list[i]))) {
+			mhr_rem_producer_tap_cb(router, tap->callback, i, tap->user_data);
 		}
 	}
 
@@ -666,7 +680,7 @@ void mhr_add_producer(struct mh_router *router, int fd, int channel, const char 
 	prd->router = router;
 	prd->channel = channel;
 	PG_AddTail(&router->producer_list[channel], &prd->node);
-	if(router->fd != -1 && !router->hold[channel]) {
+	if(router->fd != -1 && producer_may_read(router, prd)) {
 		ev_io_start(router->loop, &prd->w);
 	}
 }
@@ -696,9 +710,9 @@ void mhr_add_consumer_cb(struct mh_router *router, MHRConsumerCallback callback,
 	PG_AddTail(&router->consumer_cb_list[channel], &cnc->node);
 }
 
-void mhr_add_producer_tap_cb(struct mh_router *router, MHRConsumerCallback callback, int channel,
+void mhr_add_producer_tap_cb(struct mh_router *router, MHRTapCallback callback, int channel,
 			     void *user_data) {
-	struct ConsumerCb *tap;
+	struct TapCb *tap;
 
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
 		return;
@@ -707,8 +721,6 @@ void mhr_add_producer_tap_cb(struct mh_router *router, MHRConsumerCallback callb
 
 	tap = w_calloc(1, sizeof(*tap));
 	tap->callback = callback;
-	tap->router = router;
-	tap->channel = channel;
 	tap->user_data = user_data;
 	PG_AddTail(&router->tap_cb_list[channel], &tap->node);
 }
@@ -826,9 +838,9 @@ void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback callback,
 	warn("(mhr) %s() callback not found", __func__);
 }
 
-void mhr_rem_producer_tap_cb(struct mh_router *router, MHRConsumerCallback callback, int channel,
+void mhr_rem_producer_tap_cb(struct mh_router *router, MHRTapCallback callback, int channel,
 			     void *user_data) {
-	struct ConsumerCb *tap;
+	struct TapCb *tap;
 
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
 		return;
@@ -929,20 +941,85 @@ void mhr_send_out(struct mh_router *router, const uint8_t *data, unsigned int le
 	}
 }
 
-void mhr_hold_producers(struct mh_router *router, int channel, int hold) {
+// Starts the producers of the channel that may be read now, stops the others.
+static void update_producers(struct mh_router *router, int channel) {
 	struct Producer *prd;
 
+	// producer_cb stops a producer again when the leaky bucket or the buffer is exhausted.
+	PG_SCANLIST(&router->producer_list[channel], prd) {
+		if(router->fd != -1 && producer_may_read(router, prd))
+			ev_io_start(router->loop, &prd->w);
+		else
+			ev_io_stop(router->loop, &prd->w);
+	}
+}
+
+void mhr_hold_producers(struct mh_router *router, int channel, int hold) {
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS || router->hold[channel] == !!hold)
 		return;
 
 	dbg1("%s %s() %s %d", router->serial, __func__, ch_channel2str(channel), hold);
 
 	router->hold[channel] = !!hold;
-	if(hold || router->fd == -1)
+	update_producers(router, channel);
+}
+
+void mhr_set_producer_turn(struct mh_router *router, int channel, int fd) {
+	if(channel < 0 || channel >= ALL_NUM_CHANNELS || router->turn[channel] == fd)
 		return;
-	// producer_cb stops a producer again when the leaky bucket or the buffer is exhausted.
+
+	dbg1("%s %s() %s %d", router->serial, __func__, ch_channel2str(channel), fd);
+
+	router->turn[channel] = fd;
+	update_producers(router, channel);
+}
+
+static int producer_waiting(struct Producer *prd) {
+	int n = 0;
+	return ioctl(prd->fd, FIONREAD, &n) == 0 && n > 0;
+}
+
+int mhr_next_waiting_producer(struct mh_router *router, int channel, int fd) {
+	struct Producer *prd, *first = NULL;
+	int after = 0;
+
+	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
+		return -1;
+
+	// The first waiting producer behind fd in the list, else the first one before it.
+	PG_SCANLIST(&router->producer_list[channel], prd) {
+		if(prd->fd == fd) {
+			after = 1;
+		} else if(producer_waiting(prd)) {
+			if(after)
+				return prd->fd;
+			if(!first)
+				first = prd;
+		}
+	}
+	return first ? first->fd : -1;
+}
+
+int mhr_count_producers(struct mh_router *router, int channel) {
+	struct Producer *prd;
+	int n = 0;
+
+	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
+		return 0;
 	PG_SCANLIST(&router->producer_list[channel], prd)
-		ev_io_start(router->loop, &prd->w);
+		n++;
+	return n;
+}
+
+const char *mhr_get_producer_tag(struct mh_router *router, int channel, int fd) {
+	struct Producer *prd;
+
+	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
+		return NULL;
+	PG_SCANLIST(&router->producer_list[channel], prd)
+		if(prd->fd == fd)
+			return prd->owner_tag ? prd->owner_tag : "";
+	return NULL;
 }
 
 void mhr_intercept_consumers(struct mh_router *router, int channel, int intercept) {
@@ -953,13 +1030,15 @@ void mhr_intercept_consumers(struct mh_router *router, int channel, int intercep
 }
 
 // Like mhr_send_out(), but to the connectors only, not to the consumer callbacks.
-void mhr_pass_out(struct mh_router *router, const uint8_t *data, unsigned int len, int channel) {
+void mhr_pass_out(struct mh_router *router, const uint8_t *data, unsigned int len, int channel, int fd) {
 	struct Consumer *cns;
 
 	if(channel < 0 || channel >= ALL_NUM_CHANNELS || !len)
 		return;
 
 	PG_SCANLIST(&router->consumer_list[channel], cns) {
+		if(fd != MHR_ALL && cns->fd != fd)
+			continue;
 		if(len <= buf_size_avail(&cns->buf)) {
 			buf_append(&cns->buf, data, len);
 			ev_io_start(router->loop, &cns->w);

@@ -20,6 +20,7 @@
 #include "cat_trace.h"
 #include "app_ctx.h"
 #include "channel.h"
+#include "conmgr.h"
 #include "device.h"
 #include "eventbus.h"
 #include "events.h"
@@ -50,10 +51,12 @@
 #define CATN_MON_MAX_BYTES (20 * 1024 * 1024)
 
 // Own queries: when no application keeps the radio state fresh, mhuxd asks the radio itself,
-// one query at a time in a gap of the applications' traffic. Their data waits in the router
-// meanwhile; radio frames answering the query are taken out of the radio data.
-#define CATN_OWN_TICK 0.1	// the poll condition is checked this often
-#define CATN_OWN_IDLE 0.15	// no CAT data in either direction for this long before a query
+// one query at a time: right after an application's command was answered, or when the line has
+// been quiet for a moment. The applications' data waits in the router meanwhile; radio frames
+// answering the query are taken out of the radio data.
+#define CATN_TICK 0.1		// the poll condition (and the number of connectors) is checked this often
+#define CATN_OWN_IDLE 0.15	// no CAT data in either direction for this long before a query,
+				// unless an application's command was just answered
 #ifndef CATN_OWN_STALE
 #define CATN_OWN_STALE 1.5	// values older than this are queried, each query at most this often
 #endif
@@ -69,6 +72,19 @@
 #define CATN_RADIO_SILENT (2 * CATN_KEEPALIVE)
 #define CATN_CIV_OWN_ADDR 0xe5	// mhuxd's CI-V controller address, applications use E0
 #define CATN_ROUTE_MAX 256	// radio data held back until its frame is complete
+#define CATN_ROUTE_FLUSH 0.1	// held radio data that doesn't complete a frame is passed on after
+
+// Several applications, each on a connector of its own: one command at a time on the CAT line.
+// An application's turn ends when the radio answered its commands; the next application with
+// data waiting gets the line. Answers go to the application that asked.
+#ifndef CATN_TURN_TIMEOUT
+#define CATN_TURN_TIMEOUT 0.5	// no answer this long after the application's last data: given up
+#endif
+#define CATN_TURN_TICK 0.02	// turn end and timeout checked this often, besides on radio data
+
+// Destination of radio data while it is routed: a connector fd, MHR_ALL, or one of these.
+#define ROUTE_NONE (-3)		// no frame completed yet
+#define ROUTE_DROP (-2)		// answer to an own query
 
 // Rig types (keyer protocol keys, src/radiotypes.c) that need special handling.
 #define RIG_TYPE_IC735   0x08	// 4-byte frequencies
@@ -181,7 +197,7 @@ struct cat_native {
 
 	// Own queries
 	int own_queries;		// configured
-	ev_timer own_tick;
+	ev_timer tick;
 	ev_timer own_timer;		// waiting for the answer
 	int own_active;			// query sent, applications' data held
 	int own_slot;			// Q_* of the query in flight
@@ -191,15 +207,30 @@ struct cat_native {
 	uint8_t own_unsupported[Q_NUM];
 	uint8_t civ_mode_cmd;		// 0x26, or 0x04 if the radio doesn't know 26
 	int own_timeouts;		// in a row
+	int client_answered;		// the current radio byte completed an answer to an application's query
 	ev_tstamp last_host, last_radio;	// last CAT data
 	int radio_silent;		// keepalive stopped, see CATN_RADIO_SILENT
 
-	// Radio data routing while an own query can be answered: data is held until its frame is
-	// complete; frames answering the query are dropped, the rest is passed on.
+	// Radio data routing while an own query can be answered, or while several applications
+	// share the radio: data is held until its frame is complete; frames answering an own query
+	// are dropped, answers to an application go to it, the rest to all.
 	int routing;
 	uint8_t route_buf[CATN_ROUTE_MAX];
 	size_t route_len;
-	int frames_own, frames_other;	// frames completed by the current byte
+	int route_dest;			// for the frames completed by the current byte, ROUTE_NONE if none
+	ev_timer route_timer;		// CATN_ROUTE_FLUSH
+
+	// Applications: client n (trace tag Hn) is the connector clients_fd[n - 1], numbered when
+	// it first sends data.
+	struct app_ctx *ctx;
+	int clients_fd[CAT_MAX_CLIENTS];	// -1: free
+	int connectors;			// on the channel, last count
+	int multi;			// more than one, with a decoder: taking turns
+	int turn_fd;			// connector whose commands are on the line, -1: none
+	int turn_client;
+	int turn_fresh;			// granted, its data not read yet
+	ev_tstamp turn_t;		// granted, or its last data
+	ev_timer turn_timer;
 };
 
 static const char *radio_str(uint8_t radio) {
@@ -255,6 +286,17 @@ static unsigned catn_pending(const struct cat_native *cn) {
 		return cat_civ_pending(cn->civ, t_ms);
 	if(cn->ascii)
 		return cat_ascii_pending(cn->ascii, t_ms);
+	return 0;
+}
+
+static int catn_client_busy(const struct cat_native *cn, int client) {
+	if(client < 1)
+		return 0;
+	uint64_t t_ms = (uint64_t)(ev_now(cn->loop) * 1000.0);
+	if(cn->civ)
+		return cat_civ_client_busy(cn->civ, client, t_ms);
+	if(cn->ascii)
+		return cat_ascii_client_busy(cn->ascii, client, t_ms);
 	return 0;
 }
 
@@ -314,7 +356,7 @@ static void catn_mon_frame(struct cat_native *cn, const struct cat_frame *f) {
 	localtime_r(&secs, &tm);
 	snprintf(time_str, sizeof(time_str), "%02d:%02d:%02d.%03d", tm.tm_hour, tm.tm_min, tm.tm_sec,
 		 (int)((now - (ev_tstamp)secs) * 1000.0));
-	cat_trace_frame(line, sizeof(line), time_str, "H1", f, &cn->st);
+	cat_trace_frame(line, sizeof(line), time_str, f, &cn->st);
 	catn_mon_line(cn, line);
 }
 
@@ -351,10 +393,23 @@ static void catn_mon_open(struct cat_native *cn, const char *dir) {
  * Radio data routing
  */
 
-static void catn_route_flush(struct cat_native *cn) {
-	if(cn->route_len)
-		mhr_pass_out(cn->router, cn->route_buf, cn->route_len, cn->channel);
+// Radio data that belongs to no client's command: to the application whose turn it is, to all
+// when none has it.
+static int catn_route_default(const struct cat_native *cn) {
+	return cn->turn_fd >= 0 ? cn->turn_fd : MHR_ALL;
+}
+
+static void catn_route_flush(struct cat_native *cn, int dest) {
+	ev_timer_stop(cn->loop, &cn->route_timer);
+	if(cn->route_len && dest != ROUTE_DROP)
+		mhr_pass_out(cn->router, cn->route_buf, cn->route_len, cn->channel, dest);
 	cn->route_len = 0;
+}
+
+static void catn_route_timer_cb(struct ev_loop *loop, struct ev_timer *w, int revents) {
+	struct cat_native *cn = w->data;
+	(void)loop; (void)revents;
+	catn_route_flush(cn, catn_route_default(cn));
 }
 
 static void catn_route_start(struct cat_native *cn) {
@@ -368,15 +423,148 @@ static void catn_route_start(struct cat_native *cn) {
 static void catn_route_stop(struct cat_native *cn) {
 	if(!cn->routing)
 		return;
-	catn_route_flush(cn);
+	catn_route_flush(cn, MHR_ALL);
 	cn->routing = 0;
 	mhr_intercept_consumers(cn->router, cn->channel, 0);
 }
 
-// Routing ends when no own query can be answered any more (late answers included).
+// A removed connector's command may still be answered.
+static int catn_removed_busy(const struct cat_native *cn) {
+	for(int i = 0; i < CAT_MAX_CLIENTS; i++) {
+		int fd = cn->clients_fd[i];
+		if(fd >= 0 && !mhr_get_producer_tag(cn->router, cn->channel, fd) && catn_client_busy(cn, i + 1))
+			return 1;
+	}
+	return 0;
+}
+
+// With a single application, routing ends when no own query can be answered any more, nor a
+// command of a connector just removed (late answers included).
 static void catn_route_check(struct cat_native *cn) {
-	if(cn->routing && !cn->own_active && !(catn_pending(cn) & CAT_PENDING_OWN))
+	if(cn->routing && !cn->multi && !cn->own_active && !(catn_pending(cn) & CAT_PENDING_OWN) &&
+	   !catn_removed_busy(cn))
 		catn_route_stop(cn);
+}
+
+/*
+ * Several applications
+ */
+
+static const char *catn_connector_name(const struct cat_native *cn, int fd) {
+	const char *tag = mhr_get_producer_tag(cn->router, cn->channel, fd);
+	return tag && *tag ? tag : "?";
+}
+
+// Client number of a connector, assigned when it first sends data. 0 if all are taken.
+static int catn_client_of(struct cat_native *cn, int fd) {
+	int i, free_slot = -1, removed_slot = -1;
+
+	for(i = 0; i < CAT_MAX_CLIENTS; i++) {
+		if(cn->clients_fd[i] == fd)
+			return i + 1;
+		if(free_slot < 0 && cn->clients_fd[i] < 0)
+			free_slot = i;
+		// The slot of a removed connector, if nothing else is left.
+		if(removed_slot < 0 && cn->clients_fd[i] >= 0 &&
+		   !mhr_get_producer_tag(cn->router, cn->channel, cn->clients_fd[i]))
+			removed_slot = i;
+	}
+	if(free_slot < 0)
+		free_slot = removed_slot;
+	if(free_slot < 0)
+		return 0;
+	cn->clients_fd[free_slot] = fd;
+	catn_mon_comment(cn, "H%d: connector %s", free_slot + 1, catn_connector_name(cn, fd));
+	return free_slot + 1;
+}
+
+static void catn_turn_timer_cb(struct ev_loop *loop, struct ev_timer *w, int revents);
+
+// The application on connector fd gets the line, -1: free for all.
+static void catn_turn_give(struct cat_native *cn, int fd, int fresh) {
+	cn->turn_fd = fd;
+	cn->turn_client = fd >= 0 ? catn_client_of(cn, fd) : 0;
+	cn->turn_fresh = fresh;
+	cn->turn_t = ev_now(cn->loop);
+	mhr_set_producer_turn(cn->router, cn->channel, fd);
+	if(fd >= 0)
+		ev_timer_again(cn->loop, &cn->turn_timer);
+	else
+		ev_timer_stop(cn->loop, &cn->turn_timer);
+}
+
+// The turn ends when the radio answered the commands of the application, or it gave up on
+// them. That holds for a connector removed meanwhile too: the answers to its last commands may
+// still come, the next command would collide with them. Then the next application with data
+// waiting gets the line, round robin; none: free for all, whoever sends first gets it.
+static void catn_turn_check(struct cat_native *cn) {
+	ev_tstamp now = ev_now(cn->loop);
+
+	if(cn->turn_fd < 0)
+		return;
+	int fresh = cn->turn_fresh && mhr_get_producer_tag(cn->router, cn->channel, cn->turn_fd);
+	int busy = fresh || catn_client_busy(cn, cn->turn_client);
+	if(busy && now - cn->turn_t < CATN_TURN_TIMEOUT)
+		return;
+	if(busy && !fresh) {
+		dbg0("%s %s native CAT: no answer to H%d within %.1f s, next application", cn->serial,
+		     radio_str(cn->radio), cn->turn_client, CATN_TURN_TIMEOUT);
+		catn_mon_comment(cn, "H%d: no answer within %.1f s, its commands are given up",
+				 cn->turn_client, CATN_TURN_TIMEOUT);
+		if(cn->civ)
+			cat_civ_client_discard(cn->civ, cn->turn_client);
+		else if(cn->ascii)
+			cat_ascii_client_discard(cn->ascii, cn->turn_client);
+	}
+	int next = cn->multi ? mhr_next_waiting_producer(cn->router, cn->channel, cn->turn_fd) : -1;
+	catn_turn_give(cn, next, next >= 0);
+}
+
+static void catn_turn_timer_cb(struct ev_loop *loop, struct ev_timer *w, int revents) {
+	(void)loop; (void)revents;
+	catn_turn_check(w->data);
+}
+
+// Connectors with more than one session share one data stream: their applications can't be
+// told apart.
+static void catn_check_maxcon_cb(const struct con_info *info, void *user_data) {
+	struct cat_native *cn = user_data;
+
+	if(info->channel != cn->channel || info->maxcon <= 1 || !info->serial || strcmp(info->serial, cn->serial))
+		return;
+	warn("%s %s native CAT: %s%s accepts %d connections. mhuxd can't tell the applications sharing it "
+	     "apart, nor take turns between them: give each application a port of its own", cn->serial,
+	     radio_str(cn->radio), info->type == CON_TCP ? "TCP port " : "/dev/mhuxd/",
+	     info->devname ? info->devname : "?", info->maxcon);
+}
+
+// Taking turns needs more than one connector and a decoder.
+static void catn_multi_update(struct cat_native *cn) {
+	int n = mhr_count_producers(cn->router, cn->channel);
+	int multi = n > 1 && (cn->civ || cn->ascii);
+
+	if(n != cn->connectors) {
+		cn->connectors = n;
+		if(cn->ctx)
+			conmgr_foreach(app_ctx_get_conmgr(cn->ctx), catn_check_maxcon_cb, cn);
+	}
+	if(multi == cn->multi)
+		return;
+	cn->multi = multi;
+	if(multi) {
+		info("%s %s native CAT: %d connectors, taking turns between their applications",
+		     cn->serial, radio_str(cn->radio), n);
+		catn_mon_comment(cn, "%d connectors, taking turns", n);
+		catn_route_start(cn);
+	} else {
+		info("%s %s native CAT: %s", cn->serial, radio_str(cn->radio),
+		     n > 1 ? "no decoder, not taking turns between the applications" : "single connector");
+		catn_mon_comment(cn, "%d connector(s), not taking turns", n);
+		// With a decoder, a turn in progress ends when its commands are answered.
+		if(!cn->civ && !cn->ascii)
+			catn_turn_give(cn, -1, 0);
+		catn_route_check(cn);
+	}
 }
 
 /*
@@ -389,12 +577,16 @@ static void catn_own_end(struct cat_native *cn) {
 	cn->own_active = 0;
 	ev_timer_stop(cn->loop, &cn->own_timer);
 	mhr_hold_producers(cn->router, cn->channel, 0);
+	// The application next in turn waited for the query: its time starts now.
+	if(cn->turn_fd >= 0 && cn->turn_fresh)
+		cn->turn_t = ev_now(cn->loop);
 }
 
 // Decoder starts over: what the radio knows and doesn't know is learned again.
 static void catn_own_reset(struct cat_native *cn) {
 	catn_own_end(cn);
-	catn_route_stop(cn);
+	if(!cn->multi)
+		catn_route_stop(cn);
 	memset(cn->own_sent, 0, sizeof(cn->own_sent));
 	memset(cn->own_rejects, 0, sizeof(cn->own_rejects));
 	memset(cn->own_unsupported, 0, sizeof(cn->own_unsupported));
@@ -410,9 +602,12 @@ static void catn_reset(struct cat_native *cn) {
 	cn->data_unknown_since = 0;
 	cn->last_info_valid = 0;
 	catn_own_reset(cn);
+	catn_turn_give(cn, -1, 0);	// the decoder's view of the applications' commands is gone
 }
 
 static void catn_frame_cb(const struct cat_frame *f, void *user_data);
+
+static void catn_setup_decoder(struct cat_native *cn, int rigtype, int addr);
 
 // (Re)creates the decoder when the channel's rig type or CI-V address changed.
 static void catn_setup(struct cat_native *cn, int force) {
@@ -439,6 +634,11 @@ static void catn_setup(struct cat_native *cn, int force) {
 
 	if(rigtype == cn->rigtype && addr == cn->civ_addr)
 		return;
+	catn_setup_decoder(cn, rigtype, addr);
+	catn_multi_update(cn);
+}
+
+static void catn_setup_decoder(struct cat_native *cn, int rigtype, int addr) {
 	cn->rigtype = rigtype;
 	cn->civ_addr = addr;
 
@@ -572,7 +772,7 @@ static void catn_keepalive_cb(struct ev_loop *loop, struct ev_timer *w, int reve
 	mhc_update_radio_info(cn->ctl, CATN_SOURCE, &cn->last_info);
 }
 
-static void catn_feed(struct cat_native *cn, enum cat_dir dir, unsigned const char *data, int len) {
+static void catn_feed(struct cat_native *cn, enum cat_dir dir, int client, unsigned const char *data, int len) {
 	catn_setup(cn, 0);
 	const struct cat_stats *stats = catn_stats(cn);
 	if(!stats || len <= 0)
@@ -581,9 +781,9 @@ static void catn_feed(struct cat_native *cn, enum cat_dir dir, unsigned const ch
 	uint32_t applied = stats->applied;
 	uint64_t t_ms = (uint64_t)(ev_now(cn->loop) * 1000.0);
 	if(cn->civ)
-		cat_civ_feed(cn->civ, dir, data, len, t_ms);
+		cat_civ_feed(cn->civ, dir, client, data, len, t_ms);
 	else
-		cat_ascii_feed(cn->ascii, dir, data, len, t_ms);
+		cat_ascii_feed(cn->ascii, dir, client, data, len, t_ms);
 	if(stats->applied == applied)
 		return;
 
@@ -709,9 +909,9 @@ static void catn_own_send(struct cat_native *cn, int slot) {
 
 	uint64_t t_ms = (uint64_t)(now * 1000.0);
 	if(cn->civ)
-		cat_civ_feed(cn->civ, CAT_DIR_OWN, buf, len, t_ms);
+		cat_civ_feed(cn->civ, CAT_DIR_OWN, 0, buf, len, t_ms);
 	else
-		cat_ascii_feed(cn->ascii, CAT_DIR_OWN, buf, len, t_ms);
+		cat_ascii_feed(cn->ascii, CAT_DIR_OWN, 0, buf, len, t_ms);
 }
 
 // Answer to the own query in flight: reply, acknowledge or rejection.
@@ -754,19 +954,13 @@ static void catn_own_timeout_cb(struct ev_loop *loop, struct ev_timer *w, int re
 		     radio_str(cn->radio), CATN_OWN_RETRY);
 }
 
-static void catn_own_tick_cb(struct ev_loop *loop, struct ev_timer *w, int revents) {
-	struct cat_native *cn = w->data;
-	ev_tstamp now = ev_now(loop);
-	(void)revents;
+// Sends the next own query that is due, if the line is free: no command of an application
+// waiting for its answer, none partly sent, no earlier query that may still be answered. An
+// application that got the line but hasn't sent yet waits for the query (its data is held).
+static void catn_own_try(struct cat_native *cn) {
+	ev_tstamp now = ev_now(cn->loop);
 
-	catn_route_check(cn);
-	if(cn->own_active)
-		return;
-	catn_setup(cn, 0);
-	if(!catn_can_query(cn))
-		return;
-	// Not while an application talks to the radio, nor while an earlier query may be answered.
-	if(now - cn->last_host < CATN_OWN_IDLE || now - cn->last_radio < CATN_OWN_IDLE || catn_pending(cn))
+	if(cn->own_active || !catn_can_query(cn) || catn_pending(cn) || (cn->turn_fd >= 0 && !cn->turn_fresh))
 		return;
 	if(cn->own_timeouts >= CATN_OWN_MAX_TIMEOUTS && now - cn->own_last < CATN_OWN_RETRY)
 		return;
@@ -782,6 +976,24 @@ static void catn_own_tick_cb(struct ev_loop *loop, struct ev_timer *w, int reven
 	}
 }
 
+static void catn_tick_cb(struct ev_loop *loop, struct ev_timer *w, int revents) {
+	struct cat_native *cn = w->data;
+	ev_tstamp now = ev_now(loop);
+	(void)revents;
+
+	catn_multi_update(cn);
+	catn_route_check(cn);
+	if(cn->own_active)
+		return;
+	catn_setup(cn, 0);
+	// Between the applications' commands, queries go out when one is answered (catn_radio_cb).
+	// Here: nobody talks, or only traffic the decoder doesn't follow (another controller on the
+	// bus, an address the decoder doesn't know) for a moment.
+	if(now - cn->last_host < CATN_OWN_IDLE || now - cn->last_radio < CATN_OWN_IDLE)
+		return;
+	catn_own_try(cn);
+}
+
 static void catn_frame_cb(const struct cat_frame *f, void *user_data) {
 	struct cat_native *cn = user_data;
 
@@ -790,12 +1002,22 @@ static void catn_frame_cb(const struct cat_frame *f, void *user_data) {
 	if(f->dir != CAT_DIR_RADIO)
 		return;
 	if(f->own) {
-		cn->frames_own++;
 		if(cn->own_active && f->kind != CAT_FRAME_ECHO)
 			catn_own_answered(cn, f);
-	} else {
-		cn->frames_other++;
+		if(cn->route_dest == ROUTE_NONE)
+			cn->route_dest = ROUTE_DROP;	// not for the applications
+		return;
 	}
+	// Echo and answers to the application that sent the command, transceive and auto
+	// information to all, anything else to the application whose turn it is.
+	int dest = f->kind == CAT_FRAME_UNSOLICITED ? MHR_ALL : catn_route_default(cn);
+	if(f->client > 0 && cn->clients_fd[f->client - 1] >= 0)
+		dest = cn->clients_fd[f->client - 1];
+	cn->route_dest = dest;
+	// An application's query answered: the line is free. Not after FB, a radio with transceive
+	// on may report the change that was just set.
+	if(f->client > 0 && (f->kind == CAT_FRAME_REPLY || f->kind == CAT_FRAME_NAK || f->kind == CAT_FRAME_ERROR))
+		cn->client_answered = 1;
 }
 
 // Radio -> host, one byte per call.
@@ -811,33 +1033,52 @@ static void catn_radio_cb(struct mh_router *router, unsigned const char *data, i
 	}
 
 	for(int i = 0; i < len; i++) {
+		cn->client_answered = 0;
 		if(!cn->routing) {
 			// The router passed the data on to the applications.
-			catn_feed(cn, CAT_DIR_RADIO, &data[i], 1);
+			catn_feed(cn, CAT_DIR_RADIO, 0, &data[i], 1);
+			catn_turn_check(cn);
+			// The line is free until the application's next command: an own query may go in.
+			if(cn->client_answered)
+				catn_own_try(cn);
 			continue;
 		}
 		if(cn->route_len == CATN_ROUTE_MAX)
-			catn_route_flush(cn);
+			catn_route_flush(cn, catn_route_default(cn));
 		cn->route_buf[cn->route_len++] = data[i];
-		cn->frames_own = cn->frames_other = 0;
-		catn_feed(cn, CAT_DIR_RADIO, &data[i], 1);
-		if(cn->frames_other)
-			catn_route_flush(cn);
-		else if(cn->frames_own)
-			cn->route_len = 0;	// answer to the own query, not for the applications
+		cn->route_dest = ROUTE_NONE;
+		catn_feed(cn, CAT_DIR_RADIO, 0, &data[i], 1);
+		if(cn->route_dest != ROUTE_NONE)
+			catn_route_flush(cn, cn->route_dest);
+		else
+			ev_timer_again(cn->loop, &cn->route_timer);
+		// Answered: the next application may send, after an own query if one is due. Its data
+		// is read after this callback.
+		catn_turn_check(cn);
+		if(cn->client_answered)
+			catn_own_try(cn);
 		catn_route_check(cn);
 		if(!cn->routing && i + 1 < len)
-			mhr_pass_out(cn->router, &data[i + 1], len - i - 1, cn->channel);
+			mhr_pass_out(cn->router, &data[i + 1], len - i - 1, cn->channel, MHR_ALL);
 	}
 }
 
 // Host -> radio, as the router reads it from the connectors.
 static void catn_host_cb(struct mh_router *router, unsigned const char *data, int len, int channel,
-			 void *user_data) {
+			 int fd, void *user_data) {
 	struct cat_native *cn = user_data;
 	(void)router; (void)channel;
+
 	cn->last_host = ev_now(cn->loop);
-	catn_feed(cn, CAT_DIR_HOST, data, len);
+	catn_multi_update(cn);
+	// The first application to send gets the line; the router holds the others' data.
+	if(cn->multi && cn->turn_fd < 0)
+		catn_turn_give(cn, fd, 0);
+	if(fd == cn->turn_fd) {
+		cn->turn_fresh = 0;
+		cn->turn_t = cn->last_host;
+	}
+	catn_feed(cn, CAT_DIR_HOST, catn_client_of(cn, fd), data, len);
 }
 
 static void catn_keyer_state_cb(enum app_event_type type, const void *data, void *user_data) {
@@ -853,6 +1094,7 @@ static void catn_keyer_state_cb(enum app_event_type type, const void *data, void
 	cn->rigtype = -1;
 	cn->civ_addr = -1;
 	catn_reset(cn);
+	catn_multi_update(cn);
 	if(ev->state == MHC_KEYER_STATE_ONLINE)
 		catn_setup(cn, 1);
 }
@@ -879,6 +1121,10 @@ struct cat_native *cat_native_create(struct app_ctx *ctx, struct device *dev, co
 	cn->rigtype = -1;
 	cn->civ_addr = -1;
 	cat_state_init(&cn->st);
+	cn->ctx = ctx;
+	for(int i = 0; i < CAT_MAX_CLIENTS; i++)
+		cn->clients_fd[i] = -1;
+	cn->turn_fd = -1;
 
 	ev_timer_init(&cn->publish_timer, catn_publish_cb, 0., 0.);
 	cn->publish_timer.data = cn;
@@ -886,10 +1132,13 @@ struct cat_native *cat_native_create(struct app_ctx *ctx, struct device *dev, co
 	cn->keepalive_timer.data = cn;
 	ev_timer_init(&cn->own_timer, catn_own_timeout_cb, 0., 0.);
 	cn->own_timer.data = cn;
-	ev_timer_init(&cn->own_tick, catn_own_tick_cb, CATN_OWN_TICK, CATN_OWN_TICK);
-	cn->own_tick.data = cn;
-	if(cn->own_queries)
-		ev_timer_start(cn->loop, &cn->own_tick);
+	ev_timer_init(&cn->tick, catn_tick_cb, CATN_TICK, CATN_TICK);
+	cn->tick.data = cn;
+	ev_timer_start(cn->loop, &cn->tick);
+	ev_timer_init(&cn->turn_timer, catn_turn_timer_cb, 0., CATN_TURN_TICK);
+	cn->turn_timer.data = cn;
+	ev_timer_init(&cn->route_timer, catn_route_timer_cb, 0., CATN_ROUTE_FLUSH);
+	cn->route_timer.data = cn;
 
 	mhr_add_consumer_cb(cn->router, catn_radio_cb, cn->channel, cn);
 	mhr_add_producer_tap_cb(cn->router, catn_host_cb, cn->channel, cn);
@@ -908,12 +1157,15 @@ void cat_native_destroy(struct cat_native *cn) {
 
 	if(cn->kscb)
 		eventbus_unsubscribe(cn->kscb);
-	catn_own_reset(cn);	// releases held data and the radio data
+	// Releases held data and the radio data.
+	catn_own_reset(cn);
+	catn_turn_give(cn, -1, 0);
+	catn_route_stop(cn);
 	mhr_rem_producer_tap_cb(cn->router, catn_host_cb, cn->channel, cn);
 	mhr_rem_consumer_cb(cn->router, catn_radio_cb, cn->channel);
 	ev_timer_stop(cn->loop, &cn->publish_timer);
 	ev_timer_stop(cn->loop, &cn->keepalive_timer);
-	ev_timer_stop(cn->loop, &cn->own_tick);
+	ev_timer_stop(cn->loop, &cn->tick);
 	catn_destroy_decoder(cn);
 	if(cn->mon_file) {
 		catn_mon_comment(cn, "monitor stopped");

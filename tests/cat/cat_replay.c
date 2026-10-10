@@ -46,7 +46,8 @@ struct replay {
 	struct cat_state st;
 	uint64_t t_ms;
 	uint64_t day_ms;	// added to HH:MM:SS times after midnight
-	char tag[8];
+	// Last radio frame: whose command it belongs to, "H<n>", "M" or "-".
+	char last_radio[8];
 };
 
 static void fmt_freq(char *buf, size_t sz, const struct cat_item *it) {
@@ -59,12 +60,21 @@ static void fmt_freq(char *buf, size_t sz, const struct cat_item *it) {
 static void frame_cb(const struct cat_frame *f, void *user_data) {
 	struct replay *rp = user_data;
 	char time[32], line[CAT_TRACE_LINE_MAX];
+
+	if(f->dir == CAT_DIR_RADIO) {
+		if(f->own)
+			snprintf(rp->last_radio, sizeof(rp->last_radio), "M");
+		else if(f->client)
+			snprintf(rp->last_radio, sizeof(rp->last_radio), "H%d", f->client);
+		else
+			snprintf(rp->last_radio, sizeof(rp->last_radio), "-");
+	}
 	if(!rp->verbose)
 		return;
 
 	snprintf(time, sizeof(time), "%llu.%03llu", (unsigned long long)(f->t_ms / 1000),
 		 (unsigned long long)(f->t_ms % 1000));
-	cat_trace_frame(line, sizeof(line), time, rp->tag, f, &rp->st);
+	cat_trace_frame(line, sizeof(line), time, f, &rp->st);
 	printf("%s\n", line);
 }
 
@@ -216,13 +226,15 @@ static int parse_time(const char *tok, uint64_t *t_ms) {
 	return 0;
 }
 
-static int parse_tag(const char *tok, enum cat_dir *dir) {
+static int parse_tag(const char *tok, enum cat_dir *dir, int *client) {
+	*client = 0;
 	if(!strcmp(tok, "R")) {
 		*dir = CAT_DIR_RADIO;
 	} else if(!strcmp(tok, "M")) {
 		*dir = CAT_DIR_OWN;
-	} else if(tok[0] == 'H' && tok[1] >= '1' && tok[1] <= '9' && !tok[2]) {
+	} else if(tok[0] == 'H' && tok[1] >= '1' && tok[1] <= '0' + CAT_MAX_CLIENTS && !tok[2]) {
 		*dir = CAT_DIR_HOST;
+		*client = tok[1] - '0';
 	} else {
 		return -1;
 	}
@@ -233,6 +245,7 @@ static void data_line(struct replay *rp, char *line) {
 	static uint8_t buf[MAX_PAYLOAD];
 	char *p = line, *tok;
 	enum cat_dir dir;
+	int client;
 	uint64_t t;
 	size_t len;
 
@@ -256,18 +269,17 @@ static void data_line(struct replay *rp, char *line) {
 		rp->t_ms += 10;	// lines without time stamp are 10 ms apart
 	}
 
-	if(!tok || parse_tag(tok, &dir)) {
+	if(!tok || parse_tag(tok, &dir, &client)) {
 		fail(rp, "expected [time] H1..H9|M|R <bytes>, got '%s'", line);
 		return;
 	}
-	snprintf(rp->tag, sizeof(rp->tag), "%s", tok);
 
 	if(parse_payload(rp, p ? p : "", buf, &len) || ensure_decoder(rp))
 		return;
 	if(rp->ascii)
-		cat_ascii_feed(rp->ascii, dir, buf, len, rp->t_ms);
+		cat_ascii_feed(rp->ascii, dir, client, buf, len, rp->t_ms);
 	else
-		cat_civ_feed(rp->civ, dir, buf, len, rp->t_ms);
+		cat_civ_feed(rp->civ, dir, client, buf, len, rp->t_ms);
 }
 
 static void config_line(struct replay *rp, char *line) {
@@ -396,6 +408,18 @@ static void assert_line(struct replay *rp, char *line) {
 			check_u32(rp, tok, val, stats->errors);
 		} else if(!strcmp(tok, "own")) {
 			check_u32(rp, tok, val, stats->own);
+		} else if(!strcmp(tok, "client")) {
+			check(rp, tok, val, rp->last_radio[0] ? rp->last_radio : "-");
+		} else if(!strcmp(tok, "busy")) {
+			size_t n = 0;
+			got[0] = '\0';
+			for(int c = 1; c <= CAT_MAX_CLIENTS; c++) {
+				int busy = rp->ascii ? cat_ascii_client_busy(rp->ascii, c, rp->t_ms) :
+						       cat_civ_client_busy(rp->civ, c, rp->t_ms);
+				if(busy)
+					n += snprintf(got + n, sizeof(got) - n, "%sH%d", n ? "," : "", c);
+			}
+			check(rp, tok, val, n ? got : "none");
 		} else if(!strcmp(tok, "pending")) {
 			unsigned pend = rp->ascii ? cat_ascii_pending(rp->ascii, rp->t_ms) :
 						    cat_civ_pending(rp->civ, rp->t_ms);

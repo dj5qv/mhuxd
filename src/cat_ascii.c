@@ -30,10 +30,19 @@ struct ascii_rx {
 	uint64_t t_ms;		// last byte
 };
 
+// A framer per source: one per client (index client - 1), mhuxd's own queries, the radio.
+#define RX_OWN   CAT_MAX_CLIENTS
+#define RX_RADIO (CAT_MAX_CLIENTS + 1)
+#define RX_NUM   (CAT_MAX_CLIENTS + 2)
+
 struct ascii_pending {
 	char prefix[PREFIX_LEN];
+	uint8_t frame[ASCII_MAX_FRAME];	// with parameters: the whole frame
+	size_t len;
 	uint64_t t_ms;
 	uint8_t own;		// mhuxd's own query
+	uint8_t client;		// the client that sent it
+	uint8_t query;		// no parameters: a query, the radio answers it
 };
 
 struct cat_ascii {
@@ -41,7 +50,7 @@ struct cat_ascii {
 	struct cat_state *st;
 	cat_frame_cb cb;
 	void *cb_data;
-	struct ascii_rx rx[CAT_DIR_RADIO + 1];
+	struct ascii_rx rx[RX_NUM];
 	// Commands, to tell replies from auto information.
 	struct ascii_pending pend[PEND_MAX];
 	int npend;
@@ -98,7 +107,7 @@ const struct cat_stats *cat_ascii_get_stats(const struct cat_ascii *a) {
 }
 
 static void emit(struct cat_ascii *a, enum cat_frame_kind kind, enum cat_dir dir,
-		 const uint8_t *buf, size_t len, int applied, int own, uint64_t t_ms) {
+		 const uint8_t *buf, size_t len, int applied, int own, int client, uint64_t t_ms) {
 	switch(kind) {
 	case CAT_FRAME_REPLY:   a->stats.replies++; break;
 	case CAT_FRAME_BAD:     a->stats.bad++; break;
@@ -115,6 +124,7 @@ static void emit(struct cat_ascii *a, enum cat_frame_kind kind, enum cat_dir dir
 		struct cat_frame f = {
 			.kind = kind, .dir = dir, .t_ms = t_ms,
 			.buf = buf, .len = len, .applied = applied, .text = 1, .own = own,
+			.client = client,
 		};
 		a->cb(&f, a->cb_data);
 	}
@@ -553,37 +563,64 @@ static void pend_remove(struct cat_ascii *a, int i) {
 	a->npend--;
 }
 
-static void pend_add(struct cat_ascii *a, const char *prefix, int own, uint64_t t) {
-	while(a->npend && a->pend[0].t_ms + PEND_TIMEOUT_MS < t)
-		pend_remove(a, 0);
+// A command still waiting for its answer.
+static int pend_live(const struct ascii_pending *p, uint64_t t) {
+	return p->t_ms + (p->query ? PEND_TIMEOUT_MS : CAT_ASCII_SET_WAIT_MS) >= t;
+}
+
+static void pend_add(struct cat_ascii *a, const uint8_t *buf, size_t len, const char *prefix, int own,
+		     int client, uint64_t t) {
+	for(int i = a->npend - 1; i >= 0; i--)
+		if(!pend_live(&a->pend[i], t))
+			pend_remove(a, i);
 	if(a->npend == PEND_MAX)
 		pend_remove(a, 0);
-	snprintf(a->pend[a->npend].prefix, PREFIX_LEN, "%s", prefix);
-	a->pend[a->npend].t_ms = t;
-	a->pend[a->npend].own = own;
-	a->npend++;
+	struct ascii_pending *p = &a->pend[a->npend++];
+	snprintf(p->prefix, PREFIX_LEN, "%s", prefix);
+	memcpy(p->frame, buf, len);
+	p->len = len;
+	p->t_ms = t;
+	p->own = own;
+	p->client = client;
+	p->query = len == strlen(prefix) + 1;	// prefix and ';'
 }
 
-// The reply to the oldest pending command with this prefix, any if prefix is NULL (error).
-// Returns 0 if none, 1 for a client command, 2 for an own query.
-static int pend_take(struct cat_ascii *a, const char *prefix, uint64_t t) {
-	for(int i = 0; i < a->npend; i++) {
-		if(a->pend[i].t_ms + PEND_TIMEOUT_MS < t)
+// The command a radio frame answers: the oldest pending query with its prefix, else the oldest
+// command with it (a read with parameters, Yaesu "MD0;"); any if buf is NULL (error). A set
+// gets no answer, so a query sent after it gets the reply. When AI is on, the radio repeats a
+// set: a frame equal to a pending set is no answer, all clients get it (a read with parameters
+// gets a longer answer, "MD0;" -> "MD02;"). Returns 0 if the frame answers nothing.
+static int pend_take(struct cat_ascii *a, const char *prefix, const uint8_t *buf, size_t len, uint64_t t,
+		     int *own, int *client) {
+	int found = -1;
+
+	for(int i = 0; i < a->npend && found < 0; i++)
+		if(a->pend[i].query && pend_live(&a->pend[i], t) && (!buf || !strcmp(a->pend[i].prefix, prefix)))
+			found = i;
+	for(int i = 0; i < a->npend && found < 0; i++) {
+		const struct ascii_pending *p = &a->pend[i];
+		if(!pend_live(p, t) || (buf && strcmp(p->prefix, prefix)))
 			continue;
-		if(!prefix || !strcmp(a->pend[i].prefix, prefix)) {
-			int own = a->pend[i].own;
-			pend_remove(a, i);
-			return own ? 2 : 1;
+		if(buf && !p->own && p->len == len && !memcmp(p->frame, buf, len)) {
+			pend_remove(a, i);	// the set repeated
+			return 0;
 		}
+		found = i;
 	}
-	return 0;
+	if(found < 0)
+		return 0;
+	*own = a->pend[found].own;
+	*client = a->pend[found].client;
+	pend_remove(a, found);
+	return 1;
 }
 
-static void process_frame(struct cat_ascii *a, enum cat_dir dir, const uint8_t *buf, size_t len, uint64_t t) {
+static void process_frame(struct cat_ascii *a, enum cat_dir dir, int client, const uint8_t *buf, size_t len,
+			  uint64_t t) {
 	const char *s = (const char *)buf;
 	size_t n = len - 1;	// without ';'
 	char prefix[PREFIX_LEN];
-	int r;
+	int r, own = 0;
 
 	a->stats.frames++;
 	if(!a->st->vfo_ab.valid)
@@ -592,36 +629,37 @@ static void process_frame(struct cat_ascii *a, enum cat_dir dir, const uint8_t *
 	prefix_of(s, n, prefix);
 
 	if(dir != CAT_DIR_RADIO) {
+		own = dir == CAT_DIR_OWN;
 		if(n)
-			pend_add(a, prefix, dir == CAT_DIR_OWN, t);
+			pend_add(a, buf, len, prefix, own, client, t);
 		r = apply_frame(a, s, n, 1, t);
-		emit(a, CAT_FRAME_CMD, dir, buf, len, r > 0, dir == CAT_DIR_OWN, t);
+		emit(a, CAT_FRAME_CMD, dir, buf, len, r > 0, own, client, t);
 		return;
 	}
 
+	client = 0;
 	if(n == 1 && (s[0] == '?' || s[0] == 'E' || s[0] == 'O')) {
-		int p = pend_take(a, NULL, t);
-		emit(a, CAT_FRAME_ERROR, dir, buf, len, 0, p == 2, t);
+		pend_take(a, NULL, NULL, 0, t, &own, &client);
+		emit(a, CAT_FRAME_ERROR, dir, buf, len, 0, own, client, t);
 		return;
 	}
 
-	int reply = n ? pend_take(a, prefix, t) : 0;
+	int reply = n ? pend_take(a, prefix, buf, len, t, &own, &client) : 0;
 	r = apply_frame(a, s, n, 0, t);
 	emit(a, r < 0 ? CAT_FRAME_BAD : reply ? CAT_FRAME_REPLY : CAT_FRAME_UNSOLICITED,
-	     dir, buf, len, r > 0, reply == 2, t);
+	     dir, buf, len, r > 0, own, client, t);
 }
 
 /*
  * Framer
  */
 
-static void rx_byte(struct cat_ascii *a, enum cat_dir dir, uint8_t b, uint64_t t) {
-	struct ascii_rx *rx = &a->rx[dir];
-
+static void rx_byte(struct cat_ascii *a, enum cat_dir dir, int client, struct ascii_rx *rx, uint8_t b,
+		    uint64_t t) {
 	rx->t_ms = t;
 	if(b == ';') {
 		rx->buf[rx->len++] = b;
-		process_frame(a, dir, rx->buf, rx->len, t);
+		process_frame(a, dir, client, rx->buf, rx->len, t);
 		rx->len = 0;
 		return;
 	}
@@ -635,29 +673,71 @@ static void rx_byte(struct cat_ascii *a, enum cat_dir dir, uint8_t b, uint64_t t
 	// and every byte stays in the CAT monitor, so its traces replay the same way.
 	if(b < 0x20 || b >= 0x7f || rx->len + 1 >= ASCII_MAX_FRAME) {
 		rx->buf[rx->len++] = b;
-		emit(a, CAT_FRAME_DROPPED, dir, rx->buf, rx->len, 0, dir == CAT_DIR_OWN, t);
+		emit(a, CAT_FRAME_DROPPED, dir, rx->buf, rx->len, 0, dir == CAT_DIR_OWN, client, t);
 		rx->len = 0;
 		return;
 	}
 	rx->buf[rx->len++] = b;
 }
 
+static int rx_partial(const struct ascii_rx *rx, uint64_t t_ms) {
+	return rx->len && rx->t_ms + PEND_TIMEOUT_MS >= t_ms;
+}
+
 unsigned cat_ascii_pending(const struct cat_ascii *a, uint64_t t_ms) {
-	const struct ascii_rx *rx = &a->rx[CAT_DIR_HOST];
 	unsigned r = 0;
 
-	if(rx->len && rx->t_ms + PEND_TIMEOUT_MS >= t_ms)
-		r |= CAT_PENDING_CLIENT;
+	for(int c = 0; c < CAT_MAX_CLIENTS; c++)
+		if(rx_partial(&a->rx[c], t_ms))
+			r |= CAT_PENDING_CLIENT;
 	// Sets have no answer: they count until they expire.
 	for(int i = 0; i < a->npend; i++)
-		if(a->pend[i].t_ms + PEND_TIMEOUT_MS >= t_ms)
+		if(pend_live(&a->pend[i], t_ms))
 			r |= a->pend[i].own ? CAT_PENDING_OWN : CAT_PENDING_CLIENT;
 	return r;
 }
 
-void cat_ascii_feed(struct cat_ascii *a, enum cat_dir dir, const uint8_t *buf, size_t len, uint64_t t_ms) {
-	if(dir > CAT_DIR_RADIO)
+int cat_ascii_client_busy(const struct cat_ascii *a, int client, uint64_t t_ms) {
+	if(client < 1 || client > CAT_MAX_CLIENTS)
+		return 0;
+	if(rx_partial(&a->rx[client - 1], t_ms))
+		return 1;
+	for(int i = 0; i < a->npend; i++)
+		if(a->pend[i].client == client && pend_live(&a->pend[i], t_ms))
+			return 1;
+	return 0;
+}
+
+void cat_ascii_client_discard(struct cat_ascii *a, int client) {
+	if(client < 1 || client > CAT_MAX_CLIENTS)
 		return;
+	a->rx[client - 1].len = 0;
+	for(int i = a->npend - 1; i >= 0; i--)
+		if(a->pend[i].client == client)
+			pend_remove(a, i);
+}
+
+void cat_ascii_feed(struct cat_ascii *a, enum cat_dir dir, int client, const uint8_t *buf, size_t len,
+		    uint64_t t_ms) {
+	struct ascii_rx *rx;
+
+	switch(dir) {
+	case CAT_DIR_HOST:
+		if(client < 1 || client > CAT_MAX_CLIENTS)
+			return;
+		rx = &a->rx[client - 1];
+		break;
+	case CAT_DIR_OWN:
+		rx = &a->rx[RX_OWN];
+		client = 0;
+		break;
+	case CAT_DIR_RADIO:
+		rx = &a->rx[RX_RADIO];
+		client = 0;
+		break;
+	default:
+		return;
+	}
 	for(size_t i = 0; i < len; i++)
-		rx_byte(a, dir, buf[i], t_ms);
+		rx_byte(a, dir, client, rx, buf[i], t_ms);
 }

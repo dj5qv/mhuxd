@@ -24,7 +24,7 @@ cat_replay: cat_replay.c $(CAT_SRCS) $(CAT_HDRS)
 # keepalive and own query intervals.
 NATIVE_TEST_DEFS = -DCATN_KEEPALIVE=0.5 -DCATN_OWN_STALE=0.6 -DCATN_OWN_RETRY=2.0 -DLOGDIR=\"/nonexistent\"
 NATIVE_SRCS = stubs.c $(SRCDIR)/cat_native.c $(SRCDIR)/radiotypes.c $(CAT_SRCS)
-NATIVE_DEPS = stubs.h $(NATIVE_SRCS) $(SRCDIR)/cat_native.h $(SRCDIR)/mhrouter.h $(CAT_HDRS)
+NATIVE_DEPS = stubs.h $(NATIVE_SRCS) $(SRCDIR)/cat_native.h $(SRCDIR)/mhrouter.h $(SRCDIR)/conmgr.h $(CAT_HDRS)
 native_test: native_test.c $(NATIVE_DEPS)
 	$(CC) $(CPPFLAGS) $(NATIVE_TEST_DEFS) $(CFLAGS) -o $@ native_test.c $(NATIVE_SRCS) -lev
 

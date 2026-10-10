@@ -1,0 +1,72 @@
+# Two applications (H1, H2) on one IC-7300, each on a connector of its own, both with
+# controller address E0. The decoder ties echo, reply and acknowledge to the client whose
+# command they answer (client=), mhuxd routes them there and gives the line to the next
+# application once nothing is waiting for an answer (busy=).
+@civ addr=94
+0.000 H1 fe fe 94 e0 03 fd
+= busy=H1 pending=client
+0.015 R  fe fe 94 e0 03 fd
+= client=H1 busy=H1
+0.040 R  fe fe e0 94 03 00 40 07 14 00 fd
+= client=H1 busy=none rx=14074000
+
+# H2's turn: its echo and reply go to H2
+0.050 H2 fe fe 94 e0 26 00 fd
+= busy=H2
+0.065 R  fe fe 94 e0 26 00 fd
+= client=H2
+0.090 R  fe fe e0 94 26 00 01 01 01 fd
+= client=H2 busy=none mode=PKTUSB
+
+# A set from H1, acknowledged
+0.100 H1 fe fe 94 e0 05 00 00 08 14 00 fd
+= busy=H1
+0.115 R  fe fe 94 e0 05 00 00 08 14 00 fd
+0.140 R  fe fe e0 94 fb fd
+= client=H1 rx=14080000 busy=none
+
+# Transceive belongs to no client: it goes to all
+0.200 R  fe fe 00 94 00 00 00 07 14 00 fd
+= client=- rx=14070000
+
+# Each client has a framer of its own: interleaved partial frames still frame right
+0.300 H1 fe fe 94
+0.301 H2 fe fe 94 e0
+= busy=H1,H2
+0.302 H1 e0 03 fd
+0.303 H2 04 fd
+0.315 R  fe fe 94 e0 03 fd
+= client=H1
+0.320 R  fe fe 94 e0 04 fd
+= client=H2
+0.340 R  fe fe e0 94 03 00 00 07 14 00 fd
+= client=H1 busy=H2
+0.360 R  fe fe e0 94 04 03 01 fd
+= client=H2 busy=none mode=CW
+
+# The same command from both: the radio answers in order, a reply only closes the commands
+# of its own client
+0.400 H1 fe fe 94 e0 03 fd
+0.405 H2 fe fe 94 e0 03 fd
+0.415 R  fe fe 94 e0 03 fd
+= client=H1
+0.420 R  fe fe 94 e0 03 fd
+= client=H2
+0.440 R  fe fe e0 94 03 00 00 07 14 00 fd
+= client=H1 busy=H2
+0.460 R  fe fe e0 94 03 00 00 07 14 00 fd
+= client=H2 busy=none
+
+# A rejected command (FA) goes to the client that sent it
+0.500 H2 fe fe 94 e0 1a 05 00 01 fd
+0.515 R  fe fe 94 e0 1a 05 00 01 fd
+0.540 R  fe fe e0 94 fa fd
+= client=H2 busy=none
+
+# A collision belongs to no client (mhuxd passes it to the application whose turn it is);
+# the command stays pending until it expires after 2 s
+0.600 H1 fe fe 94 e0 03 fd
+0.610 R  fe fe 94 e0 fc
+= client=- busy=H1 jams=1
+2.700 R  fe fe 00 94 00 00 00 07 14 00 fd
+= busy=none pending=none

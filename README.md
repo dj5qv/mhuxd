@@ -26,7 +26,9 @@
 - Native rig mode sync (Icom, Kenwood, Elecraft, newer Yaesu, Flex/ANAN): mhuxd reads the CAT traffic of the applications
   using the keyer's CAT port and keeps keyer mode and frequency in sync with the radio, without
   rigctld. When no application polls the radio, mhuxd asks it itself, in between the
-  applications' commands. With a CAT monitor for troubleshooting.
+  applications' commands. Several applications can share the radio, each on a port of its
+  own: mhuxd lets them take turns and sends each answer to the application that asked. With a
+  CAT monitor for troubleshooting.
 
 
 ---
@@ -263,19 +265,32 @@ directly, e.g. WSJTX configured like in the "WSJTX direct" example above.
 - While an application polls the radio (WSJTX, fldigi and loggers do), mhuxd takes frequency
   and mode from its traffic and sends nothing itself. When values are older than 1.5 s
   (nobody polls, or the application doesn't ask for the data mode), mhuxd asks the radio
-  itself ("Query the radio", on by default): one command at a time, only when the CAT line
-  has been quiet for a moment. Commands of the applications wait meanwhile (a few ten ms), and
-  the radio's answers to mhuxd don't reach them. On Icom mhuxd uses the CI-V controller address
+  itself ("Query the radio", on by default): one command at a time, when the CAT line has been
+  quiet for a moment or right after the radio answered an application. Commands of the
+  applications wait meanwhile (a few ten ms), and the radio's answers to mhuxd don't reach
+  them. On Icom mhuxd uses the CI-V controller address
   E5, the applications E0. Without the queries ("Query the radio" off), front panel changes
   are only seen from the radio's own messages: CI-V transceive on Icom ("CI-V Transceive",
   default on on the IC-7300), Auto Information on the others when an application turned it
   on (AI).
+- Several applications on one radio (like the Router's "2nd CAT port"): give each application
+  a port of its own on the radio's CAT channel, e.g. `/dev/mhuxd/cat1` for WSJTX and a second
+  virtual serial port `/dev/mhuxd/cat1_2` for the logger, or a TCP port. mhuxd then sends one
+  command at a time to the radio: an application's command waits until the radio has answered
+  the other's (a few ten ms), so they don't collide on the CI-V bus. Echo and answers go only to
+  the application that sent the command, CI-V transceive and Auto Information to all. Without
+  an answer within 0.5 s, mhuxd gives the command up and lets the next application go on.
+  Keep "Max Connections" at 1 on these ports: applications sharing a port can't be told apart
+  (mhuxd warns in the log). An application that only listens on its port, to follow the
+  frequency from another application's polls, gets only transceive and AI messages this way;
+  the decoded radio state is available from mhuxd's REST API and WebSocket instead.
 - When the radio doesn't answer for 10 s (switched off), its state expires and the keyer goes
   back to its configured mode, as with rigctld.
 - "Radio state" shows what mhuxd sees, e.g. "14.074.000 Hz PKTUSB → keyer DIGITAL". That's
   the first thing to check when the keyer mode doesn't follow the radio.
 - "CAT monitor" shows the decoded CAT traffic live and writes it to
-  `cat-<serial>-r1.trace` in mhuxd's log directory. If something isn't decoded right,
+  `cat-<serial>-r1.trace` in mhuxd's log directory. The applications are tagged H1, H2, ... in
+  the order they first send; the monitor names their ports. If something isn't decoded right,
   please send that file along with your report: it can be replayed by the tests in
   `tests/cat/` as is.
 

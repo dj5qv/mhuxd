@@ -6,10 +6,16 @@ backend (`rig_mode_sync.backend: "native"`), CAT monitor, radio state in REST an
 web UI. `src/cat*.c`, `tests/cat/`. Tested with IC-7300 + DK2 and WSJT-X (keyer mode follows
 the radio, keepalive holds it after WSJT-X exits, monitor, UI). The ASCII dialects are tested
 against the manuals, Hamlib's backends and Hamlib's rig simulators only, no real radio yet.
-Phase 2 implemented (2026-10-10): own queries with client data held back and the answers taken
-out of the radio data, through two router hooks instead of a separate broker (see "Phase 2"
-below). Tested with the stub tests and end to end through the real router with an emulated
-keyer, IC-7300 and client (`tests/cat/router_test.c`); not yet on real hardware.
+Phase 2 done (2026-10-10): own queries with client data held back and the answers taken out of
+the radio data, through two router hooks instead of a separate broker (see "Phase 2" below).
+Tested with the stub tests, end to end through the real router with an emulated keyer, IC-7300
+and client (`tests/cat/router_test.c`), and with DK2 + IC-7300 + WSJT-X.
+Phase 3 implemented (2026-10-10): several applications, each on a connector of its own, take
+turns on the CAT line; answers go to the application that asked (see "Phase 3" below). Tested
+with traces, end to end through the real router with two emulated clients, and with DK2 +
+IC-7300: three applications on `cat1`, `cat1_2`, `cat1_3` (QLog got its queries through while
+`rigctl` sent `f m` back to back). Own queries also go in right after an application's query
+was answered, so a client that never pauses doesn't starve them (item 10 there).
 Related: `docs/task_rigctld_support.md` (the current rig mode sync via rigctld).
 
 ## Reason
@@ -451,8 +457,7 @@ Only an IC-7300 is available, so most coverage must come from traces and simulat
    (`src/cat_trace.c`, shared with `cat_replay -v`), with classification and the decoded state
    as comment, plus `@civ` and comment lines when the decoder starts over. Lines go to
    `LOGDIR/cat-<serial>-r<n>.trace` (stops at 20 MB, restarted when larger at open) and as
-   WebSocket events `cat_monitor`. Client data is tagged `H1`: the router tap doesn't tell the
-   connectors apart (phase 3).
+   WebSocket events `cat_monitor`. Client data is tagged `H1`..`H9` per connector since phase 3.
 5. Config: `backend: "native"` (device level, so per keyer either rigctld or native), per
    radio `enabled`, `protocol` (`auto` from the rig type, or `civ`) and `civ_address` (0 = the
    channel's `icomaddress`). Done in `src/cfgmgrj.c` and `docs/rest-api-schemas.json`.
@@ -484,8 +489,9 @@ Own queries (`src/cat_native.c`):
 1. **When:** checked every 100 ms. A query is sent when the CAT line was quiet in both
    directions for 150 ms, no client command waits for its answer (decoders:
    `cat_civ_pending()` / `cat_ascii_pending()`, `CAT_PENDING_CLIENT`; an ASCII set has no
-   answer and counts until it expires after 2 s), no earlier own query may still be answered,
-   the keyer is online and the radio address is known (CI-V).
+   answer and counts until it expires after 2 s, 200 ms since phase 3), no earlier own query
+   may still be answered, the keyer is online and the radio address is known (CI-V). Since
+   phase 3 also right after a client's query was answered (item 10 of phase 3).
 2. **What:** values of the selected VFO older than 1.5 s (`CATN_OWN_STALE`, item time stamps
    in `cat_state`), each query at most every 1.5 s. Any decoded frame refreshes a value, so
    an application polling every second (WSJT-X) never triggers an own query.
@@ -535,8 +541,73 @@ keyer actually takes.
 
 ### Phase 3: multiple clients (software Y-connector)
 
-1. Several connectors per brokered channel, round-robin, reply routing, `forward_unsolicited`.
-2. `maxcon > 1` validation on brokered channels.
+Planned: several connectors per brokered channel, round robin, reply routing,
+`forward_unsolicited`, `maxcon > 1` validation. Implemented (2026-10-10) with more router hooks,
+as phase 2, not with a broker owning the connector sockets:
+
+1. **Clients are connectors.** Each application gets a connector of its own: a second VSP on
+   the channel (`cat1_2`) or a TCP connector. The router identifies connectors by their endpoint
+   fd (the tap callback gets it); `cat_native.c` numbers them H1..H9 in the order they first send
+   data. conmgr passes the VSP device name or `tcp:<port>` as router tag, so the CAT monitor names
+   them (`# H2: connector cat1_2`).
+2. **Decoders** (`cat_civ.c`, `cat_ascii.c`): a framer per client, and every pending command
+   carries its client; echo, reply, FB/FA and error replies name it (`struct cat_frame.client`,
+   trace comment `# H2 reply`). `cat_*_client_busy()`: a frame partly received or a command
+   waiting for its answer; `cat_*_client_discard()` gives them up.
+   - CI-V: a reply closes the older commands of its controller and client only.
+   - ASCII: a reply goes to the oldest pending query (no parameters) with its prefix, else to
+     the oldest command with parameters (a read like Yaesu `MD0;`). A set gets no answer, so a
+     query sent after it gets the reply, from whichever client. A command with parameters counts
+     as pending for 200 ms only (`CAT_ASCII_SET_WAIT_MS`; before: 2 s), so a set doesn't block
+     the line. A radio frame equal to a pending set is the radio repeating it (auto
+     information): unsolicited, to all.
+3. **Turns** (`mhr_set_producer_turn()`): with more than one connector on the channel and a
+   decoder, the first application that sends gets the line. The router then reads only its
+   connector, the others' data waits in their sockets (no queue in mhuxd). The turn ends when its
+   commands are answered (checked on every radio byte and every 20 ms); the next connector with
+   data waiting (`mhr_next_waiting_producer()`: FIONREAD, round robin after the current one) gets
+   it, otherwise the line is free for whoever sends first. Two applications polling back to back
+   alternate command by command. No answer 0.5 s after the application's last data
+   (`CATN_TURN_TIMEOUT`): its commands are given up (the Router's "oldest query discarded"),
+   the next application gets the line. An ASCII set has the line for up to 200 ms, enough for
+   Hamlib's set + verify.
+4. **Routing** radio → applications: in this mode radio data is always routed (the interception
+   of phase 2): echo and answers to the application whose command they answer, answers to own
+   queries dropped, transceive and AI to all, anything else (unmatched, collisions, broken
+   frames) to the application that has the line, to all when none has. Radio data that doesn't
+   complete a frame within 100 ms is passed on the same way.
+5. Own queries only while no application has the line, see item 10.
+6. **Connector removed** while its command is on the line: the router keeps the turn with it,
+   cat_native passes it on once the answer is in or timed out (the next command would collide
+   with the answer on the CI-V bus), the late answer is dropped. Routing goes on until then even
+   when only one connector is left.
+7. **One connector:** unchanged, no turns, radio data routed only around own queries. No decoder
+   for the rig type: no turns either, as before phase 3.
+8. **`maxcon > 1`** on a connector of the channel: warning in the log, since its applications
+   share one data stream and can't be told apart. Not rejected, existing configurations keep
+   working as before.
+9. **Tests:** `traces/civ_clients.trace`, `traces/ascii_clients.trace` (decoders, with the new
+   assertions `client=` and `busy=`); `router_test`: two clients on two connectors asking
+   different commands, both back to back (they alternate), slow next to back to back (latency
+   below 150 ms), both idle (own queries, transceive to both), an unanswered command (the other
+   client waits less than 0.8 s), a connector removed while its command is on the bus. The
+   emulated radio counts commands that arrive while its answer is due (bus collisions): none.
+
+10. **Own queries between commands** (after the hardware test): a client that polls without
+    pause and never asks for frequency, mode or data flag (meters, or `04` without `1A 06`)
+    never left the 150 ms gap, so the values went stale (USB-D counting as VOICE after 1 s).
+    The decoders know when a command is answered, so the line is free right then: when a radio
+    frame answers a client's query (reply, FA, error; not FB, a radio with transceive on may
+    report the change it just set), no other command waits for its answer and a value is
+    stale, one own query goes out at once (`catn_own_try()`). The client's next command waits
+    in its socket meanwhile, so it is delayed by one query (a few ten ms) now and then; with
+    several clients the query goes in before the next one's turn. The 150 ms rule stays for an
+    idle line and for traffic the decoders don't follow. `router_test`: one client and two
+    clients polling only meters back to back (front panel change found, latency below 0.1 and
+    0.15 s, nothing of the queries at the clients); a client polling frequency and mode back to
+    back still triggers none.
+
+Not done: `forward_unsolicited` per connector. Transceive and AI go to all connectors, as before.
 
 ### Phase 4: extensions
 
@@ -553,7 +624,9 @@ keyer actually takes.
   applications' `E0`, so the decoder tells the answers apart and traces are readable.
 - Keyer `usedecoderifconnected` with native CAT active: warn only, or force off while connected.
 - Interplay with keyer options `icomsimulateautoinfo` and `digitalovervoicerule`: to test.
-- Bounds for queued client data and maximum hold time.
+- Bounds for queued client data and maximum hold time: decided in phases 2 and 3, client data
+  waits in the connectors' socket buffers (no queue in mhuxd), at most 0.3 s for an own query
+  and 0.5 s for another application's unanswered command.
 - Quiet-gap and timeout defaults per family (to be measured: keyer USB frame latency, radio
   response times at 9600/19200/38400/115200 Bd).
 - First MK3 trace with the IC-7300: confirm echo behavior matches the DK2.

@@ -12,13 +12,16 @@ tests/cat/cat_replay -v some.trace # every frame with classification and state
 `native_test` checks the glue between decoder and mhcontrol (`src/cat_native.c`:
 publish delay, waiting for the data flag, keepalive, rig type changes, keyer
 state, CAT monitor, own queries) with router, mhcontrol and event bus stubbed
-(`stubs.c`, shared). `router_test` runs the own queries end to end through the
-real router (`src/mhrouter.c`): an emulated keyer (microHAM protocol, channel R1)
-with an IC-7300 answering CI-V with bus echo, and a Hamlib-like client on a
-connector socketpair; it checks that the client never sees a frame of mhuxd's
-queries and that every client command is answered in time. Both need libev,
-are built with short intervals (`NATIVE_TEST_DEFS` in the Makefile) and run for
-about 20 and 13 s.
+(`stubs.c`, shared). `router_test` runs end to end through the real router
+(`src/mhrouter.c`): an emulated keyer (microHAM protocol, channel R1) with an
+IC-7300 answering CI-V with bus echo, and Hamlib-like clients on connector
+socketpairs. With one client it checks that the client never sees a frame of
+mhuxd's queries and that every client command is answered in time; with two
+clients on two connectors, that they take turns (no command reaches the radio
+while its answer is due), each gets only the echo and answers of its own
+commands, and an unanswered command or a removed connector doesn't block the
+other client for long. Both need libev, are built with short intervals
+(`NATIVE_TEST_DEFS` in the Makefile) and run for about 20 and 25 s.
 
 See `docs/task_native_cat.md` for the design.
 
@@ -38,7 +41,9 @@ One item per line. `#` starts a comment, also at the end of a line.
   are 10 ms after the previous line. Time must not go backwards.
 - **Tags**: `H1`..`H9` client to radio, `M` mhuxd's own query to radio, `R`
   radio to host. On Icom behind the keyer, `R` includes the bus echo of every
-  command. Radio frames answering an `M` query are shown as `# own reply` etc.
+  command. Each client is an application on a connector of its own, with a
+  framer of its own. Radio frames answering an `M` query are shown as
+  `# own reply` etc., those answering a client's command as `# H2 reply`.
 - **Bytes**: hex, with or without spaces (`fe fe 94` or `fefe94`), and quoted
   text with `\r`, `\n`, `\t`, `\xNN`, `\\`, `\"` escapes (`"FA;"`), for the
   ASCII protocols later.
@@ -74,12 +79,14 @@ fixtures without conversion: add `=` lines and put the file in `traces/`.
 | `frames`, `replies`, `applied`, `unmatched`, `bad`, `jams`, `dropped`, `foreign`, `errors` | decoder counters |
 | `own` | counter: radio frames answering `M` queries (echo, reply, acknowledge, error) |
 | `pending` | commands waiting for an answer: `none`, `client`, `own`, `both` |
+| `busy` | clients with a frame partly received or a command waiting for its answer: `none`, `H1`, `H1,H2`, ... (mhuxd gives the line to the next client when its client isn't busy any more) |
+| `client` | whose command the last radio frame answers (echo, reply, acknowledge, error): `H1`..`H9`, `M`, or `-` for none (transceive, auto information, unmatched) |
 
 ## Traces
 
 - `civ_*.trace`: hand-written cases (queries, sets, transceive, VFO selection,
   framing, host tap, pipelining, address learning, 4-byte frequencies, own
-  queries).
+  queries, two clients).
 - `ascii_*.trace`: hand-written cases for the ASCII dialects.
 - `hamlib_sim_*.trace`: Hamlib 4.6 talking to Hamlib's rig simulators
   (`simulators/` in the Hamlib source: simts590, simelecraft, simft991,

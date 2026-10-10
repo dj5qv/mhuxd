@@ -47,9 +47,18 @@ struct cat_ascii *cat_ascii_create(const struct cat_ascii_cfg *cfg, struct cat_s
 void cat_ascii_destroy(struct cat_ascii *a);
 // Called for every frame, for the CAT monitor and tests.
 void cat_ascii_set_frame_cb(struct cat_ascii *a, cat_frame_cb cb, void *user_data);
-void cat_ascii_feed(struct cat_ascii *a, enum cat_dir dir, const uint8_t *buf, size_t len, uint64_t t_ms);
+// client: 1..CAT_MAX_CLIENTS for CAT_DIR_HOST, ignored otherwise.
+void cat_ascii_feed(struct cat_ascii *a, enum cat_dir dir, int client, const uint8_t *buf, size_t len,
+		    uint64_t t_ms);
 const struct cat_stats *cat_ascii_get_stats(const struct cat_ascii *a);
-// CAT_PENDING_* flags: commands that may still get an answer.
+// CAT_PENDING_* flags: commands that may still get an answer (see CAT_ASCII_SET_WAIT_MS).
 unsigned cat_ascii_pending(const struct cat_ascii *a, uint64_t t_ms);
+// A command with parameters may be a set, which gets no answer, or a read (Yaesu "MD0;"): it
+// waits for an answer this long only, a query without parameters 2 s.
+#define CAT_ASCII_SET_WAIT_MS 200
+// The client has a frame partly received or a command waiting for its answer.
+int cat_ascii_client_busy(const struct cat_ascii *a, int client, uint64_t t_ms);
+// Forgets the client's commands waiting for an answer and its partly received frame.
+void cat_ascii_client_discard(struct cat_ascii *a, int client);
 
 #endif // CAT_ASCII_H
