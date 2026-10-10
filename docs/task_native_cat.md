@@ -521,6 +521,16 @@ Own queries (`src/cat_native.c`):
 
 Not done yet: keyer `usedecoderifconnected` still only warns (a third party on the line).
 
+Found in the hardware test (2026-10-10, DK2 fw 3.14, both backends affected): the DK2 has no
+VOICE mode. Asked for VOICE (LSB/USB/AM/FM without data) it switches to FSK and reports FSK.
+`mhc_update_radio_info()` sent SET KEYER MODE whenever the keyer's last reported mode differed
+from the radio's, and the keyer reports only changes, so it sent VOICE on every update until
+the radio left voice. Now it sends when the radio's mode changes, when the forced mode was
+just lifted, or when the keyer changed its mode by itself later (a report more than 1 s after
+the request, e.g. its mode button); a failed command is sent again. The same applied to any
+mode a keyer doesn't take, and to MK2R with the two radios in different modes (the old check
+also compared the focused radio's mode).
+
 ### Phase 3: multiple clients (software Y-connector)
 
 1. Several connectors per brokered channel, round-robin, reply routing, `forward_unsolicited`.

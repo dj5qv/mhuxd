@@ -34,6 +34,8 @@
 #define IVAL_HEARTBEAT 3.0
 #define CMD_TIMEOUT 2.0
 #define RADIO_INFO_TIMEOUT 10.0
+// A KEYER MODE report this soon after SET KEYER MODE is the keyer's answer to it.
+#define KEYER_MODE_ANSWER_TIME 1.0
 
 #define MAX_CW_FSK_MESSAGE_LEN 50
 
@@ -195,6 +197,11 @@ struct mh_control {
 	char radio_info_source[2][16];
 	ev_timer radio_info_timer[2];       // timer to mark radio info as stale after some time without update.
 	uint8_t radio_info_freq_sent_success[2]; // radio qrg info successfully sent.
+	// Keyer mode requested from radio info (SET KEYER MODE), -1 = none or failed, and when.
+	int radio_info_mode_req[2];
+	ev_tstamp radio_info_mode_req_time[2];
+	// The keyer reported a mode change that wasn't the answer to a request (manual switching).
+	uint8_t keyer_mode_changed[2];
 	struct PGList radio_info_freq_free_list;
 
 	uint8_t speed_params_valid[MH_NUM_CHANNELS];
@@ -542,6 +549,13 @@ static void control_channel_cb(struct mh_router *router, unsigned const char *da
 		ctl->tracked_keyer_mode_r1r2[0] = (f >> 2) & 3;
 		ctl->tracked_keyer_mode_r1r2[1] = (f >> 4) & 3;
 
+		// Shortly after SET KEYER MODE this is the keyer's answer, which may differ from the
+		// request (DK2 has no VOICE mode). Later reports are changes of the keyer's own.
+		for(int r = 0; r < 2; r++) {
+			if(ev_now(ctl->loop) - ctl->radio_info_mode_req_time[r] > KEYER_MODE_ANSWER_TIME)
+				ctl->keyer_mode_changed[r] = 1;
+		}
+
 		dbg0("%s mode  cur: %s, r1: %s, r2: %s", ctl->serial,
 			keyer_modes[ctl->tracked_keyer_mode], keyer_modes[ctl->tracked_keyer_mode_r1r2[0]],
 			keyer_modes[ctl->tracked_keyer_mode_r1r2[1]]);
@@ -686,6 +700,8 @@ static void initializer_step(struct mh_control *ctl, unsigned const char *reply,
 				warn("%s could not download antsw from device!", ctl->serial);
 		}
 		info("%s ONLINE", ctl->serial);
+		// The keyer may have been reset or reconfigured meanwhile.
+		ctl->radio_info_mode_req[0] = ctl->radio_info_mode_req[1] = -1;
 		set_state(ctl, CTL_STATE_OK);
 		break;
 	}
@@ -858,6 +874,8 @@ struct mh_control *mhc_create(struct ev_loop *loop, struct mh_router *router, st
 	ctl->tracked_keyer_mode = -1;
 	ctl->tracked_keyer_mode_r1r2[0] = -1;
 	ctl->tracked_keyer_mode_r1r2[1] = -1;
+	ctl->radio_info_mode_req[0] = -1;
+	ctl->radio_info_mode_req[1] = -1;
 
 	mhr_add_status_cb(router, router_status_cb, ctl);
 
@@ -1933,10 +1951,28 @@ static uint8_t freq_changed(struct mhc_radio_info *old_info, const struct mhc_ra
 
 
 
+// Keyer mode of the radio as last reported by the keyer.
+static uint8_t keyer_mode_of_radio(struct mh_control *ctl, uint8_t radio) {
+	if(ctl->mhi.flags & MHF_HAS_R2)
+		return ctl->tracked_keyer_mode_r1r2[radio-1];
+	return ctl->tracked_keyer_mode;
+}
+
+// Completion of SET KEYER MODE from radio info: if it got lost, the next radio info sends it again.
+static void radio_info_mode_cb(unsigned const char *reply, int len, int result, void *user_data) {
+	struct mh_control *ctl = user_data;
+	(void)reply; (void)len;
+
+	if(result == CMD_RESULT_TIMEOUT || result == CMD_RESULT_OFFLINE || result == CMD_RESULT_ERROR) {
+		dbg0("%s %s() SET KEYER MODE failed (%d)", ctl->serial, __func__, result);
+		ctl->radio_info_mode_req[0] = ctl->radio_info_mode_req[1] = -1;
+	}
+}
+
 void mhc_update_radio_info(struct mh_control *ctl, const char *source, const struct mhc_radio_info *info) {
 	if(!info)
 		return;
-	// uint8_t force_mode_changed;
+	uint8_t force_mode_changed;
 	uint8_t radio = info->radio;
 
 	dbg1("%s %s() source %s r%d mode %d rx=%u tx=%u", ctl->serial, __func__, source, radio,
@@ -1947,7 +1983,7 @@ void mhc_update_radio_info(struct mh_control *ctl, const char *source, const str
 
 	ev_timer_again(ctl->loop, &ctl->radio_info_timer[radio-1]);
 
-	/* force_mode_changed = */ set_force_keyer_mode(ctl, radio, 0);
+	force_mode_changed = set_force_keyer_mode(ctl, radio, 0);
 
 	// Tell listeners (REST/WebSocket) about new values, not about every refresh.
 	const struct mhc_radio_info *old = &ctl->radio_info[radio-1];
@@ -1963,30 +1999,36 @@ void mhc_update_radio_info(struct mh_control *ctl, const char *source, const str
 		dbg1("%s %s() r%d info updated", ctl->serial, __func__, radio);
 	}
 
-	// Update mode in keyer if changed.
-	if(info->mode >= 0 && info->mode <= 3 &&
-		(
-			info->mode != ctl->tracked_keyer_mode || 
-			( (ctl->mhi.flags & MHF_HAS_R2) && (info->mode != ctl->tracked_keyer_mode_r1r2[radio-1]) )
-		) )
+	// Set the keyer mode when the radio's mode changed, when the forced mode was just lifted
+	// (the keyer is in r1KeyerMode then), or when the keyer changed its mode by itself since.
+	// Not whenever the keyer's reported mode differs: the keyer reports only changes, so a mode
+	// it doesn't have (DK2: no VOICE, it takes FSK) would be requested on every update.
+	int r = radio - 1;
+	uint8_t keyer_mode = keyer_mode_of_radio(ctl, radio);
+	if(info->mode >= 0 && info->mode <= 3 && (ctl->mhi.flags & MHF_HAS_KEYER_MODE) &&
+	   (force_mode_changed || info->mode != ctl->radio_info_mode_req[r] ||
+	    (ctl->keyer_mode_changed[r] && info->mode != keyer_mode)))
 	{
-		dbg0("%s %s() r%d mode changed from %d to %d", ctl->serial, __func__, radio, ctl->radio_info[radio-1].mode, info->mode);
-		if(ctl->mhi.flags & MHF_HAS_R2) {
-			// We don't need to track success by callback, as we compare against keyer
-			// reported mode. If it doesn't change, we send again.
-			mhc_set_mode_on_radio(ctl, info->mode, radio, NULL, NULL);
-		} else {
-			mhc_set_mode(ctl, info->mode, NULL, NULL);
-		}
+		dbg0("%s %s() r%d mode %d, keyer mode %d, requested before %d%s", ctl->serial, __func__, radio,
+		     info->mode, keyer_mode, ctl->radio_info_mode_req[r],
+		     force_mode_changed ? ", forced mode lifted" : "");
+		ctl->radio_info_mode_req[r] = info->mode;
+		ctl->radio_info_mode_req_time[r] = ev_now(ctl->loop);
+		ctl->keyer_mode_changed[r] = 0;
+		if(ctl->mhi.flags & MHF_HAS_R2)
+			mhc_set_mode_on_radio(ctl, info->mode, radio, radio_info_mode_cb, ctl);
+		else
+			mhc_set_mode(ctl, info->mode, radio_info_mode_cb, ctl);
 	} else {
-		dbg1("%s %s() r%d mode unchanged (%d)", ctl->serial, __func__, radio, info->mode);
+		dbg1("%s %s() r%d mode unchanged (%d, keyer %d)", ctl->serial, __func__, radio, info->mode, keyer_mode);
 	}
 
-	if( ! ctl->radio_info_freq_sent_success[radio-1] || freq_changed(&ctl->radio_info[radio-1], info)) {
+	if((ctl->mhi.flags & MHF_HAS_CAT_CMD) &&
+		(! ctl->radio_info_freq_sent_success[radio-1] || freq_changed(&ctl->radio_info[radio-1], info))) {
 		dbg0("%s %s() r%d freq changed rx=%u tx=%u vfoA=%u vfoB=%u",
 		     ctl->serial, __func__, radio, info->rxFreq, info->txFreq,
 		     info->vfoAFreq, info->vfoBFreq);
-		if((ctl->mhi.flags & MHF_HAS_CAT_CMD) && mhc_is_online(ctl)) {
+		if(mhc_is_online(ctl)) {
 			send_cat_freq_info(ctl, info, radio);
 		} else {
 			// Keyer may not be online, flag that it is out of sync.
