@@ -6,6 +6,10 @@ backend (`rig_mode_sync.backend: "native"`), CAT monitor, radio state in REST an
 web UI. `src/cat*.c`, `tests/cat/`. Tested with IC-7300 + DK2 and WSJT-X (keyer mode follows
 the radio, keepalive holds it after WSJT-X exits, monitor, UI). The ASCII dialects are tested
 against the manuals, Hamlib's backends and Hamlib's rig simulators only, no real radio yet.
+Phase 2 implemented (2026-10-10): own queries with client data held back and the answers taken
+out of the radio data, through two router hooks instead of a separate broker (see "Phase 2"
+below). Tested with the stub tests and end to end through the real router with an emulated
+keyer, IC-7300 and client (`tests/cat/router_test.c`); not yet on real hardware.
 Related: `docs/task_rigctld_support.md` (the current rig mode sync via rigctld).
 
 ## Reason
@@ -335,6 +339,8 @@ traces:
 
 ### Own queries
 
+As implemented in phase 2: see "Phase 2" below. The original plan:
+
 - Every decoded value (from client replies, acknowledged sets, transceive/AI, own queries)
   refreshes the item's age.
 - No client connected: poll every `poll_ms`.
@@ -462,11 +468,58 @@ application keeps `/dev/mhuxd/cat1`.
 
 ### Phase 2: own queries
 
-1. Move CAT connectors behind the broker (conmgr wiring), fast path for a single client.
-2. Transaction tracking, holding client data during own queries, timeouts.
-3. Tell the broker when applications open/close a port: `EV_CON_STATUS` exists in
-   `src/events.h` but nothing publishes it yet. VSP/TCP connectors publish open-count changes.
-4. Poll policy: closed port → periodic, open port → stale items only.
+Planned: move the CAT connectors behind a broker that owns their sockets (conmgr wiring), with
+a fast path for a single client. Implemented instead (2026-10-10) with two hooks in the router,
+which keeps its buffering, flow control and EOF handling, and leaves the data path unchanged
+outside an own query:
+
+- `mhr_hold_producers(router, channel, hold)`: while held, the router doesn't read the
+  connectors of the channel; their data waits in the socket buffers.
+- `mhr_intercept_consumers(router, channel, on)` + `mhr_pass_out()`: while intercepted, radio
+  data of the channel only goes to the consumer callbacks; `cat_native.c` passes on what the
+  applications should get.
+
+Own queries (`src/cat_native.c`):
+
+1. **When:** checked every 100 ms. A query is sent when the CAT line was quiet in both
+   directions for 150 ms, no client command waits for its answer (decoders:
+   `cat_civ_pending()` / `cat_ascii_pending()`, `CAT_PENDING_CLIENT`; an ASCII set has no
+   answer and counts until it expires after 2 s), no earlier own query may still be answered,
+   the keyer is online and the radio address is known (CI-V).
+2. **What:** values of the selected VFO older than 1.5 s (`CATN_OWN_STALE`, item time stamps
+   in `cat_state`), each query at most every 1.5 s. Any decoded frame refreshes a value, so
+   an application polling every second (WSJT-X) never triggers an own query.
+   - CI-V: `03` (frequency), `26 00` (mode with data flag; after three `FA` from the radio
+     `04` plus `1A 06` instead). Controller address `E5`, applications use `E0`.
+   - Kenwood: `IF;`, plus `DA;` (TS-590, TS-990) or `DT;` (TS-950) for the data flag of
+     LSB/USB/AM/FM. Elecraft: `IF;`, plus `DT;` while in DATA mode (the sub mode only changes
+     on the radio). Yaesu: `IF;` (the mode includes data). Flex: `FA;`, `MD;`.
+   - A query rejected three times in a row (`FA`, `?;`) is not sent again until the decoder
+     starts over; a single rejection may be the radio's state (TX, menu).
+3. **One at a time:** client data is held (`mhr_hold_producers`) from sending the query until
+   the answer is in (reply, `FB`/`FA`, error) or 300 ms passed. The decoders mark frames that
+   belong to an own query (`struct cat_frame.own`: echo, reply, acknowledge, error; counter
+   `own`), matched per pending command, so a client reply in flight still goes to the client.
+4. **Routing radio data:** from sending the query until no own query can be answered any more
+   (also after a timeout, while the decoder keeps it pending for 2 s), radio data is
+   intercepted: bytes are held until their frame is complete, frames of the own query are
+   dropped, everything else (client replies, transceive, AI, unparseable data) is passed on.
+   Outside these windows the router passes radio data on as before.
+5. **Radio silent:** after three timeouts in a row queries go out every 10 s only. With own
+   queries on, the keepalive stops when nothing came from the radio for 10 s, so mhcontrol's
+   radio info expires and the keyer falls back to its configured mode, as with rigctld.
+6. **Config:** per radio `own_queries`: `auto` (default) or `never` (listen only, the Router's
+   "Disable router queries"). The intervals are constants; `poll_ms`, `stale_ms` and
+   `idle_gap_ms` from the proposal above were not needed. Web UI: "Query the radio".
+7. **Not needed:** telling the broker when applications open/close a port (`EV_CON_STATUS`):
+   with values refreshed by the applications' own polls, the stale rule covers both cases.
+8. **Tests:** `tests/cat/traces/civ_own.trace`, `ascii_own.trace` (decoders: own marking,
+   pending); `native_test` (policy with stubbed router); `router_test` (real router, keyer
+   protocol, emulated IC-7300 with bus echo, a Hamlib-like client: idle, polling faster and
+   slower than the stale time, back to back, transceive broadcasts during own queries; checks
+   that the client never sees a frame of an own query and every client command is answered).
+
+Not done yet: keyer `usedecoderifconnected` still only warns (a third party on the line).
 
 ### Phase 3: multiple clients (software Y-connector)
 
@@ -484,8 +537,8 @@ application keeps `/dev/mhuxd/cat1`.
 
 ## Open decisions
 
-- mhuxd's own CI-V controller address: distinct (e.g. `0xE5`, readable in traces) or the same as
-  the application's.
+- mhuxd's own CI-V controller address: decided `0xE5` (phase 2), distinct from the
+  applications' `E0`, so the decoder tells the answers apart and traces are readable.
 - Keyer `usedecoderifconnected` with native CAT active: warn only, or force off while connected.
 - Interplay with keyer options `icomsimulateautoinfo` and `digitalovervoicerule`: to test.
 - Bounds for queued client data and maximum hold time.

@@ -47,6 +47,14 @@ void mhr_rem_consumer_cb(struct mh_router *router, MHRConsumerCallback, int chan
 void mhr_add_producer_tap_cb(struct mh_router *router, MHRConsumerCallback, int channel, void *user_data);
 void mhr_rem_producer_tap_cb(struct mh_router *router, MHRConsumerCallback, int channel, void *user_data);
 
+// Native CAT own queries (src/cat_native.c). While held, the router doesn't read the data the
+// connectors send on the channel; it waits in their socket buffers.
+void mhr_hold_producers(struct mh_router *router, int channel, int hold);
+// While intercepted, data from the keyer on the channel goes to the consumer callbacks only;
+// one of them passes on what the connectors should get with mhr_pass_out().
+void mhr_intercept_consumers(struct mh_router *router, int channel, int intercept);
+void mhr_pass_out(struct mh_router *router, const uint8_t *data, unsigned int len, int channel);
+
 // processor interface (deprecated)
 void mhr_add_processor_cb(struct mh_router *router, MHRProcessorCallback callback, int channel, void *user_data);
 void mhr_rem_processor_cb(struct mh_router *router, MHRProcessorCallback callback, int channel);

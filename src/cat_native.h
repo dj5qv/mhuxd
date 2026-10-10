@@ -8,9 +8,11 @@
 
 /*
  * Native CAT rig mode sync (docs/task_native_cat.md), the alternative to
- * rigctld_client.c. Phase 1: listens to the CAT channel of one radio in both
+ * rigctld_client.c. Listens to the CAT channel of one radio in both
  * directions, decodes frequency and mode and feeds mhc_update_radio_info().
- * It never sends anything to the radio.
+ * With own queries on, it asks the radio itself when no application keeps the
+ * state fresh, in the gaps of the applications' traffic: their data is held
+ * back meanwhile and the answers are taken out of the radio data.
  */
 
 #ifndef CAT_NATIVE_H
@@ -36,6 +38,7 @@ struct cat_native_cfg {
 	uint8_t radio;		// 1 or 2
 	int protocol;		// CAT_NATIVE_PROTO_*
 	int civ_address;	// 0 = the channel's icomaddress
+	int own_queries;	// ask the radio when no application does
 	int monitor;		// CAT monitor: trace file + EV_CAT_MONITOR events
 	const char *monitor_dir;	// NULL = LOGDIR
 };

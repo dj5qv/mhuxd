@@ -1,0 +1,34 @@
+# mhuxd's own queries (tag M) next to a client, Kenwood TS-590.
+@kenwood
+0.000 H1 "FA;"
+= pending=client
+0.050 R  "FA00014074000;"
+= rx=14074000 pending=none own=0
+
+# Own queries: IF, then the data flag
+1.000 M  "IF;"
+= pending=own
+1.050 R  "IF00007074000     +000000000031000000;"
+= rx=7074000 mode=CW own=1 pending=none
+2.000 M  "DA;"
+2.030 R  "DA0;"
+= own=2
+
+# Error reply to an own query
+3.000 M  "XY;"
+3.030 R  "?;"
+= own=3 errors=1 pending=none
+
+# Auto information while nothing is pending stays unsolicited
+4.000 R  "FA00007074000;"
+= own=3 replies=3
+
+# A set gets no answer: it counts as pending until it expires (2 s)
+5.000 H1 "FA00014074000;"
+= pending=client
+6.900 M  "IF;"
+= pending=both
+6.950 R  "IF00014074000     +000000000021000000;"
+= own=4 pending=client mode=USB
+7.100 R  "DA1;"
+= pending=none mode=PKTUSB own=4

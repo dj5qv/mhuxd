@@ -42,6 +42,8 @@ void cat_civ_destroy(struct cat_civ *civ);
 void cat_civ_set_frame_cb(struct cat_civ *civ, cat_frame_cb cb, void *user_data);
 void cat_civ_feed(struct cat_civ *civ, enum cat_dir dir, const uint8_t *buf, size_t len, uint64_t t_ms);
 uint8_t cat_civ_radio_addr(const struct cat_civ *civ);
+// CAT_PENDING_* flags: commands waiting for their reply or acknowledge.
+unsigned cat_civ_pending(const struct cat_civ *civ, uint64_t t_ms);
 const struct cat_stats *cat_civ_get_stats(const struct cat_civ *civ);
 
 #endif // CAT_CIV_H

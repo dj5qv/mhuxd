@@ -91,7 +91,8 @@ void cat_trace_frame(char *buf, size_t sz, const char *time, const char *host_ta
 		for(size_t i = 0; i < f->len; i++)
 			APPEND(" %02x", f->buf[i]);
 	}
-	APPEND("  # %s", cat_frame_kind_str(f->kind));
+	// Frames answering an own query (tag M) are marked, so the M lines' answers stand out.
+	APPEND("  # %s%s", f->own && f->dir == CAT_DIR_RADIO ? "own " : "", cat_frame_kind_str(f->kind));
 	if(f->applied && st) {
 		char s[128];
 		cat_trace_state(s, sizeof(s), st);

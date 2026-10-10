@@ -193,6 +193,7 @@ static int start_rig_mode_sync_clients(struct cfgmgrj *cfgmgrj, struct mh_contro
                 .radio = defs[i].radio,
                 .protocol = cat_native_protocol_from_str(json_get_str_or(defs[i].obj, "protocol", "auto")),
                 .civ_address = json_get_int(defs[i].obj, "civ_address", 0),
+                .own_queries = strcmp(json_get_str_or(defs[i].obj, "own_queries", "auto"), "never") != 0,
                 .monitor = json_get_boolish(defs[i].obj, "monitor", 0),
             };
             struct cat_native *native = cat_native_create(cfgmgrj->ctx, dev, &ncfg);
@@ -325,6 +326,14 @@ static int validate_rig_mode_sync_radio(const char *radio_name, json_t *radio_ob
             warn("cfgmgrj: rig_mode_sync.%s.civ_address must be integer 0..0xdf (0 = channel's icomaddress)", radio_name);
             return -1;
         }
+    }
+
+    json_t *own_queries = json_object_get(radio_obj, "own_queries");
+    if(own_queries && (!json_is_string(own_queries) ||
+                       (strcmp(json_string_value(own_queries), "auto") &&
+                        strcmp(json_string_value(own_queries), "never")))) {
+        warn("cfgmgrj: rig_mode_sync.%s.own_queries must be auto or never", radio_name);
+        return -1;
     }
 
     json_t *monitor = json_object_get(radio_obj, "monitor");

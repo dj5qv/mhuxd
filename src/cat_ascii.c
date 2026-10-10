@@ -27,11 +27,13 @@ enum { VFO_A, VFO_B };
 struct ascii_rx {
 	uint8_t buf[ASCII_MAX_FRAME];
 	size_t len;
+	uint64_t t_ms;		// last byte
 };
 
 struct ascii_pending {
 	char prefix[PREFIX_LEN];
 	uint64_t t_ms;
+	uint8_t own;		// mhuxd's own query
 };
 
 struct cat_ascii {
@@ -40,7 +42,7 @@ struct cat_ascii {
 	cat_frame_cb cb;
 	void *cb_data;
 	struct ascii_rx rx[CAT_DIR_RADIO + 1];
-	// Client commands, only to tell replies from auto information.
+	// Commands, to tell replies from auto information.
 	struct ascii_pending pend[PEND_MAX];
 	int npend;
 	// Elecraft: mode code and data sub mode (DT) per VFO, 0 = unknown.
@@ -96,7 +98,7 @@ const struct cat_stats *cat_ascii_get_stats(const struct cat_ascii *a) {
 }
 
 static void emit(struct cat_ascii *a, enum cat_frame_kind kind, enum cat_dir dir,
-		 const uint8_t *buf, size_t len, int applied, uint64_t t_ms) {
+		 const uint8_t *buf, size_t len, int applied, int own, uint64_t t_ms) {
 	switch(kind) {
 	case CAT_FRAME_REPLY:   a->stats.replies++; break;
 	case CAT_FRAME_BAD:     a->stats.bad++; break;
@@ -106,11 +108,13 @@ static void emit(struct cat_ascii *a, enum cat_frame_kind kind, enum cat_dir dir
 	}
 	if(applied)
 		a->stats.applied++;
+	if(own && dir == CAT_DIR_RADIO)
+		a->stats.own++;
 
 	if(a->cb) {
 		struct cat_frame f = {
 			.kind = kind, .dir = dir, .t_ms = t_ms,
-			.buf = buf, .len = len, .applied = applied, .text = 1,
+			.buf = buf, .len = len, .applied = applied, .text = 1, .own = own,
 		};
 		a->cb(&f, a->cb_data);
 	}
@@ -549,24 +553,27 @@ static void pend_remove(struct cat_ascii *a, int i) {
 	a->npend--;
 }
 
-static void pend_add(struct cat_ascii *a, const char *prefix, uint64_t t) {
+static void pend_add(struct cat_ascii *a, const char *prefix, int own, uint64_t t) {
 	while(a->npend && a->pend[0].t_ms + PEND_TIMEOUT_MS < t)
 		pend_remove(a, 0);
 	if(a->npend == PEND_MAX)
 		pend_remove(a, 0);
 	snprintf(a->pend[a->npend].prefix, PREFIX_LEN, "%s", prefix);
 	a->pend[a->npend].t_ms = t;
+	a->pend[a->npend].own = own;
 	a->npend++;
 }
 
 // The reply to the oldest pending command with this prefix, any if prefix is NULL (error).
+// Returns 0 if none, 1 for a client command, 2 for an own query.
 static int pend_take(struct cat_ascii *a, const char *prefix, uint64_t t) {
 	for(int i = 0; i < a->npend; i++) {
 		if(a->pend[i].t_ms + PEND_TIMEOUT_MS < t)
 			continue;
 		if(!prefix || !strcmp(a->pend[i].prefix, prefix)) {
+			int own = a->pend[i].own;
 			pend_remove(a, i);
-			return 1;
+			return own ? 2 : 1;
 		}
 	}
 	return 0;
@@ -586,22 +593,22 @@ static void process_frame(struct cat_ascii *a, enum cat_dir dir, const uint8_t *
 
 	if(dir != CAT_DIR_RADIO) {
 		if(n)
-			pend_add(a, prefix, t);
+			pend_add(a, prefix, dir == CAT_DIR_OWN, t);
 		r = apply_frame(a, s, n, 1, t);
-		emit(a, CAT_FRAME_CMD, dir, buf, len, r > 0, t);
+		emit(a, CAT_FRAME_CMD, dir, buf, len, r > 0, dir == CAT_DIR_OWN, t);
 		return;
 	}
 
 	if(n == 1 && (s[0] == '?' || s[0] == 'E' || s[0] == 'O')) {
-		pend_take(a, NULL, t);
-		emit(a, CAT_FRAME_ERROR, dir, buf, len, 0, t);
+		int p = pend_take(a, NULL, t);
+		emit(a, CAT_FRAME_ERROR, dir, buf, len, 0, p == 2, t);
 		return;
 	}
 
-	int reply = n && pend_take(a, prefix, t);
+	int reply = n ? pend_take(a, prefix, t) : 0;
 	r = apply_frame(a, s, n, 0, t);
 	emit(a, r < 0 ? CAT_FRAME_BAD : reply ? CAT_FRAME_REPLY : CAT_FRAME_UNSOLICITED,
-	     dir, buf, len, r > 0, t);
+	     dir, buf, len, r > 0, reply == 2, t);
 }
 
 /*
@@ -611,6 +618,7 @@ static void process_frame(struct cat_ascii *a, enum cat_dir dir, const uint8_t *
 static void rx_byte(struct cat_ascii *a, enum cat_dir dir, uint8_t b, uint64_t t) {
 	struct ascii_rx *rx = &a->rx[dir];
 
+	rx->t_ms = t;
 	if(b == ';') {
 		rx->buf[rx->len++] = b;
 		process_frame(a, dir, rx->buf, rx->len, t);
@@ -627,11 +635,24 @@ static void rx_byte(struct cat_ascii *a, enum cat_dir dir, uint8_t b, uint64_t t
 	// and every byte stays in the CAT monitor, so its traces replay the same way.
 	if(b < 0x20 || b >= 0x7f || rx->len + 1 >= ASCII_MAX_FRAME) {
 		rx->buf[rx->len++] = b;
-		emit(a, CAT_FRAME_DROPPED, dir, rx->buf, rx->len, 0, t);
+		emit(a, CAT_FRAME_DROPPED, dir, rx->buf, rx->len, 0, dir == CAT_DIR_OWN, t);
 		rx->len = 0;
 		return;
 	}
 	rx->buf[rx->len++] = b;
+}
+
+unsigned cat_ascii_pending(const struct cat_ascii *a, uint64_t t_ms) {
+	const struct ascii_rx *rx = &a->rx[CAT_DIR_HOST];
+	unsigned r = 0;
+
+	if(rx->len && rx->t_ms + PEND_TIMEOUT_MS >= t_ms)
+		r |= CAT_PENDING_CLIENT;
+	// Sets have no answer: they count until they expire.
+	for(int i = 0; i < a->npend; i++)
+		if(a->pend[i].t_ms + PEND_TIMEOUT_MS >= t_ms)
+			r |= a->pend[i].own ? CAT_PENDING_OWN : CAT_PENDING_CLIENT;
+	return r;
 }
 
 void cat_ascii_feed(struct cat_ascii *a, enum cat_dir dir, const uint8_t *buf, size_t len, uint64_t t_ms) {

@@ -47,6 +47,7 @@ struct cat_frame {
 	size_t len;
 	int applied;		// the frame updated cat_state
 	int text;		// ASCII protocol: shown as quoted text in traces
+	int own;		// part of mhuxd's own query: the query, its echo, reply or acknowledge
 };
 
 typedef void (*cat_frame_cb)(const struct cat_frame *frame, void *user_data);
@@ -61,6 +62,13 @@ struct cat_stats {
 	uint32_t dropped;
 	uint32_t foreign;
 	uint32_t errors;
+	uint32_t own;		// radio frames answering mhuxd's own queries (echo, reply, ack, error)
+};
+
+// Commands waiting for their answer (cat_civ_pending(), cat_ascii_pending()).
+enum {
+	CAT_PENDING_CLIENT = 1,	// from a client, or a client frame partly received
+	CAT_PENDING_OWN = 2,	// mhuxd's own query
 };
 
 const char *cat_frame_kind_str(enum cat_frame_kind kind);

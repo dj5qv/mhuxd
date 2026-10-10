@@ -270,6 +270,7 @@
     // backend native
     protocol: r?.protocol ?? 'auto',
     civ_address: r?.civ_address ? Number(r.civ_address).toString(16).toUpperCase() : '',
+    own_queries: r?.own_queries !== 'never',
     monitor: boolish(r?.monitor)
   });
 
@@ -336,6 +337,7 @@
       rigctld_options: String(f?.rigctld_options || ''),
       protocol: ['civ', 'kenwood', 'elecraft', 'yaesu', 'flex'].includes(f?.protocol) ? f.protocol : 'auto',
       civ_address: civ,
+      own_queries: f?.own_queries === false ? 'never' : 'auto',
       monitor: f?.monitor ? 1 : 0
     };
   };
@@ -2027,6 +2029,19 @@
                 value={rs?.civ_address ?? ''}
                 on:input={(e) => updateRigModeSyncRadio(activeSerial, rk, 'civ_address', e.target.value)}
               />
+            </div>
+          </div>
+          <div class="row">
+            <div class="label">Query the radio:</div>
+            <div class="value">
+              <input
+                type="checkbox"
+                checked={rs?.own_queries !== false}
+                on:change={(e) => updateRigModeSyncRadio(activeSerial, rk, 'own_queries', e.target.checked)}
+              />
+              <span class="placeholder">
+                when no application does (front panel changes, data mode)
+              </span>
             </div>
           </div>
           <div class="row">

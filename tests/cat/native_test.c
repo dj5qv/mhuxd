@@ -9,7 +9,8 @@
 /*
  * Tests the glue between the CI-V decoder and mhcontrol (src/cat_native.c):
  * publish delay, waiting for the data flag, keepalive, rig type changes, keyer
- * state, CAT monitor. Built with CATN_KEEPALIVE=0.5 (see Makefile).
+ * state, CAT monitor, own queries. Built with a keepalive of 0.5 s and values
+ * stale after 0.6 s (see Makefile).
  *
  *   native_test <dir>
  *
@@ -30,93 +31,11 @@
 #include "events.h"
 #include "mhcontrol.h"
 #include "mhrouter.h"
-
-#define RIG_IC7300 0x88
-#define RIG_K3     0x62
-#define RIG_TS590  0x7D
-#define RIG_FT817  0x29	// legacy Yaesu binary: no decoder yet
-
-static struct ev_loop *loop;
-static int failures;
+#include "stubs.h"
 
 /*
- * Stubs
+ * Router stubs
  */
-
-int log_level = 0;
-void log_msg(int severity, const char *header, const char *fmt, ...) {
-	va_list ap;
-	(void)severity;
-	if(!getenv("VERBOSE"))
-		return;
-	printf("    %s ", header);
-	va_start(ap, fmt);
-	vprintf(fmt, ap);
-	va_end(ap);
-}
-
-void *w_malloc(size_t size) {
-	void *p = malloc(size);
-	if(!p)
-		abort();
-	return p;
-}
-
-void *w_calloc(size_t nmemb, size_t size) {
-	void *p = calloc(nmemb, size);
-	if(!p)
-		abort();
-	return p;
-}
-
-char *w_strdup(const char *src) {
-	char *p = strdup(src);
-	if(!p)
-		abort();
-	return p;
-}
-
-struct ev_loop *app_ctx_get_loop(app_ctx *ctx) {
-	(void)ctx;
-	return loop;
-}
-
-eventbus_t *app_ctx_get_eventbus(app_ctx *ctx) {
-	(void)ctx;
-	return NULL;
-}
-
-static event_cb_fn keyer_state_cb;
-static void *keyer_state_data;
-static int mon_lines;
-static char mon_last[256];
-
-void eventbus_publish(eventbus_t *bus, enum app_event_type type, const void *data) {
-	(void)bus;
-	if(type == EV_CAT_MONITOR) {
-		const struct ev_cat_monitor *ev = data;
-		mon_lines++;
-		snprintf(mon_last, sizeof(mon_last), "%s", ev->line);
-	}
-}
-
-const char *mhc_state_str(int state) {
-	return state == MHC_KEYER_STATE_ONLINE ? "ONLINE" : "OFFLINE";
-}
-
-eventbus_sub_t *eventbus_subscribe(eventbus_t *bus, enum app_event_type type, event_cb_fn cb, void *user_data) {
-	(void)bus;
-	if(type == EV_KEYER_STATE) {
-		keyer_state_cb = cb;
-		keyer_state_data = user_data;
-	}
-	return (eventbus_sub_t *)&keyer_state_cb;
-}
-
-void eventbus_unsubscribe(eventbus_sub_t *sub) {
-	(void)sub;
-	keyer_state_cb = NULL;
-}
 
 static MHRConsumerCallback radio_cb, host_cb;
 static void *radio_data, *host_data;
@@ -148,87 +67,109 @@ void mhr_rem_producer_tap_cb(struct mh_router *router, MHRConsumerCallback cb, i
 		host_cb = NULL;
 }
 
-static struct mhc_speed_cfg speed;
-static int speed_valid;
+// Own queries: what mhuxd sent, whether client data is held and radio data intercepted, and
+// what the clients got from the radio.
+static uint8_t sent[64];
+static size_t nsent;
+static int nsends;
+static int held, intercepted;
+static uint8_t client_rx[1024];
+static size_t nclient_rx;
+static uint8_t held_host[256];
+static size_t nheld_host;
+static ev_timer release_timer;
 
-int mhc_get_speed_params(struct mh_control *ctl, int channel, struct mhc_speed_cfg *out) {
-	(void)ctl; (void)channel;
-	if(!speed_valid)
+int mhr_send_in(struct mh_router *router, const uint8_t *data, unsigned int len, int channel) {
+	(void)router; (void)channel;
+	if(len > sizeof(sent))
 		return -1;
-	*out = speed;
-	return 0;
+	memcpy(sent, data, len);
+	nsent = len;
+	nsends++;
+	return len;
 }
 
-#define MAX_PUB 64
-static struct mhc_radio_info pub[MAX_PUB];
-static int npub;
+static void to_client(const uint8_t *data, size_t len) {
+	if(nclient_rx + len <= sizeof(client_rx)) {
+		memcpy(client_rx + nclient_rx, data, len);
+		nclient_rx += len;
+	}
+}
 
-void mhc_update_radio_info(struct mh_control *ctl, const char *source, const struct mhc_radio_info *info) {
-	(void)ctl; (void)source;
-	if(npub < MAX_PUB)
-		pub[npub++] = *info;
+void mhr_pass_out(struct mh_router *router, const uint8_t *data, unsigned int len, int channel) {
+	(void)router; (void)channel;
+	to_client(data, len);
+}
+
+void mhr_intercept_consumers(struct mh_router *router, int channel, int intercept) {
+	(void)router; (void)channel;
+	intercepted = intercept;
+}
+
+// Released client data is read on the next loop iteration, as in the router.
+static void release_cb(struct ev_loop *l, struct ev_timer *w, int revents) {
+	(void)l; (void)w; (void)revents;
+	if(held || !nheld_host)
+		return;
+	size_t n = nheld_host;
+	nheld_host = 0;
+	if(host_cb)
+		host_cb(NULL, held_host, n, host_channel, host_data);
+}
+
+void mhr_hold_producers(struct mh_router *router, int channel, int hold) {
+	(void)router; (void)channel;
+	held = hold;
+	if(!hold && nheld_host) {
+		ev_timer_set(&release_timer, 0., 0.);
+		ev_timer_start(loop, &release_timer);
+	}
 }
 
 /*
  * Helpers
  */
 
-#define CHECK(cond, ...) do { \
-	if(!(cond)) { \
-		printf("FAIL %s:%d: ", __FILE__, __LINE__); \
-		printf(__VA_ARGS__); \
-		printf("\n"); \
-		failures++; \
-	} \
-} while(0)
-
-static void stop_cb(struct ev_loop *l, struct ev_timer *w, int revents) {
-	(void)w; (void)revents;
-	ev_break(l, EVBREAK_ONE);
-}
-
-static void run_for(double s) {
-	ev_timer t;
-	ev_timer_init(&t, stop_cb, s, 0.);
-	ev_timer_start(loop, &t);
-	ev_run(loop, 0);
-	ev_timer_stop(loop, &t);
-}
-
-static size_t parse_hex(const char *s, uint8_t *buf) {
-	size_t n = 0;
-	unsigned v;
-	int off;
-	while(sscanf(s, " %2x%n", &v, &off) == 1) {
-		buf[n++] = v;
-		s += off;
+// The router delivers radio data one byte per call, to the clients unless intercepted.
+static void radio_bytes(const uint8_t *buf, size_t n) {
+	ev_now_update(loop);
+	for(size_t i = 0; i < n && radio_cb; i++) {
+		if(!intercepted)
+			to_client(&buf[i], 1);
+		radio_cb(NULL, &buf[i], 1, radio_channel, radio_data);
 	}
-	return n;
 }
 
-// The router delivers radio data one byte per call.
 static void radio(const char *hex) {
 	uint8_t buf[64];
 	size_t n = parse_hex(hex, buf);
-	ev_now_update(loop);
-	for(size_t i = 0; i < n && radio_cb; i++)
-		radio_cb(NULL, &buf[i], 1, radio_channel, radio_data);
+	radio_bytes(buf, n);
 }
 
-// Client data arrives as read from the connector.
+// Client data arrives as read from the connector; while held it waits.
+static void host_bytes(const uint8_t *buf, size_t n) {
+	ev_now_update(loop);
+	if(held) {
+		memcpy(held_host + nheld_host, buf, n);
+		nheld_host += n;
+	} else if(host_cb) {
+		host_cb(NULL, buf, n, host_channel, host_data);
+	}
+}
+
 static void host(const char *hex) {
 	uint8_t buf[64];
 	size_t n = parse_hex(hex, buf);
-	ev_now_update(loop);
-	if(host_cb)
-		host_cb(NULL, buf, n, host_channel, host_data);
+	host_bytes(buf, n);
 }
 
 // ASCII protocols: the radio's answer, as text.
 static void radio_text(const char *text) {
-	ev_now_update(loop);
-	for(size_t i = 0; text[i] && radio_cb; i++)
-		radio_cb(NULL, (const uint8_t *)&text[i], 1, radio_channel, radio_data);
+	radio_bytes((const uint8_t *)text, strlen(text));
+}
+
+static void host_text(const char *text) {
+	host_bytes((const uint8_t *)text, strlen(text));
 }
 
 // Command as Hamlib sends it: host data, then the bus echo.
@@ -237,14 +178,170 @@ static void cmd(const char *hex) {
 	radio(hex);
 }
 
-static void keyer_state(int state) {
-	struct ev_keyer_state ev = { .serial = "TEST0001", .state = state };
-	if(keyer_state_cb)
-		keyer_state_cb(EV_KEYER_STATE, &ev, keyer_state_data);
+
+// Runs the loop until mhuxd sent an own query, at most s seconds. Returns the time it took,
+// or -1.
+static double wait_query(double s) {
+	int before = nsends;
+	double waited = 0;
+	while(nsends == before && waited < s) {
+		run_for(0.02);
+		waited += 0.02;
+	}
+	return nsends != before ? waited : -1;
 }
 
-static const struct mhc_radio_info *last_pub(void) {
-	return npub ? &pub[npub - 1] : NULL;
+static int sent_is(const char *hex) {
+	uint8_t buf[64];
+	size_t n = parse_hex(hex, buf);
+	return n == nsent && !memcmp(buf, sent, n);
+}
+
+static int sent_text_is(const char *text) {
+	return strlen(text) == nsent && !memcmp(text, sent, nsent);
+}
+
+static int client_got(const char *hex) {
+	uint8_t buf[64];
+	size_t n = parse_hex(hex, buf);
+	return n == nclient_rx && !memcmp(buf, client_rx, n);
+}
+
+// Plays the IC-7300 for mhuxd's own CI-V queries: echo, then the answer. With nak_26 the radio
+// doesn't know command 26.
+static void civ_answer(int nak_26) {
+	uint8_t q[64];
+	size_t n = nsent;
+
+	memcpy(q, sent, n);
+	radio_bytes(q, n);
+	switch(q[4]) {
+	case 0x03: radio("fe fe e5 94 03 00 00 07 14 00 fd"); break;
+	case 0x04: radio("fe fe e5 94 04 01 01 fd"); break;
+	case 0x1a: radio("fe fe e5 94 1a 06 01 01 fd"); break;
+	case 0x26: radio(nak_26 ? "fe fe e5 94 fa fd" : "fe fe e5 94 26 00 01 01 01 fd"); break;
+	}
+}
+
+static void test_own_queries(struct device *dev) {
+	struct cat_native_cfg cfg = { .radio = 1, .own_queries = 1 };
+	const struct mhc_radio_info *p;
+	struct cat_native *cn;
+	double t;
+
+	speed.rigtype = RIG_IC7300;
+	speed.icomaddress = 0x94;
+	nsends = 0;
+	nclient_rx = 0;
+	npub = 0;
+	cn = cat_native_create((app_ctx *)dev, dev, &cfg);
+
+	// Nothing known, line idle: frequency first. Client data waits, radio data is intercepted.
+	t = wait_query(0.5);
+	CHECK(t >= 0 && sent_is("fe fe 94 e5 03 fd"), "own frequency query (%.2f s)", t);
+	CHECK(held && intercepted, "client data held, radio data intercepted");
+	host("fe fe 94 e0 04 fd");
+	CHECK(nheld_host == 6, "client command waits");
+	radio("fe fe 94 e5 03 fd");
+	CHECK(held, "still held after the echo");
+	radio("fe fe e5 94 03 00 40 07 14 00 fd");
+	CHECK(!held && !intercepted, "released after the answer");
+	CHECK(nclient_rx == 0, "echo and answer not passed to the client, got %zu bytes", nclient_rx);
+	run_for(0.01);
+	CHECK(nheld_host == 0, "held client command sent after the answer");
+	radio("fe fe 94 e0 04 fd");
+	radio("fe fe e0 94 04 01 01 fd");
+	CHECK(client_got("fe fe 94 e0 04 fd fe fe e0 94 04 01 01 fd"), "client gets its echo and reply");
+
+	// USB, data flag unknown: 26 00 after an idle gap. A transceive frame between echo and
+	// answer goes to the client.
+	nclient_rx = 0;
+	t = wait_query(0.5);
+	CHECK(t >= 0.1 && sent_is("fe fe 94 e5 26 00 fd"), "own mode query after an idle gap (%.2f s)", t);
+	radio("fe fe 94 e5 26 00 fd");
+	radio("fe fe 00 94 00 00 00 08 14 00 fd");
+	radio("fe fe e5 94 26 00 01 01 01 fd");
+	CHECK(client_got("fe fe 00 94 00 00 00 08 14 00 fd"), "transceive passed on, own frames not");
+	CHECK(!held && !intercepted, "released after the mode answer");
+	run_for(0.25);
+	p = last_pub();
+	CHECK(p && p->mode == MOD_DIGITAL && p->rxFreq == 14080000, "own answers published: 14080000 PKTUSB");
+	CHECK(wait_query(0.25) < 0, "no own query while the values are fresh");
+
+	// A client polling keeps the values fresh: no own queries.
+	nsends = 0;
+	for(int i = 0; i < 5; i++) {
+		cmd("fe fe 94 e0 03 fd");
+		radio("fe fe e0 94 03 00 00 08 14 00 fd");
+		cmd("fe fe 94 e0 26 00 fd");
+		radio("fe fe e0 94 26 00 01 01 01 fd");
+		run_for(0.3);
+	}
+	CHECK(nsends == 0, "no own queries while a client polls, got %d", nsends);
+
+	// No answer: client data released after the timeout, a late answer is still taken out.
+	nclient_rx = 0;
+	t = wait_query(2.0);
+	CHECK(t >= 0 && sent_is("fe fe 94 e5 03 fd"), "own frequency query once stale (%.2f s)", t);
+	run_for(0.35);
+	CHECK(!held && intercepted, "timeout: client data released, radio data still routed");
+	radio("fe fe 94 e5 03 fd");
+	radio("fe fe e5 94 03 00 00 07 14 00 fd");
+	CHECK(nclient_rx == 0 && !intercepted, "late answer taken out, routing ends (%zu bytes)", nclient_rx);
+
+	// The radio doesn't know 26: after three rejections 04 and 1A 06 instead.
+	int n26 = 0, n04 = 0, n1a = 0;
+	for(int i = 0; i < 12 && !(n04 && n1a); i++) {
+		if(wait_query(2.0) < 0)
+			break;
+		n26 += sent[4] == 0x26;
+		n04 += sent[4] == 0x04;
+		n1a += sent[4] == 0x1a;
+		civ_answer(1);
+	}
+	CHECK(n26 == 3 && n04 && n1a, "26 rejected three times, then 04 and 1A 06 (%d %d %d)", n26, n04, n1a);
+	CHECK(nclient_rx == 0, "client got nothing of it, %zu bytes", nclient_rx);
+
+	// Keyer offline: no queries.
+	keyer_state_val = MHC_KEYER_STATE_OFFLINE;
+	nsends = 0;
+	run_for(1.0);
+	CHECK(nsends == 0, "no own queries while the keyer is offline, got %d", nsends);
+	keyer_state_val = MHC_KEYER_STATE_ONLINE;
+
+	// Radio off (silent since the keyer went offline): queries time out, the keepalive stops,
+	// so the radio state expires in mhcontrol.
+	run_for(0.6);
+	int n = npub;
+	run_for(1.2);
+	CHECK(npub == n, "no keepalive while the radio is silent (%d -> %d)", n, npub);
+	CHECK(!held, "nothing held while the radio is silent");
+
+	cat_native_destroy(cn);
+	CHECK(!held && !intercepted, "destroy releases client and radio data");
+
+	// Kenwood TS-590: IF, then DA for the data flag of USB.
+	speed.rigtype = RIG_TS590;
+	nclient_rx = 0;
+	npub = 0;
+	cn = cat_native_create((app_ctx *)dev, dev, &cfg);
+	t = wait_query(0.5);
+	CHECK(t >= 0 && sent_text_is("IF;"), "TS-590: own IF query");
+	radio_text("IF00014074000     +000000000021000000;");
+	t = wait_query(0.5);
+	CHECK(t >= 0 && sent_text_is("DA;"), "TS-590: DA after IF");
+	radio_text("DA1;");
+	run_for(0.25);
+	p = last_pub();
+	CHECK(p && p->rxFreq == 14074000 && p->mode == MOD_DIGITAL, "TS-590: 14074000 PKTUSB from own queries");
+	CHECK(nclient_rx == 0 && !held && !intercepted, "TS-590: answers taken out, %zu bytes", nclient_rx);
+
+	// A client set has no answer: it blocks own queries until it expires.
+	host_text("FA00014080000;");
+	nsends = 0;
+	t = wait_query(1.5);
+	CHECK(t < 0, "no own query within 1.5 s after a client set");
+	cat_native_destroy(cn);
 }
 
 /*
@@ -274,6 +371,7 @@ int main(int argc, char **argv) {
 	const struct mhc_radio_info *p;
 
 	loop = ev_default_loop(0);
+	ev_timer_init(&release_timer, release_cb, 0., 0.);
 
 	// Channel not configured yet: no decoder, nothing published.
 	struct cat_native *cn = cat_native_create((app_ctx *)&dev, &dev, &cfg);
@@ -428,6 +526,9 @@ int main(int argc, char **argv) {
 	run_for(0.3);
 	CHECK(npub == 0, "no decoder for the FT-817, got %d publications", npub);
 	cat_native_destroy(cn);
+
+	CHECK(nsends == 0, "nothing sent to the radio without own queries, got %d", nsends);
+	test_own_queries(&dev);
 
 	// CAT monitor: trace lines to the event bus and to <dir>/cat-<serial>-r1.trace.
 	if(argc > 1) {

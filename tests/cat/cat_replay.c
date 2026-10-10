@@ -394,6 +394,14 @@ static void assert_line(struct replay *rp, char *line) {
 			check_u32(rp, tok, val, stats->foreign);
 		} else if(!strcmp(tok, "errors")) {
 			check_u32(rp, tok, val, stats->errors);
+		} else if(!strcmp(tok, "own")) {
+			check_u32(rp, tok, val, stats->own);
+		} else if(!strcmp(tok, "pending")) {
+			unsigned pend = rp->ascii ? cat_ascii_pending(rp->ascii, rp->t_ms) :
+						    cat_civ_pending(rp->civ, rp->t_ms);
+			check(rp, tok, val, pend == (CAT_PENDING_CLIENT | CAT_PENDING_OWN) ? "both" :
+					    pend == CAT_PENDING_CLIENT ? "client" :
+					    pend == CAT_PENDING_OWN ? "own" : "none");
 		} else {
 			fail(rp, "unknown key '%s'", tok);
 		}

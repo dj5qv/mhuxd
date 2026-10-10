@@ -25,7 +25,8 @@
 
 - Native rig mode sync (Icom, Kenwood, Elecraft, newer Yaesu, Flex/ANAN): mhuxd reads the CAT traffic of the applications
   using the keyer's CAT port and keeps keyer mode and frequency in sync with the radio, without
-  rigctld. With a CAT monitor for troubleshooting.
+  rigctld. When no application polls the radio, mhuxd asks it itself, in between the
+  applications' commands. With a CAT monitor for troubleshooting.
 
 
 ---
@@ -259,11 +260,18 @@ directly, e.g. WSJTX configured like in the "WSJTX direct" example above.
   reported the data sub mode (DT), DATA counts as DATA A.
 - Keep the keyer option "Use decoder if connected" off. The keyer's own CAT polls interfere with
   the applications' commands (measured with an IC-7300: collisions on the CI-V bus).
-- mhuxd doesn't send anything to the radio yet. Frequency and mode are known while an
-  application polls the radio (WSJTX, fldigi and loggers do), and from the radio's own
-  messages on changes: CI-V transceive on Icom ("CI-V Transceive", default on on the IC-7300),
-  Auto Information on the others when an application turned it on (AI). When nobody polls,
-  the keyer keeps the last known mode.
+- While an application polls the radio (WSJTX, fldigi and loggers do), mhuxd takes frequency
+  and mode from its traffic and sends nothing itself. When values are older than 1.5 s
+  (nobody polls, or the application doesn't ask for the data mode), mhuxd asks the radio
+  itself ("Query the radio", on by default): one command at a time, only when the CAT line
+  has been quiet for a moment. Commands of the applications wait meanwhile (a few ten ms), and
+  the radio's answers to mhuxd don't reach them. On Icom mhuxd uses the CI-V controller address
+  E5, the applications E0. Without the queries ("Query the radio" off), front panel changes
+  are only seen from the radio's own messages: CI-V transceive on Icom ("CI-V Transceive",
+  default on on the IC-7300), Auto Information on the others when an application turned it
+  on (AI).
+- When the radio doesn't answer for 10 s (switched off), its state expires and the keyer goes
+  back to its configured mode, as with rigctld.
 - "Radio state" shows what mhuxd sees, e.g. "14.074.000 Hz PKTUSB → keyer DIGITAL". That's
   the first thing to check when the keyer mode doesn't follow the radio.
 - "CAT monitor" shows the decoded CAT traffic live and writes it to

@@ -49,9 +49,31 @@
 // CAT monitor files (LOGDIR/cat-<serial>-r<n>.trace) stop growing at this size.
 #define CATN_MON_MAX_BYTES (20 * 1024 * 1024)
 
+// Own queries: when no application keeps the radio state fresh, mhuxd asks the radio itself,
+// one query at a time in a gap of the applications' traffic. Their data waits in the router
+// meanwhile; radio frames answering the query are taken out of the radio data.
+#define CATN_OWN_TICK 0.1	// the poll condition is checked this often
+#define CATN_OWN_IDLE 0.15	// no CAT data in either direction for this long before a query
+#ifndef CATN_OWN_STALE
+#define CATN_OWN_STALE 1.5	// values older than this are queried, each query at most this often
+#endif
+#define CATN_OWN_TIMEOUT 0.3	// answer expected within; the applications' data waits meanwhile
+#ifndef CATN_OWN_RETRY
+#define CATN_OWN_RETRY 10.0	// query interval while the radio doesn't answer
+#endif
+#define CATN_OWN_MAX_TIMEOUTS 3
+#define CATN_OWN_MAX_REJECTS 3	// rejected this often in a row: the radio doesn't know the query
+// With own queries, the keepalive stops when nothing came from the radio for this long (radio
+// off), so mhcontrol falls back to the keyer's configured mode as it does when rigctld loses
+// the radio.
+#define CATN_RADIO_SILENT (2 * CATN_KEEPALIVE)
+#define CATN_CIV_OWN_ADDR 0xe5	// mhuxd's CI-V controller address, applications use E0
+#define CATN_ROUTE_MAX 256	// radio data held back until its frame is complete
+
 // Rig types (keyer protocol keys, src/radiotypes.c) that need special handling.
 #define RIG_TYPE_IC735   0x08	// 4-byte frequencies
 #define RIG_TYPE_OMNI_VI 0x38	// Ten-Tec, speaks CI-V
+#define RIG_TYPE_TS950   0x19	// data mode via DT, not DA
 
 // Rig types with a Kenwood-style ASCII protocol. Icom radios are recognized by their CI-V
 // address. Legacy Yaesu (binary), Ten-Tec, JRC, Hilberling, Perseus: no decoder yet.
@@ -112,6 +134,16 @@ static const char *protocol_names[] = {
 	[CAT_NATIVE_PROTO_NONE] = "none",
 };
 
+// Own queries, per value.
+enum {
+	Q_FREQ,		// CI-V 03; IF on Kenwood, Elecraft, Yaesu (with the mode); FA on Flex
+	Q_MODE,		// CI-V 26 00 (with the data flag) or 04; MD on Flex
+	Q_DATA,		// CI-V 1A 06 when the radio has no 26; DA/DT on Kenwood, DT on Elecraft
+	Q_NUM
+};
+
+static const char *q_names[Q_NUM] = { "frequency", "mode", "data mode" };
+
 struct cat_native {
 	struct ev_loop *loop;
 	struct mh_control *ctl;
@@ -134,6 +166,8 @@ struct cat_native {
 	int civ_addr;
 	struct cat_civ *civ;		// one of these, or none
 	struct cat_ascii *ascii;
+	int decoder_protocol;		// CAT_NATIVE_PROTO_* of the decoder
+	int no_data;			// Kenwood without data mode
 	struct cat_state st;
 	ev_tstamp cfg_checked;
 	int decoder_warned;
@@ -144,6 +178,28 @@ struct cat_native {
 	struct mhc_radio_info last_info;
 	int last_info_valid;
 	eventbus_sub_t *kscb;
+
+	// Own queries
+	int own_queries;		// configured
+	ev_timer own_tick;
+	ev_timer own_timer;		// waiting for the answer
+	int own_active;			// query sent, applications' data held
+	int own_slot;			// Q_* of the query in flight
+	ev_tstamp own_sent[Q_NUM];
+	ev_tstamp own_last;		// last query
+	uint8_t own_rejects[Q_NUM];
+	uint8_t own_unsupported[Q_NUM];
+	uint8_t civ_mode_cmd;		// 0x26, or 0x04 if the radio doesn't know 26
+	int own_timeouts;		// in a row
+	ev_tstamp last_host, last_radio;	// last CAT data
+	int radio_silent;		// keepalive stopped, see CATN_RADIO_SILENT
+
+	// Radio data routing while an own query can be answered: data is held until its frame is
+	// complete; frames answering the query are dropped, the rest is passed on.
+	int routing;
+	uint8_t route_buf[CATN_ROUTE_MAX];
+	size_t route_len;
+	int frames_own, frames_other;	// frames completed by the current byte
 };
 
 static const char *radio_str(uint8_t radio) {
@@ -193,6 +249,15 @@ static const struct cat_stats *catn_stats(const struct cat_native *cn) {
 	return NULL;
 }
 
+static unsigned catn_pending(const struct cat_native *cn) {
+	uint64_t t_ms = (uint64_t)(ev_now(cn->loop) * 1000.0);
+	if(cn->civ)
+		return cat_civ_pending(cn->civ, t_ms);
+	if(cn->ascii)
+		return cat_ascii_pending(cn->ascii, t_ms);
+	return 0;
+}
+
 /*
  * CAT monitor
  */
@@ -240,8 +305,7 @@ static void catn_mon_comment(struct cat_native *cn, const char *fmt, ...) {
 	catn_mon_line(cn, line);
 }
 
-static void catn_mon_frame_cb(const struct cat_frame *f, void *user_data) {
-	struct cat_native *cn = user_data;
+static void catn_mon_frame(struct cat_native *cn, const struct cat_frame *f) {
 	char time_str[32], line[CAT_TRACE_LINE_MAX];
 	ev_tstamp now = ev_now(cn->loop);
 	time_t secs = (time_t)now;
@@ -283,13 +347,72 @@ static void catn_mon_open(struct cat_native *cn, const char *dir) {
 	catn_mon_comment(cn, "mhuxd CAT monitor, %s %s, started %s", cn->serial, radio_str(cn->radio), date);
 }
 
+/*
+ * Radio data routing
+ */
+
+static void catn_route_flush(struct cat_native *cn) {
+	if(cn->route_len)
+		mhr_pass_out(cn->router, cn->route_buf, cn->route_len, cn->channel);
+	cn->route_len = 0;
+}
+
+static void catn_route_start(struct cat_native *cn) {
+	if(cn->routing)
+		return;
+	cn->routing = 1;
+	cn->route_len = 0;
+	mhr_intercept_consumers(cn->router, cn->channel, 1);
+}
+
+static void catn_route_stop(struct cat_native *cn) {
+	if(!cn->routing)
+		return;
+	catn_route_flush(cn);
+	cn->routing = 0;
+	mhr_intercept_consumers(cn->router, cn->channel, 0);
+}
+
+// Routing ends when no own query can be answered any more (late answers included).
+static void catn_route_check(struct cat_native *cn) {
+	if(cn->routing && !cn->own_active && !(catn_pending(cn) & CAT_PENDING_OWN))
+		catn_route_stop(cn);
+}
+
+/*
+ * Own queries
+ */
+
+static void catn_own_end(struct cat_native *cn) {
+	if(!cn->own_active)
+		return;
+	cn->own_active = 0;
+	ev_timer_stop(cn->loop, &cn->own_timer);
+	mhr_hold_producers(cn->router, cn->channel, 0);
+}
+
+// Decoder starts over: what the radio knows and doesn't know is learned again.
+static void catn_own_reset(struct cat_native *cn) {
+	catn_own_end(cn);
+	catn_route_stop(cn);
+	memset(cn->own_sent, 0, sizeof(cn->own_sent));
+	memset(cn->own_rejects, 0, sizeof(cn->own_rejects));
+	memset(cn->own_unsupported, 0, sizeof(cn->own_unsupported));
+	cn->civ_mode_cmd = 0x26;
+	cn->own_timeouts = 0;
+	cn->own_last = 0;
+}
+
 static void catn_reset(struct cat_native *cn) {
 	cat_state_init(&cn->st);
 	ev_timer_stop(cn->loop, &cn->publish_timer);
 	ev_timer_stop(cn->loop, &cn->keepalive_timer);
 	cn->data_unknown_since = 0;
 	cn->last_info_valid = 0;
+	catn_own_reset(cn);
 }
+
+static void catn_frame_cb(const struct cat_frame *f, void *user_data);
 
 // (Re)creates the decoder when the channel's rig type or CI-V address changed.
 static void catn_setup(struct cat_native *cn, int force) {
@@ -360,6 +483,12 @@ static void catn_setup(struct cat_native *cn, int force) {
 		err("%s %s native CAT: out of memory", cn->serial, radio_str(cn->radio));
 		return;
 	}
+	cn->decoder_protocol = protocol;
+	cn->no_data = no_data;
+	if(cn->civ)
+		cat_civ_set_frame_cb(cn->civ, catn_frame_cb, cn);
+	else
+		cat_ascii_set_frame_cb(cn->ascii, catn_frame_cb, cn);
 	if(cn->civ)
 		info("%s %s native CAT: CI-V, rig type '%s', radio address %02X%s", cn->serial,
 		     radio_str(cn->radio), rtyp_get_name(rigtype), addr, addr ? "" : " (learn)");
@@ -369,10 +498,6 @@ static void catn_setup(struct cat_native *cn, int force) {
 		     no_data && protocol == CAT_NATIVE_PROTO_KENWOOD ? ", no data mode" : "");
 
 	if(cn->monitor) {
-		if(cn->civ)
-			cat_civ_set_frame_cb(cn->civ, catn_mon_frame_cb, cn);
-		else
-			cat_ascii_set_frame_cb(cn->ascii, catn_mon_frame_cb, cn);
 		catn_mon_comment(cn, "rig type '%s'", rtyp_get_name(rigtype));
 		catn_mon_line(cn, line);
 	}
@@ -421,12 +546,28 @@ static void catn_publish_cb(struct ev_loop *loop, struct ev_timer *w, int revent
 	catn_publish(w->data);
 }
 
+// Own queries can be sent: configured, decoder with a known radio address, keyer online.
+static int catn_can_query(const struct cat_native *cn) {
+	if(!cn->own_queries || (!cn->ascii && !cn->civ))
+		return 0;
+	if(cn->civ && !cat_civ_radio_addr(cn->civ))
+		return 0;
+	return mhc_get_state(cn->ctl) == MHC_KEYER_STATE_ONLINE;
+}
+
 static void catn_keepalive_cb(struct ev_loop *loop, struct ev_timer *w, int revents) {
 	struct cat_native *cn = w->data;
-	(void)loop; (void)revents;
+	(void)revents;
 
 	if(!cn->last_info_valid)
 		return;
+	if(catn_can_query(cn) && ev_now(loop) - cn->last_radio > CATN_RADIO_SILENT) {
+		if(!cn->radio_silent)
+			info("%s %s native CAT: no answer from the radio for %.0f s, radio state expires",
+			     cn->serial, radio_str(cn->radio), CATN_RADIO_SILENT);
+		cn->radio_silent = 1;
+		return;
+	}
 	dbg1("%s %s native CAT: no new data, sending the last state again", cn->serial, radio_str(cn->radio));
 	mhc_update_radio_info(cn->ctl, CATN_SOURCE, &cn->last_info);
 }
@@ -454,18 +595,249 @@ static void catn_feed(struct cat_native *cn, enum cat_dir dir, unsigned const ch
 	}
 }
 
+// Frame for an own query, NULL if the protocol has none for this value.
+static size_t catn_build_query(const struct cat_native *cn, int slot, uint8_t *buf) {
+	const char *q = NULL;
+
+	if(cn->civ) {
+		size_t n = 0;
+		buf[n++] = 0xfe;
+		buf[n++] = 0xfe;
+		buf[n++] = cat_civ_radio_addr(cn->civ);
+		buf[n++] = CATN_CIV_OWN_ADDR;
+		switch(slot) {
+		case Q_FREQ:
+			buf[n++] = 0x03;
+			break;
+		case Q_MODE:
+			buf[n++] = cn->civ_mode_cmd;
+			if(cn->civ_mode_cmd == 0x26)
+				buf[n++] = 0x00;	// selected VFO
+			break;
+		default:
+			buf[n++] = 0x1a;
+			buf[n++] = 0x06;
+			break;
+		}
+		buf[n++] = 0xfd;
+		return n;
+	}
+
+	switch(cn->decoder_protocol) {
+	case CAT_NATIVE_PROTO_FLEX:
+		q = slot == Q_FREQ ? "FA;" : slot == Q_MODE ? "MD;" : NULL;
+		break;
+	case CAT_NATIVE_PROTO_YAESU:
+		q = slot == Q_FREQ ? "IF;" : NULL;
+		break;
+	case CAT_NATIVE_PROTO_ELECRAFT:
+		q = slot == Q_FREQ ? "IF;" : slot == Q_DATA ? "DT;" : NULL;
+		break;
+	default:
+		if(slot == Q_FREQ)
+			q = "IF;";
+		else if(slot == Q_DATA && !cn->no_data)
+			q = cn->rigtype == RIG_TYPE_TS950 ? "DT;" : "DA;";
+		break;
+	}
+	if(!q)
+		return 0;
+	memcpy(buf, q, strlen(q));
+	return strlen(q);
+}
+
+static int item_stale(const struct cat_item *it, uint64_t now_ms) {
+	return !it->valid || it->t_ms + (uint64_t)(CATN_OWN_STALE * 1000.0) < now_ms;
+}
+
+// The value behind the query is unknown or older than CATN_OWN_STALE.
+static int catn_query_needed(const struct cat_native *cn, int slot, uint64_t now_ms) {
+	const struct cat_vfo_state *v = &cn->st.vfo[CAT_VFO_SEL];
+	int freq = item_stale(&v->freq, now_ms);
+	int mode = item_stale(&v->mode, now_ms);
+	int data = v->mode.valid && cat_mode_with_data(v->mode.val, 1) != (enum cat_mode)v->mode.val &&
+		   item_stale(&v->data, now_ms);
+
+	if(cn->civ) {
+		switch(slot) {
+		case Q_FREQ: return freq;
+		case Q_MODE: return mode || (data && cn->civ_mode_cmd == 0x26);
+		default:     return data && !mode && cn->civ_mode_cmd == 0x04;
+		}
+	}
+
+	switch(slot) {
+	case Q_FREQ:
+		return freq || (mode && cn->decoder_protocol != CAT_NATIVE_PROTO_FLEX);
+	case Q_MODE:
+		return mode;
+	default:
+		if(cn->decoder_protocol == CAT_NATIVE_PROTO_ELECRAFT) {
+			// DATA mode: the sub mode (DT) only changes on the radio, IF doesn't tell it.
+			enum cat_mode m = cat_state_mode(&cn->st, CAT_VFO_SEL);
+			return m == CAT_MODE_PKTUSB || m == CAT_MODE_PKTLSB || m == CAT_MODE_RTTY ||
+			       m == CAT_MODE_RTTYR;
+		}
+		return data;
+	}
+}
+
+static void catn_own_send(struct cat_native *cn, int slot) {
+	uint8_t buf[16];
+	size_t len = catn_build_query(cn, slot, buf);
+	ev_tstamp now = ev_now(cn->loop);
+
+	cn->own_sent[slot] = now;
+	cn->own_last = now;
+	if(!len) {
+		cn->own_unsupported[slot] = 1;
+		return;
+	}
+
+	// The applications' data waits until the answer is in or the query timed out.
+	mhr_hold_producers(cn->router, cn->channel, 1);
+	if(mhr_send_in(cn->router, buf, len, cn->channel) != (int)len) {
+		mhr_hold_producers(cn->router, cn->channel, 0);
+		return;
+	}
+	dbg1("%s %s native CAT: own %s query", cn->serial, radio_str(cn->radio), q_names[slot]);
+	cn->own_active = 1;
+	cn->own_slot = slot;
+	catn_route_start(cn);
+	ev_timer_set(&cn->own_timer, CATN_OWN_TIMEOUT, 0.);
+	ev_timer_start(cn->loop, &cn->own_timer);
+
+	uint64_t t_ms = (uint64_t)(now * 1000.0);
+	if(cn->civ)
+		cat_civ_feed(cn->civ, CAT_DIR_OWN, buf, len, t_ms);
+	else
+		cat_ascii_feed(cn->ascii, CAT_DIR_OWN, buf, len, t_ms);
+}
+
+// Answer to the own query in flight: reply, acknowledge or rejection.
+static void catn_own_answered(struct cat_native *cn, const struct cat_frame *f) {
+	int slot = cn->own_slot;
+
+	catn_own_end(cn);
+	cn->own_timeouts = 0;
+	if(f->kind != CAT_FRAME_NAK && f->kind != CAT_FRAME_ERROR) {
+		cn->own_rejects[slot] = 0;
+		return;
+	}
+
+	// A single rejection may be the radio's state (TX, menu), not the command.
+	if(++cn->own_rejects[slot] < CATN_OWN_MAX_REJECTS)
+		return;
+	cn->own_rejects[slot] = 0;
+	if(cn->civ && slot == Q_MODE && cn->civ_mode_cmd == 0x26) {
+		info("%s %s native CAT: the radio doesn't know CI-V command 26, asking 04 and 1A 06 instead",
+		     cn->serial, radio_str(cn->radio));
+		cn->civ_mode_cmd = 0x04;
+		return;
+	}
+	info("%s %s native CAT: the radio rejects the %s query, not asked again", cn->serial,
+	     radio_str(cn->radio), q_names[slot]);
+	cn->own_unsupported[slot] = 1;
+}
+
+static void catn_own_timeout_cb(struct ev_loop *loop, struct ev_timer *w, int revents) {
+	struct cat_native *cn = w->data;
+	(void)loop; (void)revents;
+
+	// Late answers are still taken out while the decoder keeps the query pending.
+	catn_own_end(cn);
+	cn->own_timeouts++;
+	dbg0("%s %s native CAT: no answer to own %s query", cn->serial, radio_str(cn->radio),
+	     q_names[cn->own_slot]);
+	if(cn->own_timeouts == CATN_OWN_MAX_TIMEOUTS)
+		info("%s %s native CAT: the radio doesn't answer, asking every %.0f s", cn->serial,
+		     radio_str(cn->radio), CATN_OWN_RETRY);
+}
+
+static void catn_own_tick_cb(struct ev_loop *loop, struct ev_timer *w, int revents) {
+	struct cat_native *cn = w->data;
+	ev_tstamp now = ev_now(loop);
+	(void)revents;
+
+	catn_route_check(cn);
+	if(cn->own_active)
+		return;
+	catn_setup(cn, 0);
+	if(!catn_can_query(cn))
+		return;
+	// Not while an application talks to the radio, nor while an earlier query may be answered.
+	if(now - cn->last_host < CATN_OWN_IDLE || now - cn->last_radio < CATN_OWN_IDLE || catn_pending(cn))
+		return;
+	if(cn->own_timeouts >= CATN_OWN_MAX_TIMEOUTS && now - cn->own_last < CATN_OWN_RETRY)
+		return;
+
+	uint64_t now_ms = (uint64_t)(now * 1000.0);
+	for(int slot = 0; slot < Q_NUM; slot++) {
+		if(cn->own_unsupported[slot] || now - cn->own_sent[slot] < CATN_OWN_STALE)
+			continue;
+		if(catn_query_needed(cn, slot, now_ms)) {
+			catn_own_send(cn, slot);
+			return;
+		}
+	}
+}
+
+static void catn_frame_cb(const struct cat_frame *f, void *user_data) {
+	struct cat_native *cn = user_data;
+
+	if(cn->monitor)
+		catn_mon_frame(cn, f);
+	if(f->dir != CAT_DIR_RADIO)
+		return;
+	if(f->own) {
+		cn->frames_own++;
+		if(cn->own_active && f->kind != CAT_FRAME_ECHO)
+			catn_own_answered(cn, f);
+	} else {
+		cn->frames_other++;
+	}
+}
+
 // Radio -> host, one byte per call.
 static void catn_radio_cb(struct mh_router *router, unsigned const char *data, int len, int channel,
 			  void *user_data) {
+	struct cat_native *cn = user_data;
 	(void)router; (void)channel;
-	catn_feed(user_data, CAT_DIR_RADIO, data, len);
+
+	cn->last_radio = ev_now(cn->loop);
+	if(cn->radio_silent) {
+		info("%s %s native CAT: data from the radio again", cn->serial, radio_str(cn->radio));
+		cn->radio_silent = 0;
+	}
+
+	for(int i = 0; i < len; i++) {
+		if(!cn->routing) {
+			// The router passed the data on to the applications.
+			catn_feed(cn, CAT_DIR_RADIO, &data[i], 1);
+			continue;
+		}
+		if(cn->route_len == CATN_ROUTE_MAX)
+			catn_route_flush(cn);
+		cn->route_buf[cn->route_len++] = data[i];
+		cn->frames_own = cn->frames_other = 0;
+		catn_feed(cn, CAT_DIR_RADIO, &data[i], 1);
+		if(cn->frames_other)
+			catn_route_flush(cn);
+		else if(cn->frames_own)
+			cn->route_len = 0;	// answer to the own query, not for the applications
+		catn_route_check(cn);
+		if(!cn->routing && i + 1 < len)
+			mhr_pass_out(cn->router, &data[i + 1], len - i - 1, cn->channel);
+	}
 }
 
 // Host -> radio, as the router reads it from the connectors.
 static void catn_host_cb(struct mh_router *router, unsigned const char *data, int len, int channel,
 			 void *user_data) {
+	struct cat_native *cn = user_data;
 	(void)router; (void)channel;
-	catn_feed(user_data, CAT_DIR_HOST, data, len);
+	cn->last_host = ev_now(cn->loop);
+	catn_feed(cn, CAT_DIR_HOST, data, len);
 }
 
 static void catn_keyer_state_cb(enum app_event_type type, const void *data, void *user_data) {
@@ -498,6 +870,8 @@ struct cat_native *cat_native_create(struct app_ctx *ctx, struct device *dev, co
 	cn->channel = cn->radio == 2 ? MH_CHANNEL_R2 : MH_CHANNEL_R1;
 	cn->protocol = cfg->protocol;
 	cn->civ_address = cfg->civ_address;
+	cn->own_queries = cfg->own_queries;
+	cn->civ_mode_cmd = 0x26;
 	cn->ebus = app_ctx_get_eventbus(ctx);
 	cn->monitor = cfg->monitor;
 	if(cn->monitor)
@@ -510,13 +884,20 @@ struct cat_native *cat_native_create(struct app_ctx *ctx, struct device *dev, co
 	cn->publish_timer.data = cn;
 	ev_timer_init(&cn->keepalive_timer, catn_keepalive_cb, 0., CATN_KEEPALIVE);
 	cn->keepalive_timer.data = cn;
+	ev_timer_init(&cn->own_timer, catn_own_timeout_cb, 0., 0.);
+	cn->own_timer.data = cn;
+	ev_timer_init(&cn->own_tick, catn_own_tick_cb, CATN_OWN_TICK, CATN_OWN_TICK);
+	cn->own_tick.data = cn;
+	if(cn->own_queries)
+		ev_timer_start(cn->loop, &cn->own_tick);
 
 	mhr_add_consumer_cb(cn->router, catn_radio_cb, cn->channel, cn);
 	mhr_add_producer_tap_cb(cn->router, catn_host_cb, cn->channel, cn);
 	cn->kscb = eventbus_subscribe(app_ctx_get_eventbus(ctx), EV_KEYER_STATE, catn_keyer_state_cb, cn);
 
-	info("%s %s native CAT rig mode sync created (protocol %s%s)", cn->serial, radio_str(cn->radio),
-	     cat_native_protocol_str(cn->protocol), cn->monitor ? ", monitor on" : "");
+	info("%s %s native CAT rig mode sync created (protocol %s%s%s)", cn->serial, radio_str(cn->radio),
+	     cat_native_protocol_str(cn->protocol), cn->own_queries ? ", own queries" : "",
+	     cn->monitor ? ", monitor on" : "");
 	catn_setup(cn, 1);
 	return cn;
 }
@@ -527,10 +908,12 @@ void cat_native_destroy(struct cat_native *cn) {
 
 	if(cn->kscb)
 		eventbus_unsubscribe(cn->kscb);
+	catn_own_reset(cn);	// releases held data and the radio data
 	mhr_rem_producer_tap_cb(cn->router, catn_host_cb, cn->channel, cn);
 	mhr_rem_consumer_cb(cn->router, catn_radio_cb, cn->channel);
 	ev_timer_stop(cn->loop, &cn->publish_timer);
 	ev_timer_stop(cn->loop, &cn->keepalive_timer);
+	ev_timer_stop(cn->loop, &cn->own_tick);
 	catn_destroy_decoder(cn);
 	if(cn->mon_file) {
 		catn_mon_comment(cn, "monitor stopped");

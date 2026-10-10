@@ -15,23 +15,32 @@ CAT_SRCS = $(SRCDIR)/cat_civ.c $(SRCDIR)/cat_ascii.c $(SRCDIR)/cat_state.c $(SRC
 CAT_HDRS = $(SRCDIR)/cat.h $(SRCDIR)/cat_civ.h $(SRCDIR)/cat_ascii.h $(SRCDIR)/cat_state.h \
 	   $(SRCDIR)/cat_trace.h $(SRCDIR)/mhcontrol.h
 
-all: cat_replay native_test
+all: cat_replay native_test router_test
 
 cat_replay: cat_replay.c $(CAT_SRCS) $(CAT_HDRS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ cat_replay.c $(CAT_SRCS)
 
-# cat_native.c with router, mhcontrol and event bus stubbed (needs libev), with a short
-# keepalive interval.
-native_test: native_test.c $(SRCDIR)/cat_native.c $(SRCDIR)/cat_native.h $(SRCDIR)/radiotypes.c $(CAT_SRCS) $(CAT_HDRS)
-	$(CC) $(CPPFLAGS) -DCATN_KEEPALIVE=0.5 -DLOGDIR=\"/nonexistent\" $(CFLAGS) -o $@ native_test.c $(SRCDIR)/cat_native.c $(SRCDIR)/radiotypes.c $(CAT_SRCS) -lev
+# cat_native.c with router, mhcontrol and event bus stubbed (needs libev), with short
+# keepalive and own query intervals.
+NATIVE_TEST_DEFS = -DCATN_KEEPALIVE=0.5 -DCATN_OWN_STALE=0.6 -DCATN_OWN_RETRY=2.0 -DLOGDIR=\"/nonexistent\"
+NATIVE_SRCS = stubs.c $(SRCDIR)/cat_native.c $(SRCDIR)/radiotypes.c $(CAT_SRCS)
+NATIVE_DEPS = stubs.h $(NATIVE_SRCS) $(SRCDIR)/cat_native.h $(SRCDIR)/mhrouter.h $(CAT_HDRS)
+native_test: native_test.c $(NATIVE_DEPS)
+	$(CC) $(CPPFLAGS) $(NATIVE_TEST_DEFS) $(CFLAGS) -o $@ native_test.c $(NATIVE_SRCS) -lev
 
-check: cat_replay native_test
+# The same with the real router, emulated keyer, radio and client on socketpairs.
+ROUTER_SRCS = $(SRCDIR)/mhrouter.c $(SRCDIR)/mux.c $(SRCDIR)/demux.c $(SRCDIR)/buffer.c $(SRCDIR)/pglist.c
+router_test: router_test.c $(NATIVE_DEPS) $(ROUTER_SRCS)
+	$(CC) $(CPPFLAGS) $(NATIVE_TEST_DEFS) $(CFLAGS) -o $@ router_test.c $(NATIVE_SRCS) $(ROUTER_SRCS) -lev
+
+check: cat_replay native_test router_test
 	./cat_replay traces/*.trace
 	rm -rf monitor-out && mkdir monitor-out
 	./native_test monitor-out
 	./cat_replay monitor-out/cat-TEST0001-r1.trace
+	./router_test
 
 clean:
-	rm -rf cat_replay native_test monitor-out
+	rm -rf cat_replay native_test router_test monitor-out
 
 .PHONY: all check clean

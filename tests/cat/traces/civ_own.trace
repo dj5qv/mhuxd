@@ -1,0 +1,49 @@
+# mhuxd's own queries (tag M, controller address E5) next to a client (E0).
+# Frames answering an own query count as 'own': the echo, the reply, FB/FA.
+@civ addr=94
+0.000 H1 fe fe 94 e0 03 fd
+0.015 R  fe fe 94 e0 03 fd
+= pending=client
+0.040 R  fe fe e0 94 03 00 40 07 14 00 fd
+= rx=14074000 pending=none own=0
+
+# Own query: echo and reply
+1.000 M  fe fe 94 e5 26 00 fd
+= pending=own
+1.015 R  fe fe 94 e5 26 00 fd
+= own=1 pending=own
+1.040 R  fe fe e5 94 26 00 01 01 01 fd
+= mode=PKTUSB keyer=DIGITAL own=2 pending=none
+
+# Command not supported: FA answers the own query
+2.000 M  fe fe 94 e5 25 00 fd
+2.015 R  fe fe 94 e5 25 00 fd
+2.040 R  fe fe e5 94 fa fd
+= own=4 pending=none
+
+# Client and own query outstanding together: each reply goes to its controller
+3.000 H1 fe fe 94 e0 04 fd
+3.010 M  fe fe 94 e5 03 fd
+= pending=both
+3.015 R  fe fe 94 e0 04 fd
+3.025 R  fe fe 94 e5 03 fd
+3.040 R  fe fe e0 94 04 03 01 fd
+= own=5 mode=CW pending=own
+3.060 R  fe fe e5 94 03 00 00 08 14 00 fd
+= own=6 rx=14080000 pending=none
+
+# No answer: the own query counts as pending for 2 s, a late reply is unmatched
+4.000 M  fe fe 94 e5 03 fd
+= pending=own
+5.900 R  fe fe 00 94 00 00 00 07 14 00 fd
+= rx=14070000 pending=own
+6.100 R  fe fe e5 94 03 00 00 08 14 00 fd
+= rx=14070000 pending=none own=6 unmatched=1
+
+# A partly received client frame counts as pending
+7.000 H1 fe fe 94 e0
+= pending=client
+7.010 H1 03 fd
+7.015 R  fe fe 94 e0 03 fd
+7.040 R  fe fe e0 94 03 00 00 07 14 00 fd
+= pending=none

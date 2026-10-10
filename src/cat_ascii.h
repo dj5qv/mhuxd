@@ -49,5 +49,7 @@ void cat_ascii_destroy(struct cat_ascii *a);
 void cat_ascii_set_frame_cb(struct cat_ascii *a, cat_frame_cb cb, void *user_data);
 void cat_ascii_feed(struct cat_ascii *a, enum cat_dir dir, const uint8_t *buf, size_t len, uint64_t t_ms);
 const struct cat_stats *cat_ascii_get_stats(const struct cat_ascii *a);
+// CAT_PENDING_* flags: commands that may still get an answer.
+unsigned cat_ascii_pending(const struct cat_ascii *a, uint64_t t_ms);
 
 #endif // CAT_ASCII_H

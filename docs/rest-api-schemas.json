@@ -198,6 +198,11 @@
           "minimum": 0,
           "maximum": 223
         },
+        "own_queries": {
+          "description": "backend native: auto = ask the radio when no application keeps the state fresh, never = listen only",
+          "type": "string",
+          "enum": ["auto", "never"]
+        },
         "monitor": {
           "description": "backend native: CAT monitor, LOGDIR/cat-<serial>-r<n>.trace and WebSocket events cat_monitor",
           "oneOf": [
