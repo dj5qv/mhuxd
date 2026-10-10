@@ -550,7 +550,7 @@ static void control_channel_cb(struct mh_router *router, unsigned const char *da
 		ctl->tracked_keyer_mode_r1r2[1] = (f >> 4) & 3;
 
 		// Shortly after SET KEYER MODE this is the keyer's answer, which may differ from the
-		// request (DK2 has no VOICE mode). Later reports are changes of the keyer's own.
+		// request (a mode the keyer doesn't have). Later reports are changes of the keyer's own.
 		for(int r = 0; r < 2; r++) {
 			if(ev_now(ctl->loop) - ctl->radio_info_mode_req_time[r] > KEYER_MODE_ANSWER_TIME)
 				ctl->keyer_mode_changed[r] = 1;
@@ -1975,6 +1975,14 @@ void mhc_update_radio_info(struct mh_control *ctl, const char *source, const str
 	uint8_t force_mode_changed;
 	uint8_t radio = info->radio;
 
+	// Keyer without VOICE mode (DK2): request the mode it takes instead, and show it as such.
+	struct mhc_radio_info mapped;
+	if((ctl->mhi.flags & MHF_HAS_NO_VOICE_USE_FSK) && info->mode == MOD_VOICE) {
+		mapped = *info;
+		mapped.mode = MOD_FSK;
+		info = &mapped;
+	}
+
 	dbg1("%s %s() source %s r%d mode %d rx=%u tx=%u", ctl->serial, __func__, source, radio,
 	     info->mode, info->rxFreq, info->txFreq);
 
@@ -2002,7 +2010,8 @@ void mhc_update_radio_info(struct mh_control *ctl, const char *source, const str
 	// Set the keyer mode when the radio's mode changed, when the forced mode was just lifted
 	// (the keyer is in r1KeyerMode then), or when the keyer changed its mode by itself since.
 	// Not whenever the keyer's reported mode differs: the keyer reports only changes, so a mode
-	// it doesn't have (DK2: no VOICE, it takes FSK) would be requested on every update.
+	// it doesn't take (forced mode, a mode it doesn't have, a stale report) would be requested
+	// on every update.
 	int r = radio - 1;
 	uint8_t keyer_mode = keyer_mode_of_radio(ctl, radio);
 	if(info->mode >= 0 && info->mode <= 3 && (ctl->mhi.flags & MHF_HAS_KEYER_MODE) &&

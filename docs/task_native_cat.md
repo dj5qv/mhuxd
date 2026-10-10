@@ -529,7 +529,9 @@ the radio left voice. Now it sends when the radio's mode changes, when the force
 just lifted, or when the keyer changed its mode by itself later (a report more than 1 s after
 the request, e.g. its mode button); a failed command is sent again. The same applied to any
 mode a keyer doesn't take, and to MK2R with the two radios in different modes (the old check
-also compared the focused radio's mode).
+also compared the focused radio's mode). In addition, `mhc_update_radio_info()` maps VOICE to
+FSK on keyers with `MHF_HAS_NO_VOICE_USE_FSK` (DK2), so mhuxd requests and shows the mode the
+keyer actually takes.
 
 ### Phase 3: multiple clients (software Y-connector)
 

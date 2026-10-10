@@ -87,6 +87,7 @@ static const struct mh_flag_name mh_flag_names[] = {
 	{ MHF_HAS_SM_COMMANDS, "HAS_SM_COMMANDS" },
 	{ MHF_HAS_PFSK, "HAS_PFSK" },
 	{ MHF_HAS_PCW, "HAS_PCW" },
+	{ MHF_HAS_NO_VOICE_USE_FSK, "HAS_NO_VOICE_USE_FSK" },
 	{ MHF_MHUXD_SUPPORTED, "MHUXD_SUPPORTED" }
 };
 
