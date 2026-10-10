@@ -429,7 +429,7 @@ static int client_init(struct client *c) {
  */
 
 // One client: own queries in the gaps of its traffic.
-static void test_own_queries(void) {
+static void test_own_queries(struct mh_router *router) {
 	struct client *c = &cl[0];
 	const struct mhc_radio_info *p;
 	int own;
@@ -515,6 +515,38 @@ static void test_own_queries(void) {
 	run_for(0.3);
 	CHECK(c->transceive == 10, "transceive: %d of 10 broadcasts", c->transceive);
 	CHECK_CLEAN(c, "transceive");
+
+	// The client doesn't take transceive (forward_unsolicited false, as for Hamlib): mhuxd still
+	// decodes the broadcasts, the client gets none, its polls are answered.
+	mhr_set_consumer_flags(router, c->fd[0], MH_CHANNEL_R1, MHR_CNS_NO_UNSOLICITED);
+	client_poll(c, 0.2);
+	run_for(0.3);
+	client_reset(c);
+	for(int i = 0; i < 10; i++) {
+		panel_mode(i & 1 ? 0x01 : 0x03, 0);
+		run_for(0.13);
+	}
+	run_for(0.3);
+	p = last_pub();
+	CHECK(!c->transceive, "no transceive: %d broadcasts reached the client", c->transceive);
+	CHECK(c->done >= 8 && !c->timeouts, "no transceive, polling: %d answered, %d timeouts", c->done,
+	      c->timeouts);
+	CHECK_CLEAN(c, "no transceive");
+	CHECK(p && p->mode == MOD_VOICE, "no transceive: front panel changes still decoded, keyer mode %d",
+	      p ? p->mode : -9);
+
+	// Taken again: broadcasts reach the client.
+	mhr_set_consumer_flags(router, c->fd[0], MH_CHANNEL_R1, 0);
+	client_poll(c, -1);
+	run_for(0.3);
+	client_reset(c);
+	for(int i = 0; i < 3; i++) {
+		panel_mode(i & 1 ? 0x01 : 0x03, 0);
+		run_for(0.13);
+	}
+	run_for(0.3);
+	CHECK(c->transceive == 3, "transceive again: %d of 3 broadcasts", c->transceive);
+	CHECK_CLEAN(c, "transceive again");
 	rig.transceive = 0;
 	CHECK(!collisions, "one client: %d collisions on the bus", collisions);
 }
@@ -605,6 +637,21 @@ static void test_two_clients(struct mh_router *router) {
 	CHECK_CLEAN(a, "idle, client A");
 	CHECK_CLEAN(b, "idle, client B");
 
+	// A doesn't take transceive, B does.
+	mhr_set_consumer_flags(router, a->fd[0], MH_CHANNEL_R1, MHR_CNS_NO_UNSOLICITED);
+	client_reset(a);
+	client_reset(b);
+	rig.transceive = 1;
+	for(int i = 0; i < 4; i++) {
+		panel_mode(i & 1 ? 0x03 : 0x01, 0);
+		run_for(0.13);
+	}
+	run_for(0.3);
+	rig.transceive = 0;
+	CHECK(!a->transceive && b->transceive == 4, "transceive to B only: %d and %d of 4 broadcasts",
+	      a->transceive, b->transceive);
+	mhr_set_consumer_flags(router, a->fd[0], MH_CHANNEL_R1, 0);
+
 	// B's command isn't answered: A waits until mhuxd gives up on it (CATN_TURN_TIMEOUT).
 	client_poll(a, 0);
 	run_for(0.3);
@@ -666,7 +713,7 @@ int main(void) {
 	speed_valid = 1;
 	struct cat_native *cn = cat_native_create((app_ctx *)&dev, &dev, &cfg);
 
-	test_own_queries();
+	test_own_queries(dev.router);
 	test_two_clients(dev.router);
 
 	cat_native_destroy(cn);

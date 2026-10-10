@@ -20,7 +20,8 @@ mhuxd's queries and that every client command is answered in time; with two
 clients on two connectors, that they take turns (no command reaches the radio
 while its answer is due), each gets only the echo and answers of its own
 commands, and an unanswered command or a removed connector doesn't block the
-other client for long. Both need libev, are built with short intervals
+other client for long; a client without transceive (forward_unsolicited false)
+gets none of the broadcasts. Both need libev, are built with short intervals
 (`NATIVE_TEST_DEFS` in the Makefile) and run for about 20 and 25 s.
 
 See `docs/task_native_cat.md` for the design.

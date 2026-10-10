@@ -65,10 +65,18 @@ int mhr_next_waiting_producer(struct mh_router *router, int channel, int fd);
 int mhr_count_producers(struct mh_router *router, int channel);
 // owner_tag of the producer, NULL if fd is no producer of the channel.
 const char *mhr_get_producer_tag(struct mh_router *router, int channel, int fd);
+// Consumer flags.
+enum {
+	MHR_CNS_NO_UNSOLICITED = 1,	// no radio data that answers nobody (CI-V transceive, AI)
+};
+void mhr_set_consumer_flags(struct mh_router *router, int fd, int channel, unsigned flags);
+// Consumers of the channel with one of the flags.
+int mhr_count_consumers_flagged(struct mh_router *router, int channel, unsigned flags);
 // While intercepted, data from the keyer on the channel goes to the consumer callbacks only;
-// one of them passes on what the connectors should get with mhr_pass_out(), to the consumer
-// fd or to all (MHR_ALL).
+// one of them passes on what the connectors should get with mhr_pass_out(): to the consumer
+// fd, to all (MHR_ALL), or to all without MHR_CNS_NO_UNSOLICITED (MHR_UNSOLICITED).
 #define MHR_ALL (-1)
+#define MHR_UNSOLICITED (-2)
 void mhr_intercept_consumers(struct mh_router *router, int channel, int intercept);
 void mhr_pass_out(struct mh_router *router, const uint8_t *data, unsigned int len, int channel, int fd);
 

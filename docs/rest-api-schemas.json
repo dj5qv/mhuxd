@@ -331,6 +331,13 @@
             {"type": "boolean"},
             {"type": "integer"}
           ]
+        },
+        "forward_unsolicited": {
+          "description": "CAT channels with rig mode sync backend native: pass on CI-V transceive and auto information (default true)",
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
         }
       },
       "additionalProperties": false

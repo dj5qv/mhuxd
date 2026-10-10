@@ -53,6 +53,7 @@ struct connector {
 	int ptt_rts;
 	int ptt_dtr;
 	int remote_access;
+	int no_unsolicited;
 };
 
 struct conmgr {
@@ -195,6 +196,9 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 	cspec.fd_data = sodat[1];
 	mhr_add_endpoint_fd(ctr->dev->router, sodat[0], ctr->channel, ctr->tag);
 	ctr->router_owns_data = 1;
+	ctr->no_unsolicited = cfg->no_unsolicited;
+	if(ctr->no_unsolicited)
+		mhr_set_consumer_flags(ctr->dev->router, sodat[0], ctr->channel, MHR_CNS_NO_UNSOLICITED);
 
 	cspec.vsp = cfg->vsp;
 	cspec.tcp = cfg->tcp;
@@ -390,6 +394,7 @@ void conmgr_foreach(struct conmgr *conmgr, conmgr_iter_cb cb, void *user_data) {
 		info.ptt_rts = ctr->ptt_rts;
 		info.ptt_dtr = ctr->ptt_dtr;
 		info.remote_access = ctr->remote_access;
+		info.no_unsolicited = ctr->no_unsolicited;
 		cb(&info, user_data);
 	}
 }

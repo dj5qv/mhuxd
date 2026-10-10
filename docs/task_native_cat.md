@@ -607,7 +607,19 @@ as phase 2, not with a broker owning the connector sockets:
     0.15 s, nothing of the queries at the clients); a client polling frequency and mode back to
     back still triggers none.
 
-Not done: `forward_unsolicited` per connector. Transceive and AI go to all connectors, as before.
+11. **`forward_unsolicited`** per connector (default true; JSON `forward_unsolicited`, C
+    `con_cfg.no_unsolicited`, web UI "Transceive / AI" in Add Port for CAT channels): false
+    keeps CI-V transceive and AI frames (`CAT_FRAME_UNSOLICITED`) from that connector. Hamlib
+    and rigctld tend to trip over transceive frames between their commands. conmgr sets the
+    router consumer flag `MHR_CNS_NO_UNSOLICITED`; while any consumer of the channel has it
+    and there is a decoder, radio data is routed (also with a single connector) and
+    unsolicited frames go to `MHR_UNSOLICITED`, i.e. all consumers without the flag. The
+    decoder still sees them, so the radio state follows the front panel. Without a decoder
+    (rig type not supported) the frames reach all connectors, logged as a warning. ASCII: a
+    reply that comes more than 200 ms after a read with parameters (Yaesu `MD0;`) counts as
+    auto information and is held back as well. `router_test`: a polling client without
+    transceive gets none of 10 broadcasts and all its answers while the state follows the
+    broadcasts; two clients, one with and one without.
 
 ### Phase 4: extensions
 

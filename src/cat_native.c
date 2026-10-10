@@ -82,9 +82,10 @@
 #endif
 #define CATN_TURN_TICK 0.02	// turn end and timeout checked this often, besides on radio data
 
-// Destination of radio data while it is routed: a connector fd, MHR_ALL, or one of these.
-#define ROUTE_NONE (-3)		// no frame completed yet
-#define ROUTE_DROP (-2)		// answer to an own query
+// Destination of radio data while it is routed: a connector fd, MHR_ALL, MHR_UNSOLICITED, or
+// one of these.
+#define ROUTE_NONE (-4)		// no frame completed yet
+#define ROUTE_DROP (-3)		// answer to an own query
 
 // Rig types (keyer protocol keys, src/radiotypes.c) that need special handling.
 #define RIG_TYPE_IC735   0x08	// 4-byte frequencies
@@ -226,6 +227,9 @@ struct cat_native {
 	int clients_fd[CAT_MAX_CLIENTS];	// -1: free
 	int connectors;			// on the channel, last count
 	int multi;			// more than one, with a decoder: taking turns
+	int no_unsolicited;		// connectors that don't take transceive / AI, last count
+	int filter;			// some, with a decoder: holding transceive / AI back from them
+	int filter_warned;		// some, but no decoder for the rig type
 	int turn_fd;			// connector whose commands are on the line, -1: none
 	int turn_client;
 	int turn_fresh;			// granted, its data not read yet
@@ -438,10 +442,10 @@ static int catn_removed_busy(const struct cat_native *cn) {
 	return 0;
 }
 
-// With a single application, routing ends when no own query can be answered any more, nor a
-// command of a connector just removed (late answers included).
+// With a single application that takes all radio data, routing ends when no own query can be
+// answered any more, nor a command of a connector just removed (late answers included).
 static void catn_route_check(struct cat_native *cn) {
-	if(cn->routing && !cn->multi && !cn->own_active && !(catn_pending(cn) & CAT_PENDING_OWN) &&
+	if(cn->routing && !cn->multi && !cn->filter && !cn->own_active && !(catn_pending(cn) & CAT_PENDING_OWN) &&
 	   !catn_removed_busy(cn))
 		catn_route_stop(cn);
 }
@@ -538,11 +542,38 @@ static void catn_check_maxcon_cb(const struct con_info *info, void *user_data) {
 	     info->devname ? info->devname : "?", info->maxcon);
 }
 
+// Connectors that don't take transceive / AI (forward_unsolicited false): the radio data is
+// routed, so these frames can be held back from them. Needs a decoder.
+static void catn_filter_update(struct cat_native *cn) {
+	int n = mhr_count_consumers_flagged(cn->router, cn->channel, MHR_CNS_NO_UNSOLICITED);
+	int decoder = cn->civ || cn->ascii;
+	int filter = n > 0 && decoder;
+
+	if(n && !decoder && cn->rigtype >= 0 && !cn->filter_warned)
+		warn("%s %s native CAT: no decoder for rig type '%s', transceive and auto information "
+		     "reach all ports", cn->serial, radio_str(cn->radio), rtyp_get_name(cn->rigtype));
+	cn->filter_warned = n && !decoder && cn->rigtype >= 0;
+	if(filter && (!cn->filter || n != cn->no_unsolicited)) {
+		info("%s %s native CAT: %d port(s) without transceive and auto information", cn->serial,
+		     radio_str(cn->radio), n);
+		catn_mon_comment(cn, "%d port(s) without transceive and auto information", n);
+	}
+	cn->no_unsolicited = n;
+	if(filter == cn->filter)
+		return;
+	cn->filter = filter;
+	if(filter)
+		catn_route_start(cn);
+	else
+		catn_route_check(cn);
+}
+
 // Taking turns needs more than one connector and a decoder.
 static void catn_multi_update(struct cat_native *cn) {
 	int n = mhr_count_producers(cn->router, cn->channel);
 	int multi = n > 1 && (cn->civ || cn->ascii);
 
+	catn_filter_update(cn);
 	if(n != cn->connectors) {
 		cn->connectors = n;
 		if(cn->ctx)
@@ -585,7 +616,7 @@ static void catn_own_end(struct cat_native *cn) {
 // Decoder starts over: what the radio knows and doesn't know is learned again.
 static void catn_own_reset(struct cat_native *cn) {
 	catn_own_end(cn);
-	if(!cn->multi)
+	if(!cn->multi && !cn->filter)
 		catn_route_stop(cn);
 	memset(cn->own_sent, 0, sizeof(cn->own_sent));
 	memset(cn->own_rejects, 0, sizeof(cn->own_rejects));
@@ -1009,8 +1040,8 @@ static void catn_frame_cb(const struct cat_frame *f, void *user_data) {
 		return;
 	}
 	// Echo and answers to the application that sent the command, transceive and auto
-	// information to all, anything else to the application whose turn it is.
-	int dest = f->kind == CAT_FRAME_UNSOLICITED ? MHR_ALL : catn_route_default(cn);
+	// information to all that take it, anything else to the application whose turn it is.
+	int dest = f->kind == CAT_FRAME_UNSOLICITED ? MHR_UNSOLICITED : catn_route_default(cn);
 	if(f->client > 0 && cn->clients_fd[f->client - 1] >= 0)
 		dest = cn->clients_fd[f->client - 1];
 	cn->route_dest = dest;

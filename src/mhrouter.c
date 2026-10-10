@@ -55,6 +55,7 @@ struct Consumer {
 	ev_io w;
 	struct buffer buf;
 	int channel;
+	unsigned flags;		// MHR_CNS_*
 };
 
 struct ConsumerCb {
@@ -1000,6 +1001,27 @@ int mhr_next_waiting_producer(struct mh_router *router, int channel, int fd) {
 	return first ? first->fd : -1;
 }
 
+void mhr_set_consumer_flags(struct mh_router *router, int fd, int channel, unsigned flags) {
+	struct Consumer *cns;
+
+	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
+		return;
+	PG_SCANLIST(&router->consumer_list[channel], cns)
+		if(cns->fd == fd)
+			cns->flags = flags;
+}
+
+int mhr_count_consumers_flagged(struct mh_router *router, int channel, unsigned flags) {
+	struct Consumer *cns;
+	int n = 0;
+
+	if(channel < 0 || channel >= ALL_NUM_CHANNELS)
+		return 0;
+	PG_SCANLIST(&router->consumer_list[channel], cns)
+		n += (cns->flags & flags) != 0;
+	return n;
+}
+
 int mhr_count_producers(struct mh_router *router, int channel) {
 	struct Producer *prd;
 	int n = 0;
@@ -1037,7 +1059,7 @@ void mhr_pass_out(struct mh_router *router, const uint8_t *data, unsigned int le
 		return;
 
 	PG_SCANLIST(&router->consumer_list[channel], cns) {
-		if(fd != MHR_ALL && cns->fd != fd)
+		if(fd == MHR_UNSOLICITED ? (cns->flags & MHR_CNS_NO_UNSOLICITED) : fd != MHR_ALL && cns->fd != fd)
 			continue;
 		if(len <= buf_size_avail(&cns->buf)) {
 			buf_append(&cns->buf, data, len);

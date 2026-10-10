@@ -20,7 +20,8 @@
     maxcon: 1,
     ptt_rts: false,
     ptt_dtr: false,
-    remote_access: false
+    remote_access: false,
+    forward_unsolicited: true
   };
   let portStatus = '';
   let portStatusKind = 'success';
@@ -82,6 +83,8 @@
     return channel;
   };
 
+  const isCatChannel = (channel) => ['CAT1', 'CAT2'].includes(displayPortChannel(channel));
+
   // Channel name, suffixed when another VSP already uses it (e.g. CAT1 of a second keyer),
   // as the daemon refuses to create an existing /dev/mhuxd/ device.
   const suggestVspDevname = (channel, existing) => {
@@ -123,6 +126,7 @@
     } else if (portForm.type === 'TCP') {
       base.remote_access = portForm.remote_access ? 1 : 0;
     }
+    if (isCatChannel(portForm.channel)) base.forward_unsolicited = portForm.forward_unsolicited ? 1 : 0;
     return base;
   };
 
@@ -227,6 +231,7 @@
       <div>Remote Access</div>
       <div>RTS-PTT</div>
       <div>DTR-PTT</div>
+      <div>Transceive / AI</div>
       <div>Destination Name</div>
       <div>Destination Serial</div>
       <div>Channel</div>
@@ -251,6 +256,7 @@
           <div>{c.type === 'TCP' ? checkMark(c.remote_access) : '—'}</div>
           <div>{c.type === 'VSP' ? checkMark(c.ptt_rts) : '—'}</div>
           <div>{c.type === 'VSP' ? checkMark(c.ptt_dtr) : '—'}</div>
+          <div>{isCatChannel(c.channel) ? checkMark(c.forward_unsolicited ?? true) : '—'}</div>
           <div>{deviceNameForSerial(c.serial)}</div>
           <div>{c.serial || '—'}</div>
           <div>{displayPortChannel(c.channel)}</div>
@@ -364,6 +370,18 @@
         <input class="input" type="number" min="1" bind:value={portForm.maxcon} />
       </div>
     </div>
+
+    {#if isCatChannel(portForm.channel)}
+      <div class="row">
+        <div class="label">Transceive / AI:</div>
+        <div class="value">
+          <input type="checkbox" bind:checked={portForm.forward_unsolicited} />
+          <span class="placeholder">
+            pass on CI-V transceive and Auto Information (off for Hamlib/rigctld; needs rig mode sync "native")
+          </span>
+        </div>
+      </div>
+    {/if}
 
     <div class="button-row">
       <button class="btn" on:click={applyPort} disabled={portSaving || keyers.length === 0}>

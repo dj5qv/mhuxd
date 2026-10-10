@@ -102,8 +102,14 @@ static void to_client(const uint8_t *data, size_t len) {
 
 void mhr_pass_out(struct mh_router *router, const uint8_t *data, unsigned int len, int channel, int fd) {
 	(void)router; (void)channel;
-	CHECK(fd == MHR_ALL || fd == CLIENT_FD, "radio data passed to connector %d", fd);
+	CHECK(fd == MHR_ALL || fd == MHR_UNSOLICITED || fd == CLIENT_FD, "radio data passed to connector %d", fd);
 	to_client(data, len);
+}
+
+// The client takes transceive and auto information.
+int mhr_count_consumers_flagged(struct mh_router *router, int channel, unsigned flags) {
+	(void)router; (void)channel; (void)flags;
+	return 0;
 }
 
 // A single connector: no turns.

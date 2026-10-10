@@ -278,12 +278,18 @@ directly, e.g. WSJTX configured like in the "WSJTX direct" example above.
   virtual serial port `/dev/mhuxd/cat1_2` for the logger, or a TCP port. mhuxd then sends one
   command at a time to the radio: an application's command waits until the radio has answered
   the other's (a few ten ms), so they don't collide on the CI-V bus. Echo and answers go only to
-  the application that sent the command, CI-V transceive and Auto Information to all. Without
-  an answer within 0.5 s, mhuxd gives the command up and lets the next application go on.
-  Keep "Max Connections" at 1 on these ports: applications sharing a port can't be told apart
-  (mhuxd warns in the log). An application that only listens on its port, to follow the
-  frequency from another application's polls, gets only transceive and AI messages this way;
-  the decoded radio state is available from mhuxd's REST API and WebSocket instead.
+  the application that sent the command, CI-V transceive and Auto Information to all (unless
+  switched off for a port, see "Transceive / AI" below). Without an answer within 0.5 s, mhuxd
+  gives the command up and lets the next application go on. Keep "Max Connections" at 1 on
+  these ports: applications sharing a port can't be told apart (mhuxd warns in the log). An
+  application that only listens on its port, to follow the frequency from another
+  application's polls, gets only transceive and AI messages this way; the decoded radio state
+  is available from mhuxd's REST API and WebSocket instead.
+- "Transceive / AI" (per port, when adding a CAT port, on by default): switched off, the port
+  doesn't get CI-V transceive and Auto Information messages, only the answers to its own
+  commands. Hamlib and rigctld don't cope well with transceive messages between their
+  commands, so this lets the radio's CI-V transceive stay on for the other applications (and
+  for mhuxd, which still follows the radio from them). Works with a single port too.
 - When the radio doesn't answer for 10 s (switched off), its state expires and the keyer goes
   back to its configured mode, as with rigctld.
 - "Radio state" shows what mhuxd sees, e.g. "14.074.000 Hz PKTUSB → keyer DIGITAL". That's

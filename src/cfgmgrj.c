@@ -1021,6 +1021,13 @@ static int con_cfg_from_json(json_t *conn_obj, struct con_cfg *ccfg) {
     ccfg->channel = channel;
     ccfg->type = CON_INVALID;
 
+    json_t *fwd = json_object_get(conn_obj, "forward_unsolicited");
+    if(fwd && !json_is_boolean(fwd) && !json_is_integer(fwd)) {
+        err("connector forward_unsolicited must be bool/int!");
+        return -1;
+    }
+    ccfg->no_unsolicited = !json_get_boolish(conn_obj, "forward_unsolicited", 1);
+
     if(!strcasecmp(type_str, "VSP"))
         ccfg->type = CON_VSP;
     else if(!strcasecmp(type_str, "TCP"))
@@ -1658,6 +1665,8 @@ static void sync_con_cb(const struct con_info *info, void *user_data) {
         json_object_set_new(conn, "maxcon", json_integer(info->maxcon));
         json_object_set_new(conn, "remote_access", json_integer(info->remote_access));
     }
+    if(info->no_unsolicited)
+        json_object_set_new(conn, "forward_unsolicited", json_false());
     
     if(cfgmgrj->connectors) {
         size_t j;

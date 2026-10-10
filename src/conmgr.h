@@ -38,6 +38,9 @@ struct con_cfg {
 	const char *serial;
 	int channel;
 	enum con_type type;
+	// CAT channel with native CAT: CI-V transceive and auto information are not passed on
+	// (JSON forward_unsolicited false).
+	int no_unsolicited;
 	struct con_vsp_cfg vsp;
 	struct con_tcp_cfg tcp;
 };
@@ -65,6 +68,7 @@ struct con_info {
 	int ptt_rts;
 	int ptt_dtr;
 	int remote_access;
+	int no_unsolicited;
 };
 
 struct app_ctx;
