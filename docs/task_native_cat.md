@@ -16,6 +16,11 @@ with traces, end to end through the real router with two emulated clients, and w
 IC-7300: three applications on `cat1`, `cat1_2`, `cat1_3` (QLog got its queries through while
 `rigctl` sent `f m` back to back). Own queries also go in right after an application's query
 was answered, so a client that never pauses doesn't starve them (item 10 there).
+Phase 4, first part implemented (2026-10-10): the older Yaesu radios with binary CAT
+(`src/cat_ybin.c`, see "Phase 4" below). No real radio available: tested with hand-written
+traces, an emulated radio (`tests/cat/ybin_radio.c`) checked against Hamlib's backends, end
+to end through the router (`tests/cat/ybin_test.c`), and Hamlib's FT-1000MP backend through
+the router.
 Related: `docs/task_rigctld_support.md` (the current rig mode sync via rigctld).
 
 ## Reason
@@ -644,12 +649,64 @@ as phase 2, not with a broker owning the connector sockets:
 
 ### Phase 4: extensions
 
-- Legacy Yaesu binary (per-model response length tables; the OmniRig ini files list them).
+- Legacy Yaesu binary: done, see below.
 - Ten-Tec ASCII, ORION first (low priority).
 - Optional: own queries from user-supplied OmniRig ini files for radios without a built-in
   codec.
 - SDR tracking port: read-only TS-2000 emulation built on the decoded state.
 - Expose the decoded frequency via MCP / REST for other tools.
+
+Older Yaesu radios, binary protocol (implemented 2026-10-10):
+
+1. Models, from the keyer's rig types: FT-757GXII, FT-817 (and FT-818), FT-857, FT-897, FT-847,
+   FT-840, FT-890, FT-900, FT-920, FT-990, FT-1000/1000D, FT-1000MP/MARK-V/MARK-V Field. Not
+   the FT-767GX: it echoes every command and wants an acknowledge command before it sends its
+   data, whose length depends on the command before; left for later (no decoder, rigctld).
+   Sources: the MARK-V FT-1000MP manual, Hamlib's backends (answer lengths as Hamlib reads them,
+   record layouts, mode codes), OmniRig's ini files for cross-checks only.
+2. Framing: commands are 5 bytes, by count per client, forgotten after a gap of 300 ms (the
+   radios wait up to 200 ms). Answers have no marker: their length comes from a per-model table
+   by opcode and 4th parameter (status update 10: 1, 16, 18/19, 28 or 32 bytes, memory dumps up
+   to 1941), in the order of the commands. Radio bytes without a command waiting are unmatched
+   and go to the application whose turn it is.
+3. Robustness without framing: an answer whose bytes stop for 100 ms (plus the pacing delay) is
+   over, even if shorter than the table says (memory dumps differ between firmware versions,
+   e.g. FT-990 ROM 1.2: 1492 instead of 1508 bytes); a command still without any answer byte
+   200 ms later when the next command comes got none (radio busy, CAT off, unknown command), so
+   the next answer is framed right. Answers are validated (BCD digits, known mode codes) before
+   they update the state.
+4. Commands without answer keep the line for 100 ms (FT-757GXII: 150 ms, it has no command
+   buffer), as Hamlib's post_write_delay does, so two applications don't overrun the radio.
+5. Long answers: passed on in pieces of 80 bytes (the trace line limit), only answers up to that
+   size are decoded (status data; the FT-757GXII's 75 bytes included). While an answer is coming
+   in, the application's turn and mhuxd's own query don't time out: a memory dump takes 4 s at
+   4800 Bd, pacing (command 0E, up to 255 ms per byte) more (`cat_ybin_answering()`).
+6. Decoded: frequency and mode of the current VFO, VFO A and B, VFO selection and split from the
+   status flags (FA) where the radio tells them (not the FT-1000/1000D: its VFO B flag doesn't
+   work, Hamlib), the FT-817 family's EEPROM VFO and split bits (read command BB, addresses as
+   Hamlib reads them) and A/B toggle. Sets of frequency, mode and VFO from the applications are
+   taken over at once; only the FT-817 family acknowledges commands (one byte).
+7. Own queries: frequency and mode with one command, 03 (FT-817 family, FT-847), status update
+   10 with current data (the others) or all status data (FT-757GXII). The own query timeout
+   grows by 2.5 ms per answer byte. The FT-847 ignores everything until an application sent
+   CAT on; mhuxd doesn't switch it on itself (it changes the radio's state), its queries then
+   go unanswered and back off.
+8. The CAT monitor writes each frame with the time of its last byte (all protocols): the binary
+   decoder notices a short command or answer only later (`cat_ybin_expire()`, called from the
+   tick), and the trace must replay the same way.
+9. Config: auto only (from the rig type), no protocol name to select, as the answer lengths
+   depend on the model.
+10. Tests: `ybin_*.trace` per family; `ybin_radio.c`, an emulated radio written apart from the
+    decoder and checked with `rigctl` against Hamlib 4.6.2's backends for all models but the
+    FT-757GXII (its backend sets DTR, which a pseudo terminal can't); `ybin_test.c` end to end
+    (own queries, two clients, a memory dump, pacing, Hamlib's FT-1000MP backend through the
+    router next to a polling client). `ybin_sim` puts the emulated radio on a pseudo terminal
+    or a serial port, e.g. one wired to the keyer's radio port for a test with a real keyer.
+11. Open: real traces (CAT monitor traces of users; Hamlib debug logs, `hamlib2trace.py --model`
+    converts the binary backends' block reads). FT-817 family: Hamlib falls back to a delay when the
+    acknowledge doesn't come, so some radios or firmware may not send it; the decoder copes
+    (rule 3), but the answer after an unacknowledged set may be framed wrong once. Hamlib's
+    FT-1000MP backend reads CW and CW-R the other way round than the manual and OmniRig.
 
 ## Open decisions
 

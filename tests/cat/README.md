@@ -1,11 +1,11 @@
 # Native CAT decoder tests
 
 Replays CAT traces through the native CAT decoders (`src/cat_civ.c`,
-`src/cat_state.c`) and checks assertions. The decoders are pure code (no
+`src/cat_ascii.c`, `src/cat_ybin.c`, `src/cat_state.c`) and checks assertions. The decoders are pure code (no
 libev, no I/O), so no keyer, radio or mhuxd build is needed.
 
 ```
-make -C tests/cat check            # all traces in traces/, native_test, router_test
+make -C tests/cat check            # all traces in traces/, native_test, router_test, ybin_test
 tests/cat/cat_replay -v some.trace # every frame with classification and state
 ```
 
@@ -24,8 +24,35 @@ other client for long; a client without transceive (forward_unsolicited false)
 gets none of the broadcasts. With the VFO knob "turned" (a broadcast every
 30 ms, a command arriving meanwhile collides: cut-off broadcast and five FC),
 two polling clients see no timeout and no debris while mhuxd resends the
-destroyed commands (civ_collision_resend), and time out without it. Both need libev, are built with short intervals
-(`NATIVE_TEST_DEFS` in the Makefile) and run for about 20 and 25 s.
+destroyed commands (civ_collision_resend), and time out without it.
+
+`ybin_test` does the same for the older Yaesu radios (binary protocol): the
+radio is emulated by `ybin_radio.c` at 4800 Bd, the clients send a command and
+read as many bytes as its answer has, so a byte that isn't theirs shows up as a
+wrong count (the answers carry no framing). FT-817: own queries while the
+client is idle or polls slowly, none while it polls fast, acknowledged sets.
+FT-1000MP: two clients taking turns, a memory dump of 1863 bytes (4 s) that
+keeps the line for its client, answers slowed down by pacing beyond mhuxd's
+turn timeout, and Hamlib's real FT-1000MP backend (`rigctl -m 1024`, skipped if
+not installed) on a pseudo terminal as connector next to a polling client.
+FT-757GXII: own queries with its 75 byte status data. The tests need libev,
+are built with short intervals (`NATIVE_TEST_DEFS` in the Makefile) and run for
+about 20, 25 and 30 s.
+
+`ybin_radio.c` is written apart from the decoder, from what Hamlib's backends
+send and expect. `ybin_sim` puts it on a pseudo terminal, or a serial port
+(e.g. wired to the keyer's radio port, to test with a real keyer), so Hamlib
+can check it:
+
+```
+tests/cat/ybin_sim -m ft1000mp -v &        # prints the pseudo terminal
+rigctl -m 1024 -r /dev/pts/5 f m F 7074000 M PKTLSB 0 f m
+tests/cat/ybin_sim -m ft817 -d /dev/ttyUSB1 -b 9600
+```
+
+Checked that way (2026-10-10, Hamlib 4.6.2): FT-817, FT-857, FT-897, FT-847,
+FT-840, FT-890, FT-900, FT-920, FT-990, FT-1000D, FT-1000MP. Not the FT-757GXII:
+Hamlib's backend sets DTR, which a pseudo terminal can't.
 
 See `docs/task_native_cat.md` for the design.
 
@@ -54,10 +81,13 @@ commands) begin with the time: `# 14:23:02.237 H2: collision, command sent again
   text with `\r`, `\n`, `\t`, `\xNN`, `\\`, `\"` escapes (`"FA;"`), for the
   ASCII protocols later.
 - **Protocol lines**: `@civ` (Icom), `@kenwood`, `@elecraft`, `@yaesu`, `@flex`
-  (the Kenwood-style ASCII dialects, `src/cat_ascii.h`).
+  (the Kenwood-style ASCII dialects, `src/cat_ascii.h`), `@ybin` (older Yaesu
+  radios, binary, `src/cat_ybin.h`).
 - **Options** for `@civ`: `addr=<hex>` radio address (`0` = learn from the
   traffic), `freq_len=<n>` BCD frequency bytes (default 5, 4 on IC-731/IC-735).
   For `@kenwood`: `nodata`, the radio has no data mode (TS-2000 and older).
+  For `@ybin`: `model=<name>` (required): `ft757gx2`, `ft817`, `ft857`, `ft897`,
+  `ft847`, `ft840`, `ft890`, `ft900`, `ft920`, `ft990`, `ft1000`, `ft1000mp`.
   A later `@civ` line starts the decoder over (state and counters), as mhuxd
   does when the keyer reconnects or the rig type changes.
 - **Time** stamps `HH:MM:SS.mmm` may wrap past midnight.
@@ -66,7 +96,10 @@ commands) begin with the time: `# 14:23:02.237 H2: collision, command sent again
 the decoded state as a trailing comment, so its output replays as a trace.
 The CAT monitor (rig mode sync backend native, option `monitor`) writes the
 same format to `LOGDIR/cat-<serial>-r<n>.trace`, so user traces become test
-fixtures without conversion: add `=` lines and put the file in `traces/`.
+fixtures without conversion: add `=` lines and put the file in `traces/`. Each
+line has the time of the frame's last byte: the binary Yaesu decoder notices a
+command or answer that stopped short only later, so its line comes out late but
+replays the same way.
 
 ## Assertions
 
@@ -95,6 +128,9 @@ fixtures without conversion: add `=` lines and put the file in `traces/`.
   framing, host tap, pipelining, address learning, 4-byte frequencies, own
   queries, two clients, bus collisions).
 - `ascii_*.trace`: hand-written cases for the ASCII dialects.
+- `ybin_*.trace`: hand-written cases for the older Yaesu radios, per model
+  family (answer lengths, status data records, sets, framing by gaps, memory
+  dumps in pieces, pacing).
 - `hamlib_sim_*.trace`: Hamlib 4.6 talking to Hamlib's rig simulators
   (`simulators/` in the Hamlib source: simts590, simelecraft, simft991,
   simpowersdr), so the command sequences of the most common client library are
@@ -106,4 +142,5 @@ fixtures without conversion: add `=` lines and put the file in `traces/`.
 ```
 tests/cat/hamlib2trace.py --addr 94 --time 52.5:70 rigctl.log > excerpt.trace
 tests/cat/hamlib2trace.py --dialect kenwood --text rigctl.log > session.trace
+tests/cat/hamlib2trace.py --model ft1000mp rigctl.log > session.trace
 ```

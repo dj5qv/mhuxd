@@ -28,6 +28,7 @@
 #include "cat_civ.h"
 #include "cat_state.h"
 #include "cat_trace.h"
+#include "cat_ybin.h"
 
 #define MAX_PAYLOAD 4096
 
@@ -37,12 +38,14 @@ struct replay {
 	int verbose;
 	int failures;
 	int asserts;
-	// Decoder: CI-V, or one of the ASCII dialects (ascii_cfg.dialect) if ascii is set.
-	int use_ascii;
+	// Decoder: CI-V, one of the ASCII dialects (ascii_cfg.dialect), or Yaesu binary.
+	enum { P_CIV, P_ASCII, P_YBIN } proto;
 	struct cat_civ_cfg civ_cfg;
 	struct cat_ascii_cfg ascii_cfg;
+	struct cat_ybin_cfg ybin_cfg;
 	struct cat_civ *civ;
 	struct cat_ascii *ascii;
+	struct cat_ybin *ybin;
 	struct cat_state st;
 	uint64_t t_ms;
 	uint64_t day_ms;	// added to HH:MM:SS times after midnight
@@ -90,16 +93,20 @@ static void fail(struct replay *rp, const char *fmt, ...) {
 }
 
 static int have_decoder(const struct replay *rp) {
-	return rp->civ || rp->ascii;
+	return rp->civ || rp->ascii || rp->ybin;
 }
 
 static int ensure_decoder(struct replay *rp) {
 	if(have_decoder(rp))
 		return 0;
-	if(rp->use_ascii) {
+	if(rp->proto == P_ASCII) {
 		rp->ascii = cat_ascii_create(&rp->ascii_cfg, &rp->st);
 		if(rp->ascii)
 			cat_ascii_set_frame_cb(rp->ascii, frame_cb, rp);
+	} else if(rp->proto == P_YBIN) {
+		rp->ybin = cat_ybin_create(&rp->ybin_cfg, &rp->st);
+		if(rp->ybin)
+			cat_ybin_set_frame_cb(rp->ybin, frame_cb, rp);
 	} else {
 		rp->civ = cat_civ_create(&rp->civ_cfg, &rp->st);
 		if(rp->civ)
@@ -115,12 +122,34 @@ static int ensure_decoder(struct replay *rp) {
 static void destroy_decoder(struct replay *rp) {
 	cat_civ_destroy(rp->civ);
 	cat_ascii_destroy(rp->ascii);
+	cat_ybin_destroy(rp->ybin);
 	rp->civ = NULL;
 	rp->ascii = NULL;
+	rp->ybin = NULL;
 }
 
 static const struct cat_stats *decoder_stats(const struct replay *rp) {
-	return rp->ascii ? cat_ascii_get_stats(rp->ascii) : cat_civ_get_stats(rp->civ);
+	if(rp->ascii)
+		return cat_ascii_get_stats(rp->ascii);
+	if(rp->ybin)
+		return cat_ybin_get_stats(rp->ybin);
+	return cat_civ_get_stats(rp->civ);
+}
+
+static int client_busy(const struct replay *rp, int client) {
+	if(rp->ascii)
+		return cat_ascii_client_busy(rp->ascii, client, rp->t_ms);
+	if(rp->ybin)
+		return cat_ybin_client_busy(rp->ybin, client, rp->t_ms);
+	return cat_civ_client_busy(rp->civ, client, rp->t_ms);
+}
+
+static unsigned pending(const struct replay *rp) {
+	if(rp->ascii)
+		return cat_ascii_pending(rp->ascii, rp->t_ms);
+	if(rp->ybin)
+		return cat_ybin_pending(rp->ybin, rp->t_ms);
+	return cat_civ_pending(rp->civ, rp->t_ms);
 }
 
 // Strip a trailing comment ('#' outside of quotes) and trailing white space.
@@ -278,6 +307,8 @@ static void data_line(struct replay *rp, char *line) {
 		return;
 	if(rp->ascii)
 		cat_ascii_feed(rp->ascii, dir, client, buf, len, rp->t_ms);
+	else if(rp->ybin)
+		cat_ybin_feed(rp->ybin, dir, client, buf, len, rp->t_ms);
 	else
 		cat_civ_feed(rp->civ, dir, client, buf, len, rp->t_ms);
 }
@@ -289,7 +320,7 @@ static void config_line(struct replay *rp, char *line) {
 
 	tok = strsep(&p, " \t");
 	dialect = cat_ascii_dialect_from_str(tok);
-	if(strcmp(tok, "civ") && dialect < 0) {
+	if(strcmp(tok, "civ") && strcmp(tok, "ybin") && dialect < 0) {
 		fail(rp, "unknown protocol '%s'", tok);
 		return;
 	}
@@ -300,25 +331,35 @@ static void config_line(struct replay *rp, char *line) {
 	}
 	memset(&rp->civ_cfg, 0, sizeof(rp->civ_cfg));
 	memset(&rp->ascii_cfg, 0, sizeof(rp->ascii_cfg));
-	rp->use_ascii = dialect >= 0;
+	memset(&rp->ybin_cfg, 0, sizeof(rp->ybin_cfg));
+	rp->proto = dialect >= 0 ? P_ASCII : !strcmp(tok, "ybin") ? P_YBIN : P_CIV;
 	rp->ascii_cfg.dialect = dialect >= 0 ? dialect : 0;
+	rp->ybin_cfg.model = CAT_YBIN_MODEL_NUM;
 
 	while((tok = strsep(&p, " \t"))) {
 		unsigned v;
 		if(!*tok)
 			continue;
-		if(!rp->use_ascii && sscanf(tok, "addr=%x", &v) == 1 && v <= 0xff)
+		if(rp->proto == P_CIV && sscanf(tok, "addr=%x", &v) == 1 && v <= 0xff)
 			rp->civ_cfg.radio_addr = v;
-		else if(!rp->use_ascii && sscanf(tok, "freq_len=%u", &v) == 1 && v >= 3 && v <= 6)
+		else if(rp->proto == P_CIV && sscanf(tok, "freq_len=%u", &v) == 1 && v >= 3 && v <= 6)
 			rp->civ_cfg.freq_len = v;
-		else if(rp->use_ascii && !strcmp(tok, "nodata"))
+		else if(rp->proto == P_ASCII && !strcmp(tok, "nodata"))
 			rp->ascii_cfg.no_data = 1;
+		else if(rp->proto == P_YBIN && !strncmp(tok, "model=", 6) && cat_ybin_model_from_str(tok + 6) >= 0)
+			rp->ybin_cfg.model = cat_ybin_model_from_str(tok + 6);
 		else
 			fail(rp, "bad option '%s'", tok);
 	}
+	if(rp->proto == P_YBIN && rp->ybin_cfg.model == CAT_YBIN_MODEL_NUM) {
+		fail(rp, "@ybin needs model=");
+		rp->ybin_cfg.model = CAT_YBIN_FT817;
+	}
 	if(rp->verbose) {
-		if(rp->use_ascii)
+		if(rp->proto == P_ASCII)
 			cat_trace_ascii_config(buf, sizeof(buf), &rp->ascii_cfg);
+		else if(rp->proto == P_YBIN)
+			cat_trace_ybin_config(buf, sizeof(buf), &rp->ybin_cfg);
 		else
 			cat_trace_civ_config(buf, sizeof(buf), &rp->civ_cfg);
 		printf("%s\n", buf);
@@ -416,15 +457,12 @@ static void assert_line(struct replay *rp, char *line) {
 			size_t n = 0;
 			got[0] = '\0';
 			for(int c = 1; c <= CAT_MAX_CLIENTS; c++) {
-				int busy = rp->ascii ? cat_ascii_client_busy(rp->ascii, c, rp->t_ms) :
-						       cat_civ_client_busy(rp->civ, c, rp->t_ms);
-				if(busy)
+				if(client_busy(rp, c))
 					n += snprintf(got + n, sizeof(got) - n, "%sH%d", n ? "," : "", c);
 			}
 			check(rp, tok, val, n ? got : "none");
 		} else if(!strcmp(tok, "pending")) {
-			unsigned pend = rp->ascii ? cat_ascii_pending(rp->ascii, rp->t_ms) :
-						    cat_civ_pending(rp->civ, rp->t_ms);
+			unsigned pend = pending(rp);
 			check(rp, tok, val, pend == (CAT_PENDING_CLIENT | CAT_PENDING_OWN) ? "both" :
 					    pend == CAT_PENDING_CLIENT ? "client" :
 					    pend == CAT_PENDING_OWN ? "own" : "none");

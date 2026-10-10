@@ -569,13 +569,25 @@ int main(int argc, char **argv) {
 	      "TS-590: 14074000 PKTUSB -> DIGITAL (mode_str '%s')", p ? p->mode_str : "");
 	cat_native_destroy(cn);
 
-	// Legacy Yaesu (binary protocol): no decoder.
+	// Older Yaesu radio, binary protocol: read frequency and mode, BCD and mode code (FT-817).
 	speed.rigtype = RIG_FT817;
+	cn = cat_native_create((app_ctx *)&dev, &dev, &cfg);
+	npub = 0;
+	host("00 00 00 00 03");
+	radio("00 70 74 00 0a");
+	run_for(0.3);
+	p = last_pub();
+	CHECK(p && p->rxFreq == 7074000 && p->mode == MOD_DIGITAL && !strcmp(p->mode_str, "PKTUSB"),
+	      "FT-817: 7074000 DIG -> DIGITAL (mode_str '%s')", p ? p->mode_str : "");
+	cat_native_destroy(cn);
+
+	// FT-767GX (echo and acknowledge protocol): no decoder.
+	speed.rigtype = RIG_FT767;
 	cn = cat_native_create((app_ctx *)&dev, &dev, &cfg);
 	npub = 0;
 	radio_text("FA00014074000;MD2;");
 	run_for(0.3);
-	CHECK(npub == 0, "no decoder for the FT-817, got %d publications", npub);
+	CHECK(npub == 0, "no decoder for the FT-767GX, got %d publications", npub);
 	cat_native_destroy(cn);
 
 	CHECK(nsends == 0, "nothing sent to the radio without own queries, got %d", nsends);
@@ -609,6 +621,21 @@ int main(int argc, char **argv) {
 		CHECK(file_contains(path, " R fc  # jam") == 1, "collision");
 		CHECK(file_comment(path, "keyer OFFLINE, decoder starts over") == 1, "keyer state comment");
 		CHECK(file_comment(path, "monitor stopped") == 1, "closing comment");
+
+		// Older Yaesu radio: a command that stops short is noticed later, its line has the time
+		// of its last byte, so the trace replays the same way (make check replays the file).
+		speed.rigtype = RIG_FT817;
+		cn = cat_native_create((app_ctx *)&dev, &dev, &cfg);
+		host("00 00");
+		run_for(0.4);
+		host("00 00 00 00 03");
+		radio("01 40 74 00 01");
+		run_for(0.3);
+		cat_native_destroy(cn);
+		CHECK(file_contains(path, "@ybin model=ft817") == 1, "config line of the older Yaesu radio");
+		CHECK(file_contains(path, " H1 00 00  # dropped") == 1, "command that stopped short");
+		CHECK(file_contains(path, " H1 00 00 00 00 03  # cmd") == 1, "command");
+		CHECK(file_contains(path, " R 01 40 74 00 01  # H1 reply, applied: rx=14074000") == 1, "answer");
 	}
 
 	printf("%s native_test\n", failures ? "FAIL" : "ok  ");

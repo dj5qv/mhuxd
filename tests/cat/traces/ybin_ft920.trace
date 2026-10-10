@@ -1,0 +1,24 @@
+# Yaesu FT-920: status update 10 (current data and VFO data alike) returns 28 bytes, a 14 byte
+# record for VFO A (main display) and one for VFO B: frequency in Hz (4 bytes), mode with
+# bit 6 for the upper side band and bit 7 for the narrow filter.
+@ybin model=ft920
+0.000 H1 00 00 00 02 10
+0.060 R  00 00 d6 c0 90 00 00 40 00 00 00 00 00 00 00 00 d9 70 10 00 00 41 00 00 00 00 00 00
+= client=H1 busy=none rx=14074000 mode=USB unsel=14250000 mode_unsel=CW
+0.100 H1 00 00 00 03 10
+0.160 R  00 00 6b f0 d0 00 00 05 00 00 00 00 00 00 00 00 d9 70 10 00 00 81 00 00 00 00 00 00
+= rx=7074000 mode=PKTUSB keyer=DIGITAL mode_unsel=CWR
+
+# Status flags (FA, parameter 1): 8 bytes, bit 0 VFO B transmits, bit 1 VFO B receives
+0.200 H1 00 00 00 01 fa
+0.220 R  01 00 00 00 00 00 00 00
+= vfo=A split=1 tx=14250000
+0.300 H1 00 00 00 01 fa
+0.320 R  03 00 00 00 00 00 00 00
+= vfo=B split=0 rx=14250000 mode=CWR
+
+# Mode set: 0A data on USB for VFO A, 8B data on FM for VFO B
+0.400 H1 00 00 00 0a 0c
+= mode_unsel=PKTUSB
+0.500 H1 00 00 00 8b 0c
+= mode=PKTFM

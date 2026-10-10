@@ -1,0 +1,26 @@
+# Yaesu FT-900 (FT-840, FT-890 alike): current data (10, parameter 2) 19 bytes, frequency
+# (3 bytes, 10 Hz units) at offset 2, mode at 7; VFO data (parameter 3) 18 bytes, VFO A at 1
+# and 6, VFO B at 10 and 15.
+@ybin model=ft900
+0.000 H1 00 00 00 02 10
+0.050 R  00 00 15 79 a8 00 00 01 00 00 00 00 00 00 00 00 00 00 00
+= client=H1 busy=none rx=14074000 mode=USB
+0.100 H1 00 00 00 03 10
+0.150 R  00 15 79 a8 00 00 02 00 00 00 15 be 68 00 00 01 00 00
+= rx=14074000 mode=CW unsel=14250000 mode_unsel=USB
+
+# Status flags (FA): byte 1 bit 7 VFO operation, bit 6 VFO B, bit 2 split
+0.200 H1 00 00 00 01 fa
+0.220 R  c4 00 00 00 00
+= vfo=B split=1 rx=14250000 tx=14074000
+0.300 H1 00 00 00 01 fa
+0.320 R  20 00 00 00 00
+= vfo=B split=0 tx=14250000
+
+# Sets: frequency of the current VFO (0A), mode (0C: 03 CW narrow, 05 AM narrow)
+0.400 H1 00 74 70 00 0a
+= rx=7074000
+0.500 H1 00 00 00 03 0c
+= mode=CW keyer=CW
+0.600 H1 00 00 00 05 0c
+= mode=AM

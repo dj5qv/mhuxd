@@ -24,7 +24,8 @@
 #define RIG_IC7300 0x88
 #define RIG_K3     0x62
 #define RIG_TS590  0x7D
-#define RIG_FT817  0x29	// legacy Yaesu binary: no decoder yet
+#define RIG_FT817  0x29	// older Yaesu, binary protocol
+#define RIG_FT767  0x53	// no decoder
 
 extern struct ev_loop *loop;
 extern int failures;
@@ -65,5 +66,14 @@ void keyer_state(int state);
 
 void run_for(double s);
 size_t parse_hex(const char *s, uint8_t *buf);
+
+// The keyer side of the microHAM protocol (src/mux.c, src/demux.c) for channel R1: a byte to
+// the host is a sequence of 4, the sync byte with its MSB, then the payload.
+void keyer_r1_encode(uint8_t b, uint8_t f[4]);
+// Host sequences, byte by byte: returns 1 when c completes a channel R1 byte (*b).
+struct keyer_rx {
+	int sync, idx;
+};
+int keyer_r1_decode(struct keyer_rx *k, uint8_t c, uint8_t *b);
 
 #endif // CAT_TEST_STUBS_H

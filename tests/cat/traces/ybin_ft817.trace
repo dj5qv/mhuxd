@@ -1,0 +1,97 @@
+# Yaesu FT-817 (FT-857, FT-897 alike), binary protocol: five byte commands, opcode last. Read
+# frequency and mode (03) is answered with 5 bytes: BCD frequency in 10 Hz, most significant
+# first, and the mode. Every other command gets one byte: a status (E7, F7) or acknowledge.
+@ybin model=ft817
+0.000 H1 00 00 00 00 03
+= busy=H1 pending=client
+0.030 R  01 40 74 00 01
+= client=H1 busy=none pending=none rx=14074000 mode=USB keyer=VOICE
+
+# DIG (the menu decides RTTY, PSK or USER-L/U): data
+0.100 H1 00 00 00 00 03
+0.130 R  00 70 74 00 0a
+= rx=7074000 mode=PKTUSB keyer=DIGITAL
+
+# Bit 7: narrow filter, FM-N is FM
+0.200 H1 00 00 00 00 03
+0.230 R  01 45 20 00 88
+= rx=14520000 mode=FM
+
+# A set is taken over at once, the radio acknowledges it
+1.000 H1 01 42 50 00 01
+= busy=H1 rx=14250000
+1.020 R  00
+= client=H1 busy=none replies=3
+1.100 H1 02 00 00 00 07
+= mode=CW keyer=CW
+1.120 R  00
+= busy=none
+1.200 H1 0a 00 00 00 07
+= mode=PKTUSB
+1.220 R  00
+
+# Status bytes (E7, F7) and EEPROM read (BB, 2 bytes) are replies
+1.300 H1 00 00 00 00 e7
+1.320 R  0a
+= client=H1 busy=none replies=4
+1.400 H1 00 55 00 00 bb
+1.420 R  80
+= busy=H1
+1.425 R  00
+= busy=none replies=5
+
+# Command and answer in pieces
+2.000 H1 00 00
+= busy=H1 pending=client
+2.010 H1 00 00 03
+2.040 R  01 40
+= busy=H1
+2.050 R  74 00 02
+= busy=none rx=14074000 mode=CW
+
+# Not BCD: bad, nothing taken over
+2.100 H1 00 00 00 00 03
+2.130 R  01 4a 74 00 01
+= bad=1 rx=14074000 mode=CW busy=none
+
+# A set without acknowledge: given up when the next command comes more than 200 ms later, so
+# the answer to that one is framed right
+3.000 H1 00 70 74 00 01
+= rx=7074000
+3.300 H1 00 00 00 00 03
+3.330 R  00 70 74 00 01
+= client=H1 busy=none rx=7074000 mode=USB
+
+# Radio data without a command
+4.000 R  55
+= unmatched=1 client=-
+
+# A partial command is forgotten after 300 ms, as the radio does
+5.000 H1 00 00
+5.400 H1 00 00 00 00 03
+= dropped=1 busy=H1
+5.430 R  01 40 74 00 01
+= busy=none rx=14074000 mode=USB
+
+# An answer that stops short: over after 100 ms without a byte, the next one is framed right
+6.000 H1 00 00 00 00 03
+6.030 R  01 40 74
+6.300 H1 00 00 00 00 03
+= dropped=2
+6.330 R  02 10 74 00 00
+= rx=21074000 mode=LSB busy=none
+
+# mhuxd's own query (M): its answer is marked own
+7.000 M  00 00 00 00 03
+= pending=own busy=none
+7.030 R  01 40 74 00 01
+= client=M own=1 pending=none rx=14074000 mode=USB
+
+# Two clients: answers in the order of the commands
+8.000 H1 00 00 00 00 03
+8.005 H2 00 00 00 00 e7
+= busy=H1,H2
+8.030 R  01 40 74 00 01
+= client=H1 busy=H2
+8.040 R  07
+= client=H2 busy=none

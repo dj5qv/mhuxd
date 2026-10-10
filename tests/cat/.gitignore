@@ -3,3 +3,5 @@ native_test
 __pycache__/
 monitor-out/
 router_test
+ybin_test
+ybin_sim

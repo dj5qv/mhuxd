@@ -31,6 +31,7 @@ enum {
 	CAT_NATIVE_PROTO_ELECRAFT,
 	CAT_NATIVE_PROTO_YAESU,
 	CAT_NATIVE_PROTO_FLEX,
+	CAT_NATIVE_PROTO_YBIN,	// older Yaesu radios, binary: from the rig type only (auto)
 	CAT_NATIVE_PROTO_NONE,	// no decoder for the rig type
 };
 

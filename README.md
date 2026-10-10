@@ -250,10 +250,17 @@ directly, e.g. WSJTX configured like in the "WSJTX direct" example above.
 
 - Supported: Icom (CI-V; the Ten-Tec OMNI VI speaks it too), Kenwood, Elecraft K2/K3, the
   newer Yaesu radios with ASCII CAT (FT-450, FT-950, FT-991, FT-2000, FTdx1200/3000/5000/9000),
-  Flex, ANAN (PowerSDR/Thetis) and other SDRs emulating a TS-2000. Only Icom is tested on a
-  real radio so far, the others against Hamlib's simulators: reports welcome. Not supported:
-  the older Yaesu radios with binary CAT (FT-817/857/897, FT-1000MP, ...), Ten-Tec ORION/OMNI
-  VII, JRC, Hilberling: use rigctld for these.
+  the older Yaesu radios with binary CAT (FT-757GXII, FT-817/818, FT-840, FT-847, FT-857,
+  FT-890, FT-897, FT-900, FT-920, FT-990, FT-1000/1000D, FT-1000MP/MARK-V/Field), Flex, ANAN
+  (PowerSDR/Thetis) and other SDRs emulating a TS-2000. Only Icom is tested on a real radio so
+  far, the others against Hamlib's backends and simulators: reports welcome, a CAT monitor
+  trace (see below) helps most. Not supported: Yaesu FT-767GX, Ten-Tec ORION/OMNI VII, JRC,
+  Hilberling: use rigctld for these.
+- Older Yaesu radios: their answers carry no start or end marker, mhuxd frames them by the
+  model's answer lengths, so the radio type in the keyer's "Radio" section must match the
+  radio exactly. A memory dump (several seconds) keeps the CAT line for the application that
+  asked for it. The FT-1000/1000D doesn't report which VFO is selected; mhuxd assumes VFO A
+  until an application selects one.
 - Select the radio type (and CI-V address) in the keyer's "Radio" section as usual. "Protocol:
   auto" takes the protocol from the radio type, "CI-V address" overrides the channel's address.
 - Kenwood: the data mode (USB-D, ...) is known on the TS-590, TS-950 and TS-990. The older

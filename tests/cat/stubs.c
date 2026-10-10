@@ -184,3 +184,24 @@ size_t parse_hex(const char *s, uint8_t *buf) {
 	}
 	return n;
 }
+
+void keyer_r1_encode(uint8_t b, uint8_t f[4]) {
+	f[0] = 0x20 | ((b >> 7) << 2);
+	f[1] = 0x80 | (b & 0x7f);
+	f[2] = 0x80;
+	f[3] = 0x80;
+}
+
+int keyer_r1_decode(struct keyer_rx *k, uint8_t c, uint8_t *b) {
+	if(!(c & 0x80)) {
+		k->sync = c;
+		k->idx = 0;
+		return 0;
+	}
+	k->idx++;
+	if(k->sync >= 0 && k->idx == 1 && (k->sync & 0x20)) {
+		*b = (c & 0x7f) | (((k->sync >> 2) & 1) << 7);
+		return 1;
+	}
+	return 0;
+}

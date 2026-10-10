@@ -1,0 +1,22 @@
+# Yaesu FT-757GXII: status update (10) returns 75 bytes: flags (bit 3 VFO B, bit 4 memory),
+# frequency (BCD, least significant first) and mode of the display, VFO A and VFO B.
+# Setting the return delay (0E) returns them too; parameter 1: the meter, one byte.
+@ybin model=ft757gx2
+0.000 H1 00 00 00 00 10
+= busy=H1
+0.200 R  00 00 00 00 00 00 74 40 01 01 00 74 40 01 01 00 74 70 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+= client=H1 busy=none vfo=A rx=14074000 mode=USB unsel=7074000 mode_unsel=LSB
+0.300 H1 00 00 00 00 0e
+0.500 R  08 00 00 00 00 00 74 70 00 00 00 74 40 01 01 00 74 70 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+= client=H1 busy=none vfo=B rx=7074000 mode=LSB unsel=14074000 mode_unsel=USB
+0.600 H1 00 00 00 01 10
+0.620 R  9a
+= client=H1 busy=none
+
+# No command buffer: a set keeps the line for 150 ms
+0.700 H1 00 00 00 02 0c
+= mode=CW busy=H1
+0.840 H1 00 00 00 00 05
+= busy=H1 vfo=A rx=14074000
+0.995 H2 00 00 00 01 10
+= busy=H2

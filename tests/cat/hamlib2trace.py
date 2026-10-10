@@ -5,14 +5,15 @@ Hamlib's TX dumps become host data (H1), its RX dumps radio data (R). Time
 stamps are made relative to the first converted line. Bytes Hamlib never read
 (flushed or still in the buffer when it timed out) are not in the log.
 
-  hamlib2trace.py [--lines FIRST:LAST] [--time FROM:TO] [--addr 94 | --dialect kenwood]
-                  [--text] rigctl.log > out.trace
+  hamlib2trace.py [--lines FIRST:LAST] [--time FROM:TO]
+                  [--addr 94 | --dialect kenwood | --model ft1000mp] [--text] rigctl.log > out.trace
 
 --lines restricts the conversion to a range of log lines (1-based, inclusive).
 --time keeps only bytes between FROM and TO seconds (relative to the first
 converted line; time stamps keep that origin).
 --addr writes a '@civ addr=..' header line, --dialect a '@kenwood' (elecraft, yaesu,
-flex) one. --text writes the bytes as quoted text, for the ASCII protocols.
+flex) one, --model a '@ybin model=..' one (older Yaesu radios, binary). --text writes
+the bytes as quoted text, for the ASCII protocols.
 """
 import argparse
 import os
@@ -20,7 +21,8 @@ import re
 import sys
 
 TS = re.compile(r'^\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2}):(\d{2}\.\d+)[+-]\d{4}: ')
-HDR = re.compile(r'(write_block\(\): TX|read_string_generic\(\): RX) (\d+) (bytes|characters)')
+HDR = re.compile(r'(write_block\(\): TX|read_string_generic\(\): RX|read_block_generic\(\): RX) (\d+) '
+                 r'(bytes|characters)')
 HEX = re.compile(r'^[0-9a-f]{4}\s+((?:[0-9a-f]{2} )+)')
 
 
@@ -96,7 +98,7 @@ def convert(path, first, last, t_from, t_to, text, out):
             h = HDR.search(line)
             if h:
                 cur = ['H1' if 'TX' in h.group(1) else 'R', t, int(h.group(2)), b'']
-            elif 'Timed out' in line and 'read_string_generic' in line and t0 is not None:
+            elif 'Timed out' in line and '_generic' in line and t0 is not None:
                 if t_prev >= t_from and (not t_to or t_prev <= t_to):
                     out.write('# Hamlib: read timed out\n')
     if cur and cur[3]:
@@ -110,6 +112,7 @@ def main():
     ap.add_argument('--time', default='0:0', help='FROM:TO seconds (TO 0 = end)')
     ap.add_argument('--addr', help='CI-V address of the radio (hex)')
     ap.add_argument('--dialect', help='ASCII protocol: kenwood, elecraft, yaesu, flex')
+    ap.add_argument('--model', help='older Yaesu radio, binary protocol: ft817, ft1000mp, ...')
     ap.add_argument('--text', action='store_true', help='write the bytes as quoted text')
     ap.add_argument('log')
     args = ap.parse_args()
@@ -123,6 +126,8 @@ def main():
         out.write(f'@civ addr={args.addr}\n')
     if args.dialect:
         out.write(f'@{args.dialect}\n')
+    if args.model:
+        out.write(f'@ybin model={args.model}\n')
     convert(args.log, max(first, 1), last, t_from, t_to, args.text, out)
 
 

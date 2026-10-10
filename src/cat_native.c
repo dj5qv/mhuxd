@@ -18,6 +18,7 @@
 #include "cat_civ.h"
 #include "cat_state.h"
 #include "cat_trace.h"
+#include "cat_ybin.h"
 #include "app_ctx.h"
 #include "channel.h"
 #include "conmgr.h"
@@ -61,6 +62,7 @@
 #define CATN_OWN_STALE 1.5	// values older than this are queried, each query at most this often
 #endif
 #define CATN_OWN_TIMEOUT 0.3	// answer expected within; the applications' data waits meanwhile
+#define CATN_OWN_BYTE_TIME 0.0025	// plus this per byte of a known answer length
 #ifndef CATN_OWN_RETRY
 #define CATN_OWN_RETRY 10.0	// query interval while the radio doesn't answer
 #endif
@@ -101,7 +103,8 @@
 #define RIG_TYPE_TS950   0x19	// data mode via DT, not DA
 
 // Rig types with a Kenwood-style ASCII protocol. Icom radios are recognized by their CI-V
-// address. Legacy Yaesu (binary), Ten-Tec, JRC, Hilberling, Perseus: no decoder yet.
+// address, the older Yaesu radios are in ybin_rigs. Ten-Tec, JRC, Hilberling, Perseus, FT-767:
+// no decoder yet.
 static const struct {
 	uint8_t key;
 	uint8_t protocol;
@@ -149,6 +152,28 @@ static const struct {
 	{ 0x83, CAT_NATIVE_PROTO_FLEX, 0 },	// TS 2000 compatible SDR
 };
 
+// Older Yaesu radios with the binary protocol: the answer lengths depend on the model.
+static const struct {
+	uint8_t key;
+	uint8_t model;
+} ybin_rigs[] = {
+	{ 0x45, CAT_YBIN_FT757GX2 },	// FT-757GXII
+	{ 0x29, CAT_YBIN_FT817 },
+	{ 0x3D, CAT_YBIN_FT857 },
+	{ 0x2B, CAT_YBIN_FT897 },
+	{ 0x2A, CAT_YBIN_FT847 },
+	{ 0x43, CAT_YBIN_FT840 },
+	{ 0x55, CAT_YBIN_FT890 },
+	{ 0x3A, CAT_YBIN_FT900 },
+	{ 0x3B, CAT_YBIN_FT920 },
+	{ 0x3C, CAT_YBIN_FT990 },
+	{ 0x1F, CAT_YBIN_FT1000 },
+	{ 0x20, CAT_YBIN_FT1000 },	// FT-1000D
+	{ 0x21, CAT_YBIN_FT1000MP },
+	{ 0x22, CAT_YBIN_FT1000MP },	// MARK-V
+	{ 0x23, CAT_YBIN_FT1000MP },	// MARK-V Field
+};
+
 static const char *protocol_names[] = {
 	[CAT_NATIVE_PROTO_AUTO] = "auto",
 	[CAT_NATIVE_PROTO_CIV] = "civ",
@@ -156,12 +181,14 @@ static const char *protocol_names[] = {
 	[CAT_NATIVE_PROTO_ELECRAFT] = "elecraft",
 	[CAT_NATIVE_PROTO_YAESU] = "yaesu",
 	[CAT_NATIVE_PROTO_FLEX] = "flex",
+	[CAT_NATIVE_PROTO_YBIN] = "yaesu_bin",
 	[CAT_NATIVE_PROTO_NONE] = "none",
 };
 
 // Own queries, per value.
 enum {
-	Q_FREQ,		// CI-V 03; IF on Kenwood, Elecraft, Yaesu (with the mode); FA on Flex
+	Q_FREQ,		// CI-V 03; IF on Kenwood, Elecraft, Yaesu (with the mode); FA on Flex;
+			// the status data with the mode on older Yaesu radios
 	Q_MODE,		// CI-V 26 00 (with the data flag) or 04; MD on Flex
 	Q_DATA,		// CI-V 1A 06 when the radio has no 26; DA/DT on Kenwood, DT on Elecraft
 	Q_NUM
@@ -191,6 +218,7 @@ struct cat_native {
 	int civ_addr;
 	struct cat_civ *civ;		// one of these, or none
 	struct cat_ascii *ascii;
+	struct cat_ybin *ybin;
 	int decoder_protocol;		// CAT_NATIVE_PROTO_* of the decoder
 	int no_data;			// Kenwood without data mode
 	struct cat_state st;
@@ -210,6 +238,7 @@ struct cat_native {
 	ev_timer own_timer;		// waiting for the answer
 	int own_active;			// query sent, applications' data held
 	int own_slot;			// Q_* of the query in flight
+	ev_tstamp own_timeout;		// for the query in flight
 	ev_tstamp own_sent[Q_NUM];
 	ev_tstamp own_last;		// last query
 	uint8_t own_rejects[Q_NUM];
@@ -252,10 +281,11 @@ static const char *radio_str(uint8_t radio) {
 	return radio == 2 ? "r2" : "r1";
 }
 
+// The older Yaesu radios' decoder needs the model: auto only, from the rig type.
 int cat_native_protocol_from_str(const char *s) {
 	if(!s)
 		return CAT_NATIVE_PROTO_AUTO;
-	for(int i = CAT_NATIVE_PROTO_AUTO; i < CAT_NATIVE_PROTO_NONE; i++)
+	for(int i = CAT_NATIVE_PROTO_AUTO; i <= CAT_NATIVE_PROTO_FLEX; i++)
 		if(!strcmp(s, protocol_names[i]))
 			return i;
 	return -1;
@@ -267,10 +297,17 @@ const char *cat_native_protocol_str(int protocol) {
 	return protocol_names[protocol];
 }
 
-static int protocol_of_rig(int rigtype, int *no_data) {
+static int protocol_of_rig(int rigtype, int *no_data, int *ybin_model) {
 	*no_data = 0;
+	*ybin_model = -1;
 	if(rtyp_get_icom_address(rigtype) != 0 || rigtype == RIG_TYPE_OMNI_VI)
 		return CAT_NATIVE_PROTO_CIV;
+	for(size_t i = 0; i < sizeof(ybin_rigs) / sizeof(ybin_rigs[0]); i++) {
+		if(ybin_rigs[i].key == rigtype) {
+			*ybin_model = ybin_rigs[i].model;
+			return CAT_NATIVE_PROTO_YBIN;
+		}
+	}
 	for(size_t i = 0; i < sizeof(rig_protocols) / sizeof(rig_protocols[0]); i++) {
 		if(rig_protocols[i].key == rigtype) {
 			*no_data = rig_protocols[i].no_data;
@@ -280,11 +317,17 @@ static int protocol_of_rig(int rigtype, int *no_data) {
 	return CAT_NATIVE_PROTO_NONE;
 }
 
+static int catn_has_decoder(const struct cat_native *cn) {
+	return cn->civ || cn->ascii || cn->ybin;
+}
+
 static void catn_destroy_decoder(struct cat_native *cn) {
 	cat_civ_destroy(cn->civ);
 	cat_ascii_destroy(cn->ascii);
+	cat_ybin_destroy(cn->ybin);
 	cn->civ = NULL;
 	cn->ascii = NULL;
+	cn->ybin = NULL;
 }
 
 static const struct cat_stats *catn_stats(const struct cat_native *cn) {
@@ -292,6 +335,8 @@ static const struct cat_stats *catn_stats(const struct cat_native *cn) {
 		return cat_civ_get_stats(cn->civ);
 	if(cn->ascii)
 		return cat_ascii_get_stats(cn->ascii);
+	if(cn->ybin)
+		return cat_ybin_get_stats(cn->ybin);
 	return NULL;
 }
 
@@ -301,6 +346,8 @@ static unsigned catn_pending(const struct cat_native *cn) {
 		return cat_civ_pending(cn->civ, t_ms);
 	if(cn->ascii)
 		return cat_ascii_pending(cn->ascii, t_ms);
+	if(cn->ybin)
+		return cat_ybin_pending(cn->ybin, t_ms);
 	return 0;
 }
 
@@ -312,7 +359,37 @@ static int catn_client_busy(const struct cat_native *cn, int client) {
 		return cat_civ_client_busy(cn->civ, client, t_ms);
 	if(cn->ascii)
 		return cat_ascii_client_busy(cn->ascii, client, t_ms);
+	if(cn->ybin)
+		return cat_ybin_client_busy(cn->ybin, client, t_ms);
 	return 0;
+}
+
+// Older Yaesu radios: an answer is coming in for the client (0: mhuxd's own query). It isn't
+// timed out, a memory dump takes seconds.
+static int catn_answering(const struct cat_native *cn, int client) {
+	int c, own;
+	if(!cn->ybin || !cat_ybin_answering(cn->ybin, (uint64_t)(ev_now(cn->loop) * 1000.0), &c, &own))
+		return 0;
+	return client ? !own && c == client : own;
+}
+
+static void catn_client_discard(struct cat_native *cn, int client) {
+	if(cn->civ)
+		cat_civ_client_discard(cn->civ, client);
+	else if(cn->ascii)
+		cat_ascii_client_discard(cn->ascii, client);
+	else if(cn->ybin)
+		cat_ybin_client_discard(cn->ybin, client);
+}
+
+static void catn_decoder_feed(struct cat_native *cn, enum cat_dir dir, int client, const uint8_t *data, size_t len,
+			      uint64_t t_ms) {
+	if(cn->civ)
+		cat_civ_feed(cn->civ, dir, client, data, len, t_ms);
+	else if(cn->ascii)
+		cat_ascii_feed(cn->ascii, dir, client, data, len, t_ms);
+	else if(cn->ybin)
+		cat_ybin_feed(cn->ybin, dir, client, data, len, t_ms);
 }
 
 /*
@@ -347,15 +424,17 @@ static void catn_mon_line(struct cat_native *cn, const char *line) {
 	});
 }
 
-// Wall clock time of the event loop, "HH:MM:SS.mmm".
-static void catn_mon_time(const struct cat_native *cn, char *buf, size_t sz) {
-	ev_tstamp now = ev_now(cn->loop);
-	time_t secs = (time_t)now;
+// Wall clock time t_ms (ms of the event loop's time), "HH:MM:SS.mmm".
+static void catn_mon_time_ms(uint64_t t_ms, char *buf, size_t sz) {
+	time_t secs = (time_t)(t_ms / 1000);
 	struct tm tm;
 
 	localtime_r(&secs, &tm);
-	snprintf(buf, sz, "%02d:%02d:%02d.%03d", tm.tm_hour, tm.tm_min, tm.tm_sec,
-		 (int)((now - (ev_tstamp)secs) * 1000.0));
+	snprintf(buf, sz, "%02d:%02d:%02d.%03d", tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(t_ms % 1000));
+}
+
+static void catn_mon_time(const struct cat_native *cn, char *buf, size_t sz) {
+	catn_mon_time_ms((uint64_t)(ev_now(cn->loop) * 1000.0), buf, sz);
 }
 
 // "# HH:MM:SS.mmm <text>": the time inside the comment keeps the file a replayable trace.
@@ -378,10 +457,12 @@ static void catn_mon_comment(struct cat_native *cn, const char *fmt, ...) {
 	catn_mon_line(cn, line);
 }
 
+// With the frame's own time: the older Yaesu radios' decoder notices a command or answer that
+// stops short only later, the trace replays the same way with the time of its last byte.
 static void catn_mon_frame(struct cat_native *cn, const struct cat_frame *f) {
 	char time_str[32], line[CAT_TRACE_LINE_MAX];
 
-	catn_mon_time(cn, time_str, sizeof(time_str));
+	catn_mon_time_ms(f->t_ms, time_str, sizeof(time_str));
 	cat_trace_frame(line, sizeof(line), time_str, f, &cn->st);
 	catn_mon_line(cn, line);
 }
@@ -536,6 +617,8 @@ static void catn_turn_check(struct cat_native *cn) {
 		return;
 	int fresh = cn->turn_fresh && mhr_get_producer_tag(cn->router, cn->channel, cn->turn_fd);
 	int busy = fresh || catn_client_busy(cn, cn->turn_client);
+	if(busy && catn_answering(cn, cn->turn_client))
+		cn->turn_t = now;
 	if(busy && now - cn->turn_t < CATN_TURN_TIMEOUT)
 		return;
 	if(busy && !fresh) {
@@ -543,10 +626,7 @@ static void catn_turn_check(struct cat_native *cn) {
 		     radio_str(cn->radio), cn->turn_client, CATN_TURN_TIMEOUT);
 		catn_mon_comment(cn, "H%d: no answer within %.1f s, its commands are given up",
 				 cn->turn_client, CATN_TURN_TIMEOUT);
-		if(cn->civ)
-			cat_civ_client_discard(cn->civ, cn->turn_client);
-		else if(cn->ascii)
-			cat_ascii_client_discard(cn->ascii, cn->turn_client);
+		catn_client_discard(cn, cn->turn_client);
 	}
 	int next = cn->multi ? mhr_next_waiting_producer(cn->router, cn->channel, cn->turn_fd) : -1;
 	catn_turn_give(cn, next, next >= 0);
@@ -574,7 +654,7 @@ static void catn_check_maxcon_cb(const struct con_info *info, void *user_data) {
 // routed, so these frames can be held back from them. Needs a decoder.
 static void catn_filter_update(struct cat_native *cn) {
 	int n = mhr_count_consumers_flagged(cn->router, cn->channel, MHR_CNS_NO_UNSOLICITED);
-	int decoder = cn->civ || cn->ascii;
+	int decoder = catn_has_decoder(cn);
 	int filter = n > 0 && decoder;
 
 	if(n && !decoder && cn->rigtype >= 0 && !cn->filter_warned)
@@ -593,7 +673,7 @@ static void catn_filter_update(struct cat_native *cn) {
 // Taking turns needs more than one connector and a decoder.
 static void catn_multi_update(struct cat_native *cn) {
 	int n = mhr_count_producers(cn->router, cn->channel);
-	int multi = n > 1 && (cn->civ || cn->ascii);
+	int multi = n > 1 && catn_has_decoder(cn);
 
 	catn_filter_update(cn);
 	if(n != cn->connectors) {
@@ -612,7 +692,7 @@ static void catn_multi_update(struct cat_native *cn) {
 			     n > 1 ? "no decoder, not taking turns between the applications" : "single connector");
 			catn_mon_comment(cn, "%d connector(s), not taking turns", n);
 			// With a decoder, a turn in progress ends when its commands are answered.
-			if(!cn->civ && !cn->ascii)
+			if(!catn_has_decoder(cn))
 				catn_turn_give(cn, -1, 0);
 		}
 	}
@@ -706,8 +786,8 @@ static void catn_setup_decoder(struct cat_native *cn, int rigtype, int addr) {
 		return;
 	}
 
-	int no_data;
-	int protocol = protocol_of_rig(rigtype, &no_data);
+	int no_data, ybin_model;
+	int protocol = protocol_of_rig(rigtype, &no_data, &ybin_model);
 	if(cn->protocol != CAT_NATIVE_PROTO_AUTO)
 		protocol = cn->protocol;
 
@@ -719,6 +799,10 @@ static void catn_setup_decoder(struct cat_native *cn, int rigtype, int addr) {
 		};
 		cn->civ = cat_civ_create(&cc, &cn->st);
 		cat_trace_civ_config(line, sizeof(line), &cc);
+	} else if(protocol == CAT_NATIVE_PROTO_YBIN) {
+		struct cat_ybin_cfg yc = { .model = ybin_model };
+		cn->ybin = cat_ybin_create(&yc, &cn->st);
+		cat_trace_ybin_config(line, sizeof(line), &yc);
 	} else if(protocol != CAT_NATIVE_PROTO_NONE) {
 		struct cat_ascii_cfg ac = {
 			.dialect = protocol == CAT_NATIVE_PROTO_ELECRAFT ? CAT_ASCII_ELECRAFT :
@@ -735,7 +819,7 @@ static void catn_setup_decoder(struct cat_native *cn, int rigtype, int addr) {
 		return;
 	}
 
-	if(!cn->civ && !cn->ascii) {
+	if(!catn_has_decoder(cn)) {
 		err("%s %s native CAT: out of memory", cn->serial, radio_str(cn->radio));
 		return;
 	}
@@ -743,11 +827,16 @@ static void catn_setup_decoder(struct cat_native *cn, int rigtype, int addr) {
 	cn->no_data = no_data;
 	if(cn->civ)
 		cat_civ_set_frame_cb(cn->civ, catn_frame_cb, cn);
-	else
+	else if(cn->ascii)
 		cat_ascii_set_frame_cb(cn->ascii, catn_frame_cb, cn);
+	else
+		cat_ybin_set_frame_cb(cn->ybin, catn_frame_cb, cn);
 	if(cn->civ)
 		info("%s %s native CAT: CI-V, rig type '%s', radio address %02X%s", cn->serial,
 		     radio_str(cn->radio), rtyp_get_name(rigtype), addr, addr ? "" : " (learn)");
+	else if(cn->ybin)
+		info("%s %s native CAT: Yaesu binary protocol, rig type '%s' (%s)", cn->serial,
+		     radio_str(cn->radio), rtyp_get_name(rigtype), cat_ybin_model_name(ybin_model));
 	else
 		info("%s %s native CAT: %s, rig type '%s'%s", cn->serial, radio_str(cn->radio),
 		     cat_native_protocol_str(protocol), rtyp_get_name(rigtype),
@@ -804,7 +893,7 @@ static void catn_publish_cb(struct ev_loop *loop, struct ev_timer *w, int revent
 
 // Own queries can be sent: configured, decoder with a known radio address, keyer online.
 static int catn_can_query(const struct cat_native *cn) {
-	if(!cn->own_queries || (!cn->ascii && !cn->civ))
+	if(!cn->own_queries || !catn_has_decoder(cn))
 		return 0;
 	if(cn->civ && !cat_civ_radio_addr(cn->civ))
 		return 0;
@@ -836,10 +925,7 @@ static void catn_feed(struct cat_native *cn, enum cat_dir dir, int client, unsig
 
 	uint32_t applied = stats->applied;
 	uint64_t t_ms = (uint64_t)(ev_now(cn->loop) * 1000.0);
-	if(cn->civ)
-		cat_civ_feed(cn->civ, dir, client, data, len, t_ms);
-	else
-		cat_ascii_feed(cn->ascii, dir, client, data, len, t_ms);
+	catn_decoder_feed(cn, dir, client, data, len, t_ms);
 	if(stats->applied == applied)
 		return;
 
@@ -851,9 +937,18 @@ static void catn_feed(struct cat_native *cn, enum cat_dir dir, int client, unsig
 	}
 }
 
-// Frame for an own query, NULL if the protocol has none for this value.
-static size_t catn_build_query(const struct cat_native *cn, int slot, uint8_t *buf) {
+// Frame for an own query, length 0 if the protocol has none for this value. *answer: length of
+// the answer if known, else 0.
+static size_t catn_build_query(const struct cat_native *cn, int slot, uint8_t *buf, size_t *answer) {
 	const char *q = NULL;
+
+	*answer = 0;
+	if(cn->ybin) {
+		if(slot != Q_FREQ)
+			return 0;
+		*answer = cat_ybin_query(cn->ybin, buf);
+		return *answer ? YBIN_CMD_LEN : 0;
+	}
 
 	if(cn->civ) {
 		size_t n = 0;
@@ -940,7 +1035,8 @@ static int catn_query_needed(const struct cat_native *cn, int slot, uint64_t now
 
 static void catn_own_send(struct cat_native *cn, int slot) {
 	uint8_t buf[16];
-	size_t len = catn_build_query(cn, slot, buf);
+	size_t answer;
+	size_t len = catn_build_query(cn, slot, buf, &answer);
 	ev_tstamp now = ev_now(cn->loop);
 
 	cn->own_sent[slot] = now;
@@ -959,15 +1055,13 @@ static void catn_own_send(struct cat_native *cn, int slot) {
 	dbg1("%s %s native CAT: own %s query", cn->serial, radio_str(cn->radio), q_names[slot]);
 	cn->own_active = 1;
 	cn->own_slot = slot;
+	// Long answers of the older Yaesu radios: 75 bytes take 170 ms at 4800 Bd.
+	cn->own_timeout = CATN_OWN_TIMEOUT + answer * CATN_OWN_BYTE_TIME;
 	catn_route_start(cn);
-	ev_timer_set(&cn->own_timer, CATN_OWN_TIMEOUT, 0.);
+	ev_timer_set(&cn->own_timer, cn->own_timeout, 0.);
 	ev_timer_start(cn->loop, &cn->own_timer);
 
-	uint64_t t_ms = (uint64_t)(now * 1000.0);
-	if(cn->civ)
-		cat_civ_feed(cn->civ, CAT_DIR_OWN, 0, buf, len, t_ms);
-	else
-		cat_ascii_feed(cn->ascii, CAT_DIR_OWN, 0, buf, len, t_ms);
+	catn_decoder_feed(cn, CAT_DIR_OWN, 0, buf, len, (uint64_t)(now * 1000.0));
 }
 
 // Answer to the own query in flight: reply, acknowledge or rejection.
@@ -1000,6 +1094,11 @@ static void catn_own_timeout_cb(struct ev_loop *loop, struct ev_timer *w, int re
 	struct cat_native *cn = w->data;
 	(void)loop; (void)revents;
 
+	if(catn_answering(cn, 0)) {
+		ev_timer_set(&cn->own_timer, CATN_TURN_TICK, 0.);
+		ev_timer_start(cn->loop, &cn->own_timer);
+		return;
+	}
 	// Late answers are still taken out while the decoder keeps the query pending.
 	catn_own_end(cn);
 	cn->own_timeouts++;
@@ -1037,6 +1136,8 @@ static void catn_tick_cb(struct ev_loop *loop, struct ev_timer *w, int revents) 
 	ev_tstamp now = ev_now(loop);
 	(void)revents;
 
+	if(cn->ybin)
+		cat_ybin_expire(cn->ybin, (uint64_t)(now * 1000.0));
 	catn_multi_update(cn);
 	catn_route_check(cn);
 	if(cn->own_active)
@@ -1072,7 +1173,7 @@ static void catn_civ_resend(struct cat_native *cn) {
 		return;
 	if(own) {
 		ev_timer_stop(cn->loop, &cn->own_timer);
-		ev_timer_set(&cn->own_timer, CATN_OWN_TIMEOUT, 0.);
+		ev_timer_set(&cn->own_timer, cn->own_timeout, 0.);
 		ev_timer_start(cn->loop, &cn->own_timer);
 	} else if(client && client == cn->turn_client) {
 		cn->turn_t = now;

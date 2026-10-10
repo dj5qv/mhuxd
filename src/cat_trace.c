@@ -114,6 +114,10 @@ void cat_trace_ascii_config(char *buf, size_t sz, const struct cat_ascii_cfg *cf
 	snprintf(buf, sz, "@%s%s", cat_ascii_dialect_str(cfg->dialect), cfg->no_data ? " nodata" : "");
 }
 
+void cat_trace_ybin_config(char *buf, size_t sz, const struct cat_ybin_cfg *cfg) {
+	snprintf(buf, sz, "@ybin model=%s", cat_ybin_model_str(cfg->model));
+}
+
 void cat_trace_civ_config(char *buf, size_t sz, const struct cat_civ_cfg *cfg) {
 	if(cfg->freq_len && cfg->freq_len != 5)
 		snprintf(buf, sz, "@civ addr=%02x freq_len=%u", cfg->radio_addr, cfg->freq_len);

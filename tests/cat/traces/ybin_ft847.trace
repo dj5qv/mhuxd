@@ -1,0 +1,29 @@
+# Yaesu FT-847: the FT-817 commands without acknowledge. Read frequency and mode of the main
+# VFO (03), satellite RX (13) and TX (23): 5 bytes each; RX and TX status (E7, F7): 1 byte.
+@ybin model=ft847
+# CAT on: no answer, the line is kept for 100 ms
+0.000 H1 00 00 00 00 00
+= busy=H1 pending=client
+0.200 H1 00 00 00 00 03
+= busy=H1
+0.250 R  01 40 74 00 82
+= client=H1 busy=none rx=14074000 mode=CW keyer=CW
+
+# A set: taken over, no answer
+0.300 H1 01 42 50 00 01
+= rx=14250000 busy=H1
+0.350 H1 01 00 00 00 07
+= mode=USB
+
+# Satellite RX: answered, not the main VFO
+0.500 H1 00 00 00 00 13
+0.540 R  14 50 00 00 01
+= client=H1 busy=none rx=14250000 replies=2
+
+# Codes above FM (08) are FT-817 only
+0.600 H1 00 00 00 00 03
+0.650 R  01 42 50 00 0a
+= bad=1 rx=14250000 mode=USB
+0.700 H1 00 00 00 00 e7
+0.720 R  0f
+= client=H1 busy=none replies=3

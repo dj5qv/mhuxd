@@ -1,0 +1,60 @@
+# Yaesu FT-1000MP (MARK-V, MARK-V Field). Status update (10) returns 16 byte records: band,
+# frequency (4 bytes, 0.625 Hz units, most significant first), clarifier, mode, IF filter, flags.
+# The length depends on its 4th parameter: 2 current data, 3 VFO A and B, 1 memory channel.
+@ybin model=ft1000mp
+0.000 H1 00 00 00 02 10
+= busy=H1 pending=client
+0.040 R  11 01 57 9a 80 00 00 01 00 00 00 00 00 00 00 00
+= client=H1 busy=none rx=14074000 mode=USB keyer=VOICE
+
+# Mode 6 (packet), IF filter bit 7 clear: on LSB; mode 5 with bit 7: RTTY on USB
+0.100 H1 00 00 00 02 10
+0.140 R  11 00 ac b4 80 00 00 06 00 00 00 00 00 00 00 00
+= rx=7074000 mode=PKTLSB keyer=DIGITAL
+0.150 H1 00 00 00 02 10
+0.190 R  11 01 57 c0 00 00 00 05 80 00 00 00 00 00 00 00
+= rx=14080000 mode=RTTYR
+
+# VFO A and B: 32 bytes. VFO A is selected until the radio tells otherwise.
+0.200 H1 00 00 00 03 10
+0.260 R  11 01 57 9a 80 00 00 02 00 00 00 00 00 00 00 00 11 01 5b e6 80 00 00 01 00 00 00 00 00 00 00 00
+= client=H1 busy=none rx=14074000 mode=CW unsel=14250000 mode_unsel=USB vfo=A
+
+# Status flags (FA): 3 flag bytes and the model ID 03 93, or (parameter 1) 6 flag bytes.
+# Flag byte 1: bit 0 split, bit 4 VFO B in use.
+0.300 H1 00 00 00 00 fa
+0.320 R  01 00 00 03 93
+= busy=none split=1 vfo=A tx=14250000
+0.400 H1 00 00 00 01 fa
+0.420 R  10 00 00 00 00 00
+= busy=none split=0 vfo=B rx=14250000 mode=USB unsel=14074000
+
+# Sets, taken over at once: VFO A frequency (0A, BCD, least significant first), VFO B (8A),
+# mode (0C, bit 7: VFO B), VFO (05). No answer: the line is kept for 100 ms.
+0.500 H1 00 74 70 00 0a
+= busy=H1 pending=client unsel=7074000 rx=14250000
+0.600 H1 00 74 10 02 8a
+= rx=21074000
+0.700 H1 00 00 00 8a 0c
+= mode=PKTLSB keyer=DIGITAL
+1.000 H1 00 00 00 00 05
+= vfo=A rx=7074000 unsel=21074000 mode_unsel=PKTLSB
+
+# Meter (F7): 4 bytes and F7; memory channel number: 1 byte
+1.100 H1 00 00 00 00 f7
+= busy=H1
+1.120 R  80 80 80 80 f7
+= client=H1 busy=none
+1.200 H1 00 00 00 01 10
+1.220 R  05
+= client=H1 busy=none rx=7074000
+
+# Pacing (0E): a delay after each answer byte; such gaps don't end the answer
+2.000 H1 00 00 00 50 0e
+2.200 H1 00 00 00 02 10
+2.250 R  11 01 57 9a
+2.420 R  80 00 00 01
+= busy=H1
+2.590 R  00 00 00 00
+2.760 R  00 00 00 00
+= busy=none rx=14074000 mode=USB dropped=0

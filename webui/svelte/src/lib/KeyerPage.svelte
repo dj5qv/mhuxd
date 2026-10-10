@@ -1970,10 +1970,10 @@
           {#if activeRigModeSync?.backend === 'native'}
             mhuxd reads the CAT traffic between your applications and the radio and sets the
             keyer mode from it. Applications keep using the keyer's CAT port (e.g. /dev/mhuxd/cat1),
-            no rigctld needed. Icom, Kenwood, Elecraft, Flex/ANAN and the newer Yaesu radios (not
-            the older ones with binary CAT). mhuxd doesn't query the radio itself yet:
-            changes are seen while an application polls, or through CI-V transceive. Keep the
-            keyer option "Use decoder if connected" off.
+            no rigctld needed. Icom, Kenwood, Elecraft, Flex/ANAN and Yaesu, the older radios
+            with binary CAT too (FT-817, FT-1000MP, ...). When no application polls, mhuxd asks
+            the radio itself ("Query the radio"). Keep the keyer option "Use decoder if
+            connected" off.
           {:else}
             mhuxd polls hamlib's rigctld for frequency and mode. Applications connect to rigctld
             instead of the keyer's CAT port.

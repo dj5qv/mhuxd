@@ -18,6 +18,7 @@
 #include "cat_ascii.h"
 #include "cat_civ.h"
 #include "cat_state.h"
+#include "cat_ybin.h"
 
 #define CAT_TRACE_LINE_MAX 512
 
@@ -38,5 +39,7 @@ void cat_trace_frame(char *buf, size_t sz, const char *time, const struct cat_fr
 void cat_trace_civ_config(char *buf, size_t sz, const struct cat_civ_cfg *cfg);
 // "@kenwood[ nodata]", "@elecraft", "@yaesu", "@flex"
 void cat_trace_ascii_config(char *buf, size_t sz, const struct cat_ascii_cfg *cfg);
+// "@ybin model=ft1000mp"
+void cat_trace_ybin_config(char *buf, size_t sz, const struct cat_ybin_cfg *cfg);
 
 #endif // CAT_TRACE_H

@@ -11,11 +11,12 @@ SRCDIR   ?= ../../src
 CPPFLAGS += -I$(SRCDIR) -D_GNU_SOURCE
 CFLAGS   ?= -g -O2 -Wall -Wextra
 
-CAT_SRCS = $(SRCDIR)/cat_civ.c $(SRCDIR)/cat_ascii.c $(SRCDIR)/cat_state.c $(SRCDIR)/cat_trace.c
-CAT_HDRS = $(SRCDIR)/cat.h $(SRCDIR)/cat_civ.h $(SRCDIR)/cat_ascii.h $(SRCDIR)/cat_state.h \
-	   $(SRCDIR)/cat_trace.h $(SRCDIR)/mhcontrol.h
+CAT_SRCS = $(SRCDIR)/cat_civ.c $(SRCDIR)/cat_ascii.c $(SRCDIR)/cat_ybin.c $(SRCDIR)/cat_state.c \
+	   $(SRCDIR)/cat_trace.c
+CAT_HDRS = $(SRCDIR)/cat.h $(SRCDIR)/cat_civ.h $(SRCDIR)/cat_ascii.h $(SRCDIR)/cat_ybin.h \
+	   $(SRCDIR)/cat_state.h $(SRCDIR)/cat_trace.h $(SRCDIR)/mhcontrol.h
 
-all: cat_replay native_test router_test
+all: cat_replay native_test router_test ybin_test ybin_sim
 
 cat_replay: cat_replay.c $(CAT_SRCS) $(CAT_HDRS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ cat_replay.c $(CAT_SRCS)
@@ -33,14 +34,23 @@ ROUTER_SRCS = $(SRCDIR)/mhrouter.c $(SRCDIR)/mux.c $(SRCDIR)/demux.c $(SRCDIR)/b
 router_test: router_test.c $(NATIVE_DEPS) $(ROUTER_SRCS)
 	$(CC) $(CPPFLAGS) $(NATIVE_TEST_DEFS) $(CFLAGS) -o $@ router_test.c $(NATIVE_SRCS) $(ROUTER_SRCS) -lev
 
-check: cat_replay native_test router_test
+# The same with older Yaesu radios (binary protocol), emulated by ybin_radio.c.
+ybin_test: ybin_test.c ybin_radio.c ybin_radio.h $(NATIVE_DEPS) $(ROUTER_SRCS)
+	$(CC) $(CPPFLAGS) $(NATIVE_TEST_DEFS) $(CFLAGS) -o $@ ybin_test.c ybin_radio.c $(NATIVE_SRCS) $(ROUTER_SRCS) -lev
+
+# Emulated older Yaesu radio on a pseudo terminal or serial port, for Hamlib and real keyers.
+ybin_sim: ybin_sim.c ybin_radio.c ybin_radio.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ ybin_sim.c ybin_radio.c
+
+check: cat_replay native_test router_test ybin_test
 	./cat_replay traces/*.trace
 	rm -rf monitor-out && mkdir monitor-out
 	./native_test monitor-out
 	./cat_replay monitor-out/cat-TEST0001-r1.trace
 	./router_test
+	./ybin_test
 
 clean:
-	rm -rf cat_replay native_test router_test monitor-out
+	rm -rf cat_replay native_test router_test ybin_test ybin_sim monitor-out
 
 .PHONY: all check clean

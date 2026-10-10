@@ -58,7 +58,7 @@ void tty_close(int fd) {
 
 static int kfd[2] = { -1, -1 };
 static ev_io keyer_w;
-static int k_sync = -1, k_idx;
+static struct keyer_rx krx = { -1, 0 };
 
 #define SILENT_CMD 0x30	// the radio doesn't answer this command
 
@@ -87,10 +87,10 @@ static struct {
 static int noutq;
 static ev_timer outq_timer;
 
-// One byte per sequence, R1 only: sync byte with the MSB of the data, then the payload.
 static void keyer_send(const uint8_t *buf, size_t len) {
 	for(size_t i = 0; i < len; i++) {
-		uint8_t f[4] = { 0x20 | ((buf[i] >> 7) << 2), 0x80 | (buf[i] & 0x7f), 0x80, 0x80 };
+		uint8_t f[4];
+		keyer_r1_encode(buf[i], f);
 		if(write(kfd[1], f, sizeof(f)) != sizeof(f))
 			CHECK(0, "keyer write: %s", strerror(errno));
 	}
@@ -248,15 +248,9 @@ static void keyer_cb(struct ev_loop *l, struct ev_io *w, int revents) {
 	(void)l; (void)revents;
 
 	for(ssize_t i = 0; i < r; i++) {
-		uint8_t c = buf[i];
-		if(!(c & 0x80)) {
-			k_sync = c;
-			k_idx = 0;
-			continue;
-		}
-		k_idx++;
-		if(k_sync >= 0 && k_idx == 1 && (k_sync & 0x20))
-			radio_rx((c & 0x7f) | (((k_sync >> 2) & 1) << 7));
+		uint8_t b;
+		if(keyer_r1_decode(&krx, buf[i], &b))
+			radio_rx(b);
 	}
 }
 
