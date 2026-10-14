@@ -31054,7 +31054,7 @@ function instance$1($$self, $$props, $$invalidate) {
     2: { cw: ["ptt", "noptt"] },
     3: { cw: ["ptt", "qsk", "semi"] },
     4: {
-      cw: ["ptt1", "qsk", "semi", "ptt2"],
+      cw: ["ptt1", "qsk", "ptt2"],
       voice: ["ptt1", "ptt2"],
       digital: ["ptt1", "ptt2", "ptt12"]
     },
