@@ -572,8 +572,7 @@ static void control_channel_cb(struct mh_router *router, unsigned const char *da
 		}
 
 		if(ctl->mhi.type == MHT_MK && old_keyer_mode != ctl->tracked_keyer_mode) {
-			// Special handling of MK1 model. No mode specific r1FrBase.
-			kcfg_update_mk1_frbase(ctl->kcfg, ctl->tracked_keyer_mode);
+			// MK1 has no mode specific r1FrBase, kcfg sets it for the new mode.
 			mhc_load_kopts(ctl, NULL, NULL);
 		}
 
@@ -679,14 +678,8 @@ static void initializer_step(struct mh_control *ctl, unsigned const char *reply,
 			set_state(ctl, CTL_STATE_DEVICE_DISABLED);
 			break;
 		}
-		struct buffer *kb = kcfg_get_buffer(ctl->kcfg);
-		struct buffer buf;
 		dbg0("%s upload config", ctl->serial);
-		buf_reset(&buf);
-		buf_append_c(&buf, MHCMD_SET_SETTINGS);
-		buf_append(&buf, kb->data, kb->size);
-		buf_append_c(&buf, MHCMD_SET_SETTINGS | MSB_BIT);
-		submit_cmd(ctl, &buf, initializer_cb, ctl);
+		mhc_load_kopts(ctl, initializer_cb, ctl);
 		set_state(ctl, CTL_STATE_LOAD_CFG);
 		break;
 	case CTL_STATE_LOAD_CFG:
@@ -1301,11 +1294,12 @@ void mhc_set_mode_on_radio(struct mh_control *ctl, int mode, uint8_t radio, mhc_
 }
 
 void mhc_load_kopts(struct mh_control *ctl, mhc_cmd_completion_cb_fn cb, void *user_data) {
-	const struct buffer *kb = kcfg_get_buffer(ctl->kcfg);
+	uint16_t size;
+	const uint8_t *settings = kcfg_get_settings(ctl->kcfg, &size);
 	struct buffer buf;
 	buf_reset(&buf);
 	buf_append_c(&buf, MHCMD_SET_SETTINGS);
-	buf_append(&buf, kb->data, kb->size);
+	buf_append(&buf, settings, size);
 	buf_append_c(&buf, MHCMD_SET_SETTINGS | MSB_BIT);
 	submit_cmd(ctl, &buf, cb, user_data);
 }

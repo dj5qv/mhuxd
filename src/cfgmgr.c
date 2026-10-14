@@ -114,59 +114,6 @@ static int merge_runtime_cfg(struct cfg *cfg) {
 	return rval;
 }
 
-static int mk1_set_frbase(struct device *dev, struct cfg *param_cfg) {
-	int rval = 0;
-
-	// Ugly special treatment for MK1
-	const struct mh_info *mhi;
-	mhi = mhc_get_mhinfo(dev->ctl);
-	if(mhi && mhi->type == MHT_MK ) {
-		HDF *param_hdf = (HDF *)param_cfg;
-		int mode, audioRx = -1, audioTx = -1, audioTxFootSw = -1, ptt1 = -1, ptt2 = -1;
-
-		dbg1("%s()", __func__);
-
-		mode = hdf_get_int_value(param_hdf, "r1KeyerMode", -1);
-		switch(mode) {
-		case MOD_CW:
-			audioRx = hdf_get_int_value(param_hdf, "r1FrBase_Cw.audioRx", -1);
-			audioTx = hdf_get_int_value(param_hdf, "r1FrBase_Cw.audioTx", -1);
-			audioTxFootSw = hdf_get_int_value(param_hdf, "r1FrBase_Cw.audioTxFootSw", -1);
-			ptt1 = hdf_get_int_value(param_hdf, "r1FrBase_Cw.ptt1", -1);
-			ptt2 = hdf_get_int_value(param_hdf, "r1FrBase_Cw.ptt2", -1);
-			break;
-		case MOD_VOICE:
-			audioRx = hdf_get_int_value(param_hdf, "r1FrBase_Voice.audioRx", -1);
-			audioTx = hdf_get_int_value(param_hdf, "r1FrBase_Voice.audioTx", -1);
-			audioTxFootSw = hdf_get_int_value(param_hdf, "r1FrBase_Voice.audioTxFootSw", -1);
-			ptt1 = hdf_get_int_value(param_hdf, "r1FrBase_Voice.ptt1", -1);
-			ptt2 = hdf_get_int_value(param_hdf, "r1FrBase_Voice.ptt2", -1);
-			break;
-		case MOD_FSK:
-		case MOD_DIGITAL:
-			audioRx = hdf_get_int_value(param_hdf, "r1FrBase_Digital.audioRx", -1);
-			audioTx = hdf_get_int_value(param_hdf, "r1FrBase_Digital.audioTx", -1);
-			audioTxFootSw = hdf_get_int_value(param_hdf, "r1FrBase_Digital.audioTxFootSw", -1);
-			ptt1 = hdf_get_int_value(param_hdf, "r1FrBase_Digital.ptt1", -1);
-			ptt2 = hdf_get_int_value(param_hdf, "r1FrBase_Digital.ptt2", -1);
-			break;
-		}
-
-		if(audioRx >= 0)
-			rval += mhc_set_kopt(dev->ctl, "r1FrBase.audioRx", audioRx);
-		if(audioTx >= 0)
-			rval += mhc_set_kopt(dev->ctl, "r1FrBase.audioTx", audioTx);
-		if(audioTxFootSw >= 0)
-			rval += mhc_set_kopt(dev->ctl, "r1FrBase.audioTxFootSw", audioTxFootSw);
-		if(ptt1 >= 0)
-			rval += mhc_set_kopt(dev->ctl, "r1FrBase.ptt1", ptt1);
-		if(ptt2 >= 0)
-			rval += mhc_set_kopt(dev->ctl, "r1FrBase.ptt2", ptt2);
-	}
-
-	return rval;
-}
-
 // Merge device configuration into cfg
 int merge_device_cfg(struct cfgmgr *cfgmgr, struct device *dev, struct cfg *cfg) {
 	NEOERR *err;
@@ -659,7 +606,6 @@ int cfgmgr_apply_cfg(struct cfgmgr *cfgmgr, struct cfg *cfg, int apply_mode) {
 
 		HDF *param_hdf = hdf_get_obj(hdf, "param");
 		rval += apply_keyer_params(cfgmgr, dev, param_hdf, "");
-		mk1_set_frbase(dev, (struct cfg *)param_hdf);
 
 		if(mhc_is_online(dev->ctl)) {
 			result = -1;

@@ -107,9 +107,9 @@ static const struct citem c_base[] = {
 };
 
 struct citem c_mk1[] = {
-	// MK1 doesn't recognize mode specific r1FrBase_ settings.
-	// We need to update r1FrBase upon every mode change and mode
-	// specific r1FrBase_ change. Handled in mk1_care_frbase().
+	// MK1 doesn't recognize mode specific r1FrBase_ settings. r1FrBase is
+	// set from them in mk1_set_frbase() each time the settings are sent.
+	// Still an item so that saved configurations load without warnings.
 	{ "r1FrBase.audioRx",	0,  1, 2, 1 },
 	{ "r1FrBase.audioTx",	0,  3, 2, 1 },
 	{ "r1FrBase.audioTxFootSw",	0,  5, 2, 1 },
@@ -676,18 +676,32 @@ struct citem c_sm[] = {
 #define LARGEST6 (LARGEST5 > SM_SIZE ? LARGEST5 : SM_SIZE)
 #define MAX_NUM_CITEMS (LARGEST6)
 
+/* The MK family (MK, CK, DK) has a single r1FrBase at offset 0 for all keyer
+ * modes, set by mk1_set_frbase(). The mode specific r1FrBase_Cw and _Voice
+ * stay at 10 and 11, r1FrBase_Digital is stored at 12. urouter sends only
+ * the first 8 bytes, the rest is not used by these keyers.
+ */
+#define MK1_FRBASE_CW		(10)
+#define MK1_FRBASE_VOICE	(11)
+#define MK1_FRBASE_DIGITAL	(12)
+#define MK1_SETTINGS_SIZE	(8)
+
+// urouter defaults: CW AAA PTT1, VOICE CCC PTT1, DIGITAL BBB PTT2
+static const uint8_t mk1_frbase_def[] = { [MOD_CW] = 0x6a, [MOD_VOICE] = 0x7f, [MOD_DIGITAL] = 0x95 };
+
 struct kcfg {
 	struct buffer b;
 	const struct mh_info *mhi;
 	struct citem citem[MAX_NUM_CITEMS];
 	uint8_t num_citems;
+	uint8_t settings_size;	// bytes sent to the keyer, b may hold more
 };
 
+static int is_mk_family(const struct mh_info *mhi) {
+	return mhi->type == MHT_MK || mhi->type == MHT_CK || mhi->type == MHT_DK;
+}
+
 static int set_byte(struct kcfg *kcfg, unsigned idx, unsigned char val) {
-	if(kcfg->mhi->type == MHT_MK && idx < (unsigned)(kcfg->b.size + 1)) {
-		kcfg->b.data[idx] = val;
-		return 0;
-	}
 	if(idx < kcfg->b.size) {
 		kcfg->b.data[idx] = val;
 		return 0;
@@ -696,9 +710,6 @@ static int set_byte(struct kcfg *kcfg, unsigned idx, unsigned char val) {
 }
 
 static int get_byte(struct kcfg *kcfg, unsigned idx) {
-	if(kcfg->mhi->type == MHT_MK && idx < (unsigned)(kcfg->b.size + 1))
-		return kcfg->b.data[idx];
-
 	if(idx < kcfg->b.size)
 		return kcfg->b.data[idx];
 	return -1;
@@ -815,17 +826,6 @@ struct kcfg *kcfg_create(const struct mh_info *mhi) {
 	case MHT_MK:
 		memcpy(&kcfg->citem[ARRAY_SIZE(c_base)], c_mk1, sizeof(c_mk1));
 		kcfg->num_citems = ARRAY_SIZE(c_base) + ARRAY_SIZE(c_mk1);
-		buf_size = 12;
-
-		/* Bad hack to treat MK1 limitations. Store r1FrBase_Digital
-		 * "behind" the buffer.
-		 * Index 0 r1FrBase is handled by c_mk1 extension.
-		 */
-		kcfg->citem[0].off = 12;
-		kcfg->citem[1].off = 12;
-		kcfg->citem[2].off = 12;
-		kcfg->citem[3].off = 12;
-		kcfg->citem[4].off = 12;
 		break;
 	case MHT_DK2:
 		memcpy(&kcfg->citem[ARRAY_SIZE(c_base)], c_dk2, sizeof(c_dk2));
@@ -854,12 +854,8 @@ struct kcfg *kcfg_create(const struct mh_info *mhi) {
 		buf_size = 56;
 		break;
 	case MHT_CK:
-		kcfg->num_citems = ARRAY_SIZE(c_base);
-		buf_size = 12;
-		break;
 	case MHT_DK:
 		kcfg->num_citems = ARRAY_SIZE(c_base);
-		buf_size = 12;
 		break;
 	case MHT_SM:
 	case MHT_SMD:
@@ -869,12 +865,28 @@ struct kcfg *kcfg_create(const struct mh_info *mhi) {
 		break;
 	}
 
+	uint16_t i;
+	kcfg->settings_size = buf_size;
+	if(is_mk_family(mhi)) {
+		buf_size = MK1_FRBASE_DIGITAL + 1;
+		kcfg->settings_size = MK1_SETTINGS_SIZE;
+		// The first items of c_base are r1FrBase_Digital
+		for(i = 0; i < 5; i++)
+			kcfg->citem[i].off = MK1_FRBASE_DIGITAL;
+	}
+
 	buf_add_size(&kcfg->b, buf_size);
 
 	// Init buffer
-	uint16_t i;
 	for(i = 0; i < kcfg->num_citems; i++)
 		kcfg_set_val(kcfg, kcfg->citem[i].key, kcfg->citem[i].def);
+
+	// urouter defaults. CW stays at D (0) as enforced by kcfg_set_val(), the
+	// MK family doesn't know D, mk1_set_frbase() sends it as A.
+	if(is_mk_family(mhi)) {
+		kcfg->b.data[MK1_FRBASE_VOICE] = mk1_frbase_def[MOD_VOICE];
+		kcfg->b.data[MK1_FRBASE_DIGITAL] = mk1_frbase_def[MOD_DIGITAL];
+	}
 
 	// DK2 (and probably DK as well) don't support mic PTT (PTT1 flag).
 	// Hence we set PTT2 to 1 for CW mode as the default.
@@ -906,10 +918,49 @@ void kcfg_destroy(struct kcfg *kcfg) {
 		free(kcfg);
 }
 
-struct buffer *kcfg_get_buffer(struct kcfg *kcfg) {
-	if(kcfg)
-		return (&kcfg->b);
-	return NULL;
+// The MK family must be reconfigured after each keyer mode change. Like urouter,
+// CK always uses the CW and DK the DIGITAL settings, MK those of r1KeyerMode.
+static void mk1_set_frbase(struct kcfg *kcfg) {
+	int mode = MOD_DIGITAL;
+	int off;
+
+	if(kcfg->mhi->type == MHT_CK)
+		mode = MOD_CW;
+	if(kcfg->mhi->type == MHT_MK)
+		mode = kcfg_get_val(kcfg, "r1KeyerMode", MOD_DIGITAL);
+
+	switch(mode) {
+	case MOD_CW:
+		off = MK1_FRBASE_CW;
+		break;
+	case MOD_VOICE:
+		off = MK1_FRBASE_VOICE;
+		break;
+	default:	// FSK uses the DIGITAL settings
+		mode = MOD_DIGITAL;
+		off = MK1_FRBASE_DIGITAL;
+		break;
+	}
+
+	uint8_t frbase = kcfg->b.data[off];
+
+	// No audio state D (0) on the MK family, use urouter's default state of the mode.
+	for(int sh = 0; sh < 6; sh += 2) {
+		if(!(frbase & 3 << sh))
+			frbase |= mk1_frbase_def[mode] & 3 << sh;
+	}
+
+	kcfg->b.data[0] = frbase;
+	// urouter copies ptt1/ptt2 to bits 5/6 of byte 2 as well (obsolete_r1Ptt1/2)
+	kcfg->b.data[2] = (kcfg->b.data[2] & ~0x60) | (frbase >> 1 & 0x60);
+}
+
+// Settings as sent to the keyer with SET SETTINGS.
+const uint8_t *kcfg_get_settings(struct kcfg *kcfg, uint16_t *size) {
+	if(is_mk_family(kcfg->mhi))
+		mk1_set_frbase(kcfg);
+	*size = kcfg->settings_size;
+	return kcfg->b.data;
 }
 
 void kcfg_iter_begin(struct kcfg *kcfg, struct kcfg_iterator *iter) {
@@ -961,22 +1012,5 @@ void kcfg_update_keyer_mode(struct kcfg *kcfg, uint8_t cur, uint8_t r1, uint8_t 
 		kcfg_set_val(kcfg, "r2KeyerMode", r2);
 	} else {
 		kcfg_set_val(kcfg, "r1KeyerMode", cur);
-	}
-}
-
-void kcfg_update_mk1_frbase(struct kcfg *kcfg, int8_t mode) {
-	if(!kcfg || kcfg->mhi->type != MHT_MK)
-		return;
-
-	switch(mode) {
-	case MOD_CW:
-		kcfg_set_val(kcfg, "r1FrBase", kcfg->b.data[10]);
-		break;
-	case MOD_VOICE:
-		kcfg_set_val(kcfg, "r1FrBase", kcfg->b.data[11]);
-		break;
-	case MOD_DIGITAL:
-		kcfg_set_val(kcfg, "r1FrBase", kcfg->b.data[12]);
-		break;
 	}
 }

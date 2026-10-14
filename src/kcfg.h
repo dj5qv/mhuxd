@@ -22,7 +22,7 @@ struct kcfg_iterator {
 
 struct kcfg *kcfg_create(const struct mh_info *mhi);
 void kcfg_destroy(struct kcfg *kcfg);
-struct buffer *kcfg_get_buffer(struct kcfg *kcfg);
+const uint8_t *kcfg_get_settings(struct kcfg *kcfg, uint16_t *size);
 int kcfg_set_val(struct kcfg *kcfg, const char *key, int val);
 int kcfg_get_val(struct kcfg *kcfg, const char *key, int def);
 
@@ -31,6 +31,5 @@ int kcfg_iter_next(struct kcfg_iterator *iter);
 int kcfg_iter_get(struct kcfg_iterator *iter, const char **keyp, int *valp);
 
 void kcfg_update_keyer_mode(struct kcfg *kcfg, uint8_t cur, uint8_t r1, uint8_t r2);
-void kcfg_update_mk1_frbase(struct kcfg *kcfg, int8_t mode);
 
 #endif // KCFG_H
