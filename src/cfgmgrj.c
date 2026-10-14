@@ -433,8 +433,7 @@ static const struct ptt_map_entry ptt_map[] = {
     { MHT_MK, "qsk", 0, 0, 1 },
 
     { MHT_DK, "ptt", 0, 1, 0 },
-    { MHT_DK, "semi", 0, 0, 0 },
-    { MHT_DK, "qsk", 0, 0, 1 },
+    { MHT_DK, "noptt", 0, 0, 0 },
 
     { MHT_DK2, "ptt", 0, 1, 0 },
     { MHT_DK2, "semi", 0, 0, 0 },
@@ -442,7 +441,6 @@ static const struct ptt_map_entry ptt_map[] = {
 
     { MHT_CK, "ptt", 0, 1, 0 },
     { MHT_CK, "qsk", 0, 0, 1 },
-    { MHT_CK, "noptt", 0, 0, 0 },
 
     { MHT_MK2R, "ptt1", 1, 0, 0 },
     { MHT_MK2R, "ptt2", 0, 1, 0 },
@@ -462,6 +460,7 @@ static const char *compose_ptt_str(int type, int ptt1, int ptt2, int qsk) {
     case MHT_CK:
         return ptt2 ? "ptt" : "qsk";
     case MHT_DK:
+        return ptt2 ? "ptt" : "noptt";
     case MHT_DK2:
         if(ptt2)
             return "ptt";
