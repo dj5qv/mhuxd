@@ -135,7 +135,7 @@
   };
   const pttOptionsByType = {
     1: { cw: ['ptt', 'qsk'] },
-    2: { cw: ['ptt', 'noptt'] },
+    2: { digital: ['ptt', 'noptt'] },
     3: { cw: ['ptt', 'qsk', 'semi'] },
     4: { cw: ['ptt1', 'qsk', 'ptt2'], voice: ['ptt1', 'ptt2'], digital: ['ptt1', 'ptt2', 'ptt12'] },
     5: { cw: ['ptt1', 'qsk', 'semi', 'ptt2'], voice: ['ptt1', 'ptt2'], digital: ['ptt1', 'ptt2', 'ptt12'] },
@@ -619,7 +619,7 @@
     const voiceOpts = pttOptionsFor(type, 'voice');
     const digitalOpts = pttOptionsFor(type, 'digital');
     return {
-      cw: ptt.cw ?? cwOpts[0] ?? 'ptt1',
+      cw: cwOpts.length ? (ptt.cw ?? cwOpts[0]) : null,
       voice: voiceOpts.length ? (ptt.voice ?? voiceOpts[0]) : null,
       digital: digitalOpts.length ? (ptt.digital ?? digitalOpts[0]) : null
     };
@@ -667,7 +667,8 @@
     const cwOpts = pttOptionsFor(type, 'cw');
     const voiceOpts = pttOptionsFor(type, 'voice');
     const digitalOpts = pttOptionsFor(type, 'digital');
-    const payload = { cw: form.cw };
+    const payload = {};
+    if (cwOpts.length && form.cw) payload.cw = form.cw;
     if (voiceOpts.length && form.voice) payload.voice = form.voice;
     if (digitalOpts.length && form.digital) payload.digital = form.digital;
   
@@ -2385,20 +2386,22 @@
   <section class="section">
     <div class="section-title">PTT Radio 1</div>
     <div class="panel">
-      <div class="row">
-        <div class="label">PTT CW:</div>
-        <div class="value">
-          <select
-            class="select"
-            value={activePttR1?.cw}
-            on:change={(e) => applyPttChange(activeSerial, 'r1', 'cw', e.target.value)}
-          >
-            {#each pttOptionsFor(activeKeyer?.type ?? 0, 'cw') as opt}
-              <option value={opt}>{pttOptionLabels[opt] || opt}</option>
-            {/each}
-          </select>
+      {#if pttOptionsFor(activeKeyer?.type ?? 0, 'cw').length}
+        <div class="row">
+          <div class="label">PTT CW:</div>
+          <div class="value">
+            <select
+              class="select"
+              value={activePttR1?.cw}
+              on:change={(e) => applyPttChange(activeSerial, 'r1', 'cw', e.target.value)}
+            >
+              {#each pttOptionsFor(activeKeyer?.type ?? 0, 'cw') as opt}
+                <option value={opt}>{pttOptionLabels[opt] || opt}</option>
+              {/each}
+            </select>
+          </div>
         </div>
-      </div>
+      {/if}
       {#if pttOptionsFor(activeKeyer?.type ?? 0, 'voice').length}
         <div class="row">
           <div class="label">PTT Voice:</div>
@@ -2505,20 +2508,22 @@
     <section class="section">
       <div class="section-title">PTT Radio 2</div>
       <div class="panel">
-        <div class="row">
-          <div class="label">PTT CW:</div>
-          <div class="value">
-            <select
-              class="select"
-              value={activePttR2?.cw}
-              on:change={(e) => applyPttChange(activeSerial, 'r2', 'cw', e.target.value)}
-            >
-              {#each pttOptionsFor(activeKeyer?.type ?? 0, 'cw') as opt}
-                <option value={opt}>{pttOptionLabels[opt] || opt}</option>
-              {/each}
-            </select>
+        {#if pttOptionsFor(activeKeyer?.type ?? 0, 'cw').length}
+          <div class="row">
+            <div class="label">PTT CW:</div>
+            <div class="value">
+              <select
+                class="select"
+                value={activePttR2?.cw}
+                on:change={(e) => applyPttChange(activeSerial, 'r2', 'cw', e.target.value)}
+              >
+                {#each pttOptionsFor(activeKeyer?.type ?? 0, 'cw') as opt}
+                  <option value={opt}>{pttOptionLabels[opt] || opt}</option>
+                {/each}
+              </select>
+            </div>
           </div>
-        </div>
+        {/if}
         {#if pttOptionsFor(activeKeyer?.type ?? 0, 'voice').length}
           <div class="row">
             <div class="label">PTT Voice:</div>

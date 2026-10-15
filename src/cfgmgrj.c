@@ -534,9 +534,31 @@ static int apply_ptt_value(struct mh_control *ctl, int type, const char *chan, c
         snprintf(qsk_key, sizeof(qsk_key), "%sQsk", chan);
         if(mhc_set_kopt(ctl, qsk_key, match->qsk))
             return -1;
+
+        // urouter switches the CK's serial PTT delay along with PTT/QSK
+        if(type == MHT_CK) {
+            char delay_key[32];
+            snprintf(delay_key, sizeof(delay_key), "%sDelaySerialPtt", chan);
+            if(mhc_set_kopt(ctl, delay_key, !match->qsk))
+                return -1;
+        }
     }
 
     return 0;
+}
+
+// Keyer modes with a PTT setting: CK and DK2 CW only, the DK DIGITAL only (it
+// gets the DIGITAL settings in all its modes, as from urouter), the others all.
+static int ptt_has_mode(int type, const char *mode) {
+    switch(type) {
+    case MHT_CK:
+    case MHT_DK2:
+        return !strcmp(mode, "cw");
+    case MHT_DK:
+        return !strcmp(mode, "digital");
+    default:
+        return 1;
+    }
 }
 
 static int apply_ptt_channel_from_json(struct mh_control *ctl, int type, const char *chan, json_t *chan_obj, int *changed) {
@@ -549,6 +571,11 @@ static int apply_ptt_channel_from_json(struct mh_control *ctl, int type, const c
         json_t *val = json_object_get(chan_obj, modes[i]);
         if(!val)
             continue;
+        // Skipped, not refused: saved configurations may still have them.
+        if(!ptt_has_mode(type, modes[i])) {
+            dbg1("cfgmgrj: ignoring ptt.%s.%s, no such setting on type %d", chan, modes[i], type);
+            continue;
+        }
         if(!json_is_string(val)) {
             warn("cfgmgrj: ptt.%s.%s must be string", chan, modes[i]);
             errors++;
@@ -579,10 +606,6 @@ static int param_get_int(json_t *param, const char *key, int defval) {
     return json_get_int(param, key, defval);
 }
 
-static int ptt_mode_supported(int type) {
-    return !(type == MHT_DK || type == MHT_DK2 || type == MHT_CK);
-}
-
 static json_t *build_ptt_channel_json(int type, json_t *param, const char *chan) {
     if(!param || !chan)
         return NULL;
@@ -597,27 +620,22 @@ static json_t *build_ptt_channel_json(int type, json_t *param, const char *chan)
     if(!json_has_key(param, key1) && !json_has_key(param, key2) && !json_has_key(param, qsk_key))
         return NULL;
 
-    int ptt1 = param_get_int(param, key1, 0);
-    int ptt2 = param_get_int(param, key2, 0);
     int qsk = param_get_int(param, qsk_key, 0);
 
     json_t *obj = json_object();
     if(!obj)
         return NULL;
-    json_object_set_new(obj, "cw", json_string(compose_ptt_str(type, ptt1, ptt2, qsk)));
 
-    if(ptt_mode_supported(type)) {
-        snprintf(key1, sizeof(key1), "%sFrBase_Voice.ptt1", chan);
-        snprintf(key2, sizeof(key2), "%sFrBase_Voice.ptt2", chan);
-        ptt1 = param_get_int(param, key1, 0);
-        ptt2 = param_get_int(param, key2, 0);
-        json_object_set_new(obj, "voice", json_string(compose_ptt_str(type, ptt1, ptt2, qsk)));
-
-        snprintf(key1, sizeof(key1), "%sFrBase_Digital.ptt1", chan);
-        snprintf(key2, sizeof(key2), "%sFrBase_Digital.ptt2", chan);
-        ptt1 = param_get_int(param, key1, 0);
-        ptt2 = param_get_int(param, key2, 0);
-        json_object_set_new(obj, "digital", json_string(compose_ptt_str(type, ptt1, ptt2, qsk)));
+    const char *modes[] = { "cw", "voice", "digital" };
+    const char *suffix[] = { "FrBase_Cw", "FrBase_Voice", "FrBase_Digital" };
+    for(size_t i = 0; i < ARRAY_SIZE(modes); i++) {
+        if(!ptt_has_mode(type, modes[i]))
+            continue;
+        snprintf(key1, sizeof(key1), "%s%s.ptt1", chan, suffix[i]);
+        snprintf(key2, sizeof(key2), "%s%s.ptt2", chan, suffix[i]);
+        int ptt1 = param_get_int(param, key1, 0);
+        int ptt2 = param_get_int(param, key2, 0);
+        json_object_set_new(obj, modes[i], json_string(compose_ptt_str(type, ptt1, ptt2, qsk)));
     }
 
     return obj;
