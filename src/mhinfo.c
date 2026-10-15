@@ -18,13 +18,15 @@ const struct mh_info_map mh_info_map[] = {
 
 	{ .type = MHT_CK,       
 	  .name = "CW KEYER",
-	  .flags = MHF_MHUXD_SUPPORTED|MHF_HAS_WINKEY|MHF_HAS_PTT_SETTINGS|MHF_HAS_KEYER_MODE|
+	  // No MHF_HAS_KEYER_MODE on CK and DK: like urouter, mhuxd doesn't choose their
+	  // keyer mode, kcfg sends CW resp. DIGITAL settings without forcing a mode.
+	  .flags = MHF_MHUXD_SUPPORTED|MHF_HAS_WINKEY|MHF_HAS_PTT_SETTINGS|
 		MHF_HAS_FLAGS_CHANNEL|MHF_HAS_MCP_SUPPORT },
 
 	{ .type = MHT_DK,
 	  .name = "DIGI KEYER",
 	  .flags = MHF_MHUXD_SUPPORTED|MHF_HAS_R1|MHF_HAS_FSK1|MHF_HAS_LNA_PA_PTT|
-		MHF_HAS_PTT_SETTINGS|MHF_HAS_KEYER_MODE|MHF_HAS_FLAGS_CHANNEL|
+		MHF_HAS_PTT_SETTINGS|MHF_HAS_FLAGS_CHANNEL|
 		MHF_HAS_MCP_SUPPORT},
 
 	{ .type = MHT_DK2, 

@@ -1913,7 +1913,7 @@ static const char *force_key[] = {
 };
 
 static uint8_t set_force_keyer_mode(struct mh_control *ctl, uint8_t radio, uint8_t enable) {
-	if(radio < 1 || radio > 2)
+	if(radio < 1 || radio > 2 || !(ctl->mhi.flags & MHF_HAS_KEYER_MODE))
 		return 0;
 
 	enable &= 1;

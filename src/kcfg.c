@@ -701,6 +701,8 @@ static int is_mk_family(const struct mh_info *mhi) {
 	return mhi->type == MHT_MK || mhi->type == MHT_CK || mhi->type == MHT_DK;
 }
 
+static void mk1_set_frbase(struct kcfg *kcfg);
+
 static int set_byte(struct kcfg *kcfg, unsigned idx, unsigned char val) {
 	if(idx < kcfg->b.size) {
 		kcfg->b.data[idx] = val;
@@ -910,6 +912,10 @@ struct kcfg *kcfg_create(const struct mh_info *mhi) {
 		kcfg_set_val(kcfg, "r1FrBase_Digital.audioTxFootSw", AUDIO_SW_D);
 	}
 
+	// Show the values set at sending (CK/DK keyer mode) before the keyer is online
+	if(is_mk_family(mhi))
+		mk1_set_frbase(kcfg);
+
 	return kcfg;
 }
 
@@ -920,14 +926,20 @@ void kcfg_destroy(struct kcfg *kcfg) {
 
 // The MK family must be reconfigured after each keyer mode change. Like urouter,
 // CK always uses the CW and DK the DIGITAL settings, MK those of r1KeyerMode.
+// CK and DK pick their keyer mode themselves: as urouter, r1KeyerMode is sent as
+// CW resp. DIGITAL and the mode is not forced (the DK may use FSK as well).
 static void mk1_set_frbase(struct kcfg *kcfg) {
 	int mode = MOD_DIGITAL;
 	int off;
 
-	if(kcfg->mhi->type == MHT_CK)
-		mode = MOD_CW;
-	if(kcfg->mhi->type == MHT_MK)
+	if(kcfg->mhi->type == MHT_MK) {
 		mode = kcfg_get_val(kcfg, "r1KeyerMode", MOD_DIGITAL);
+	} else {
+		if(kcfg->mhi->type == MHT_CK)
+			mode = MOD_CW;
+		kcfg_set_val(kcfg, "r1ForceKeyerMode", 0);
+		kcfg_set_val(kcfg, "r1KeyerMode", mode);
+	}
 
 	switch(mode) {
 	case MOD_CW:
