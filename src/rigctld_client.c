@@ -41,8 +41,18 @@
 #define RIGCL_RESPAWN_INITIAL_MS (100)
 #define RIGCL_RESPAWN_MAX_MS     (60000)
 
-#define RIGCL_NUM_COMMANDS 3
-#define RIGCL_CMD_STRING "+\\get_vfo_info VFOA\n+\\get_vfo_info VFOB\n+\\get_vfo_info currVFO\n"
+/* The commands are sent one at a time, each after the previous RPRT has
+ * arrived.  wfview's rigctld emulation answers a batch of pipelined commands
+ * with a single RPRT for the whole batch, so waiting for one RPRT per command
+ * would time out.  It also ignores the VFO argument of get_vfo_info and
+ * always reports the current VFO.
+ * https://github.com/wf-group/wfview/issues/147 */
+static const char *const rigcl_commands[] = {
+	"+\\get_vfo_info VFOA\n",
+	"+\\get_vfo_info VFOB\n",
+	"+\\get_vfo_info currVFO\n",
+};
+#define RIGCL_NUM_COMMANDS ((int)(sizeof(rigcl_commands) / sizeof(rigcl_commands[0])))
 
 enum rigcl_io_phase {
 	RIGCL_PHASE_IDLE = 0,
@@ -81,6 +91,7 @@ struct rigctld_client {
 	char tx_buf[80];
 	size_t tx_len;
 	size_t tx_off;
+	int cmd_idx;
 	char rx_buf[512];
 	size_t rx_len;
 	struct mhc_radio_info last_info;
@@ -420,7 +431,15 @@ static void rigcl_finish_request(struct rigctld_client *client) {
 	ev_timer_stop(client->loop, &client->op_timeout_timer);
 	client->phase = RIGCL_PHASE_IDLE;
 	client->tx_off = 0;
+	client->cmd_idx = 0;
 	client->rx_len = 0;
+}
+
+static void rigcl_load_command(struct rigctld_client *client, int idx) {
+	client->cmd_idx = idx;
+	snprintf(client->tx_buf, sizeof(client->tx_buf), "%s", rigcl_commands[idx]);
+	client->tx_len = strlen(client->tx_buf);
+	client->tx_off = 0;
 }
 
 static void rigcl_arm_op_timeout(struct rigctld_client *client, int timeout_ms) {
@@ -661,8 +680,18 @@ static void rigcl_io_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
         dbg1("%s %s r%d read %zu/%zu bytes", __func__, client->serial, client->radio,
              client->rx_len, sizeof(client->rx_buf) - 1);
 
-		if(count_rprt_lines(client->rx_buf, client->rx_len) < RIGCL_NUM_COMMANDS)
+		if(count_rprt_lines(client->rx_buf, client->rx_len) < client->cmd_idx + 1)
 			return;
+
+		if(client->cmd_idx + 1 < RIGCL_NUM_COMMANDS) {
+			rigcl_load_command(client, client->cmd_idx + 1);
+			client->phase = RIGCL_PHASE_WRITING;
+			ev_io_stop(client->loop, &client->io_w);
+			ev_io_set(&client->io_w, client->fd, EV_WRITE);
+			ev_io_start(client->loop, &client->io_w);
+			rigcl_arm_op_timeout(client, client->io_timeout_ms);
+			return;
+		}
 
 		rigcl_parse_response(client);
 		rigcl_finish_request(client);
@@ -752,9 +781,7 @@ static void rigcl_start_request(struct rigctld_client *client) {
 	}
 
 	client->req_start_ts = ev_now(client->loop);
-	strcpy(client->tx_buf, RIGCL_CMD_STRING);
-	client->tx_len = strlen(client->tx_buf);
-	client->tx_off = 0;
+	rigcl_load_command(client, 0);
 	client->rx_len = 0;
 
 	ev_io_set(&client->io_w, client->fd, EV_WRITE);
