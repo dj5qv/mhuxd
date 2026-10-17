@@ -766,7 +766,7 @@ static void rigcl_start_request(struct rigctld_client *client) {
 	if(client->fd == -1) {
 		if(rigcl_open_nonblock_socket(client->host, client->port, &client->fd) != 0) {
 			/* Expected while we're waiting out the respawn backoff; keep
-			 * this at dbg1 so the log isn't flooded every poll_ms. */
+			 * this at dbg0 so the log isn't flooded every poll_ms. */
 			if(!(client->auto_start && client->child_pid == 0)) {
 				warn("%s rigctld connect open failed (%s:%d)", client->serial, client->host, client->port);
 			} else {
