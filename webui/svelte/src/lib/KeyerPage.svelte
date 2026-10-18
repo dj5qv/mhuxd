@@ -28,6 +28,9 @@
   let rigModeSyncFormGen = 0;
   let rigModeSyncStatus = {};
   let rigModeSyncStatusTimer = {};
+  let rigctldForm = {};
+  let rigctldStatus = {};
+  let rigctldStatusTimer = {};
   let radioInfoLive = {};   // `${serial}:${radio}` -> latest radio_info event
   let catMonitor = {};      // `${serial}:${radio}` -> last CAT monitor lines
   let pttForm = {};
@@ -265,8 +268,6 @@
     connect_timeout_ms: Number(r?.connect_timeout_ms ?? 1500),
     io_timeout_ms: Number(r?.io_timeout_ms ?? 1500),
     poll_ms: Number(r?.poll_ms ?? 500),
-    auto_start: boolish(r?.auto_start),
-    rigctld_options: r?.rigctld_options ?? '',
     // backend native
     protocol: r?.protocol ?? 'auto',
     civ_address: r?.civ_address ? Number(r.civ_address).toString(16).toUpperCase() : '',
@@ -334,8 +335,6 @@
       connect_timeout_ms: Number(f?.connect_timeout_ms || 1500),
       io_timeout_ms: Number(f?.io_timeout_ms || 1500),
       poll_ms: Number(f?.poll_ms || 500),
-      auto_start: f?.auto_start ? 1 : 0,
-      rigctld_options: String(f?.rigctld_options || ''),
       protocol: ['civ', 'kenwood', 'elecraft', 'yaesu', 'flex'].includes(f?.protocol) ? f.protocol : 'auto',
       civ_address: civ,
       own_queries: f?.own_queries === false ? 'never' : 'auto',
@@ -371,6 +370,85 @@
       setRigModeSyncStatusMsg(serial, 'Rig mode sync settings applied.', 'success');
     } catch (err) {
       setRigModeSyncStatusMsg(serial, err?.message || 'Failed to apply rig mode sync settings.', 'error');
+      await refreshDeviceConfig(serial);
+    }
+  };
+
+  // rigctld auto-start, independent of the rig mode sync backend.
+  const defaultRigctldRadio = (r, defPort) => ({
+    auto_start: boolish(r?.auto_start),
+    port: Number(r?.port ?? defPort),
+    options: r?.options ?? ''
+  });
+
+  const defaultRigctldForm = (serial) => {
+    const radios = keyerConfigForSerial(serial)?.rigctld?.radios || {};
+    return {
+      r1: defaultRigctldRadio(radios.r1, 4532),
+      r2: defaultRigctldRadio(radios.r2, 4533)
+    };
+  };
+
+  const ensureRigctldForm = (serial) => {
+    if (!serial) return;
+    if (!rigctldForm[serial]) {
+      rigctldForm = { ...rigctldForm, [serial]: defaultRigctldForm(serial) };
+    }
+  };
+
+  const resetRigctldForms = () => {
+    rigctldForm = {};
+  };
+
+  const updateRigctldRadio = (serial, radio, key, value) => {
+    const form = rigctldForm[serial] || defaultRigctldForm(serial);
+    rigctldForm = {
+      ...rigctldForm,
+      [serial]: { ...form, [radio]: { ...(form[radio] || {}), [key]: value } }
+    };
+  };
+
+  const setRigctldStatusMsg = (serial, msg, kind = 'success') => {
+    rigctldStatus = { ...rigctldStatus, [serial]: { text: msg, kind } };
+    if (rigctldStatusTimer[serial]) clearTimeout(rigctldStatusTimer[serial]);
+    rigctldStatusTimer[serial] = setTimeout(() => {
+      const { [serial]: _removed, ...rest } = rigctldStatus;
+      rigctldStatus = rest;
+    }, 3000);
+  };
+
+  const rigctldRadioPayload = (f, defPort) => {
+    const port = Number(f?.port || defPort);
+    if (!Number.isInteger(port) || port < 1 || port > 65535) return null;
+    return {
+      auto_start: f?.auto_start ? 1 : 0,
+      port,
+      options: String(f?.options || '').trim()
+    };
+  };
+
+  const applyRigctld = async (serial) => {
+    const form = rigctldForm[serial] || defaultRigctldForm(serial);
+    const r1 = rigctldRadioPayload(form.r1, 4532);
+    const r2 = hasR2 ? rigctldRadioPayload(form.r2, 4533) : undefined;
+    if (!r1 || r2 === null) {
+      setRigctldStatusMsg(serial, 'Port must be a number 1..65535.', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/v1/config/devices/${serial}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ serial, rigctld: { radios: r2 ? { r1, r2 } : { r1 } } })
+      });
+      if (!res.ok) throw new Error(`config/devices/${serial} ${res.status}`);
+      const updated = await res.json();
+      configDevices = configDevices.map((d) => (d.serial === serial ? updated : d));
+      rigctldForm = { ...rigctldForm, [serial]: defaultRigctldForm(serial) };
+      setRigctldStatusMsg(serial, 'rigctld settings applied.', 'success');
+    } catch (err) {
+      setRigctldStatusMsg(serial, err?.message || 'Failed to apply rigctld settings.', 'error');
       await refreshDeviceConfig(serial);
     }
   };
@@ -1612,6 +1690,7 @@
   $: activeFsk1 = activeSerial ? (radioForm[activeSerial]?.fsk1 || defaultRadioForm(activeSerial, 'fsk1')) : null;
   $: activeFsk2 = activeSerial ? (radioForm[activeSerial]?.fsk2 || defaultRadioForm(activeSerial, 'fsk2')) : null;
   $: activeRigModeSync = activeSerial ? (rigModeSyncForm[activeSerial] || defaultRigModeSyncForm(activeSerial)) : null;
+  $: activeRigctld = activeSerial ? (rigctldForm[activeSerial] || defaultRigctldForm(activeSerial)) : null;
   $: rigRadios = hasR2 ? ['r1', 'r2'] : ['r1'];
   $: activeRadioInfo = [1, 2].map((n) =>
     radioInfoLive[`${activeSerial}:${n}`] || (activeKeyer?.radios || []).find((r) => r.radio === n) || null);
@@ -1625,6 +1704,7 @@
   $: if (configDevices) {
     resetRadioForms();
     resetRigModeSyncForms();
+    resetRigctldForms();
     resetPttForms();
     resetMessageForms();
     resetAllParamForms();
@@ -1639,6 +1719,7 @@
     if (hasFsk1) ensureRadioForm(activeSerial, 'fsk1');
     if (hasFsk2) ensureRadioForm(activeSerial, 'fsk2');
     ensureRigModeSyncForm(activeSerial);
+    ensureRigctldForm(activeSerial);
     ensurePttForm(activeSerial, 'r1');
     if (hasR2) ensurePttForm(activeSerial, 'r2');
     ensureMessageForm(activeSerial, 'cw');
@@ -1977,7 +2058,7 @@
             connected" off.
           {:else}
             mhuxd polls hamlib's rigctld for frequency and mode. Applications connect to rigctld
-            instead of the keyer's CAT port.
+            instead of the keyer's CAT port. mhuxd can start rigctld itself, see rigctld below.
           {/if}
         </div>
       </div>
@@ -2142,30 +2223,6 @@
               />
             </div>
           </div>
-          <div class="row">
-            <div class="label">Auto-start rigctld:</div>
-            <div class="value">
-              <input
-                type="checkbox"
-                checked={!!rs?.auto_start}
-                on:change={(e) => updateRigModeSyncRadio(activeSerial, rk, 'auto_start', e.target.checked)}
-              />
-            </div>
-          </div>
-          {#if rs?.auto_start}
-            <div class="row">
-              <div class="label">rigctld options:</div>
-              <div class="value">
-                <input
-                  class="input"
-                  type="text"
-                  placeholder="-m 361 -r /dev/ttyUSB0"
-                  value={rs?.rigctld_options ?? ''}
-                  on:input={(e) => updateRigModeSyncRadio(activeSerial, rk, 'rigctld_options', e.target.value)}
-                />
-              </div>
-            </div>
-          {/if}
         {/if}
       </div>
     {/each}
@@ -2176,6 +2233,76 @@
     {#if rigModeSyncStatus[activeSerial]}
       <div class={`inline-status ${rigModeSyncStatus[activeSerial].kind === 'error' ? 'error' : ''}`}>
         {rigModeSyncStatus[activeSerial].text}
+      </div>
+    {/if}
+  </section>
+
+  <section class="section">
+    <div class="section-title">rigctld</div>
+    <div class="panel">
+      <div class="row">
+        <div class="label"></div>
+        <div class="value placeholder">
+          mhuxd starts hamlib's rigctld when the keyer comes online and stops it when the keyer
+          goes offline. Applications then share the radio through rigctld. Works with either RIG
+          Mode Sync backend, or without RIG Mode Sync: backend rigctld polls this rigctld, backend
+          native decodes the CAT traffic rigctld sends through the keyer's CAT port.
+        </div>
+      </div>
+    </div>
+
+    {#each rigRadios as rk, i (rk)}
+      {@const rp = activeRigctld?.[rk]}
+      {@const defPort = rk === 'r2' ? 4533 : 4532}
+      <div class="panel" style="margin-top: 12px;">
+        <div class="section-subtitle">Radio {i + 1}</div>
+        <div class="row">
+          <div class="label">Auto-start rigctld:</div>
+          <div class="value">
+            <input
+              type="checkbox"
+              checked={!!rp?.auto_start}
+              on:change={(e) => updateRigctldRadio(activeSerial, rk, 'auto_start', e.target.checked)}
+            />
+          </div>
+        </div>
+        {#if rp?.auto_start}
+          <div class="row">
+            <div class="label">Port:</div>
+            <div class="value">
+              <input
+                class="input"
+                type="number"
+                min="1"
+                max="65535"
+                value={rp?.port ?? defPort}
+                on:input={(e) => updateRigctldRadio(activeSerial, rk, 'port', Number(e.target.value))}
+              />
+              <span class="placeholder">passed as -t; RIG Mode Sync backend rigctld connects to its Port</span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="label">rigctld options:</div>
+            <div class="value">
+              <input
+                class="input"
+                type="text"
+                placeholder="-m 3073 -r /dev/mhuxd/cat1"
+                value={rp?.options ?? ''}
+                on:input={(e) => updateRigctldRadio(activeSerial, rk, 'options', e.target.value)}
+              />
+            </div>
+          </div>
+        {/if}
+      </div>
+    {/each}
+
+    <div class="button-row">
+      <button class="btn" type="button" on:click={() => applyRigctld(activeSerial)}>Apply</button>
+    </div>
+    {#if rigctldStatus[activeSerial]}
+      <div class={`inline-status ${rigctldStatus[activeSerial].kind === 'error' ? 'error' : ''}`}>
+        {rigctldStatus[activeSerial].text}
       </div>
     {/if}
   </section>

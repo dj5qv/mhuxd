@@ -28,6 +28,7 @@
 #include "conmgr.h"
 #include "con_vsp.h"
 #include "rigctld_client.h"
+#include "rigctld_proc.h"
 #include "cat_native.h"
 
 #define CFGFILE STATEDIR "/mhuxd-state.json"
@@ -40,6 +41,8 @@ struct cfgmgrj {
     json_t *connectors;
     json_t *rig_mode_sync;
     struct PGList rig_clients;
+    json_t *rigctld;
+    struct PGList rigctld_procs;
     // > 0 while waiting in a nested ev_run() for a keyer, see cfgmgrj_remove_device().
     int busy;
  };
@@ -50,6 +53,7 @@ struct rig_client_binding {
     uint8_t radio;
     struct rigctld_client *client;  // backend "rigctld"
     struct cat_native *native;      // backend "native"
+    struct rigctld_proc *proc;      // rigctld auto-start, in rigctld_procs
 };
 
 static json_t *build_speed_obj(const struct mhc_speed_cfg *cfg);
@@ -106,21 +110,23 @@ static void destroy_rig_client_binding(struct rig_client_binding *b) {
         rigctld_client_destroy(b->client);
     if(b->native)
         cat_native_destroy(b->native);
+    if(b->proc)
+        rigctld_proc_destroy(b->proc);
     if(b->serial)
         free(b->serial);
     free(b);
 }
 
-static void remove_rig_client_bindings(struct cfgmgrj *cfgmgrj, const char *serial, int radio) {
+static void remove_rig_client_bindings(struct PGList *list, const char *serial, int radio) {
     struct rig_client_binding *b;
 
-    if(!cfgmgrj || !serial || !*serial)
+    if(!serial || !*serial)
         return;
 
-    while((b = (void *)PG_FIRSTENTRY(&cfgmgrj->rig_clients))) {
+    while((b = (void *)PG_FIRSTENTRY(list))) {
         struct rig_client_binding *match = NULL;
         struct rig_client_binding *it;
-        PG_SCANLIST(&cfgmgrj->rig_clients, it) {
+        PG_SCANLIST(list, it) {
             if(strcmp(it->serial, serial))
                 continue;
             if(radio > 0 && it->radio != (uint8_t)radio)
@@ -157,7 +163,7 @@ static int start_rig_mode_sync_clients(struct cfgmgrj *cfgmgrj, struct mh_contro
 
     const char *serial = mhc_get_serial(ctl);
 
-    remove_rig_client_bindings(cfgmgrj, serial, 0);
+    remove_rig_client_bindings(&cfgmgrj->rig_clients, serial, 0);
 
     if(!json_get_boolish(rig_mode_sync_obj, "enabled", 0))
         return 0;
@@ -222,8 +228,6 @@ static int start_rig_mode_sync_clients(struct cfgmgrj *cfgmgrj, struct mh_contro
         cfg.io_timeout_ms = json_get_int(defs[i].obj, "io_timeout_ms", 1500);
         cfg.poll_ms = json_get_int(defs[i].obj, "poll_ms", 500);
         cfg.enabled = 1;
-        cfg.auto_start = json_get_boolish(defs[i].obj, "auto_start", 0);
-        cfg.rigctld_options = json_get_str_or(defs[i].obj, "rigctld_options", NULL);
 
         struct rigctld_client *client = rigctld_client_create(cfgmgrj->ctx, ctl, &cfg);
         if(!client) {
@@ -301,15 +305,9 @@ static int validate_rig_mode_sync_radio(const char *radio_name, json_t *radio_ob
         }
     }
 
-    json_t *auto_start = json_object_get(radio_obj, "auto_start");
-    if(auto_start && !json_is_boolean(auto_start) && !json_is_integer(auto_start)) {
-        warn("cfgmgrj: rig_mode_sync.%s.auto_start must be bool/int", radio_name);
-        return -1;
-    }
-
-    json_t *rigctld_options = json_object_get(radio_obj, "rigctld_options");
-    if(rigctld_options && !json_is_string(rigctld_options)) {
-        warn("cfgmgrj: rig_mode_sync.%s.rigctld_options must be string", radio_name);
+    if(json_has_key(radio_obj, "auto_start") || json_has_key(radio_obj, "rigctld_options")) {
+        warn("cfgmgrj: rig_mode_sync.%s.auto_start and rigctld_options moved to rigctld.radios.%s "
+             "(auto_start, options)", radio_name, radio_name);
         return -1;
     }
 
@@ -404,6 +402,142 @@ static int apply_rig_mode_sync_from_json(struct cfgmgrj *cfgmgrj, const char *se
     }
 
     return 0;
+}
+
+// rigctld auto-start, independent of the rig mode sync backend.
+static void start_rigctld_procs(struct cfgmgrj *cfgmgrj, struct mh_control *ctl, json_t *rigctld_obj) {
+    const char *serial = mhc_get_serial(ctl);
+
+    remove_rig_client_bindings(&cfgmgrj->rigctld_procs, serial, 0);
+
+    json_t *radios = json_object_get(rigctld_obj, "radios");
+    int radio;
+    for(radio = 1; radio <= 2; radio++) {
+        if(radio == 2 && !(mhc_get_mhinfo(ctl)->flags & MHF_HAS_R2))
+            continue;
+
+        json_t *r = json_is_object(radios) ? json_object_get(radios, radio == 2 ? "r2" : "r1") : NULL;
+        if(!json_is_object(r) || !json_get_boolish(r, "auto_start", 0))
+            continue;
+
+        struct rigctld_proc_cfg cfg = {
+            .serial = serial,
+            .radio = radio,
+            .port = json_get_int(r, "port", radio == 2 ? 4533 : 4532),
+            .options = json_get_str_or(r, "options", NULL),
+        };
+        struct rigctld_proc *proc = rigctld_proc_create(cfgmgrj->ctx, ctl, &cfg);
+        if(!proc) {
+            warn("cfgmgrj: unable to set up rigctld auto-start for %s %s", serial, radio == 2 ? "r2" : "r1");
+            continue;
+        }
+
+        struct rig_client_binding *b = w_calloc(1, sizeof(*b));
+        b->serial = w_strdup(serial);
+        b->radio = radio;
+        b->proc = proc;
+        PG_AddTail(&cfgmgrj->rigctld_procs, &b->node);
+    }
+}
+
+static int validate_rigctld_radio(const char *radio_name, json_t *radio_obj) {
+    if(!radio_obj)
+        return 0;
+    if(!json_is_object(radio_obj)) {
+        warn("cfgmgrj: rigctld.radios.%s must be object", radio_name);
+        return -1;
+    }
+
+    json_t *auto_start = json_object_get(radio_obj, "auto_start");
+    if(auto_start && !json_is_boolean(auto_start) && !json_is_integer(auto_start)) {
+        warn("cfgmgrj: rigctld.radios.%s.auto_start must be bool/int", radio_name);
+        return -1;
+    }
+
+    json_t *port = json_object_get(radio_obj, "port");
+    if(port && (!json_is_integer(port) || json_integer_value(port) < 1 || json_integer_value(port) > 65535)) {
+        warn("cfgmgrj: rigctld.radios.%s.port must be integer 1..65535", radio_name);
+        return -1;
+    }
+
+    json_t *options = json_object_get(radio_obj, "options");
+    if(options && !json_is_string(options)) {
+        warn("cfgmgrj: rigctld.radios.%s.options must be string", radio_name);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int validate_rigctld(struct mh_control *ctl, json_t *rigctld_obj) {
+    if(!json_is_object(rigctld_obj)) {
+        warn("cfgmgrj: rigctld must be object");
+        return -1;
+    }
+
+    json_t *radios = json_object_get(rigctld_obj, "radios");
+    if(!radios)
+        return 0;
+    if(!json_is_object(radios)) {
+        warn("cfgmgrj: rigctld.radios must be object");
+        return -1;
+    }
+
+    if(validate_rigctld_radio("r1", json_object_get(radios, "r1")))
+        return -1;
+
+    json_t *r2 = json_object_get(radios, "r2");
+    if(r2 && !(mhc_get_mhinfo(ctl)->flags & MHF_HAS_R2)) {
+        warn("cfgmgrj: rigctld.radios.r2 provided for non dual-radio keyer type %s", mhc_get_mhinfo(ctl)->type_str);
+        return -1;
+    }
+    return validate_rigctld_radio("r2", r2);
+}
+
+// State files written before the rigctld auto-start got its own "rigctld" object kept it in
+// rig_mode_sync.radios.rN (auto_start, rigctld_options, and the rig mode sync port as the
+// rigctld port). It was only in effect with rig mode sync, backend rigctld, and the radio enabled.
+static void migrate_rigctld_auto_start(json_t *root) {
+    size_t idx;
+    json_t *device;
+    json_array_foreach(json_object_get(root, "devices"), idx, device) {
+        json_t *rms = json_object_get(device, "rig_mode_sync");
+        json_t *radios = json_object_get(rms, "radios");
+        if(!json_is_object(radios))
+            continue;
+
+        int rms_on = json_get_boolish(rms, "enabled", 0) &&
+                     !strcmp(json_get_str_or(rms, "backend", "rigctld"), "rigctld");
+        int keep = json_has_key(device, "rigctld");
+        json_t *new_radios = json_object();
+        int r;
+        for(r = 1; r <= 2; r++) {
+            const char *rk = r == 2 ? "r2" : "r1";
+            json_t *radio = json_object_get(radios, rk);
+            if(!json_has_key(radio, "auto_start") && !json_has_key(radio, "rigctld_options"))
+                continue;
+
+            json_t *pr = json_object();
+            json_object_set_new(pr, "auto_start", json_integer(rms_on && json_get_boolish(radio, "enabled", 0) &&
+                                                               json_get_boolish(radio, "auto_start", 0)));
+            json_object_set_new(pr, "port", json_integer(json_get_int(radio, "port", r == 2 ? 4533 : 4532)));
+            json_object_set_new(pr, "options", json_string(json_get_str_or(radio, "rigctld_options", "")));
+            json_object_set_new(new_radios, rk, pr);
+
+            json_object_del(radio, "auto_start");
+            json_object_del(radio, "rigctld_options");
+        }
+
+        if(json_object_size(new_radios) && !keep) {
+            json_t *rigctld = json_object();
+            json_object_set_new(rigctld, "radios", new_radios);
+            json_object_set_new(device, "rigctld", rigctld);
+            info("%s rigctld auto-start settings moved out of rig mode sync",
+                 json_get_str_or(device, "serial", "?"));
+        } else {
+            json_decref(new_radios);
+        }
+    }
 }
 
 struct ptt_map_entry {
@@ -981,11 +1115,25 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
         json_t *rig_mode_sync_obj = json_object_get(device_obj, "rig_mode_sync");
         if(!rig_mode_sync_obj || json_is_null(rig_mode_sync_obj)) {
             json_object_del(cfgmgrj->rig_mode_sync, serial);
-            remove_rig_client_bindings(cfgmgrj, serial, 0);
+            remove_rig_client_bindings(&cfgmgrj->rig_clients, serial, 0);
         } else if(apply_rig_mode_sync_from_json(cfgmgrj, serial, ctl, rig_mode_sync_obj)) {
             errors++;
         } else {
             start_rig_mode_sync_clients(cfgmgrj, ctl, rig_mode_sync_obj);
+        }
+    }
+
+    if(json_has_key(device_obj, "rigctld")) {
+        json_t *rigctld_obj = json_object_get(device_obj, "rigctld");
+        if(!rigctld_obj || json_is_null(rigctld_obj)) {
+            json_object_del(cfgmgrj->rigctld, serial);
+            remove_rig_client_bindings(&cfgmgrj->rigctld_procs, serial, 0);
+        } else if(validate_rigctld(ctl, rigctld_obj)) {
+            errors++;
+        } else if(!json_equal(json_object_get(cfgmgrj->rigctld, serial), rigctld_obj)) {
+            // A restart disconnects rigctld's clients, so only when the settings changed.
+            json_object_set_new(cfgmgrj->rigctld, serial, json_deep_copy(rigctld_obj));
+            start_rigctld_procs(cfgmgrj, ctl, rigctld_obj);
         }
     }
 
@@ -1265,6 +1413,10 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
                 }
             }
 
+            json_t *rigctld_obj = dev->serial ? json_object_get(cfgmgrj->rigctld, dev->serial) : NULL;
+            if(json_is_object(rigctld_obj))
+                json_object_set_new(device, "rigctld", json_deep_copy(rigctld_obj));
+
             json_t *channel = json_object();
             if(channel) {
                 for(int ch = 0; ch < MH_NUM_CHANNELS; ch++) {
@@ -1506,6 +1658,8 @@ struct cfgmgrj *cfgmgrj_create(struct app_ctx *app_ctx) {
     cfgmgrj->connectors = json_array();
     cfgmgrj->rig_mode_sync = json_object();
     PG_NewList(&cfgmgrj->rig_clients);
+    cfgmgrj->rigctld = json_object();
+    PG_NewList(&cfgmgrj->rigctld_procs);
     return cfgmgrj;
 }
 
@@ -1519,11 +1673,17 @@ struct cfgmgrj *cfgmgrj_create(struct app_ctx *app_ctx) {
         PG_Remove(&b->node);
         destroy_rig_client_binding(b);
     }
+    while((b = (void *)PG_FIRSTENTRY(&cfgmgrj->rigctld_procs))) {
+        PG_Remove(&b->node);
+        destroy_rig_client_binding(b);
+    }
 
     if(cfgmgrj->connectors)
         json_decref(cfgmgrj->connectors);
     if(cfgmgrj->rig_mode_sync)
         json_decref(cfgmgrj->rig_mode_sync);
+    if(cfgmgrj->rigctld)
+        json_decref(cfgmgrj->rigctld);
 
     free(cfgmgrj);
     return;
@@ -1563,6 +1723,8 @@ int cfgmgrj_load_cfg(struct cfgmgrj *cfgmgrj) {
         err("cfgmgrj: failed to read %s: %s (line %d)", CFGFILE, jerr.text, jerr.line);
         return -1;
     }
+
+    migrate_rigctld_auto_start(root);
 
     cfgmgrj->busy++;
     int rc = apply_config_json(cfgmgrj, root, 1);
@@ -1647,8 +1809,10 @@ int cfgmgrj_remove_device(struct cfgmgrj *cfgmgrj, const char *serial) {
     if(mhc_is_connected(dev->ctl))
         return -EBUSY;
 
-    remove_rig_client_bindings(cfgmgrj, serial, 0);
+    remove_rig_client_bindings(&cfgmgrj->rig_clients, serial, 0);
     json_object_del(cfgmgrj->rig_mode_sync, serial);
+    remove_rig_client_bindings(&cfgmgrj->rigctld_procs, serial, 0);
+    json_object_del(cfgmgrj->rigctld, serial);
 
     conmgr_destroy_device_cons(cfgmgrj->conmgr, dev);
 

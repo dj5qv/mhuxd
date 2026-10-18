@@ -153,6 +153,7 @@
         "param": {"type": "object"},
         "ptt": {"$ref": "#/$defs/PttConfig"},
         "rig_mode_sync": {"$ref": "#/$defs/RigModeSyncConfig"},
+        "rigctld": {"$ref": "#/$defs/RigctldConfig"},
         "winkey": {"type": "object"},
         "cwMessages": {
           "type": "array",
@@ -180,13 +181,6 @@
         "connect_timeout_ms": {"type": "integer", "minimum": 100},
         "io_timeout_ms": {"type": "integer", "minimum": 100},
         "poll_ms": {"type": "integer", "minimum": 100},
-        "auto_start": {
-          "oneOf": [
-            {"type": "boolean"},
-            {"type": "integer"}
-          ]
-        },
-        "rigctld_options": {"type": "string"},
         "protocol": {
           "description": "backend native: auto = from the CAT channel's rig type",
           "type": "string",
@@ -238,6 +232,42 @@
           "properties": {
             "r1": {"$ref": "#/$defs/RigModeSyncRadioConfig"},
             "r2": {"$ref": "#/$defs/RigModeSyncRadioConfig"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "RigctldRadioConfig": {
+      "type": "object",
+      "properties": {
+        "auto_start": {
+          "description": "run rigctld while the keyer is online, with any rig mode sync backend or none",
+          "oneOf": [
+            {"type": "boolean"},
+            {"type": "integer"}
+          ]
+        },
+        "port": {
+          "description": "rigctld -t, default 4532 for r1, 4533 for r2",
+          "type": "integer", "minimum": 1, "maximum": 65535
+        },
+        "options": {
+          "description": "further rigctld arguments, split at whitespace, e.g. -m 3073 -r /dev/mhuxd/cat1",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RigctldConfig": {
+      "description": "rigctld auto-start; older state files kept auto_start and rigctld_options in rig_mode_sync.radios.rN, mhuxd moves them here when loading",
+      "type": "object",
+      "properties": {
+        "radios": {
+          "type": "object",
+          "properties": {
+            "r1": {"$ref": "#/$defs/RigctldRadioConfig"},
+            "r2": {"$ref": "#/$defs/RigctldRadioConfig"}
           },
           "additionalProperties": false
         }

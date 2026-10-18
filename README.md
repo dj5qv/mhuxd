@@ -211,11 +211,14 @@ For a PTT port you'd want to select RTS and / or DTR.
 - rigctld allows multiple applications to connect to it and run CAT queries simultaneously, 
   without interference. So WSJTX, fldigi, QLog can, when configured to use rigctld, at the
   same time run CAT queries.
-- mhuxd can "manage" rigctld (auto-start rigctld enabled). Whenever the corresponding keyer 
-  gets turned on or connected to the computer, mhuxd will start a rigctld instance. Once 
-  the keyer gets disconnected or turned off, mhuxd will terminate rigctld.
+- mhuxd can "manage" rigctld (section "rigctld", auto-start rigctld enabled). Whenever the 
+  corresponding keyer gets turned on or connected to the computer, mhuxd will start a rigctld 
+  instance. Once the keyer gets disconnected or turned off, mhuxd will terminate rigctld.
+  This works with either Rig Mode Sync backend, and without Rig Mode Sync: with backend
+  "native", mhuxd decodes the CAT traffic rigctld sends through the keyer's CAT port.
 - When enabling "auto-start rigctld", you need to provide the correct rigctld parameters
-  in field "rigctld options":
+  in field "rigctld options". mhuxd adds "-t" with the port from field "Port" (4532 for 
+  radio 1, 4533 for radio 2), Rig Mode Sync's rigctld backend must use the same port:
 
 ```
 -m 3073 -p /dev/mhuxd/ptt1 -P RTS -r /dev/mhuxd/cat1 -vv

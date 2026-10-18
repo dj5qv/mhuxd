@@ -81,12 +81,26 @@ For each radio (Radio 1, and Radio 2 on dual-radio keyers) an endpoint can be co
 * *Enabled* – synchronize this radio
 * *Host* / *Port* – where the backend is listening (default `127.0.0.1`, port 4532 for Radio 1 and 4533 for Radio 2)
 * *Connect Timeout*, *I/O Timeout*, *Poll Interval* – connection and polling timing in milliseconds
-* *Auto-start rigctld* – let mhuxd start a `rigctld` instance itself. When enabled you can pass the required *rigctld options* in the field that appears, e.g. `-m 361 -r /dev/mhuxd/cat1`.
-The -m switch specifies the rig number in hamlib. Run `rigctld -l` to display a list of rigs and the corresponding id. 
-The -r switch should be followed by the virtual serial port for CAT, that you've configured in mhuxd.
+
 Press *Apply* to store the settings.
 
 NOTE: When RIG Mode Sync is used, the keyer’s own CAT decoder should be turned off (“Use CAT Decoder if Connected” disabled).
+
+==== rigctld
+
+mhuxd can start a Hamlib `rigctld` instance itself when the keyer comes online, and stops it when the keyer goes offline.
+This is independent of RIG Mode Sync and works with either backend: with backend *rigctld* mhuxd polls this `rigctld`, with backend *native* mhuxd decodes the CAT traffic `rigctld` sends through the keyer’s CAT port.
+If `rigctld` exits, mhuxd starts it again, waiting longer after each failed attempt (up to one minute).
+
+For each radio:
+
+* *Auto-start rigctld* – let mhuxd run `rigctld` for this radio
+* *Port* – the TCP port `rigctld` listens on, passed as `-t` (default 4532 for Radio 1, 4533 for Radio 2). With RIG Mode Sync backend *rigctld*, its *Port* must be the same.
+* *rigctld options* – the further `rigctld` arguments, e.g. `-m 3073 -r /dev/mhuxd/cat1`.
+The -m switch specifies the rig number in hamlib. Run `rigctld -l` to display a list of rigs and the corresponding id.
+The -r switch should be followed by the virtual serial port for CAT, that you've configured in mhuxd.
+
+Press *Apply* to store the settings.
 
 === Menu AUX
 This menu is only available for keyers with AUX support (microKEYER II). Allows to specify the serial parameters of the AUX port.
