@@ -35,9 +35,10 @@ FT-1000MP: two clients taking turns, a memory dump of 1863 bytes (4 s) that
 keeps the line for its client, answers slowed down by pacing beyond mhuxd's
 turn timeout, and Hamlib's real FT-1000MP backend (`rigctl -m 1024`, skipped if
 not installed) on a pseudo terminal as connector next to a polling client.
-FT-757GXII: own queries with its 75 byte status data. The tests need libev,
-are built with short intervals (`NATIVE_TEST_DEFS` in the Makefile) and run for
-about 20, 25 and 30 s.
+FT-757GXII: own queries with its 75 byte status data. FT-847: CAT ON before the
+own queries, again after the radio was switched off and on and after a client's
+CAT OFF. The tests need libev, are built with short intervals
+(`NATIVE_TEST_DEFS` in the Makefile) and run for about 20, 25 and 40 s.
 
 `ybin_radio.c` is written apart from the decoder, from what Hamlib's backends
 send and expect. `ybin_sim` puts it on a pseudo terminal, or a serial port

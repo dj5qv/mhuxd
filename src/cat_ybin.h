@@ -85,6 +85,10 @@ int cat_ybin_answering(const struct cat_ybin *y, uint64_t t_ms, int *client, int
 // The status query that tells frequency and mode: copies the command to buf (YBIN_CMD_LEN)
 // and returns the length of its answer, 0 if the model has none.
 size_t cat_ybin_query(const struct cat_ybin *y, uint8_t *buf);
+// The command that makes the radio answer at all, FT-847: CAT ON (it ignores everything
+// until then, and forgets it when switched off). Copies it to buf (YBIN_CMD_LEN) and returns
+// its length, 0 if the model needs none. It has no answer.
+size_t cat_ybin_cat_on(const struct cat_ybin *y, uint8_t *buf);
 
 // A command's bytes may come this far apart (the radios wait up to 200 ms).
 #define YBIN_CMD_GAP_MS 300

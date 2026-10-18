@@ -244,6 +244,7 @@ struct cat_native {
 	uint8_t own_rejects[Q_NUM];
 	uint8_t own_unsupported[Q_NUM];
 	uint8_t civ_mode_cmd;		// 0x26, or 0x04 if the radio doesn't know 26
+	ev_tstamp own_cat_on;		// FT-847: CAT ON sent, 0 = not yet
 	int own_timeouts;		// in a row
 	int client_answered;		// the current radio byte completed an answer to an application's query
 	ev_tstamp last_host, last_radio;	// last CAT data
@@ -726,6 +727,7 @@ static void catn_own_reset(struct cat_native *cn) {
 	memset(cn->own_rejects, 0, sizeof(cn->own_rejects));
 	memset(cn->own_unsupported, 0, sizeof(cn->own_unsupported));
 	cn->civ_mode_cmd = 0x26;
+	cn->own_cat_on = 0;
 	cn->own_timeouts = 0;
 	cn->own_last = 0;
 }
@@ -1109,6 +1111,28 @@ static void catn_own_timeout_cb(struct ev_loop *loop, struct ev_timer *w, int re
 		     radio_str(cn->radio), CATN_OWN_RETRY);
 }
 
+// The FT-847 ignores everything until CAT ON and forgets it when switched off, or when an
+// application sends CAT OFF (Hamlib does when it closes). Sent before the first own query and
+// again before the next one after a query went unanswered; the query follows with a later
+// try, once the decoder's hold after the command (YBIN_HOLD_MS) is over. urouter sends it
+// only once, at its start. Returns 1 if sent.
+static int catn_own_cat_on(struct cat_native *cn) {
+	uint8_t buf[YBIN_CMD_LEN];
+	ev_tstamp now = ev_now(cn->loop);
+	size_t len;
+
+	if(!cn->ybin || (cn->own_cat_on && (!cn->own_timeouts || cn->own_cat_on > cn->own_last)))
+		return 0;
+	if(!(len = cat_ybin_cat_on(cn->ybin, buf)))
+		return 0;
+	cn->own_cat_on = now;
+	if(mhr_send_in(cn->router, buf, len, cn->channel) != (int)len)
+		return 1;
+	dbg1("%s %s native CAT: own CAT ON", cn->serial, radio_str(cn->radio));
+	catn_decoder_feed(cn, CAT_DIR_OWN, 0, buf, len, (uint64_t)(now * 1000.0));
+	return 1;
+}
+
 // Sends the next own query that is due, if the line is free: no command of an application
 // waiting for its answer, none partly sent, no earlier query that may still be answered. An
 // application that got the line but hasn't sent yet waits for the query (its data is held).
@@ -1125,7 +1149,8 @@ static void catn_own_try(struct cat_native *cn) {
 		if(cn->own_unsupported[slot] || now - cn->own_sent[slot] < CATN_OWN_STALE)
 			continue;
 		if(catn_query_needed(cn, slot, now_ms)) {
-			catn_own_send(cn, slot);
+			if(!catn_own_cat_on(cn))
+				catn_own_send(cn, slot);
 			return;
 		}
 	}

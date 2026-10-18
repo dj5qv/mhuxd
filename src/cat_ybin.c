@@ -879,3 +879,10 @@ size_t cat_ybin_query(const struct cat_ybin *y, uint8_t *buf) {
 	}
 	return answer_len(y, buf) & LEN_MASK;
 }
+
+size_t cat_ybin_cat_on(const struct cat_ybin *y, uint8_t *buf) {
+	if(y->m->fam != FAM_847)
+		return 0;
+	memset(buf, 0, YBIN_CMD_LEN);	// CAT ON: opcode 00
+	return YBIN_CMD_LEN;
+}

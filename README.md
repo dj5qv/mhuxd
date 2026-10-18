@@ -263,7 +263,9 @@ directly, e.g. WSJTX configured like in the "WSJTX direct" example above.
   model's answer lengths, so the radio type in the keyer's "Radio" section must match the
   radio exactly. A memory dump (several seconds) keeps the CAT line for the application that
   asked for it. The FT-1000/1000D doesn't report which VFO is selected; mhuxd assumes VFO A
-  until an application selects one.
+  until an application selects one. The FT-847 ignores all commands until CAT ON: mhuxd sends
+  it before its first query and again when the radio stops answering (switched off and on, or
+  an application sent CAT OFF, as Hamlib does when it closes).
 - Select the radio type (and CI-V address) in the keyer's "Radio" section as usual. "Protocol:
   auto" takes the protocol from the radio type, "CI-V address" overrides the channel's address.
 - Kenwood: the data mode (USB-D, ...) is known on the TS-590, TS-950 and TS-990. The older

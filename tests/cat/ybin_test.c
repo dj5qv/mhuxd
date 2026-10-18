@@ -19,7 +19,8 @@
  * dump of 1863 bytes (4 s) that keeps the line, answers slowed by pacing.
  * FT-757GXII: own queries with its 75 byte status data. Hamlib's FT-1000MP
  * backend (rigctl, if installed) on a pseudo terminal as a connector, next to
- * a polling client.
+ * a polling client. FT-847: CAT ON before the own queries, again after the
+ * radio was switched off and on and after a client's CAT OFF.
  */
 
 #include <errno.h>
@@ -40,6 +41,7 @@
 
 #define RIG_FT1000MP 0x21
 #define RIG_FT757GX2 0x45
+#define RIG_FT847 0x2a
 
 #define RADIO_DELAY 0.02	// the radio's processing time before an answer
 #define BYTE_TIME 0.0023	// 4800 Bd, 8N2
@@ -314,6 +316,7 @@ static struct cat_native *restart(struct device *dev, struct cat_native *cn, int
 
 	cat_native_destroy(cn);
 	radio_use(model);
+	run_for(0.3);	// the rest of an answer still on its way (75 bytes: 0.17 s) reaches no decoder
 	speed.rigtype = rigtype;
 	for(int i = 0; i < NCLIENTS; i++)
 		client_reset(&cl[i]);
@@ -585,6 +588,45 @@ static void test_ft757(void) {
 	CHECK_CLEAN(&cl[0], "FT-757GXII client idle");
 }
 
+static void test_ft847(void) {
+	struct client *c = &cl[0];
+	struct ybr_state *s = ybr_state(rig);
+	const struct mhc_radio_info *p;
+	static const uint8_t cat_off[5] = { 0, 0, 0, 0, 0x80 };
+
+	// The radio ignores everything until CAT ON: mhuxd sends it before its first query.
+	s->freq[0] = 7025000;
+	s->mode[0] = YBR_CW;
+	run_for(1.0);
+	p = last_pub();
+	CHECK(s->cat_on, "FT-847: CAT ON sent");
+	CHECK(p && p->rxFreq == 7025000 && p->mode == MOD_CW, "FT-847 own queries after CAT ON: %u %d",
+	      p ? p->rxFreq : 0, p ? p->mode : -9);
+	CHECK_CLEAN(c, "FT-847 client idle");
+
+	// Switched off and on: CAT is off, a query goes unanswered, CAT ON again once the decoder
+	// gave up on it (YBIN_ANSWER_MS).
+	s->cat_on = 0;
+	s->freq[0] = 3573000;
+	run_for(3.0);
+	p = last_pub();
+	CHECK(s->cat_on && p && p->rxFreq == 3573000, "FT-847 after switching off and on: CAT %d, %u",
+	      s->cat_on, p ? p->rxFreq : 0);
+
+	// A client closing like Hamlib, with CAT OFF: the same.
+	if(write(c->fd[1], cat_off, sizeof(cat_off)) != sizeof(cat_off))
+		CHECK(0, "client write: %s", strerror(errno));
+	s->freq[0] = 14074000;
+	s->mode[0] = YBR_USB;
+	run_for(0.1);
+	CHECK(!s->cat_on, "FT-847: the client's CAT OFF reached the radio");
+	run_for(3.0);
+	p = last_pub();
+	CHECK(s->cat_on && p && p->rxFreq == 14074000 && p->mode == MOD_VOICE,
+	      "FT-847 after the client's CAT OFF: CAT %d, %u %d", s->cat_on, p ? p->rxFreq : 0, p ? p->mode : -9);
+	CHECK_CLEAN(c, "FT-847 client");
+}
+
 int main(void) {
 	struct device dev = { .ctl = (struct mh_control *)&dev, .serial = "TEST0001" };
 	struct cat_native *cn = NULL;
@@ -611,6 +653,8 @@ int main(void) {
 	test_hamlib(dev.router);
 	cn = restart(&dev, cn, RIG_FT757GX2, "ft757gx2");
 	test_ft757();
+	cn = restart(&dev, cn, RIG_FT847, "ft847");
+	test_ft847();
 
 	cat_native_destroy(cn);
 	mhr_destroy(dev.router);
