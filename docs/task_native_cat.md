@@ -39,7 +39,8 @@ Related: `docs/task_rigctld_support.md` (the current rig mode sync via rigctld).
     every ~1.05 s while idle, each poll taking ~150 ms,
   - it does **not** hold back host data meanwhile, so host commands collide on the CI-V bus
     (radio answers `FC`); host commands sent in those windows failed 50-87 %,
-  - `dontinterfereusbcontrol=1` made no difference,
+  - `dontinterfereusbcontrol=1` made no difference (Icom only: with an FT-1000MP selected it
+    stops the keyer's polls, DK2 2026-10-19),
   - with the decoder off: 0 failures.
   - Clients that never leave the line idle for ~1 s (fldigi, most loggers) are not affected,
     WSJT-X with its 1 s poll is.

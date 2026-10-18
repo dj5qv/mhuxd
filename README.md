@@ -200,10 +200,12 @@ For a PTT port you'd want to select RTS and / or DTR.
 - Select your radio model and serial settings that match your radio.
 - "Use decoder if connected" would enable internal CAT polling from keyer to radio. 
    That is used to keep the keyer in sync with the rig's operating mode and frequency.
-- "Don't interfere USB control": This should prevent CAT polls from the keyer while some
-   program on the computer already runs CAT polls. For me that is not working anymore
-   with my current setup (IC-7300, MKIII, WSJTX), so I have 
-   disabled both.  
+- "Don't interfere USB control": This should prevent CAT polls from the keyer while the
+   computer is connected; the keyer then only reads the radio's answers to the programs'
+   queries. That works with the older Yaesu radios (checked with a DIGI KEYER II and an
+   FT-1000MP), but not with Icom: with an Icom radio selected the keyer polls anyway
+   (DIGI KEYER II, IC-7300), probably to keep CI-V accessories like the PW1 informed. So with
+   my setup (IC-7300, MKIII, WSJTX) I have disabled both.  
 
 - Section "Rig Mode Sync", this enables the use of hamlib's rigctld. With this 
   feature mhuxd can run CAT queries to identify the current operating mode and QRG.
@@ -273,7 +275,9 @@ directly, e.g. WSJTX configured like in the "WSJTX direct" example above.
 - Elecraft K3: DATA A, PSK D and AFSK A count as digital, FSK D as FSK. Until the radio has
   reported the data sub mode (DT), DATA counts as DATA A.
 - Keep the keyer option "Use decoder if connected" off. The keyer's own CAT polls interfere with
-  the applications' commands (measured with an IC-7300: collisions on the CI-V bus).
+  the applications' commands (measured with an IC-7300: collisions on the CI-V bus), and with
+  an Icom radio "Don't interfere USB control" doesn't stop them. With the other radios it does,
+  but mhuxd sets the keyer mode anyway.
 - While an application polls the radio (WSJTX, fldigi and loggers do), mhuxd takes frequency
   and mode from its traffic and sends nothing itself. When values are older than 1.5 s
   (nobody polls, or the application doesn't ask for the data mode), mhuxd asks the radio
