@@ -54,6 +54,12 @@ Checked that way (2026-10-10, Hamlib 4.6.2): FT-817, FT-857, FT-897, FT-847,
 FT-840, FT-890, FT-900, FT-920, FT-990, FT-1000D, FT-1000MP. Not the FT-757GXII:
 Hamlib's backend sets DTR, which a pseudo terminal can't.
 
+`-s 14074000:usb,7025000:cw,3580000:rtty` sets VFO A to the first state at start and to the
+next one on each SIGUSR1 (`kill -USR1`), to see what an application makes of each mode.
+With it, microHAM's urouter 9.3.5 (under Wine, with a simulated keyer) was checked against
+all these models but the FT-757GXII (2026-10-19): it accepts every answer and decodes
+frequency and mode.
+
 See `docs/task_native_cat.md` for the design.
 
 ## Trace format
