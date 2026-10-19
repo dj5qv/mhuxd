@@ -78,6 +78,25 @@ R "OM0D;"
 = mode=PKTUSB
 R "OM12;"
 = mode_unsel=USB
+# D2 (G-J) and D3 (K-N): like D1 (urouter's TS-990 table, Hamlib's kenwood_mode_table)
+R "OM0G;"
+= mode=PKTLSB keyer=DIGITAL
+R "OM0H;"
+= mode=PKTUSB
+R "OM0I;"
+= mode=PKTFM
+R "OM0J;"
+= mode=PKTAM
+R "OM0K;"
+= mode=PKTLSB
+R "OM0L;"
+= mode=PKTUSB
+R "OM0M;"
+= mode=PKTFM
+R "OM0N;"
+= mode=PKTAM keyer=DIGITAL
+R "OM0O;"
+= mode=PKTAM bad=4
 R "SF000014074000C;"
 = rx=14074000 mode=PKTLSB
 # SF/OM have codes of their own for the data modes: 2 means USB with data off

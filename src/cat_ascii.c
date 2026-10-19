@@ -172,13 +172,14 @@ static int dec_mode_kenwood(const struct cat_ascii *a, char c, int data_codes, e
 	case '6': *mode = CAT_MODE_RTTY; break;		// FSK
 	case '7': *mode = CAT_MODE_CWR; break;
 	case '9': *mode = CAT_MODE_RTTYR; break;	// FSK-R
-	// TS-990/TS-890: PSK and the data modes have codes of their own.
+	// TS-990/TS-890: PSK and the data modes have codes of their own, LSB/USB/FM/AM-D1 (C-F),
+	// -D2 (G-J), -D3 (K-N); the data sets only differ in the radio's audio settings.
 	case 'A': *mode = CAT_MODE_PSK; *data = 0; break;
 	case 'B': *mode = CAT_MODE_PSKR; *data = 0; break;
-	case 'C': *mode = CAT_MODE_PKTLSB; *data = 1; break;
-	case 'D': *mode = CAT_MODE_PKTUSB; *data = 1; break;
-	case 'E': *mode = CAT_MODE_PKTFM; *data = 1; break;
-	case 'F': *mode = CAT_MODE_PKTAM; *data = 1; break;
+	case 'C': case 'G': case 'K': *mode = CAT_MODE_PKTLSB; *data = 1; break;
+	case 'D': case 'H': case 'L': *mode = CAT_MODE_PKTUSB; *data = 1; break;
+	case 'E': case 'I': case 'M': *mode = CAT_MODE_PKTFM; *data = 1; break;
+	case 'F': case 'J': case 'N': *mode = CAT_MODE_PKTAM; *data = 1; break;
 	default: return -1;	// 0, 8: none / setting failure
 	}
 	return 0;
