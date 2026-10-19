@@ -828,15 +828,24 @@ void hs_send_headers(struct http_connection *hcon, uint16_t code, const char *co
 
 	rfc1123_current_date_time(rfc1123_current_date);
 
+	// A Connection header of the caller's (the WebSocket upgrade's "Upgrade")
+	// replaces the default: sent both, a client sees "keep-alive, Upgrade",
+	// which Qt's QWebSocket refuses.
+	int own_connection = 0;
+	for(int i = 0; i < hcon->rsp_header_cnt; i++)
+		if(!strcasecmp(hcon->rsp_header[i].name, "Connection"))
+			own_connection = 1;
+
 	int headers_size = snprintf(hr->data, MAX_HEADERS_SIZE,
 				"HTTP/%d.%d %d %s\r\n"
 				"Content-Type: %s\r\n"
 				"Date: %s\r\n"
 				"Cache-Control: no-cache\r\n"
-				"Connection: keep-alive\r\n"
+				"%s"
 				"Server: %s\r\n",
 				hcon->parser.http_major, hcon->parser.http_minor, code, c->msg,
-				content_type, rfc1123_current_date, PACKAGE_STRING);
+				content_type, rfc1123_current_date,
+				own_connection ? "" : "Connection: keep-alive\r\n", PACKAGE_STRING);
 
 	for(int i = 0; i < hcon->rsp_header_cnt; i++) {
 		headers_size += snprintf(hr->data + headers_size, MAX_HEADERS_SIZE - headers_size, "%s: %s\r\n",
