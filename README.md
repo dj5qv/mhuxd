@@ -122,7 +122,7 @@ sudo udevadm control --reload-rules
 
 ```
 
-To build Debian packages, run `make deb` in a configured source tree (needs `dpkg-dev` and `debhelper`).
+To build Debian packages, run `./make_deb.sh` in the source tree, no configure needed (needs `dpkg-dev` and `debhelper`).
 
 ## Run it
 ### When installed from package (.deb)
