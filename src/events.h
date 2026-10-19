@@ -22,6 +22,7 @@ enum app_event_type {
     EV_CON_STATUS,        // Connector (TCP/VSP) status changed
     EV_RADIO_INFO,        // Radio info (frequency, mode) from rig mode sync changed or timed out
     EV_CAT_MONITOR,       // One line of the native CAT monitor
+    EV_KEYER_FLAGS,       // Keyer input flags changed (PTT, footswitch, lockout)
     EV_MAX                // Keep as last
 };
 
@@ -49,6 +50,15 @@ struct ev_radio_info {
     uint8_t valid;                       // 0: timed out
     const char *source;                  // module that sent it ("rigcl", "catn")
     const struct mhc_radio_info *info;
+};
+
+struct ev_keyer_flags {
+    const char *serial;
+    uint8_t radio;                       // 1 or 2
+    uint8_t ptt;                         // any PTT input active
+    uint8_t footswitch;
+    uint8_t lockout;
+    uint8_t non_vox_ptt;
 };
 
 struct ev_cat_monitor {

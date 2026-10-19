@@ -6,12 +6,28 @@
 ## abort message
 {"type":"command","command":"abort_message","serial":"M32VFFGJ"}
 
+## voice keyer progress on the keyer's display (MK2, MK3; shown per the keyer's
+## display settings dispEv.playMsg / dispEv.recMsg). kind "play" or "record",
+## message 1-9 while in progress, progress/level in percent (default 0).
+## message 0 ends it: play stopped, recording stored; "aborted":true with
+## message 0 = recording discarded.
+{"type":"command","command":"dvk_state","serial":"M32VFFGJ","kind":"play","message":1,"progress":40,"level":70}
+{"type":"command","command":"dvk_state","serial":"M32VFFGJ","kind":"play","message":0}
+{"type":"command","command":"dvk_state","serial":"M32VFFGJ","kind":"record","message":0,"aborted":true}
+
+## text on one display line (0 upper, 1 lower) for "time" seconds (0.01-2.55,
+## default 2), 16 characters; characters the display lacks become spaces
+{"type":"command","command":"display_text","serial":"M32VFFGJ","line":0,"text":"CQ F1","time":2.0}
+
 
 
 ### Websocket events mhuxd -> client (besides status, mode_change, device_removed)
 
 ## radio info from rig mode sync (rigctld or native) changed, or timed out (valid false)
 {"type":"radio_info","serial":"D2UL4ED0","radio":1,"valid":true,"source":"native","rxFreq":14074000,"txFreq":14074000,"vfoAFreq":14074000,"vfoBFreq":28153130,"mode":"PKTUSB","keyerMode":"DIGITAL"}
+
+## keyer input flags changed: PTT (any source), footswitch, lockout, non-VOX PTT
+{"type":"keyer_flags","serial":"M32VFFGJ","radio":1,"ptt":true,"footswitch":false,"lockout":false,"nonVoxPtt":true}
 
 ## native CAT monitor, one trace line (rig_mode_sync.radios.r1.monitor on), format: tests/cat/README.md
 {"type":"cat_monitor","serial":"D2UL4ED0","radio":1,"line":"19:38:56.479 R fe fe e0 94 25 00 00 40 07 14 00 fd  # reply, applied: rx=14074000 unsel=? mode=? split=? keyer=?"}

@@ -43,6 +43,7 @@ struct restapi {
 	eventbus_sub_t *keyer_mode_sub;
 	eventbus_sub_t *radio_info_sub;
 	eventbus_sub_t *cat_monitor_sub;
+	eventbus_sub_t *keyer_flags_sub;
 	struct PGList ws_subscribers;
 	char *metadata_json;	/* never changes, serialized once by restapi_create() */
 	time_t start_time;
@@ -346,6 +347,23 @@ static void ev_cat_monitor_cb(enum app_event_type type, const void *data, void *
 	json_decref(event);
 }
 
+static void ev_keyer_flags_cb(enum app_event_type type, const void *data, void *user_data) {
+	struct restapi *api = user_data;
+	const struct ev_keyer_flags *ev = data;
+	if(type != EV_KEYER_FLAGS || !ev)
+		return;
+	json_t *event = json_object();
+	json_object_set_new(event, "type", json_string("keyer_flags"));
+	json_object_set_new(event, "serial", json_string(ev->serial));
+	json_object_set_new(event, "radio", json_integer(ev->radio));
+	json_object_set_new(event, "ptt", json_boolean(ev->ptt));
+	json_object_set_new(event, "footswitch", json_boolean(ev->footswitch));
+	json_object_set_new(event, "lockout", json_boolean(ev->lockout));
+	json_object_set_new(event, "nonVoxPtt", json_boolean(ev->non_vox_ptt));
+	broadcast_event(api, event);
+	json_decref(event);
+}
+
 static void on_ws_sub_closed(struct http_connection *hcon, void *data) {
 	(void)hcon;
 	struct ws_subscriber *sub = data;
@@ -413,6 +431,72 @@ static const char *cmd_abort_message(struct restapi *api, json_t *in) {
 	return NULL;
 }
 
+static int json_percent(json_t *in, const char *key, json_int_t *out) {
+	json_t *v = json_object_get(in, key);
+	if(!v) { *out = 0; return 0; }
+	if(!json_is_integer(v)) return -1;
+	*out = json_integer_value(v);
+	return (*out < 0 || *out > 100) ? -1 : 0;
+}
+
+// Voice keyer progress for the keyer's display (MK2, MK3).
+static const char *cmd_dvk_state(struct restapi *api, json_t *in) {
+	struct device *dev;
+	const char *e = cmd_get_device(api, in, &dev);
+	if(e) return e;
+	json_t *kind_val = json_object_get(in, "kind");
+	if(!json_is_string(kind_val))
+		return "missing or invalid 'kind'";
+	const char *kind = json_string_value(kind_val);
+	const int recording = strcmp(kind, "record") == 0;
+	if(!recording && strcmp(kind, "play") != 0)
+		return "'kind' must be 'play' or 'record'";
+	json_t *message_val = json_object_get(in, "message");
+	if(!json_is_integer(message_val))
+		return "missing or invalid 'message'";
+	json_int_t msg = json_integer_value(message_val);
+	if(msg < 0 || msg > 9)
+		return "'message' out of range (1-9, 0 = ended)";
+	json_int_t progress, level;
+	if(json_percent(in, "progress", &progress) || json_percent(in, "level", &level))
+		return "'progress' and 'level' are percentages (0-100)";
+	if(!(dev->ctl && (mhc_get_mhinfo(dev->ctl)->flags & MHF_HAS_DISPLAY)))
+		return "device has no display";
+	uint8_t idx = msg > 0 ? (uint8_t)(msg - 1) : MHC_DVK_STOPPED;
+	if(msg == 0 && recording && json_is_true(json_object_get(in, "aborted")))
+		idx = MHC_DVK_ABORTED;
+	mhc_dvk_state(dev->ctl, recording, idx, (uint8_t)(progress * 255 / 100), (uint8_t)(level * 255 / 100), NULL, NULL);
+	return NULL;
+}
+
+// Text on one line of the keyer's display for a while (MK2, MK3, SM).
+static const char *cmd_display_text(struct restapi *api, json_t *in) {
+	struct device *dev;
+	const char *e = cmd_get_device(api, in, &dev);
+	if(e) return e;
+	json_t *line_val = json_object_get(in, "line");
+	if(!json_is_integer(line_val) || json_integer_value(line_val) < 0 || json_integer_value(line_val) > 1)
+		return "missing or invalid 'line' (0 upper, 1 lower)";
+	json_t *text_val = json_object_get(in, "text");
+	if(!json_is_string(text_val))
+		return "missing or invalid 'text'";
+	json_t *time_val = json_object_get(in, "time");
+	double secs = json_is_number(time_val) ? json_number_value(time_val) : 2.0;
+	if(secs < 0.01 || secs > 2.55)
+		return "'time' out of range (0.01-2.55 s)";
+	if(!(dev->ctl && (mhc_get_mhinfo(dev->ctl)->flags & MHF_HAS_DISPLAY)))
+		return "device has no display";
+	// The display takes printable ASCII; anything else becomes a space.
+	char text[17];
+	const char *src = json_string_value(text_val);
+	size_t n = 0;
+	for(; src[n] && n < 16; n++)
+		text[n] = (src[n] >= 0x20 && src[n] < 0x7b && src[n] != 0x5c) ? src[n] : ' ';
+	text[n] = 0;
+	mhc_display_host_string_event(dev->ctl, (uint8_t)json_integer_value(line_val), text, (uint8_t)(secs * 100 + 0.5), NULL, NULL);
+	return NULL;
+}
+
 static int on_ws_message(struct http_connection *hcon, int opcode, const char *data, size_t len, void *user_data) {
 	struct ws_subscriber *sub = user_data;
 	if(!sub || !sub->api)
@@ -439,6 +523,10 @@ static int on_ws_message(struct http_connection *hcon, int opcode, const char *d
 			cmd_err = cmd_play_message(sub->api, in);
 		} else if(strcmp(cmd_str, "abort_message") == 0) {
 			cmd_err = cmd_abort_message(sub->api, in);
+		} else if(strcmp(cmd_str, "dvk_state") == 0) {
+			cmd_err = cmd_dvk_state(sub->api, in);
+		} else if(strcmp(cmd_str, "display_text") == 0) {
+			cmd_err = cmd_display_text(sub->api, in);
 		} else {
 			cmd_err = "unknown command";
 		}
@@ -919,6 +1007,7 @@ struct restapi *restapi_create(struct app_ctx *ctx, struct http_server *hs, stru
 	api->keyer_mode_sub  = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_MODE,  ev_keyer_mode_cb, api);
 	api->radio_info_sub  = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_RADIO_INFO,  ev_radio_info_cb, api);
 	api->cat_monitor_sub = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_CAT_MONITOR, ev_cat_monitor_cb, api);
+	api->keyer_flags_sub = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_FLAGS, ev_keyer_flags_cb, api);
 
 	return api;
 
@@ -942,6 +1031,10 @@ void restapi_shutdown(struct restapi *api) {
 	if(api->radio_info_sub) {
 		eventbus_unsubscribe(api->radio_info_sub);
 		api->radio_info_sub = NULL;
+	}
+	if(api->keyer_flags_sub) {
+		eventbus_unsubscribe(api->keyer_flags_sub);
+		api->keyer_flags_sub = NULL;
 	}
 	if(api->cat_monitor_sub) {
 		eventbus_unsubscribe(api->cat_monitor_sub);

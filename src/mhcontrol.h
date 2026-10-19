@@ -114,6 +114,9 @@ void mhc_sm_get_antsw_block(struct mh_control *ctl, uint16_t offset, mhc_cmd_com
 void mhc_sm_set_antsw_validity(struct mh_control *ctl, uint8_t param, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_sm_store_antsw_block(struct mh_control *ctl, uint16_t offset, const char *data, mhc_cmd_completion_cb_fn cb, void *user_data);
 void mhc_display_host_string_event(struct mh_control *ctl, uint8_t display_line, const char *text, uint8_t disp_time, mhc_cmd_completion_cb_fn cb, void *user_data);
+#define MHC_DVK_STOPPED 0xff
+#define MHC_DVK_ABORTED 0xfe
+void mhc_dvk_state(struct mh_control *ctl, int recording, uint8_t msg_idx, uint8_t progress, uint8_t level, mhc_cmd_completion_cb_fn cb, void *user_data);
 
 // set keyer option in mhuxd memory, not sending it to keyer. For that use mhc_load_kopts().
 int mhc_set_kopt(struct mh_control *ctl, const char *key, int val);

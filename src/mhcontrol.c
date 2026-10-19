@@ -81,8 +81,8 @@ enum {
 	MHCMD_STORE_FSK_MSG_7     = 0x26,
 	MHCMD_STORE_FSK_MSG_8     = 0x27,
 	MHCMD_STORE_FSK_MSG_9     = 0x28,
-	MHCMD_DVK_REC             = 0x29, /* MK2 only */
-	MHCMD_DVK_PLAY            = 0x2a, /* MK2 only */
+	MHCMD_DVK_REC             = 0x29, /* MK2, MK3 */
+	MHCMD_DVK_PLAY            = 0x2a, /* MK2, MK3 */
 	MHCMD_DISPLAY_HOST_STRING_EVENT = 0x2b, /* SM, MK2 only */
 	MHCMD_DISPLAY_HOST_STRING = 0x2c, /* SM, MK2 only */
 	MHCMD_CANCEL_HOST_STRING  = 0x2d, /* SM, MK2 only */
@@ -763,7 +763,21 @@ static void flags_cb(struct mh_router *router, const uint8_t *data ,int len, int
 		if((*old_flag & MHD2CFL_NON_VOX_PTT) != (data[i] & MHD2CFL_NON_VOX_PTT))
 			dbg0("%s fl non-vox-ptt r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_NON_VOX_PTT) ? 1 : 0);
 		if((*old_flag & MHD2CFL_FOOTSWITCH) != (data[i] & MHD2CFL_FOOTSWITCH))
-			dbg0("%s non-vox-ptt r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_FOOTSWITCH) ? 1 : 0);
+			dbg0("%s fl footswitch r%d %d", ctl->serial, radio, (data[i] & MHD2CFL_FOOTSWITCH) ? 1 : 0);
+
+		// Clients (a voice keyer stopping its message on the footswitch) get
+		// the inputs an operator works, not CTS, squelch or FSK busy.
+		const uint8_t published = MHD2CFL_ANY_PTT | MHD2CFL_FOOTSWITCH | MHD2CFL_LOCKOUT | MHD2CFL_NON_VOX_PTT;
+		if((*old_flag ^ data[i]) & published) {
+			eventbus_publish(ctl->ebus, EV_KEYER_FLAGS, &(struct ev_keyer_flags) {
+			    .serial = ctl->serial,
+			    .radio = radio,
+			    .ptt = !!(data[i] & MHD2CFL_ANY_PTT),
+			    .footswitch = !!(data[i] & MHD2CFL_FOOTSWITCH),
+			    .lockout = !!(data[i] & MHD2CFL_LOCKOUT),
+			    .non_vox_ptt = !!(data[i] & MHD2CFL_NON_VOX_PTT),
+			});
+		}
 
 		*old_flag = data[i];
 	}
@@ -1506,6 +1520,29 @@ void mhc_display_host_string_event(struct mh_control *ctl, uint8_t display_line,
 	buf_append_c(&b, 0x00); // F2
 	buf_append_c(&b, disp_time); // F2
 	buf_append_c(&b, MHCMD_DISPLAY_HOST_STRING_EVENT | MSB_BIT);
+	submit_cmd(ctl, &b, cb, user_data);
+}
+
+// Voice keyer progress on the display of keyers that have one and a VOICE
+// mode (MK2, MK3): what the keyer shows is set by its dispEv settings.
+// msg_idx 0-8 = message 1-9 in progress; for the end MHC_DVK_STOPPED (play
+// ended, or recording stored) or MHC_DVK_ABORTED (recording discarded).
+void mhc_dvk_state(struct mh_control *ctl, int recording, uint8_t msg_idx, uint8_t progress, uint8_t level,
+		   mhc_cmd_completion_cb_fn cb, void *user_data) {
+	struct buffer b;
+	const uint8_t cmd = recording ? MHCMD_DVK_REC : MHCMD_DVK_PLAY;
+
+	if(!(ctl->mhi.flags & MHF_HAS_DISPLAY) || !(ctl->mhi.flags & MHF_HAS_FRBASE_VOICE)) {
+		defer_callback(ctl->loop, cb, CMD_RESULT_NOT_SUPPORTED, user_data);
+		return;
+	}
+
+	buf_reset(&b);
+	buf_append_c(&b, cmd);
+	buf_append_c(&b, msg_idx);
+	buf_append_c(&b, progress);   // 255 = 100 %
+	buf_append_c(&b, level);      // 255 = 100 %
+	buf_append_c(&b, cmd | MSB_BIT);
 	submit_cmd(ctl, &b, cb, user_data);
 }
 
