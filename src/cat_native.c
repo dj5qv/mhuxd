@@ -126,6 +126,7 @@ static const struct {
 	{ 0x51, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 940
 	{ 0x19, CAT_NATIVE_PROTO_KENWOOD, 0 },	// TS 950: DT
 	{ 0x7E, CAT_NATIVE_PROTO_KENWOOD, 0 },	// TS 990: DA, OM
+	{ 0x92, CAT_NATIVE_PROTO_KENWOOD, 0 },	// TS 890: OM, SF (urouter polls OM0/OM1)
 	{ 0x1C, CAT_NATIVE_PROTO_KENWOOD, 1 },	// TS 2000
 	{ 0x44, CAT_NATIVE_PROTO_ELECRAFT, 0 },	// K2
 	{ 0x62, CAT_NATIVE_PROTO_ELECRAFT, 0 },	// K3
@@ -136,6 +137,7 @@ static const struct {
 	{ 0x84, CAT_NATIVE_PROTO_YAESU, 0 },	// FT-991
 	{ 0x60, CAT_NATIVE_PROTO_YAESU, 0 },	// FT-2000
 	{ 0x72, CAT_NATIVE_PROTO_YAESU, 0 },	// FT-2000D
+	{ 0x94, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx101D
 	{ 0x81, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx1200
 	{ 0x7F, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx3000
 	{ 0x79, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx5000
@@ -147,8 +149,8 @@ static const struct {
 	{ 0x6C, CAT_NATIVE_PROTO_YAESU, 0 },	// FTdx9000 Contest (patched)
 	{ 0x8F, CAT_NATIVE_PROTO_FLEX, 0 },	// Apache Labs ANAN 100/200
 	{ 0x8C, CAT_NATIVE_PROTO_FLEX, 0 },	// Expert Electronics MB1
-	{ 0x8D, CAT_NATIVE_PROTO_FLEX, 0 },	// Flex 5000
-	{ 0x8E, CAT_NATIVE_PROTO_FLEX, 0 },	// Flex 6000 series
+	{ 0x8E, CAT_NATIVE_PROTO_FLEX, 0 },	// Flex 5000
+	{ 0x8D, CAT_NATIVE_PROTO_FLEX, 0 },	// Flex 6000 series
 	{ 0x83, CAT_NATIVE_PROTO_FLEX, 0 },	// TS 2000 compatible SDR
 };
 
