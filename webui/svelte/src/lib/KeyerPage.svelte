@@ -3187,14 +3187,6 @@
   <section class="section">
     <div class="section-title">Winkey</div>
     <div class="panel">
-      {#if activeKeyer?.type === 3 || activeKeyer?.type === 5}
-        <div class="row">
-          <div class="label">Paddle Only Side Tone:</div>
-          <div class="value">
-            <input type="checkbox" checked={!!keyerParam(activeSerial, 'paddleOnlySideTone')} on:change={(e) => updateKeyerParam(activeSerial, 'paddleOnlySideTone', e.target.checked ? 1 : 0)} />
-          </div>
-        </div>
-      {/if}
       <div class="row">
         <div class="label">Paddle Mode:</div>
         <div class="value">
@@ -3321,7 +3313,7 @@
           </select>
         </div>
       </div>
-      {#if activeKeyer?.type === 3 || activeKeyer?.type === 5}
+      {#if activeKeyer?.type === 3 || activeKeyer?.type === 5 || activeKeyer?.type === 11}
         <div class="row">
           <div class="label">Paddle Only Side Tone:</div>
           <div class="value">
