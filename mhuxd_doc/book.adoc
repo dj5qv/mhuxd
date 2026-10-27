@@ -1,4 +1,6 @@
 = mhuxd - Daemon for microHam Keyers
+//:stylesheet: boot-cosmo.css
+:imagesdir: images
 :doctype: book
 :encoding: utf-8
 :lang: en
@@ -10,11 +12,10 @@
 //https://github.com/asciidocfx/AsciidocFX/issues/114
 //FRONT COVER PAGE
 //PURE IMAGE PAGE ONLY, BEFORE TITLE PAGE
-:front-cover-image: image:front-cover.png[]
 //TITLE PAGE
-:title-page:
+//:title-page:
 //ADD IMAGE IN TITLE PAGE 
-:title-page-background-image: image:title-bg.png[]
+//:title-page-background-image: image:title-bg.png[]
 //:title-logo-image: image:logo.png[top=25%,align=center,pdfwidth=0.5in]
 
 [.text-center]

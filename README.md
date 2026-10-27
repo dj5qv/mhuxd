@@ -7,29 +7,31 @@
 ## New in v0.90
 
 - Web UI migrated to a JS/Svelte based version. New UI is served under http://localhost:5052. The old ClearSilver based UI
-  (/classic, /cs) has been removed.
+  has been removed.
+
+- Rest-API interface, used by the Web-UI to interact with mhuxd.
 
 - Internal Clearsilver/HDF based configuration management migrated to JSON. Clearsilver still included for backward compatibility with
   the old config file. If mhuxd doesn't find a json format config file, it will attempt to load the hdf config and migrate it to json.
   (mhuxd-state.hdf -> mhuxd-state.json)
 
-- Rest-API interface, used by the Web-UI to interact with mhuxd.
-
 - Websocket interface, providing status changes.
 
-- Can communicate with rigctld. This solves an issue where keyer internal CAT queries are enabled while an application like WSJTX runs 
-  CAT queries, too, leading to collisions and instability. Using rigctld, mhuxd can sync the rig mode and frequency with the keyer.
-  It also allows multiple applications to use CAT simultaneously.
-
-- WebUI and TCP connector support IPv6 now.
+- Can decode CAT traffic for many rigs and keeps the keyer mode and frequency in sync. Previously the keyer would have to poll 
+  the rig on it's own to keep it's status up to date, leading to inteference with applications like WSJT-X.
 
 - Native rig mode sync (Icom, Kenwood, Elecraft, newer Yaesu, Flex/ANAN): mhuxd reads the CAT traffic of the applications
-  using the keyer's CAT port and keeps keyer mode and frequency in sync with the radio, without
-  rigctld. When no application polls the radio, mhuxd asks it itself, in between the
-  applications' commands. Several applications can share the radio, each on a port of its
+  using the keyer's CAT port and keeps keyer mode and frequency in sync with the radio.
+  If the required CAT commants don't come across, mhuxd can initiate CAT commands on its own.
+
+- Several applications can share the radio, each on a port of its
   own: mhuxd lets them take turns and sends each answer to the application that asked. With a
   CAT monitor for troubleshooting.
 
+- Can optionally manage rigctld, if desired. Rig and keyer becomes online -> mhuxd starts rigctld. This can also be used as a "rig mode sync"
+  option, if above mentioned "Native rig mode sync" wouldn't work for your rig.
+
+- WebUI and TCP connector support IPv6 now.
 
 ---
 
@@ -64,7 +66,7 @@ Similar to the microHam device router, mhuxd can create virtual serial ports. Th
 
 Binary packages are available for Debian (and derived distributions, Ubuntu, Mint). Refer to [mhuxd.dj5qv.de](https://mhuxd.dj5qv.de/) for details.
 
-Installing from these packages is the easiest way, like plug & play. Everything is handled automatically: systemd integration, permissions, account creation, etc.
+Installing from these packages is the easiest way, like almost plug & play. Everything is handled automatically: systemd integration, permissions, account creation, etc.
 
 ### Compile from source code
 
@@ -82,7 +84,7 @@ sudo apt install acl git pkgconf automake autoconf make gcc libev-dev libfuse-de
 # for Arch Linux
 pacman -S --needed pkgconf git automake autoconf make gcc libev fuse systemd-libs jansson
 
-# for Alpine Linux (you might need to compile the kernel, the provided ones seem to lack cuse/CONFIG_CUSE)
+# for Alpine Linux (you might need to compile the kernel with cuse support, the provided ones seem to lack cuse/CONFIG_CUSE)
 apk add pkgconf git automake autoconf make gcc libev-dev fuse-dev libudev-zero-dev jansson-dev musl-dev acl
 
 # Get the source code from github:
@@ -330,3 +332,4 @@ directly, e.g. WSJTX configured like in the "WSJTX direct" example above.
 - **Igor Sysoev, Joyent Inc. et al.** - For http\_parser
 - **Google Inc., Filipe Almeida** - For streamhtmlparser
 - **Petri Lehtinen** - For libjansson
+- The **Svelte** project
