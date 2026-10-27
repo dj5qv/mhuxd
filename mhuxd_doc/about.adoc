@@ -15,23 +15,25 @@ Mhuxd is a device router for microHam keyers. It runs on the Linux operating sys
 
 === Features
 
-* Designed to run permanantly in the background
+* Designed to run permanently in the background
 * Automatically detects any supported microHam keyer, once switched on or connected to the computer
 * Supports multiple keyers simultaneously
-* Build-in webserver to perform configuration changes via a browser
+* Built-in web server to perform configuration changes via a browser
 * Provides configurable virtual serial ports (VSP) and routes those to specific keyer channels (e.g. CAT, K1EL Winkey, PTT, FSK etc.)
-* Provide TCP/IP network ports (IPv4 and IPv6) if desired
+* Provides TCP/IP network ports (IPv4 and IPv6) if desired
 * Configuration of the K1EL Winkey chip, including CW/FSK message memories via browser
 * Supports configuration of the microKEYER II / III displays
-* Optionally supports hamlib rigctld to sync the rig with the keyer (mode, frequency display)
-* antenna switching configuration for Station Master ([red]#experimental#)
-* REST API with a server-sent event stream, used by the web interface
+* RIG Mode Sync: keeps the keyer mode and the frequency known to the keyer in sync with the rig, either by decoding the CAT traffic of your applications (backend native) or through Hamlib's rigctld
+* Several applications can share the rig's CAT port, each on a port of its own (backend native)
+* Optionally starts and stops Hamlib's rigctld together with the keyer
+* Antenna switching configuration for Station Master ([red]#experimental#)
+* REST API and WebSocket interface, used by the web interface
 
 === License
 
 Mhuxd is available under the GNU General Public License, version 2.
 
-ClearSilver is licensed under the New BSD license.
+ClearSilver is licensed under the New BSD license. mhuxd still uses it to read the configuration file of older mhuxd versions.
 
 === Acknowledgements
 

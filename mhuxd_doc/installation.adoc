@@ -5,67 +5,163 @@
 Binary packages for Debian and Debian based distributions (e.g. Ubuntu, Mint) are
 available. The home page http://mhuxd.dj5qv.de provides up-to-date installation steps.
 
+Installing from a package is the easiest way. Everything is handled automatically: systemd
+integration, the “mhuxd” account, permissions of the virtual serial ports etc. After the
+installation mhuxd is already running. To use the virtual serial ports from your own account,
+see <<port_permissions>>.
+
 === Compiling from Source
 
 ==== Prerequisites
 
-To compile mhuxd you need a C compiler, `pkg-config` and the development packages for:
+To compile mhuxd you need a C compiler, `make`, `pkg-config` and the development packages for:
 
 * libudev (`libudev-dev`)
 * libfuse (`libfuse-dev`)
 * libev (`libev-dev`)
 * libjansson (`libjansson-dev`) – JSON configuration
 
-The web interface is built from Svelte sources, which requires:
+The `acl` package provides `setfacl`, which is needed to give mhuxd access to `/dev/cuse`.
+If you build from the GitHub repository, you also need `git`, `autoconf` and `automake`.
 
-* `nodejs`
-* `npm`
+On Debian/Ubuntu:
 
-However the source code ships with a compiled UI (pure JavaScript), so nodejs and npm is not strictly required.
+`sudo apt install acl git pkgconf automake autoconf make gcc libev-dev libfuse-dev libudev-dev libjansson-dev`
 
-(On Debian/Ubuntu the package names are given in parentheses.)
+On Arch Linux:
+
+`pacman -S --needed pkgconf git automake autoconf make gcc libev fuse systemd-libs jansson`
+
+The web interface is built from Svelte sources. The source code ships with the compiled web
+interface (pure JavaScript), so `nodejs` and `npm` are only needed if you change the web
+interface yourself (`make svelte-ui-build` in the `webui` directory).
 
 ==== Building
 
-{empty} +
+Get the source code from GitHub:
 
-Download the source from the Download page and extract it, e.g.
+----
+git clone https://github.com/dj5qv/mhuxd.git
+cd mhuxd
+./autogen.sh
+----
 
-`tar -xzvf mhuxd-0.90.tar.gz`
+NOTE: `pkg-config` must already be installed when running `./autogen.sh`, otherwise it fails.
 
-{empty} +
+Or download a release archive from the home page, extract it and change into its directory, e.g.
 
-NOTE: If you cloned the source from GitHub instead, you also need the packages
-`autoconf` and `automake` and must run `./autogen.sh` once before `./configure`.
-`pkg-config` must already be installed at that point, otherwise `./autogen.sh` fails.
+----
+tar -xzvf mhuxd-0.90.tar.gz
+cd mhuxd-0.90
+----
 
-{empty} +
+Then configure, build and install mhuxd:
 
-Change into the source directory and perform:
+----
+mkdir build && cd build
+../configure --prefix=/usr/local/mhuxd
+make
+sudo make install
+----
 
-`./configure`
+With `--prefix=/usr/local/mhuxd` everything is installed into a single folder. Without it
+mhuxd is installed into /usr/local.
 
-`make`
+To build Debian packages instead, run `./make_deb.sh` in the source directory. No configure
+is needed, but the packages `dpkg-dev` and `debhelper`.
 
-`make install`
+==== Account and Permissions
 
-This will install everything into /usr/local. If you want everything in a single folder you can use the --prefix option of configure:
+mhuxd does not need to run as root, and it shouldn't. Though possible, I'd also advise against
+running it under your normal account. Create a system account “mhuxd” instead. Its group
+will also own the virtual serial ports in `/dev/mhuxd/`. The commands below assume
+`--prefix=/usr/local/mhuxd` and that you are still in the `build` directory:
 
-`./configure --prefix=/usr/local/mhuxd`
+----
+# Create user and group mhuxd, give it access to serial devices:
+sudo useradd --system --home-dir /nonexistent --no-create-home --user-group mhuxd
+sudo usermod -G dialout mhuxd    # on Arch Linux use 'uucp' instead of 'dialout'
 
-`make`
+# mhuxd stores its configuration, log file and PID file below var:
+sudo chown -R mhuxd:mhuxd /usr/local/mhuxd/var
 
-`make install`
+# Load the cuse kernel module, now and after every boot:
+sudo modprobe cuse
+echo cuse | sudo tee /etc/modules-load.d/cuse.conf
 
-Make sure that the required kernel modules are loaded:
+# Allow mhuxd to read/write /dev/cuse. This doesn't survive a reboot,
+# the udev rule below takes care of that:
+sudo setfacl -m u:mhuxd:rw /dev/cuse
 
-`modprobe ftdi_sio`
+# Install the udev rule and reload the udev rules (or reboot):
+sudo cp ../debian/mhuxd.udev /usr/lib/udev/rules.d/59-mhuxd.rules
+sudo udevadm control --reload-rules
+----
 
-`modprobe cuse`
+The udev rule grants the mhuxd account access to `/dev/cuse`, makes group “mhuxd” the owner
+of the virtual serial ports, publishes them in `/dev/serial/by-id/` as well (see <<port_routing>>)
+and keeps ModemManager away from the keyers.
 
-Start mhuxd on the command line:
+The keyers use the `ftdi_sio` driver, which the kernel loads by itself when a keyer is
+plugged in.
 
-`sudo /usr/local/sbin/mhuxd`
+[#running]
+=== Running mhuxd
 
-NOTE: mhuxd does not need to run as root, but it needs read/write access to
-`/dev/cuse`, which is typically owned by root.
+==== When installed from package
+
+mhuxd runs as systemd service and is started at boot. The log file is
+`/var/log/mhuxd/mhuxd.log`.
+
+----
+sudo systemctl stop mhuxd
+sudo systemctl start mhuxd
+----
+
+==== When compiled from source
+
+Start mhuxd under the mhuxd account:
+
+----
+# In the foreground, log output goes to the terminal. Stop it with Ctrl-C:
+sudo -u mhuxd /usr/local/mhuxd/sbin/mhuxd
+
+# In the background, log output goes into /usr/local/mhuxd/var/log/mhuxd/mhuxd.log:
+sudo -u mhuxd /usr/local/mhuxd/sbin/mhuxd -b
+
+# Stop mhuxd running in the background:
+sudo kill $(cat /usr/local/mhuxd/var/run/mhuxd/mhuxd.pid)
+----
+
+Once mhuxd runs, open the web interface at http://localhost:5052 (see <<the_webui>>).
+
+==== Command Line Options
+
+[cols="1,3"]
+|===
+| Option | Description
+
+| `-b`
+| Run in the background, log into the log file.
+
+| `-w <interface:port>`
+| Interface and port of the web server, default `localhost:5052`. `0.0.0.0:5052` makes the web
+interface reachable from other computers (IPv4 and IPv6). [red]#Don’t do this if your computer
+is directly connected to the internet or in an insecure network!#
+
+| `-l <log level>`
+| Initial log level: MUTE, CRIT, ERROR, WARN, INFO, DEBUG0 or DEBUG1. A log level set in the
+web interface overrides this option.
+
+| `-h`
+| Print the options and exit.
+|===
+
+To give the packaged service other options, override its start command with
+`sudo systemctl edit mhuxd`, e.g.
+
+----
+[Service]
+ExecStart=
+ExecStart=/usr/sbin/mhuxd -b -w 0.0.0.0:5052
+----

@@ -1,0 +1,142 @@
+[#rig_mode_sync]
+== RIG Mode Sync
+
+mhuxd can keep the keyer mode (CW, VOICE, FSK, DIGITAL) in sync with the actual rig mode, and tell the keyer the rig's frequency.
+
+The keyer's own CAT decoder (“Use Decoder if Connected”, see <<menu_radio>>) can do that too, but its CAT queries collide with the queries of applications like WSJT-X when the keyer is connected to a computer. Measured with an IC-7300: the keyer polls the radio whenever the CAT line has been idle for about one second, the commands of the application fail on the CI-V bus meanwhile. mhuxd avoids these collisions.
+
+RIG Mode Sync has two backends:
+
+* *native* – mhuxd decodes the CAT traffic between your applications and the radio on the keyer's CAT channel. The applications keep using the virtual serial port of the CAT channel (e.g. `/dev/mhuxd/cat1`) directly. No additional software is needed.
+* *rigctld* – mhuxd polls Hamlib's `rigctld` daemon. The applications connect to `rigctld` instead of the CAT port.
+
+NOTE: Keep the keyer option “Use Decoder if Connected” off when RIG Mode Sync is used. With an Icom radio “Don't Interfere USB control” doesn't stop the keyer's queries.
+
+=== Settings
+
+RIG Mode Sync is configured in the lower part of the keyer's *Radio* page, section *RIG Mode Sync*:
+
+* *Enabled* – master switch for mode synchronization on this keyer.
+* *Backend* – *native* or *rigctld*, see below.
+
+For each radio (Radio 1, and Radio 2 on the MK2R/MK2R+):
+
+* *Enabled* – synchronize this radio
+* *Radio state* – what mhuxd sees, e.g. “14.074.000 Hz PKTUSB → keyer DIGITAL”. That's the first thing to check when the keyer mode doesn't follow the rig.
+
+The further settings depend on the backend. Press *Apply* to store the settings.
+
+The mode mapping is as follows:
+
+[cols="1,3"]
+|===
+| Keyer mode | Rig modes
+
+| CW      | CW, CWR
+| VOICE   | USB, LSB, AM, FM, WFM, AMS
+| FSK     | RTTY, RTTYR
+| DIGITAL | PKTUSB, PKTLSB, PKTFM, PKTAM, FAX
+|===
+
+Other modes (e.g. PSK on some radios) leave the keyer mode unchanged. The DIGI KEYER II has no VOICE mode, it gets FSK instead.
+
+When the radio doesn't answer for 10 s (e.g. switched off), its state expires and the keyer goes back to its configured mode.
+
+=== Backend native
+
+With backend *native*, mhuxd reads the CAT traffic between your applications and the radio, decodes frequency and mode and sets the keyer mode from it. The applications open the keyer's CAT port as usual, e.g. WSJT-X configured as shown here:
+
+.WSJT-X using the CAT and PTT ports of mhuxd directly
+image::WSJTX_direct.png[]
+
+Supported radios:
+
+* Icom (CI-V; the Ten-Tec OMNI VI speaks it too)
+* Kenwood
+* Elecraft K2/K3
+* the newer Yaesu radios with ASCII CAT (FT-450, FT-950, FT-991, FT-2000, FTdx101, FTdx1200/3000/5000/9000)
+* the older Yaesu radios with binary CAT (FT-757GXII, FT-817/818, FT-840, FT-847, FT-857, FT-890, FT-897, FT-900, FT-920, FT-990, FT-1000/1000D, FT-1000MP/MARK-V/Field)
+* Flex, ANAN (PowerSDR/Thetis) and other SDRs emulating a TS-2000
+
+Only Icom is tested on a real radio so far, the others against Hamlib's backends and simulators: reports are welcome, a CAT monitor trace (see below) helps most. Not supported are the Yaesu FT-767GX, Ten-Tec ORION/OMNI VII, JRC and Hilberling: use rigctld for these.
+
+Select the rig type (and Icom address) in the keyer's *Radio* section as usual. The settings for each radio:
+
+* *Protocol* – *auto* takes the protocol from the rig type of the CAT channel. Otherwise choose Icom CI-V, Kenwood, Elecraft, Yaesu (FT-450, FT-950, FT-991, FTdx...) or Flex / PowerSDR / Thetis (ANAN). The older Yaesu radios with binary CAT need *auto*.
+* *CI-V address (hex, Icom)* – overrides the address of the CAT channel. Leave it empty to use the channel's address.
+* *Query the radio* (on by default) – see below.
+* *Resend after collisions* (Icom, on by default) – see below.
+* *CAT monitor* – shows the decoded CAT traffic live, see below.
+
+==== Queries by mhuxd
+
+While an application polls the radio (WSJT-X, fldigi and loggers do), mhuxd takes frequency and mode from its traffic and sends nothing itself. When the values are older than 1.5 s (nobody polls, or the application doesn't ask for the data mode), mhuxd asks the radio itself, if *Query the radio* is enabled. It sends one command at a time, when the CAT line has been quiet for a moment or right after the radio answered an application. Commands of the applications wait meanwhile (a few ten ms), and the radio's answers to mhuxd don't reach them. On Icom mhuxd uses the CI-V controller address E5, the applications E0.
+
+Without the queries, front panel changes are only seen from the radio's own messages: CI-V transceive on Icom (“CI-V Transceive”, on by default on the IC-7300), Auto Information on the others when an application turned it on (AI).
+
+[#native_multi_client]
+==== Several applications on one radio
+
+Like the “2nd CAT port” of the microHam Router, several applications can use the radio at the same time. Give each application a port of its own on the radio's CAT channel, e.g. `/dev/mhuxd/cat1` for WSJT-X and a second virtual serial port `/dev/mhuxd/cat1_2` for the logger, or a TCP port (see <<port_routing>>).
+
+mhuxd then sends one command at a time to the radio: an application's command waits until the radio has answered the other's (a few ten ms), so they don't collide on the CI-V bus. Echo and answers go only to the application that sent the command, CI-V transceive and Auto Information to all (unless switched off for a port, see below). Without an answer within 0.5 s, mhuxd gives the command up and lets the next application go on.
+
+Keep *Max Connections* at 1 on these ports: applications sharing a port can't be told apart (mhuxd warns in the log). An application that only listens on its port, to follow the frequency from another application's polls, gets only transceive and AI messages this way.
+
+[#native_transceive]
+==== Transceive / AI
+
+The port option *Transceive / AI* (see <<port_routing>>, on by default) can be switched off for a CAT port. The port then doesn't get CI-V transceive and Auto Information messages, only the answers to its own commands. Hamlib and rigctld don't cope well with transceive messages between their commands, so this lets the radio's CI-V transceive stay on for the other applications (and for mhuxd, which still follows the radio from them). This works with a single port too.
+
+==== Resend after collisions
+
+With CI-V transceive on, an application's command can collide with the radio's transceive message on the CI-V bus, especially while the VFO knob turns (a message every 30-50 ms). The radio then drops the command and answers with FC. Hamlib doesn't recover from that and reports a “Communication bus error” after 2 s. With *Resend after collisions* mhuxd sends such a command again itself once the bus is free, and the application only sees its answer a few ten ms later.
+
+==== Notes on some radios
+
+* *Older Yaesu radios:* their answers carry no start or end marker, mhuxd frames them by the model's answer lengths. So the rig type in the keyer's *Radio* section must match the radio exactly. A memory dump (several seconds) keeps the CAT line for the application that asked for it. The FT-1000/1000D doesn't report which VFO is selected; mhuxd assumes VFO A until an application selects one. The FT-847 ignores all commands until CAT ON: mhuxd sends it before its first query and again when the radio stops answering (switched off and on, or an application sent CAT OFF, as Hamlib does when it closes).
+* *Kenwood:* the data mode (USB-D, ...) is known on the TS-590, TS-890, TS-950 and TS-990. The older Kenwoods have none, so their USB counts as voice.
+* *Elecraft K3:* DATA A, PSK D and AFSK A count as digital, FSK D as FSK. Until the radio has reported the data sub mode (DT), DATA counts as DATA A.
+
+==== CAT monitor
+
+The *CAT monitor* shows the decoded CAT traffic live below the checkbox and writes it to `cat-<serial>-r1.trace` (`-r2` for radio 2) in mhuxd's log directory. The applications are tagged H1, H2, ... in the order they first send; the monitor names their ports. *Clear* empties the display.
+
+If something isn't decoded right, please send that file along with your report: it can be replayed by the tests in the mhuxd source (`tests/cat/`) as is.
+
+=== Backend rigctld
+
+With backend *rigctld*, mhuxd queries the rig through Hamlib's `rigctld` and updates the keyer mode whenever the rig mode changes. `rigctld` occupies the keyer's CAT port, the applications connect to `rigctld` instead. `rigctld` allows several applications to run CAT queries at the same time without interference, e.g. WSJT-X, fldigi and QLog.
+
+.mhuxd, rigctld and the applications
+image::mhuxd_rigctld_apps.drawio.png[]
+
+For each radio an endpoint can be configured:
+
+* *Host* / *Port* – where `rigctld` is listening (default `127.0.0.1`, port 4532 for Radio 1 and 4533 for Radio 2)
+* *Connect Timeout*, *I/O Timeout*, *Poll Interval* – connection and polling timing in milliseconds
+
+.WSJT-X connected to rigctld
+image::WSJTX_with_rigctld.png[]
+
+Although CAT PTT is enabled in this example, that is not really CAT PTT from the rig's perspective. `rigctld` translates it to RTS on `/dev/mhuxd/ptt1` if started with `-p /dev/mhuxd/ptt1 -P RTS` (see below), and the keyer keys the PTT line.
+
+=== rigctld auto-start
+
+mhuxd can start a Hamlib `rigctld` instance itself when the keyer comes online, and stops it when the keyer goes offline.
+This is independent of RIG Mode Sync and works with either backend: with backend *rigctld* mhuxd polls this `rigctld`, with backend *native* mhuxd decodes the CAT traffic `rigctld` sends through the keyer’s CAT port.
+If `rigctld` exits, mhuxd starts it again, waiting longer after each failed attempt (up to one minute).
+
+The section *rigctld* is in the lower part of the keyer's *Radio* page. For each radio:
+
+* *Auto-start rigctld* – let mhuxd run `rigctld` for this radio
+* *Port* – the TCP port `rigctld` listens on, passed as `-t` (default 4532 for Radio 1, 4533 for Radio 2). With RIG Mode Sync backend *rigctld*, its *Port* must be the same.
+* *rigctld options* – the further `rigctld` arguments, e.g.
+
+`-m 3073 -p /dev/mhuxd/ptt1 -P RTS -r /dev/mhuxd/cat1`
+
+* `-m 3073` is the Hamlib rig model number, IC-7300 in this case. Run `rigctld -l` to display a list of rigs and their numbers.
+* `-r /dev/mhuxd/cat1` is the virtual serial port for CAT that you've configured in mhuxd.
+* `-p /dev/mhuxd/ptt1 -P RTS` tells `rigctld` the PTT port and to key PTT with RTS (the port needs “PTT via RTS”).
+
+Press *Apply* to store the settings.

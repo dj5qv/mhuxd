@@ -19,12 +19,19 @@ image::mhuxd_left_menu.png[]
 NOTE: The screenshots in this chapter were taken with an earlier version of the
 interface and may differ from the current layout.
 
+The serial parameters (Radio, AUX, FSK), RIG Mode Sync, rigctld, the messages and the All Parameters page are stored with an *Apply* button. All other settings are sent to the keyer as soon as they are changed.
+
 === Menu Keyer Mode
-* *Keyer Mode Follows RIG* – Only available for DK2, MK2 and MK2R+. With this option enabled the keyer sets the keyer mode according to the rig mode. For this to work you must have configured the rig type and serial parameters in the “Radio Menu”. Additionally the option “Use CAT Decoder if Connected” must be enabled there.
-* *Current Mode* – This shows the current keyer mode and allows to change it.
+This menu is available for DIGI KEYER II, micro KEYER, micro KEYER II, micro KEYER III, MK2R and MK2R+. The MK2R(+) has a section for each radio.
+
+* *Keyer Mode Follows RIG* – Not available for the micro KEYER. With this option enabled the keyer sets the keyer mode according to the rig mode. For this to work you must have configured the rig type and serial parameters in the “Radio Menu”. Additionally the option “Use Decoder if Connected” must be enabled there. RIG Mode Sync (see <<rig_mode_sync>>) works without it.
+* *Current Mode* – This shows the current keyer mode (CW, VOICE, FSK, DIGITAL) and allows to change it.
+
+Like the microHam Router, mhuxd doesn't choose the keyer mode of the CW KEYER and the DIGI KEYER: the CW KEYER works in CW, the DIGI KEYER in DIGITAL.
 
 {empty} +
 
+[#menu_radio]
 === Menu Radio
 This menu is not available for CW KEYER. This page allows to configure the serial parameters between the keyer and the transceiver:
 
@@ -33,115 +40,102 @@ This menu is not available for CW KEYER. This page allows to configure the seria
 * Stop Bits
 * RTS/CTS Handshake
 
-Refer to your transceivers manual on how to set these parameters.
+Refer to your transceivers manual on how to set these parameters. The MK2R(+) has a section for each radio.
 
-For DIGI KEYER II, micro KEYER II and MK2R(+) additional options are available. These options affect the keyers capability to send CAT commands to the rig on its own:
+For DIGI KEYER II, micro KEYER II, micro KEYER III, MK2R(+) and Station Master additional options are available. These options affect the keyers capability to send CAT commands to the rig on its own:
 
-* *Rig Type:* Select your rig. This tells the keyers internal CAT decoder which rig is attached. If it is in Icom the selection will autofill the Icom Address field. You may choose “none” here which will reliably disable CAT queries from the keyer.
+* *Rig Type:* Select your rig. This tells the keyers internal CAT decoder which rig is attached. If it is an Icom the selection will autofill the Icom Address field. You may choose “none” here which will reliably disable CAT queries from the keyer. RIG Mode Sync with backend native uses the rig type too.
 * *Icom Address:* If you use an Icom rig this field must contain the Icom address in decimal notation. Usually this field gets auto filled from the Rig Type selection.
-* *PW1 connected:* Select this option if you have an Icom PW1 amplifier connected to the same bus as the rig. When enabled the keyer will periodically generate “auto-info”, preventing queries (and possible collisions) by PW1.
+* *PW1 Connected:* Select this option if you have an Icom PW1 amplifier connected to the same bus as the rig. When enabled the keyer will periodically generate “auto-info”, preventing queries (and possible collisions) by PW1.
 * *Digital Over Voice:* Choose how LSB, USB and FM modes are interpreted:
 ** *Band Map* – set keyer mode according to band map
-** *Always Voice* – set keyer mode always to VOICE
-** *Always Digital* – set keyer mode always to DIGITAL
-* *Use CAT Decoder if Connected:* Select this to enable the keyers CAT decoder even when the keyer is USB connected to a computer. 
-The CAT decoder is used to synchronize the keyers mode with the rig mode. If disabled the keyer mode must be selected in the WebUI or by an application. 
+** *Always VOICE* – set keyer mode always to VOICE
+** *Always DIGITAL* – set keyer mode always to DIGITAL
+* *Use Decoder if Connected:* Select this to enable the keyers CAT decoder even when the keyer is USB connected to a computer.
+The CAT decoder is used to synchronize the keyers mode with the rig mode. If disabled the keyer mode must be selected in the WebUI or by an application.
 The decoder is always active when the keyer is not USB connected to a computer.
-[red]#Enabling this may lead to interference. That is, CAT requests from the keyer colliding with CAT requests from an application like WSJTX. RIG Mode Sync offers a more stable solution to provide the keyer with the current mode and frequency, see next chapter.#
-* *Don’t Interfere with USB control:* Disable CAT queries by the keyer if it is USB connected to a computer. Only answers to the computer will be interpreted. 
-[red]#This may not work as advertised for DIGI KEYER II and maybe other keyers.#
+[red]#Enabling this may lead to interference. That is, CAT requests from the keyer colliding with CAT requests from an application like WSJT-X. RIG Mode Sync offers a more stable solution to provide the keyer with the current mode and frequency, see <<rig_mode_sync>>.#
+* *Don’t Interfere USB control:* Disable CAT queries by the keyer if it is USB connected to a computer. Only answers to the computer will be interpreted.
+This works with the older Yaesu radios (checked with a DIGI KEYER II and an FT-1000MP), but [red]#not with Icom: with an Icom rig selected the keyer polls anyway# (DIGI KEYER II, IC-7300), probably to keep CI-V accessories like the PW1 informed.
 
-==== RIG Mode Sync
-
-mhuxd can keep the keyer mode (CW, VOICE, FSK, DIGITAL) in sync with the actual rig mode. 
-Rather than decoding CAT itself, mhuxd queries the rig through an external backend and updates the keyer mode whenever the rig mode changes. 
-This avoids the collisions that occur when the keyer runs its own CAT queries in parallel with logging or digimode software.
-
-
-The mode mapping is as follows:
-
-[cols="1,3"]
-|===
-| Keyer mode | Rig modes
-
-| CW      | CW, CWR
-| VOICE   | USB, LSB, AM, FM, WFM, AMS
-| FSK     | RTTY, RTTYR
-| DIGITAL | PKTUSB, PKTLSB, PKTFM, PKTAM, FAX
-|===
-
-RIG Mode Sync is configured in the lower part of the *Radio* page:
-
-* *Enabled* – master switch for mode synchronization on this keyer.
-* *Backend* – how the rig is queried:
-** *rigctld* – Hamlib’s `rigctld` daemon (TCP, default port 4532)
-
-For each radio (Radio 1, and Radio 2 on dual-radio keyers) an endpoint can be configured:
-
-* *Enabled* – synchronize this radio
-* *Host* / *Port* – where the backend is listening (default `127.0.0.1`, port 4532 for Radio 1 and 4533 for Radio 2)
-* *Connect Timeout*, *I/O Timeout*, *Poll Interval* – connection and polling timing in milliseconds
-
-Press *Apply* to store the settings.
-
-NOTE: When RIG Mode Sync is used, the keyer’s own CAT decoder should be turned off (“Use CAT Decoder if Connected” disabled).
-
-==== rigctld
-
-mhuxd can start a Hamlib `rigctld` instance itself when the keyer comes online, and stops it when the keyer goes offline.
-This is independent of RIG Mode Sync and works with either backend: with backend *rigctld* mhuxd polls this `rigctld`, with backend *native* mhuxd decodes the CAT traffic `rigctld` sends through the keyer’s CAT port.
-If `rigctld` exits, mhuxd starts it again, waiting longer after each failed attempt (up to one minute).
-
-For each radio:
-
-* *Auto-start rigctld* – let mhuxd run `rigctld` for this radio
-* *Port* – the TCP port `rigctld` listens on, passed as `-t` (default 4532 for Radio 1, 4533 for Radio 2). With RIG Mode Sync backend *rigctld*, its *Port* must be the same.
-* *rigctld options* – the further `rigctld` arguments, e.g. `-m 3073 -r /dev/mhuxd/cat1`.
-The -m switch specifies the rig number in hamlib. Run `rigctld -l` to display a list of rigs and the corresponding id.
-The -r switch should be followed by the virtual serial port for CAT, that you've configured in mhuxd.
-
-Press *Apply* to store the settings.
+The lower part of the page holds the sections *RIG Mode Sync* and *rigctld*, see <<rig_mode_sync>>.
 
 === Menu AUX
-This menu is only available for keyers with AUX support (microKEYER II). Allows to specify the serial parameters of the AUX port.
+This menu is only available for keyers with an AUX port (micro KEYER II, micro KEYER III, Station Master). Allows to specify the serial parameters of the AUX port.
 
 === Menu FSK
-This menu is only available for keyers with an FSK channel. It configures the serial parameters of the FSK channel. Refer to the original microHam documentation for your keyer.
+This menu is only available for keyers with an FSK channel (all but the CW KEYER and the Station Master). It configures the serial parameters of the FSK channel, the MK2R(+) has one for each radio. Refer to the original microHam documentation for your keyer.
+
+* *Invert FSK* – invert the FSK keying signal
+* *Pseudo FSK* – DIGI KEYER II and micro KEYER III only: the keyer keys its FSK output from an on/off keyed tone in the right sound card channel, e.g. fldigi's “pseudo-FSK”. Refer to the keyer manual.
 
 === Menu PTT
-This page allows the configuration of the PTT operation. The available options vary between keyer types.
+This page allows the configuration of the PTT operation. The available options vary between keyer types; the MK2R(+) has a section for each radio.
 
 NOTE: This is a very basic overview. Please refer also to the original microHam documentation for your keyer.
 
-
-* *PTT CW* – Select PTT source(s) for CW mode
-* *PTT Voice* – Select PTT source(s) for VOICE mode
-* *PTT Digital* – Select PTT source(s) for DIGITAL mode
+* *PTT CW* – Select the PTT output for CW mode
+* *PTT Voice* – Select the PTT output for VOICE mode
+* *PTT Digital* – Select the PTT output for DIGITAL mode
 * *LNA PTT* – Enable LNA PTT relay
 * *PA PTT* – Enable PA PTT relay
 * *PA PTT Tail (x 10ms)* – PA PTT Tail time
 * *LNA PTT Tail (x 10ms)* – LNA PTT Tail time
 * *PTT Lead (x 10ms)* – PTT Lead time
-* *CW in Voice* – Allow CW operation in VOICE mode (MK2, MK2R(+) only)
-* *Sound Card PTT* – key PTT when soundcard produces audio (MK2, DK2 only)
-* *Downstream over Footswitch* – when soundcard produces audio the audio source will be switched from microphone to sound card, even if the foot switch is pressed (untested, DK2, MK2 only)
+* *CW in Voice* – Allow CW operation in VOICE mode (micro KEYER II/III, MK2R(+) only)
+* *Sound Card PTT* – key PTT when soundcard produces audio (DIGI KEYER II, micro KEYER II/III only)
+* *Downstream over Footswitch* – when soundcard produces audio the audio source will be switched from microphone to sound card, even if the foot switch is pressed (untested, DIGI KEYER II, micro KEYER II/III only)
 
+The PTT outputs offered:
+
+[cols="2,1,1,1"]
+|===
+| Keyer | CW | Voice | Digital
+
+| CW KEYER        | PTT, QSK | – | –
+| DIGI KEYER      | – | – | PTT, No PTT
+| DIGI KEYER II   | PTT, QSK, Semi Break-in | – | –
+| micro KEYER     | PTT1, QSK, PTT2 | PTT1, PTT2 | PTT1, PTT2, PTT1+2
+| micro KEYER II/III, MK2R(+) | PTT1, QSK, Semi Break-in, PTT2 | PTT1, PTT2 | PTT1, PTT2, PTT1+2
+|===
+
+PTT1 is the PTT line of the mic jack, PTT2 the one on the rear panel jack.
+
+==== Footswitch Sequencer
+Additional functions for the footswitch (or the PTT of a hand microphone):
+
+* *Mute serial CW* – mute CW from an application (DTR or RTS) while the footswitch is pressed.
+* *Mute serial FSK* – block the FSK ports while the footswitch is pressed.
+* *Restore serial PTT and audio* – when the footswitch is released, restore the application's PTT and the audio routing for it. Otherwise this only happens after the application has released PTT.
+* *Restore serial CW* – resume the application's CW when the footswitch is released (if it has not ended yet). Otherwise it stays muted until the application releases PTT.
+* *Restore serial FSK* – the same for FSK.
 
 === Menu Audio
-This menu is only available for keyers with audio switching (e.g. MK2R/MK2R+). It configures the routing of audio between the microphone, sound card and radio, together with related audio options. Refer to the original microHam documentation for your keyer.
+This menu is only available for keyers with audio switching (micro KEYER, micro KEYER II/III, MK2R/MK2R+). Refer to the original microHam documentation for your keyer.
+
+*Audio Switching* selects for VOICE and DIGITAL mode where the audio goes when receiving, when transmitting and when transmitting with the footswitch. The MK2R(+) has a section for each radio, which also selects the microphone and the sound card codec. The options are:
+
+* *A* – microphone to the radio's microphone input
+* *B* – sound card to the radio's line input
+* *C* – sound card to the radio's microphone input
+* *D* – like A + B (micro KEYER II/III)
+
+On the micro KEYER II/III the *Audio Options* contain on air recording, the audio monitor level, the microphone selector (Auto, Front, Rear), *Sound Card PTT* and *Downstream over Footswitch*.
 
 === Menu Display
-This menu is available for MK2/3 only. The first section “Display Options” allows configuration of the displays brightness, contrast and its default content.
+This menu is available for keyers with a display (micro KEYER II/III, Station Master). The first section “Display Options” allows configuration of the displays brightness, contrast and its default content.
 
 In the second section “Display Reports” you can choose which events you want to have displayed.
 
 === Menu CW
-This menu is currently only available for keyers containing a K1EL Winkey chip. In the first section certain Winkey parameters can be configured.
+This menu is only available for keyers containing a K1EL Winkey chip (all but the DIGI KEYER and the Station Master). In the first section, *Winkey*, the Winkey parameters can be configured: paddle mode (Iambic A/B, Ultimatic, Bug Keyer), PTT lead and tail, hang time, swap paddles, auto space, CT spacing, paddle watchdog, speed pot range, Farnsworth speed, DAH/DIT ratio, weighting, 1st extension, keying compensation and paddle setpoint.
 
-Detailed description on the TODO list. Meanwhile please refer to your keyers documentation and/or to the Winkey1 Version 10 document at www.k1el.com.
+Detailed description on the TODO list. Meanwhile please refer to your keyers documentation and/or to the Winkey documents at www.k1el.com.
+
+The section *Side Tone* sets the side tone frequency (or Off). On the DIGI KEYER II and the micro KEYER II/III *Paddle Only Side Tone* limits the side tone to CW sent with the paddle.
 
 === Menu CW/FSK Messages
-This menu is only available for keyers containing a K1EL Winkey chip. It stores the keyer’s CW and FSK message memories.
+This menu is only available for keyers containing a K1EL Winkey chip. It stores the keyer’s CW and FSK message memories, 8 of each.
 
 Enter the text for each message slot and press *Apply* to write the messages to the keyer. The *Test* button next to a slot plays the corresponding message so you can check it.
 
@@ -159,5 +153,4 @@ These menus are only available for the Station Master / Station Master DeLuxe ([
 NOTE: Station Master support is experimental.
 
 === Menu All Parameters
-A diagnostic page that lists all raw keyer parameters and their current values. Mainly useful for troubleshooting.
-
+A diagnostic page that lists all raw keyer parameters and their current values. They can be changed here, too. Mainly useful for troubleshooting.

@@ -34,5 +34,7 @@ include::port_permissions.adoc[]
 
 include::keyer_config.adoc[]
 
+include::rig_mode_sync.adoc[]
+
 include::index.adoc[]
 

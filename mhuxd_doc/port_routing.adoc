@@ -6,13 +6,15 @@ Similar to the virtual COM ports of the microHam Windows Device Router mhuxd can
 
 Alternatively mhuxd also offers TCP/IP network ports (IPv4 and IPv6).
 
+Ports persist even when the keyer is switched off or unplugged. Applications can keep them open meanwhile.
+
 === Port Page
-To access the port page select tab “Daemon”, menu “Ports”. The first section, “Port List”, shows the active ports. With a new mhuxd installation this list is empty. Ports can be removed here by selecting them and pushing the “Remove” button.
+To access the port page select tab “Daemon”, menu “Ports”. The first section, “Port List”, shows the configured ports. With a new mhuxd installation this list is empty. Ports can be removed here by selecting them and pushing the “Remove” button.
 
-image::mhuxd_portlist.png[]
+.Port list with ports for a micro KEYER III
+image::mhuxd_ports_page.png[]
 
-NOTE: The screenshots in this chapter were taken with an earlier version of the
-interface and may differ from the current layout.
+The *Status* column shows “ok”, or “failed” when mhuxd couldn't create the port (e.g. the TCP port number is in use; the log file tells why). The *Transceive / AI* column applies to CAT ports, see below.
 
 To create a port press the “Add” button. A dialog opens in which you choose the port type, the keyer to route to, the destination channel and the type-specific options described below. There are 2 types of ports available:
 
@@ -21,21 +23,45 @@ To create a port press the “Add” button. A dialog opens in which you choose 
 
 Press “Create” to add the port, or “Cancel” to discard.
 
-The *Max Connections* field (both port types) limits how many applications may open the port at the same time.
+.Add Port dialog
+image::mhuxd_add_port.png[]
+
+=== Destination Channels
+
+The *Destination Channel* is the keyer channel the port is connected to. Only the channels of the selected keyer are offered:
+
+[cols="1,4"]
+|===
+| Channel | Use
+
+| CAT1, CAT2 | CAT commands to the radio (CAT2: second radio of the MK2R/MK2R+)
+| PTT1, PTT2 | PTT keying by applications, see below
+| WK         | K1EL Winkey chip (CW)
+| FSK1, FSK2 | FSK (RTTY) keying
+| AUX        | AUX serial port (micro KEYER II/III, Station Master)
+| MCP        | microHam control protocol (MCP) commands
+| ROTATOR    | rotator control (Station Master)
+|===
 
 === Add a VSP Port
-Select the *VSP* port type, the keyer the port should be routed to and the *Destination Channel* – the keyer channel the port is connected to.
+Select the *VSP* port type, the keyer the port should be routed to and the *Destination Channel*.
 
-image::mhuxd_addport1.png[]
+Specify the device name. VSP devices are always located in `/dev/mhuxd/`. The dialog suggests the channel name, e.g. `cat1`. Optionally you may select “PTT via RTS” and/or “PTT via DTR”. With this option set an application can key the PTT using the RTS and/or DTR signals.
 
-Specify the device name. VSP devices are always located in `/dev/mhuxd/`. Optionally you may select “PTT via RTS” and/or “PTT via DTR”. With this option set an application can key the PTT using the RTS and/or DTR signals.
+It is not suggested to use PTT/RTS or PTT/DTR on the CAT channel. Better use a dedicated PTT VSP device (e.g. `/dev/mhuxd/ptt1`) and route it to the PTT channel.
 
-image::mhuxd_addport3.png[]
-It is not suggested to use PTT/RTS or PTT/DTR on the CAT channel. Better use a dedicated PTT VSP device and route it to the PTT channel:
-
-image::mhuxd_addport_ptt.png[]
+Many applications build their list of serial ports from `/dev/serial/by-id/` (e.g. fldigi, Hamlib, QLog). The udev rule of mhuxd therefore publishes every VSP there as well, e.g. `/dev/mhuxd/cat1` as `/dev/serial/by-id/mhuxd-cat1`. If an application still doesn't list a VSP, you can usually type its path.
 
 === Add a TCP Port
 Select the *TCP* port type, the keyer to route to and the destination channel, then enter a TCP port number. You may select “Remote Accessible”. This would allow other computers to connect to this port. [red]#Don’t do this if your computer is directly connected to the internet or in an insecure network!#
 
-image::mhuxd_addport_tcp.png[]
+On a PTT channel, a TCP port keys PTT with the byte 0x01 and releases it with 0x00.
+
+=== Common Options
+
+* *Max Connections* (both port types) – limits how many applications may open the port at the same time. Keep it at 1 on CAT ports: applications sharing one port can't be told apart (mhuxd warns in the log). To share the radio between applications, give each its own port, see <<native_multi_client>>.
+* *Transceive / AI* (CAT ports only, on by default) – when switched off, the port doesn't get CI-V transceive and Auto Information messages, only the answers to its own commands. This needs RIG Mode Sync with backend “native”, see <<native_transceive>>.
+
+=== PTT and closed ports
+
+When an application closes a port, or its TCP connection drops, while it holds PTT, mhuxd releases the PTT.
