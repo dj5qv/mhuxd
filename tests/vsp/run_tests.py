@@ -101,11 +101,12 @@ def preflight():
     return None
 
 
-def test(name, known=None, ptt=None):
+def test(name, known=None, ptt=None, ptt_socket=False):
     """Register a test. known="#12" marks a known-failing finding, ptt maps the
-    modem lines to PTT for that test's harness."""
+    modem lines to PTT for that test's harness, ptt_socket puts PTT on a socket
+    of its own instead of the data socket."""
     def deco(fn):
-        TESTS.append((name, fn, known, ptt))
+        TESTS.append((name, fn, known, ptt, ptt_socket))
         return fn
     return deco
 
@@ -124,7 +125,7 @@ class Harness:
 
     _seq = 0
 
-    def __init__(self, maxcon=4, verbose=False, ptt=None):
+    def __init__(self, maxcon=4, verbose=False, ptt=None, ptt_socket=False):
         Harness._seq += 1
         self.name = "vsptest%d_%d" % (os.getpid(), Harness._seq)
         self.path = os.path.join(DEVDIR, self.name)
@@ -138,6 +139,8 @@ class Harness:
         env = dict(os.environ, VSP_HARNESS_LOG=self.logfile)
         if ptt:
             env["VSP_HARNESS_PTT"] = ptt
+        if ptt_socket:
+            env["VSP_HARNESS_PTT_SOCKET"] = "1"
         self.proc = subprocess.Popen(
             [HARNESS, self.name, str(maxcon)],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -199,6 +202,26 @@ class Harness:
             if len(got) < n:
                 time.sleep(0.01)
         return got
+
+    def ptt_recv_until(self, n, timeout=TIMEOUT) -> bytes:
+        """Like recv_until(), for the separate PTT socket (ptt_socket=True)."""
+        got = b""
+        deadline = time.time() + timeout
+        while len(got) < n and time.time() < deadline:
+            resp = self.cmd("pttrecv")
+            got += bytes.fromhex(resp[5:]) if len(resp) > 5 else b""
+            if len(got) < n:
+                time.sleep(0.01)
+        return got
+
+    def failed(self) -> int:
+        """How often the connector called its on_fail callback."""
+        return int(self.cmd("failed").split()[1])
+
+    def shutdown(self):
+        """Close the router end of the data socket, as the router does when it
+        gives up on a connector. The connector sees EOF."""
+        self.cmd("shutdown")
 
     def stop_reading(self):
         self.cmd("stopreading")
@@ -575,6 +598,46 @@ def t_ptt_reopen(h):
         os.close(fd)
 
 
+@test("failure_ends_sessions_and_device", ptt="rts", ptt_socket=True)
+def t_failure(h):
+    """When the connector stops working (here the router closes the data socket)
+    it must drop PTT, answer a read still waiting with an error instead of
+    leaving it hanging, report the failure and remove the device node, so the
+    name is free for a restart (#9)."""
+    PTT_ON, PTT_OFF = b"\x01", b"\x00"
+
+    fd = h.open_client()                    # blocking, so the read is held
+    try:
+        set_modem_bits(fd, termios.TIOCM_RTS)
+        require(h.ptt_recv_until(1) == PTT_ON, "RTS did not key PTT")
+
+        reader = BackgroundRead(fd, 64)
+        require(not reader.done(0.2), "read returned with nothing to read")
+
+        h.shutdown()
+
+        require(reader.done(TIMEOUT), "held read still hanging after the failure")
+        err = reader.box.get("err")
+        require(err is not None and err.errno == 5,     # EIO
+                "held read should fail with EIO, got %r" % (err or reader.box.get("data")))
+        require(h.ptt_recv_until(1) == PTT_OFF,
+                "failure left PTT keyed")
+        require(h.failed() == 1, "on_fail called %d times, expected once" % h.failed())
+
+        deadline = time.time() + TIMEOUT
+        while os.path.exists(h.path) and time.time() < deadline:
+            time.sleep(0.01)
+        require(not os.path.exists(h.path), "%s still there after the failure" % h.path)
+
+        try:
+            os.write(fd, b"x")
+            raise Failure("write after the failure succeeded")
+        except OSError:
+            pass
+    finally:
+        os.close(fd)
+
+
 # struct termios2: 4 flags + c_line + c_cc[19] + ispeed + ospeed
 TERMIOS2_FMT = "4IB19sII"
 TERMIOS2_SIZE = struct.calcsize(TERMIOS2_FMT)
@@ -740,7 +803,7 @@ def main():
 
     failed, known_failed, passed = [], [], 0
 
-    for name, fn, known, ptt in TESTS:
+    for name, fn, known, ptt, ptt_socket in TESTS:
         if args.only and args.only not in name:
             continue
         tag = " [%s]" % known if known else ""
@@ -748,7 +811,7 @@ def main():
         h = None
         try:
             signal.alarm(WATCHDOG)
-            h = Harness(verbose=args.verbose, ptt=ptt)
+            h = Harness(verbose=args.verbose, ptt=ptt, ptt_socket=ptt_socket)
             fn(h)
             signal.alarm(0)
             print("PASS" + (" (known issue is fixed)" if known else ""))

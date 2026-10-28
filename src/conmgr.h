@@ -45,12 +45,23 @@ struct con_cfg {
 	struct con_tcp_cfg tcp;
 };
 
+// Called by a connector that stopped working, after it has closed its ends of the router
+// sockets. It is not called from *_destroy().
+typedef void (*con_fail_cb)(void *user_data);
+
 struct connector_spec {
 	struct ev_loop *loop;
 	int fd_data;
 	int fd_ptt;
 	struct con_vsp_cfg vsp;
 	struct con_tcp_cfg tcp;
+	con_fail_cb on_fail;
+	void *on_fail_data;
+};
+
+enum con_status {
+	CON_STATUS_FAILED = 0,	// failed to start, or stopped working
+	CON_STATUS_OK,
 };
 
 
@@ -83,7 +94,9 @@ int conmgr_destroy_con(struct conmgr *, int id);
 void conmgr_destroy_all(struct conmgr *);
 void conmgr_destroy_device_cons(struct conmgr *conmgr, const struct device *dev);
 void conmgr_foreach(struct conmgr *conmgr, conmgr_iter_cb cb, void *user_data);
-int conmgr_exists(struct conmgr *conmgr, int id);
+// A connector that is not registered (it failed to start) is CON_STATUS_FAILED, too.
+enum con_status conmgr_get_status(struct conmgr *conmgr, int id);
+const char *conmgr_status_str(enum con_status status);
 // Keep a new connector from getting this id, e.g. for a configured connector that has not been created.
 void conmgr_reserve_id(struct conmgr *conmgr, int id);
 

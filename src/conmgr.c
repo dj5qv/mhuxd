@@ -28,6 +28,7 @@
 #include "proc_mcp.h"
 #include "proc_rotator.h"
 #include "mhcontrol.h"
+#include "eventbus.h"
 
 #define MOD_ID "con"
 
@@ -54,6 +55,8 @@ struct connector {
 	int ptt_dtr;
 	int remote_access;
 	int no_unsolicited;
+	int failed;		// the instance stopped working, see con_failed()
+	eventbus_t *ebus;
 };
 
 struct conmgr {
@@ -70,6 +73,32 @@ struct conmgr *conmgr_create(void) {
 void conmgr_destroy(struct conmgr *conmgr) {
 	conmgr_destroy_all(conmgr);
 	free(conmgr);
+}
+
+// The connector is kept, so its id stays taken and deleting the port works as usual. It
+// has closed its ends of the router sockets, the router finds out by itself and closes
+// its ends after reading what is left, a PTT off among it.
+static void con_failed(void *user_data) {
+	struct connector *ctr = user_data;
+
+	ctr->failed = 1;
+	if(ctr->ebus)
+		eventbus_publish(ctr->ebus, EV_CON_STATUS, &(struct ev_con_status) {
+		    .connector_id = ctr->id,
+		    .status = CON_STATUS_FAILED,
+		});
+}
+
+// The router closes an endpoint on its own when the connector side hangs up, and the fd
+// number may belong to another endpoint by now. The router keeps the tag pointer it was
+// handed, so an endpoint still tagged with ours is ours: no other connector's tag can
+// have the same address while ctr is alive.
+static void rem_router_endpoint(struct connector *ctr, int fd, int channel) {
+	if(mhr_get_producer_tag(ctr->dev->router, channel, fd) != ctr->tag) {
+		dbg1("connector %d fd %d already closed by the router", ctr->id, fd);
+		return;
+	}
+	mhr_rem_endpoint_fd(ctr->dev->router, fd, channel);
 }
 
 int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, int id) {
@@ -202,6 +231,9 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 
 	cspec.vsp = cfg->vsp;
 	cspec.tcp = cfg->tcp;
+	cspec.on_fail = con_failed;
+	cspec.on_fail_data = ctr;
+	ctr->ebus = app_ctx_get_eventbus(app_ctx);
 
 	if(ctr->type == CON_VSP && (cfg->vsp.ptt_rts || cfg->vsp.ptt_dtr)) {
 		// create the ptt sockets for PTT control via RTS/DTR
@@ -313,7 +345,7 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 			if(ctr->ptt_channel != -1 && ctr->ptt_channel != ctr->channel) {
 				if(!ctr->router_owns_ptt)
 					dbg0("connector %d ptt fd ownership mismatch, expected router owner", ctr->id);
-				mhr_rem_endpoint_fd(ctr->dev->router, ctr->s_fd_ptt, ctr->ptt_channel);
+				rem_router_endpoint(ctr, ctr->s_fd_ptt, ctr->ptt_channel);
 			}
 
 			if(ctr->mcp) {
@@ -330,7 +362,7 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 			
 			if(!ctr->router_owns_data)
 							dbg0("connector %d data fd ownership mismatch, expected router owner", ctr->id);
-			mhr_rem_endpoint_fd(ctr->dev->router, ctr->s_fd_data, ctr->channel);
+			rem_router_endpoint(ctr, ctr->s_fd_data, ctr->channel);
 
 			switch(ctr->type) {
 			case CON_VSP:
@@ -404,14 +436,18 @@ void conmgr_reserve_id(struct conmgr *conmgr, int id) {
 		conmgr->id_cnt = id;
 }
 
-int conmgr_exists(struct conmgr *conmgr, int id) {
+enum con_status conmgr_get_status(struct conmgr *conmgr, int id) {
 	if(!conmgr)
-		return 0;
+		return CON_STATUS_FAILED;
 	struct connector *ctr;
 	PG_SCANLIST(&conmgr->connector_list, ctr) {
 		if(ctr->id == id)
-			return 1;
+			return ctr->failed ? CON_STATUS_FAILED : CON_STATUS_OK;
 	}
-	return 0;
+	return CON_STATUS_FAILED;
+}
+
+const char *conmgr_status_str(enum con_status status) {
+	return status == CON_STATUS_OK ? "ok" : "failed";
 }
 

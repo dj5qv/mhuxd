@@ -30,10 +30,13 @@
  *   stopreading          stop draining the router end         -> ok
  *   resume               resume draining                      -> ok
  *   shutdown             close the router end                 -> ok
+ *   pttrecv              take what the PTT socket received    -> data <hex>
+ *   failed               times the connector reported failure -> ok <n>
  *   quit                 destroy the vsp and exit             -> ok
  *
  * usage: vsp_harness <devname> [maxcon]
- * env:   VSP_HARNESS_PTT=rts|dtr|both, VSP_HARNESS_LOG, VSP_HARNESS_LOGLEVEL
+ * env:   VSP_HARNESS_PTT=rts|dtr|both, VSP_HARNESS_PTT_SOCKET, VSP_HARNESS_LOG,
+ *        VSP_HARNESS_LOGLEVEL
  */
 
 #include <stdio.h>
@@ -66,12 +69,16 @@ struct harness {
 	struct vsp *vsp;
 	int router_fd;
 	int reading;
+	int ptt_fd;		/* router end of a separate PTT socket, -1: PTT shares router_fd */
+	int failed;		/* connector_spec on_fail calls */
 
 	ev_io w_router_in;
 	ev_io w_router_out;
 	ev_io w_cmd;
+	ev_io w_ptt_in;
 
 	struct dynbuf rx;	/* received from the connector, waiting for "recv" */
+	struct dynbuf ptt_rx;	/* received on the separate PTT socket, for "pttrecv" */
 	struct dynbuf tx;	/* queued by "send"/"flood", waiting for the socket */
 	unsigned char cmd[4096];
 	size_t cmd_len;
@@ -197,6 +204,30 @@ static void router_in_cb(struct ev_loop *loop, ev_io *w, int revents) {
 		ev_io_stop(h->loop, &h->w_router_in);
 		return;
 	}
+}
+
+static void ptt_in_cb(struct ev_loop *loop, ev_io *w, int revents) {
+	(void)loop; (void)revents;
+	struct harness *h = w->data;
+	unsigned char buf[256];
+
+	for(;;) {
+		ssize_t r = read(w->fd, buf, sizeof(buf));
+		if(r > 0) {
+			buf_put(&h->ptt_rx, buf, (size_t)r);
+			continue;
+		}
+		if(r < 0 && errno == EINTR)
+			continue;
+		if(r == 0 || (errno != EAGAIN && errno != EWOULDBLOCK))
+			ev_io_stop(h->loop, &h->w_ptt_in);
+		return;
+	}
+}
+
+static void on_fail(void *user_data) {
+	struct harness *h = user_data;
+	h->failed++;
 }
 
 static void router_out_cb(struct ev_loop *loop, ev_io *w, int revents) {
@@ -341,6 +372,13 @@ static void handle_cmd(struct harness *h, char *line) {
 		}
 		reply("ok");
 
+	} else if(!strcmp(line, "pttrecv")) {
+		print_hex(h->ptt_rx.data + h->ptt_rx.rpos, h->ptt_rx.size - h->ptt_rx.rpos);
+		buf_took(&h->ptt_rx, h->ptt_rx.size - h->ptt_rx.rpos);
+
+	} else if(!strcmp(line, "failed")) {
+		reply("ok %d", h->failed);
+
 	} else if(!strcmp(line, "quit")) {
 		reply("ok");
 		ev_break(h->loop, EVBREAK_ALL);
@@ -437,6 +475,7 @@ int main(int argc, char **argv) {
 
 	h.loop = ev_default_loop(EVFLAG_AUTO);
 	h.router_fd = sv[0];
+	h.ptt_fd = -1;
 
 	memset(&cspec, 0, sizeof(cspec));
 	cspec.loop = h.loop;
@@ -444,6 +483,8 @@ int main(int argc, char **argv) {
 	cspec.fd_ptt = sv[1];
 	cspec.vsp.devname = argv[1];
 	cspec.vsp.maxcon = argc > 2 ? atoi(argv[2]) : 4;
+	cspec.on_fail = on_fail;
+	cspec.on_fail_data = &h;
 
 	/* VSP_HARNESS_PTT=rts|dtr|both maps the modem lines to PTT, so the PTT byte
 	 * path can be tested. fd_ptt aliases fd_data here, as it does for a connector
@@ -454,6 +495,19 @@ int main(int argc, char **argv) {
 			cspec.vsp.ptt_rts = !strcmp(ptt, "rts") || !strcmp(ptt, "both");
 			cspec.vsp.ptt_dtr = !strcmp(ptt, "dtr") || !strcmp(ptt, "both");
 		}
+	}
+
+	/* VSP_HARNESS_PTT_SOCKET: PTT on a socket of its own, like a VSP on a CAT channel
+	 * whose PTT goes to PTT1/PTT2. "shutdown" then breaks the data socket only, and
+	 * the PTT off the connector sends when it fails can still arrive. */
+	if(getenv("VSP_HARNESS_PTT_SOCKET")) {
+		int sp[2];
+		if(socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0, sp)) {
+			fprintf(stderr, "harness: socketpair failed: %s\n", strerror(errno));
+			return 1;
+		}
+		h.ptt_fd = sp[0];
+		cspec.fd_ptt = sp[1];
 	}
 
 	h.vsp = vsp_create(&cspec);
@@ -477,6 +531,12 @@ int main(int argc, char **argv) {
 	ev_io_start(h.loop, &h.w_cmd);
 	h.reading = 1;
 
+	if(h.ptt_fd != -1) {
+		ev_io_init(&h.w_ptt_in, ptt_in_cb, h.ptt_fd, EV_READ);
+		h.w_ptt_in.data = &h;
+		ev_io_start(h.loop, &h.w_ptt_in);
+	}
+
 	reply("ready");
 
 	ev_run(h.loop, 0);
@@ -484,7 +544,10 @@ int main(int argc, char **argv) {
 	vsp_destroy(h.vsp);
 	if(h.router_fd != -1)
 		close(h.router_fd);
+	if(h.ptt_fd != -1)
+		close(h.ptt_fd);
 	free(h.rx.data);
+	free(h.ptt_rx.data);
 	free(h.tx.data);
 	return 0;
 }

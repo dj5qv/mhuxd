@@ -35236,6 +35236,9 @@ function instance($$self, $$props, $$invalidate) {
     $$invalidate(1, configDevices = configDevices.filter((d) => d.serial !== data.serial));
     $$invalidate(12, connectors = connectors.filter((c) => c.serial !== data.serial));
   });
+  const unsubConStatus = onWsEvent("connector_status", (data) => {
+    $$invalidate(12, connectors = connectors.map((c) => c.id === data.id ? { ...c, status: data.status } : c));
+  });
   const unsubUsb = onWsEvent("usb_connection", (data) => {
     console.log("USB Event:", data);
   });
@@ -35273,6 +35276,7 @@ function instance($$self, $$props, $$invalidate) {
     disconnectWs();
     unsubStatus();
     unsubRemoved();
+    unsubConStatus();
     unsubUsb();
   });
   const buildKeyers = (cfgDevices, devs) => {

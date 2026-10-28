@@ -29,5 +29,9 @@
 ## keyer input flags changed: PTT (any source), footswitch, lockout, non-VOX PTT
 {"type":"keyer_flags","serial":"M32VFFGJ","radio":1,"ptt":true,"footswitch":false,"lockout":false,"nonVoxPtt":true}
 
+## a port (connector) stopped working, e.g. its virtual serial port. It keeps its
+## configuration, /api/v1/config/connectors reports the same status
+{"type":"connector_status","id":3,"status":"failed"}
+
 ## native CAT monitor, one trace line (rig_mode_sync.radios.r1.monitor on), format: tests/cat/README.md
 {"type":"cat_monitor","serial":"D2UL4ED0","radio":1,"line":"19:38:56.479 R fe fe e0 94 25 00 00 40 07 14 00 fd  # reply, applied: rx=14074000 unsel=? mode=? split=? keyer=?"}

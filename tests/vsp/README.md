@@ -75,6 +75,7 @@ regression tests for findings in `docs/review_con_csp.md`:
 | `poll_pollout_after_drain` | #6 POLLOUT notification when space frees up |
 | `two_clients_one_idle` | #17 a stalled client must not starve the others |
 | `overrun_is_counted` | dropped bytes land in TIOCGICOUNT's buf_overrun (also covers #3) |
+| `failure_ends_sessions_and_device` | #9 a failed connector drops PTT, fails a held read with EIO, reports it and removes the device node |
 
 `throughput_smoke` reports the rate and how much is dropped when a client cannot
 keep up; it measures, it does not assert.

@@ -28,6 +28,7 @@
 #include "version.h"
 #include "logger.h"
 #include "eventbus.h"
+#include "conmgr.h"
 
 #define MOD_ID "restapi"
 
@@ -44,6 +45,7 @@ struct restapi {
 	eventbus_sub_t *radio_info_sub;
 	eventbus_sub_t *cat_monitor_sub;
 	eventbus_sub_t *keyer_flags_sub;
+	eventbus_sub_t *con_status_sub;
 	struct PGList ws_subscribers;
 	char *metadata_json;	/* never changes, serialized once by restapi_create() */
 	time_t start_time;
@@ -360,6 +362,19 @@ static void ev_keyer_flags_cb(enum app_event_type type, const void *data, void *
 	json_object_set_new(event, "footswitch", json_boolean(ev->footswitch));
 	json_object_set_new(event, "lockout", json_boolean(ev->lockout));
 	json_object_set_new(event, "nonVoxPtt", json_boolean(ev->non_vox_ptt));
+	broadcast_event(api, event);
+	json_decref(event);
+}
+
+static void ev_con_status_cb(enum app_event_type type, const void *data, void *user_data) {
+	struct restapi *api = user_data;
+	const struct ev_con_status *ev = data;
+	if(type != EV_CON_STATUS || !ev)
+		return;
+	json_t *event = json_object();
+	json_object_set_new(event, "type", json_string("connector_status"));
+	json_object_set_new(event, "id", json_integer(ev->connector_id));
+	json_object_set_new(event, "status", json_string(conmgr_status_str(ev->status)));
 	broadcast_event(api, event);
 	json_decref(event);
 }
@@ -1008,6 +1023,7 @@ struct restapi *restapi_create(struct app_ctx *ctx, struct http_server *hs, stru
 	api->radio_info_sub  = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_RADIO_INFO,  ev_radio_info_cb, api);
 	api->cat_monitor_sub = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_CAT_MONITOR, ev_cat_monitor_cb, api);
 	api->keyer_flags_sub = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_KEYER_FLAGS, ev_keyer_flags_cb, api);
+	api->con_status_sub  = eventbus_subscribe(app_ctx_get_eventbus(api->ctx), EV_CON_STATUS,  ev_con_status_cb, api);
 
 	return api;
 
@@ -1039,6 +1055,10 @@ void restapi_shutdown(struct restapi *api) {
 	if(api->cat_monitor_sub) {
 		eventbus_unsubscribe(api->cat_monitor_sub);
 		api->cat_monitor_sub = NULL;
+	}
+	if(api->con_status_sub) {
+		eventbus_unsubscribe(api->con_status_sub);
+		api->con_status_sub = NULL;
 	}
 
 	struct ws_subscriber *wsub;

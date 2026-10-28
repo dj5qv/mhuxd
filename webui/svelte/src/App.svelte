@@ -153,6 +153,12 @@
     configDevices = configDevices.filter((d) => d.serial !== data.serial);
     connectors = connectors.filter((c) => c.serial !== data.serial);
   });
+  // A port stopped working. It keeps its settings, only the status changes.
+  const unsubConStatus = onWsEvent('connector_status', (data) => {
+    connectors = connectors.map((c) =>
+      c.id === data.id ? { ...c, status: data.status } : c
+    );
+  });
   const unsubUsb = onWsEvent('usb_connection', (data) => {
     console.log('USB Event:', data);
   });
@@ -188,6 +194,7 @@
     disconnectWs();
     unsubStatus();
     unsubRemoved();
+    unsubConStatus();
     unsubUsb();
   });
 

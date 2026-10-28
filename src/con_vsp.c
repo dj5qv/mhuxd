@@ -59,6 +59,8 @@ struct vsp {
 	char *chan_buf;
 	size_t chan_buf_size;
 	int force_cuse_fail_once;
+	con_fail_cb on_fail;
+	void *on_fail_data;
 	unsigned int dbg_cb_after_terminal;
 	unsigned int dbg_watch_invalid_fd;
 	uint8_t session_ids[MAX_VSP_SESSIONS];
@@ -163,20 +165,72 @@ static void close_endpoints(struct vsp *vsp) {
 	fd_close(&vsp->fd_ptt);
 }
 
+static void free_session_id(struct vsp *vsp, int16_t id);
+
+static void read_timer_stop(struct vsp_session *vs);
+
+// Answer the requests the clients are waiting for with errnum and drop all sessions,
+// sending PTT off for those that keyed it. Only for when the device goes away: the kernel
+// then ends the file handles by itself, no release request follows for them.
+static void end_sessions(struct vsp *vsp, int errnum) {
+	struct vsp_session *vs;
+
+	while((vs = (void*)PG_FIRSTENTRY(&vsp->session_list))) {
+		if(vs->ptt_status == PTT_ON_BYTE) {
+			uint8_t state = PTT_OFF_BYTE;
+			ssize_t res;
+			int errsv = 0;
+			enum mhuxd_io_rw_result io_res = io_write_nonblock(vsp->fd_ptt, &state, 1, &res, &errsv);
+			if(io_res != MHUXD_IO_RW_PROGRESS || res != 1)
+				err("%s() %s could not send PTT off", __func__, vsp->devname);
+		}
+
+		read_timer_stop(vs);
+
+		if(vs->ph)
+			fuse_pollhandle_destroy(vs->ph);
+		if(vs->pending_in_req)
+			fuse_reply_err(vs->pending_in_req, errnum);
+		if(vs->pending_out_req)
+			fuse_reply_err(vs->pending_out_req, errnum);
+		if(vs->pending_out_buf)
+			free(vs->pending_out_buf);
+		if(vs->pending_in_buf)
+			free(vs->pending_in_buf);
+
+		free_session_id(vsp, vs->id);
+		vsp->open_cnt--;
+		PG_Remove(&vs->node);
+		free(vs);
+	}
+	vsp->mbits &= ~RTS_DTR;
+}
+
 static void fail(struct vsp *vsp, int errnum, const char *msg) {
 	if(is_terminal(vsp))
 		return;
 
 	set_state(vsp, MHUXD_IO_FAILED);
 	watch_stop_all(vsp);
-	close_endpoints(vsp);
-	if(vsp->se)
-		fuse_session_exit(vsp->se);
 
 	if(errnum)
 		err_e(errnum, "%s (%s)", msg, vsp->devname);
 	else
 		err("%s (%s)", msg, vsp->devname);
+
+	// Nothing serves the device from now on. Give the clients an error instead of leaving
+	// them hanging, and close the cuse channel so the device node goes away and its name
+	// is free again. PTT off has to go out before the router sockets close. The replies
+	// have to go before fuse_session_destroy(), a fuse_req_t does not survive its session.
+	end_sessions(vsp, EIO);
+	close_endpoints(vsp);
+	if(vsp->se) {
+		fuse_session_destroy(vsp->se);
+		vsp->se = NULL;
+	}
+
+	if(vsp->on_fail)
+		vsp->on_fail(vsp->on_fail_data);
 }
 
 static int env_enabled(const char *name) {
@@ -417,7 +471,14 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 			break;
 		}
 
-		if(io_res == MHUXD_IO_RW_WOULD_BLOCK || io_res == MHUXD_IO_RW_EOF)
+		if(io_res == MHUXD_IO_RW_EOF) {
+			// The router closed its end. Nothing arrives any more, and the fd stays
+			// readable, so ev would call us again and again.
+			fail(vsp, 0, "router closed the data connection");
+			break;
+		}
+
+		if(io_res == MHUXD_IO_RW_WOULD_BLOCK)
 			break;
 
 		dbg1_h(vsp->devname, "k => vsp", buf, size);
@@ -1201,6 +1262,8 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 	vsp->state = MHUXD_IO_OPEN;
 	vsp->fd_data = cspec->fd_data;
 	vsp->fd_ptt = cspec->fd_ptt;
+	vsp->on_fail = cspec->on_fail;
+	vsp->on_fail_data = cspec->on_fail_data;
 	vsp->force_cuse_fail_once = env_enabled("MHUXD_VSP_FORCE_CUSE_FAIL_ONCE");
 	if(vsp->force_cuse_fail_once)
 		warn("%s fault injection enabled: first CUSE channel read will fail", vsp->devname);
@@ -1274,38 +1337,11 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 }
 
 void vsp_destroy(struct vsp *vsp) {
-	struct vsp_session *vs;
-
 	dbg1("%s()", __func__);
 
 	set_state(vsp, MHUXD_IO_CLOSED);
 
-	while((vs = (void*)PG_FIRSTENTRY(&vsp->session_list))) {
-		if(vs->ptt_status == PTT_ON_BYTE) {
-			uint8_t state = PTT_OFF_BYTE;
-			ssize_t res;
-			int errsv = 0;
-			enum mhuxd_io_rw_result io_res = io_write_nonblock(vsp->fd_ptt, &state, 1, &res, &errsv);
-			if(io_res != MHUXD_IO_RW_PROGRESS || res != 1)
-				err("%s() %s could not send PTT off", __func__, vsp->devname);
-		}
-
-		read_timer_stop(vs);
-
-		if(vs->ph)
-			fuse_pollhandle_destroy(vs->ph);
-		if(vs->pending_in_req)
-			fuse_reply_err(vs->pending_in_req, EINTR);
-		if(vs->pending_out_req)
-			fuse_reply_err(vs->pending_out_req, EINTR);
-		if(vs->pending_out_buf)
-			free(vs->pending_out_buf);
-		if(vs->pending_in_buf)
-			free(vs->pending_in_buf);
-
-		PG_Remove(&vs->node);
-		free(vs);
-	}
+	end_sessions(vsp, EINTR);
 
 	watch_stop_all(vsp);
 	close_endpoints(vsp);

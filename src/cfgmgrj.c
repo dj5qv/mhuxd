@@ -1542,8 +1542,8 @@ json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj) {
         json_t *c;
         json_array_foreach(connectors, idx, c) {
             int id = json_get_int(c, "id", 0);
-            int running = conmgr_exists(cfgmgrj->conmgr, id);
-            json_object_set_new(c, "status", json_string(running ? "ok" : "failed"));
+            enum con_status status = conmgr_get_status(cfgmgrj->conmgr, id);
+            json_object_set_new(c, "status", json_string(conmgr_status_str(status)));
         }
     }
 

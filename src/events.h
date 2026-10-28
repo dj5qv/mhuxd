@@ -41,7 +41,7 @@ struct ev_keyer_mode {
 
 struct ev_con_status {
     int connector_id;
-    int status;
+    int status;                          // enum con_status, conmgr.h
 };
 
 struct ev_radio_info {
