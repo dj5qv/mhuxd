@@ -342,6 +342,20 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 
 	PG_SCANLIST(&conmgr->connector_list, ctr) {
 		if(ctr->id == id) {
+			// The instance first, while the router ends are still open: its PTT off for
+			// clients that keyed goes to the router instead of a closed socket. The
+			// router releases what the removed endpoints still hold anyway.
+			switch(ctr->type) {
+			case CON_VSP:
+				vsp_destroy(ctr->instance);
+				break;
+			case CON_TCP:
+				ctcp_destroy(ctr->instance);
+				break;
+			default:
+				break;
+			}
+
 			if(ctr->ptt_channel != -1 && ctr->ptt_channel != ctr->channel) {
 				if(!ctr->router_owns_ptt)
 					dbg0("connector %d ptt fd ownership mismatch, expected router owner", ctr->id);
@@ -363,17 +377,6 @@ int conmgr_destroy_con(struct conmgr *conmgr, int id) {
 			if(!ctr->router_owns_data)
 							dbg0("connector %d data fd ownership mismatch, expected router owner", ctr->id);
 			rem_router_endpoint(ctr, ctr->s_fd_data, ctr->channel);
-
-			switch(ctr->type) {
-			case CON_VSP:
-				vsp_destroy(ctr->instance);
-				break;
-			case CON_TCP:
-				ctcp_destroy(ctr->instance);
-				break;
-			default:
-				break;
-			}
 
 			PG_Remove(&ctr->node);
 			if(ctr->devname)

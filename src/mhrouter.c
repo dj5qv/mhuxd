@@ -43,6 +43,7 @@ struct Producer {
 	int owner_router;
 	ev_io w;
 	int channel;
+	uint8_t ptt_mask;	// MHC2DFL_PTT_R1/R2 this producer holds, PTT channels only
 };
 
 struct Consumer {
@@ -240,12 +241,35 @@ static void process_in_flags(struct mh_router *router, int c) {
 }
 #endif
 
+#define PTT_FLAGS (MHC2DFL_PTT_R1 | MHC2DFL_PTT_R2)
+
+// The keyer gets the PTT bits all producers hold together, so one producer releasing PTT does
+// not unkey a radio another one still keys. The flags byte goes out on every call, also when
+// it did not change, so a client can resync the keyer by repeating its state.
+static void push_ptt(struct mh_router *router) {
+	struct Producer *prd;
+	uint8_t held = 0;
+	int ch;
+
+	for(ch = 0; ch < ALL_NUM_CHANNELS; ch++) {
+		if(!ch_is_ptt_channel(ch))
+			continue;
+		PG_SCANLIST(&router->producer_list[ch], prd)
+			held |= prd->ptt_mask;
+	}
+
+	router->wflag = (router->wflag & ~PTT_FLAGS) | held;
+
+	if(router->fd == -1)
+		return;
+	if(mhr_send_in(router, &router->wflag, 1, MH_CHANNEL_FLAGS) != 1)
+		err("(mhr) error sending data to flags channel!");
+}
+
 static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 	struct mh_router *router = prd->router;
-	uint8_t newflag = router->wflag;
 	uint8_t push = 0;
 	uint8_t mask;
-	int r;
 	int c;
 
 
@@ -283,24 +307,18 @@ static void process_ptt_producer(struct Producer *prd, struct buffer *b) {
 				continue;
 		}
 
-		if( c == PTT_ON_BYTE ) {
-			newflag |= mask;
-			push = 1;
-		}
-
-		if( c == PTT_OFF_BYTE ) {
-			newflag &= ~mask;
-			push = 1;
-		}
-	}	      
-
-	router->wflag = newflag;
-
-	if(push) {
-		r = mhr_send_in(router, &newflag, 1, MH_CHANNEL_FLAGS);
-		if(r != 1)
-			err("(mhr) error sending data to flags channel!");
+		// A producer keys one radio. PTT on with the focus moved to the other radio moves
+		// it along, PTT off releases whatever it keys: on CH_PTT_FOCUS that need not be
+		// the radio the focus is on now.
+		if(c == PTT_ON_BYTE)
+			prd->ptt_mask = mask;
+		else
+			prd->ptt_mask = 0;
+		push = 1;
 	}
+
+	if(push)
+		push_ptt(router);
 }
 
 static void producer_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
@@ -604,6 +622,21 @@ void mhr_destroy(struct mh_router *router) {
 	free(router);
 }
 
+// The keyer is gone and drops PTT by itself. Forget who held it, or the bit would go out
+// again with the next flags byte after the keyer is back, triggered by any producer, and
+// key a radio nobody keyed since. Producers are not read meanwhile, what they send until
+// then is processed after the reconnect.
+static void drop_ptt(struct mh_router *router) {
+	struct Producer *prd;
+	int ch;
+
+	for(ch = 0; ch < ALL_NUM_CHANNELS; ch++) {
+		PG_SCANLIST(&router->producer_list[ch], prd)
+			prd->ptt_mask = 0;
+	}
+	router->wflag &= ~PTT_FLAGS;
+}
+
 void mhr_set_keyer_fd(struct mh_router *router, int fd) {
 	if(fd == router->fd)
 		return;
@@ -614,6 +647,7 @@ void mhr_set_keyer_fd(struct mh_router *router, int fd) {
 		ev_io_stop(router->loop, &router->w_in);
 		ev_io_stop(router->loop, &router->w_out);
 		tty_close(router->fd);
+		drop_ptt(router);
 	}
 
 	router->fd = fd;
@@ -797,8 +831,16 @@ void mhr_rem_producer(struct mh_router *router, int fd, int channel) {
 
 	PG_SCANLIST(&router->producer_list[channel], prd) {
 		if(prd->fd == fd) {
+			uint8_t held = prd->ptt_mask;
 			PG_Remove(&prd->node);
 			ev_io_stop(router->loop, &prd->w);
+			// Gone without PTT off: the connector was deleted or failed, or its PTT
+			// off is still unread in the socket.
+			if(held) {
+				info("%s %s released PTT of a closed connection", router->serial,
+				     prd->owner_tag ? prd->owner_tag : ch_channel2str(channel));
+				push_ptt(router);
+			}
 			if(!has_consumer_fd(router, prd->fd, channel)) {
 				if(!prd->owner_router) {
 					dbg0("(mhr) ownership violation: close denied for producer fd %d tag %s", prd->fd,

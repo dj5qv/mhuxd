@@ -217,6 +217,19 @@ the router endpoints before `vsp_destroy()` writes PTT off, and the router would
 time anyway. That needs the router to track PTT per producer. TCP connectors do not report
 `ctcp_fail()` yet. tests/vsp: failure_ends_sessions_and_device)
 
+(fixed, 2026-10-28: the router tracks PTT per producer. `struct Producer` holds the PTT bits it
+keys (`ptt_mask`), and the keyer gets their OR, so one connector releasing PTT no longer unkeys a
+radio another one still keys. `mhr_rem_producer()` releases what a producer still holds when it
+goes away: deleted, failed, or with its PTT off still unread in the socket. That covers deleting a
+keyed VSP, and also a failure on a port whose data and PTT share one socket, where `fail()` cannot
+write PTT off any more. `conmgr_destroy_con()` now destroys the instance before removing the router
+endpoints, so the connector's own PTT off reaches an open socket instead of failing with EPIPE.
+Also fixed on the way: on `CH_PTT_FOCUS`, PTT off released the radio that had the focus *now*, so
+a focus change while keyed left the other radio keyed. And held PTT is forgotten when the keyer is
+lost, otherwise any later flags byte would key the radio again after the reconnect. Several
+clients on one `maxcon > 1` port still share one producer, and only `maxcon` 1 is planned for PTT
+ports. tests/ptt: router_ptt_test)
+
 ### 10. Signal handlers: do NOT call `cuse_lowlevel_teardown()`
 `src/con_vsp.c:1007` (setup) / `src/con_vsp.c:1146` (teardown)
 
