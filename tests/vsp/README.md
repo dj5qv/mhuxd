@@ -61,7 +61,7 @@ the next one with a leftover device node.
 All tests pass. Any failure is a real one — there are no known-issue tests left.
 
 `smoke_roundtrip` and `poll_pollin` validate the rig itself; the rest are
-regression tests for findings in `docs/review_con_csp.md`:
+regression tests for findings in `docs/review_con_vsp.md`:
 
 | Test | Covers |
 |---|---|

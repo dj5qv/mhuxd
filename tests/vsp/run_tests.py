@@ -18,7 +18,7 @@ Needs root and the cuse module:
     make -C tests/vsp
     sudo ./tests/vsp/run_tests.py [-v] [--only NAME] [--allow-known]
 
-Tests tagged with a finding number from docs/review_con_csp.md are expected to
+Tests tagged with a finding number from docs/review_con_vsp.md are expected to
 fail until that finding is fixed; --allow-known exits 0 when only those fail.
 """
 
