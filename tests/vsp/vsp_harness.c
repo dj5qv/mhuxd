@@ -53,8 +53,8 @@
 #include "logger.h"
 
 /* Keep the socket buffers small so a client can fill them without shifting
- * megabytes. The connector's own struct buffer is 512 bytes, so this keeps
- * backpressure tests quick and deterministic. */
+ * megabytes. The connector's own struct buffer is BUFFER_CAPACITY (buffer.h),
+ * so this keeps backpressure tests quick and deterministic. */
 #define SOCK_BUF_SIZE 1024
 
 struct dynbuf {

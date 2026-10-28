@@ -252,7 +252,8 @@ def main():
             # the buffer would have to be to pass that step.
             need = int(baud_to_bps(first_fail) * args.reader_delay / 1000.0)
             print("     %.0f ms of stall needs %d bytes of buf_out at %d baud "
-                  "(BUFFER_CAPACITY is %d)" % (args.reader_delay, need, first_fail, 512))
+                  "(BUFFER_CAPACITY is %d)" % (args.reader_delay, need, first_fail,
+                                               run_tests.BUFFER_CAPACITY))
 
     if args.direction in ("out", "both"):
         print("\noutbound (application -> rig), %.1fs per step" % args.seconds)

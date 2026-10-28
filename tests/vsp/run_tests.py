@@ -25,6 +25,7 @@ fail until that finding is fixed; --allow-known exits 0 when only those fail.
 import argparse
 import os
 import fcntl
+import re
 import select
 import signal
 import subprocess
@@ -63,6 +64,20 @@ OBJS = ["mhuxd-con_vsp.o", "mhuxd-buffer.o", "mhuxd-pglist.o",
 
 TESTS = []
 KEEP_LOGS = False
+
+
+def buffer_capacity():
+    """BUFFER_CAPACITY from src/buffer.h, the size of a session's buf_out. Read
+    from the source so the overflow tests keep overflowing when it changes."""
+    path = os.path.join(HERE, "..", "..", "src", "buffer.h")
+    with open(path) as f:
+        m = re.search(r"^#define\s+BUFFER_CAPACITY\s+(\d+)", f.read(), re.M)
+    if not m:
+        raise RuntimeError("BUFFER_CAPACITY not found in %s" % path)
+    return int(m.group(1))
+
+
+BUFFER_CAPACITY = buffer_capacity()
 
 
 def stale_objects():
@@ -534,8 +549,8 @@ def t_two_clients(h):
     idle = h.open_client(nonblock=True)      # opened first, scanned first
     active = h.open_client(nonblock=True)
     try:
-        # overflow the idle client's 512 byte buffer
-        h.send(b"\x11" * 512)
+        # fill the idle client's buf_out, so it has no room left for the marker
+        h.flood(BUFFER_CAPACITY)
         time.sleep(0.2)
         drain(active)
 
@@ -562,10 +577,10 @@ def t_overrun(h):
         require(before["buf_overrun"] == 0,
                 "buf_overrun started at %d" % before["buf_overrun"])
 
-        # 512 bytes fills buf_out exactly, the rest has nowhere to go
-        h.send(b"\x22" * 512)
+        # BUFFER_CAPACITY bytes fill buf_out exactly, the rest has nowhere to go
+        h.flood(BUFFER_CAPACITY)
         time.sleep(0.2)
-        h.send(b"\x22" * 256)
+        h.flood(256)
         time.sleep(0.2)
 
         after = icount(fd)
