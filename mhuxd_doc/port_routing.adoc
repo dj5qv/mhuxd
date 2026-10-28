@@ -57,9 +57,10 @@ Select the *TCP* port type, the keyer to route to and the destination channel, t
 
 On a PTT channel, a TCP port keys PTT with the byte 0x01 and releases it with 0x00.
 
+A port takes one application at a time, a second one is turned away: a virtual serial port fails to open with EBUSY, a TCP connection is closed. To share the radio between applications, give each its own port, see <<native_multi_client>>.
+
 === Common Options
 
-* *Max Connections* (both port types) – limits how many applications may open the port at the same time. Keep it at 1 on CAT ports: applications sharing one port can't be told apart (mhuxd warns in the log). To share the radio between applications, give each its own port, see <<native_multi_client>>.
 * *Transceive / AI* (CAT ports only, on by default) – when switched off, the port doesn't get CI-V transceive and Auto Information messages, only the answers to its own commands. This needs RIG Mode Sync with backend “native”, see <<native_transceive>>.
 
 === PTT and closed ports

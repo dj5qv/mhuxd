@@ -69,12 +69,10 @@ int conmgr_create_con(struct app_ctx *ctx, struct cfg *cfg, int id) {
 
 	if(ccfg.type == CON_VSP) {
 		ccfg.vsp.devname = cfg_get_val(cfg, "devname", NULL);
-		ccfg.vsp.maxcon = cfg_get_int_val(cfg, "maxcon", 1);
 		ccfg.vsp.ptt_rts = cfg_get_int_val(cfg, "ptt_rts", 0);
 		ccfg.vsp.ptt_dtr = cfg_get_int_val(cfg, "ptt_dtr", 0);
 	} else if(ccfg.type == CON_TCP) {
 		ccfg.tcp.port = cfg_get_val(cfg, "devname", NULL);
-		ccfg.tcp.maxcon = cfg_get_int_val(cfg, "maxcon", 1);
 		ccfg.tcp.remote_access = cfg_get_int_val(cfg, "remote_access", 0);
 	}
 

@@ -23,7 +23,7 @@
 
 /* Drop a client that vanished without closing (cable, WiFi, sleep) after
  * ~30 s: first probe after 10 s of silence, then every 5 s, give up after 4.
- * Otherwise the stale session keeps holding a maxcon slot for a long time. */
+ * Otherwise the stale session keeps holding the port for a long time. */
 #define CTCP_KEEPIDLE	10
 #define CTCP_KEEPINTVL	5
 #define CTCP_KEEPCNT	4
@@ -41,7 +41,6 @@ struct ctcp {
 	ev_io w_data_in;
 	ev_io w_data_out;
 
-	int max_con;
 	int open_cnt;
 	struct PGList session_list;
 
@@ -304,8 +303,9 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 		return;
 	}
 
-	if(ctcp->open_cnt >= ctcp->max_con) {
-		info("rejecting connect, maximum connections reached for %s", ctcp->devname);
+	// One application per port: applications sharing a port couldn't be told apart.
+	if(ctcp->open_cnt) {
+		info("rejecting connect, %s is already in use", ctcp->devname);
 		fd_close(&fd);
 		return;
 	}
@@ -401,7 +401,6 @@ struct ctcp *ctcp_create(const struct connector_spec *cpsec, uint8_t is_ptt_chan
 	ctcp->lsnr_v4 = lsnr_v4;
 	ctcp->fd_data = cpsec->fd_data;
 	ctcp->state = MHUXD_IO_OPEN;
-	ctcp->max_con = (cpsec->tcp.maxcon > 0) ? cpsec->tcp.maxcon : 1;
 
 	ev_io_init(&ctcp->w_data_in, data_in_cb, ctcp->fd_data, EV_READ);
 	ev_io_init(&ctcp->w_data_out, data_out_cb, ctcp->fd_data, EV_WRITE);

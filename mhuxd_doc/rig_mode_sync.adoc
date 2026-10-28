@@ -81,7 +81,7 @@ Like the “2nd CAT port” of the microHam Router, several applications can use
 
 mhuxd then sends one command at a time to the radio: an application's command waits until the radio has answered the other's (a few ten ms), so they don't collide on the CI-V bus. Echo and answers go only to the application that sent the command, CI-V transceive and Auto Information to all (unless switched off for a port, see below). Without an answer within 0.5 s, mhuxd gives the command up and lets the next application go on.
 
-Keep *Max Connections* at 1 on these ports: applications sharing a port can't be told apart (mhuxd warns in the log). An application that only listens on its port, to follow the frequency from another application's polls, gets only transceive and AI messages this way.
+A port takes one application at a time: applications sharing a port couldn't be told apart. An application that only listens on its port, to follow the frequency from another application's polls, gets only transceive and AI messages this way.
 
 [#native_transceive]
 ==== Transceive / AI

@@ -42,7 +42,6 @@ struct vsp {
 	ev_io w_data_out;
 	ev_io w_chan_in;
 
-	int max_con;
 	int rts_is_ptt : 1;
 	int dtr_is_ptt : 1;
 
@@ -637,8 +636,9 @@ static void dv_open(fuse_req_t req, struct fuse_file_info *fi)
 
 	id = get_free_session_id(vsp);
 
-	if(vsp->open_cnt >= vsp->max_con || id == -1) {
-		warn("%s open by pid %d failed, maximum number of connections reached!", 
+	// One application per port: applications sharing a port couldn't be told apart.
+	if(vsp->open_cnt || id == -1) {
+		warn("%s open by pid %d failed, port is already open!",
 		vsp->devname, fuse_req_ctx(req)->pid);
 		err = EBUSY;
 		if(id != -1)
@@ -1258,7 +1258,6 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 	//	vsp->ptt_off_msg = w_strdup(cspec->ptt_off_msg);
 	vsp->rts_is_ptt = cspec->vsp.ptt_rts ? 1 : 0;
 	vsp->dtr_is_ptt = cspec->vsp.ptt_dtr ? 1 : 0;
-	vsp->max_con = (cspec->vsp.maxcon > 0) ? cspec->vsp.maxcon : 1;
 	vsp->state = MHUXD_IO_OPEN;
 	vsp->fd_data = cspec->fd_data;
 	vsp->fd_ptt = cspec->fd_ptt;

@@ -60,8 +60,9 @@ the next one with a leftover device node.
 
 All tests pass. Any failure is a real one — there are no known-issue tests left.
 
-`smoke_roundtrip` and `poll_pollin` validate the rig itself; the rest are
-regression tests for findings in `docs/review_con_vsp.md`:
+`smoke_roundtrip` and `poll_pollin` validate the rig itself, `second_open_busy` checks
+that a port takes one application; the rest are regression tests for findings in
+`docs/review_con_vsp.md`:
 
 | Test | Covers |
 |---|---|
@@ -73,7 +74,6 @@ regression tests for findings in `docs/review_con_vsp.md`:
 | `nonblocking_read_empty_is_eagain` | #13 EAGAIN instead of a 0-byte reply (EOF) |
 | `nonblocking_write_full_is_eagain` | #13 EAGAIN instead of 0 |
 | `poll_pollout_after_drain` | #6 POLLOUT notification when space frees up |
-| `two_clients_one_idle` | #17 a stalled client must not starve the others |
 | `overrun_is_counted` | dropped bytes land in TIOCGICOUNT's buf_overrun (also covers #3) |
 | `failure_ends_sessions_and_device` | #9 a failed connector drops PTT, fails a held read with EIO, reports it and removes the device node |
 

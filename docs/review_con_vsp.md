@@ -8,8 +8,8 @@ Context also read: `buffer.[ch]`, `conmgr.c` (socketpair setup), `mhrouter.c` (P
 
 No code was changed as part of this review.
 
-Reproduction cases for #12, #13 and #17 live in `tests/vsp` (see its README); #6 has a
-regression test there too.
+Reproduction cases for #12 and #13 live in `tests/vsp` (see its README); #6 has a
+regression test there too. The one for #17 went with `maxcon`: a port takes one application now.
 
 Ranked shortlist, if only a few items get fixed:
 **#16** (stuck PTT), **#1** (`fi->fh`), **#2** (dangling write buffer), **#7** (CLOEXEC),

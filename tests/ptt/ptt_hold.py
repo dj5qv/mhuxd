@@ -11,9 +11,9 @@ def hold_ptt(seconds, host='localhost', port=9001):
             if not select.select([s], [], [], left)[0]:
                 break                       # hold time over, connection still alive
             if not s.recv(1024):            # mhuxd closed the connection
-                sys.exit("connection closed by mhuxd (rejected / maxcon reached?)")
+                sys.exit("connection closed by mhuxd (rejected / port in use?)")
     except ConnectionResetError:
-        sys.exit("connection reset by mhuxd (rejected / maxcon reached?)")
+        sys.exit("connection reset by mhuxd (rejected / port in use?)")
     finally:
         s.close()
 

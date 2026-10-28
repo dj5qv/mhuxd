@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include "stubs.h"
 #include "app_ctx.h"
-#include "conmgr.h"
 #include "events.h"
 #include "logger.h"
 #include "util.h"
@@ -73,20 +72,6 @@ struct ev_loop *app_ctx_get_loop(app_ctx *ctx) {
 eventbus_t *app_ctx_get_eventbus(app_ctx *ctx) {
 	(void)ctx;
 	return NULL;
-}
-
-struct conmgr *app_ctx_get_conmgr(app_ctx *ctx) {
-	(void)ctx;
-	return NULL;
-}
-
-struct con_info test_connectors[MAX_CONNECTORS];
-int ntest_connectors;
-
-void conmgr_foreach(struct conmgr *conmgr, conmgr_iter_cb cb, void *user_data) {
-	(void)conmgr;
-	for(int i = 0; i < ntest_connectors; i++)
-		cb(&test_connectors[i], user_data);
 }
 
 event_cb_fn keyer_state_cb;

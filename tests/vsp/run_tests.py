@@ -23,6 +23,7 @@ fail until that finding is fixed; --allow-known exits 0 when only those fail.
 """
 
 import argparse
+import errno
 import os
 import fcntl
 import re
@@ -140,7 +141,7 @@ class Harness:
 
     _seq = 0
 
-    def __init__(self, maxcon=4, verbose=False, ptt=None, ptt_socket=False):
+    def __init__(self, verbose=False, ptt=None, ptt_socket=False):
         Harness._seq += 1
         self.name = "vsptest%d_%d" % (os.getpid(), Harness._seq)
         self.path = os.path.join(DEVDIR, self.name)
@@ -157,7 +158,7 @@ class Harness:
         if ptt_socket:
             env["VSP_HARNESS_PTT_SOCKET"] = "1"
         self.proc = subprocess.Popen(
-            [HARNESS, self.name, str(maxcon)],
+            [HARNESS, self.name],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             text=True, bufsize=1, env=env)
         line = self.proc.stdout.readline().strip()
@@ -543,28 +544,23 @@ def t_pollout(h):
         os.close(fd)
 
 
-@test("two_clients_one_idle")
-def t_two_clients(h):
-    """A client that stops reading must not starve the other clients."""
-    idle = h.open_client(nonblock=True)      # opened first, scanned first
-    active = h.open_client(nonblock=True)
+@test("second_open_busy")
+def t_second_open(h):
+    """A port takes one application: a second open fails with EBUSY, and the
+    port opens again once the first client closed it."""
+    fd = h.open_client(nonblock=True)
     try:
-        # fill the idle client's buf_out, so it has no room left for the marker
-        h.flood(BUFFER_CAPACITY)
-        time.sleep(0.2)
-        drain(active)
-
-        h.send(b"MARKER")
-        deadline = time.time() + TIMEOUT
-        got = b""
-        while time.time() < deadline and b"MARKER" not in got:
-            if wait_poll(active, select.POLLIN, 0.1) & select.POLLIN:
-                got += drain(active)
-        require(b"MARKER" in got,
-                "the reading client got %d bytes, marker never arrived" % len(got))
+        try:
+            os.close(h.open_client(nonblock=True))
+        except OSError as e:
+            require(e.errno == errno.EBUSY,
+                    "second open failed with %s, expected EBUSY" % errno.errorcode.get(e.errno, e.errno))
+        else:
+            raise Failure("second open succeeded while the port was open")
     finally:
-        os.close(idle)
-        os.close(active)
+        os.close(fd)
+
+    os.close(h.open_client(nonblock=True))
 
 
 @test("overrun_is_counted")

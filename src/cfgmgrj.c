@@ -1219,7 +1219,6 @@ static int con_cfg_from_json(json_t *conn_obj, struct con_cfg *ccfg) {
                 "starting with a letter or digit!", ccfg->vsp.devname, VSP_DEVNAME_MAX);
             return -1;
         }
-        ccfg->vsp.maxcon = json_get_int(conn_obj, "maxcon", 1);
         ccfg->vsp.ptt_rts = json_get_int(conn_obj, "ptt_rts", 0);
         ccfg->vsp.ptt_dtr = json_get_int(conn_obj, "ptt_dtr", 0);
     } else if(ccfg->type == CON_TCP) {
@@ -1229,7 +1228,6 @@ static int con_cfg_from_json(json_t *conn_obj, struct con_cfg *ccfg) {
             return -1;
         }
         ccfg->tcp.port = json_string_value(devname_val);
-        ccfg->tcp.maxcon = json_get_int(conn_obj, "maxcon", 1);
         ccfg->tcp.remote_access = json_get_int(conn_obj, "remote_access", 0);
     } else {
         err("invalid connector type '%s'!", type_str);
@@ -1844,13 +1842,11 @@ static void sync_con_cb(const struct con_info *info, void *user_data) {
     if(info->type == CON_VSP) {
         json_object_set_new(conn, "type", json_string("VSP"));
         json_object_set_new(conn, "devname", json_string(info->devname ? info->devname : ""));
-        json_object_set_new(conn, "maxcon", json_integer(info->maxcon));
         json_object_set_new(conn, "ptt_rts", json_integer(info->ptt_rts));
         json_object_set_new(conn, "ptt_dtr", json_integer(info->ptt_dtr));
     } else if(info->type == CON_TCP) {
         json_object_set_new(conn, "type", json_string("TCP"));
         json_object_set_new(conn, "devname", json_string(info->devname ? info->devname : ""));
-        json_object_set_new(conn, "maxcon", json_integer(info->maxcon));
         json_object_set_new(conn, "remote_access", json_integer(info->remote_access));
     }
     if(info->no_unsolicited)

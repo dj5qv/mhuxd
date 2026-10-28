@@ -23,14 +23,12 @@ enum con_type {
 
 struct con_vsp_cfg {
 	const char *devname;
-	int maxcon;
 	int ptt_rts;
 	int ptt_dtr;
 };
 
 struct con_tcp_cfg {
 	const char *port;
-	int maxcon;
 	int remote_access;
 };
 
@@ -75,7 +73,6 @@ struct con_info {
 	int channel;
 	enum con_type type;
 	const char *devname;
-	int maxcon;
 	int ptt_rts;
 	int ptt_dtr;
 	int remote_access;

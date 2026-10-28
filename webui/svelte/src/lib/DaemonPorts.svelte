@@ -17,7 +17,6 @@
     serial: '',
     channel: 'R1',
     devname: '',
-    maxcon: 1,
     ptt_rts: false,
     ptt_dtr: false,
     remote_access: false,
@@ -119,7 +118,6 @@
       type: portForm.type,
       devname: String(portForm.devname)
     };
-    if (portForm.maxcon) base.maxcon = Number(portForm.maxcon);
     if (portForm.type === 'VSP') {
       base.ptt_rts = portForm.ptt_rts ? 1 : 0;
       base.ptt_dtr = portForm.ptt_dtr ? 1 : 0;
@@ -363,13 +361,6 @@
         </div>
       </div>
     {/if}
-
-    <div class="row">
-      <div class="label">Max Connections:</div>
-      <div class="value">
-        <input class="input" type="number" min="1" bind:value={portForm.maxcon} />
-      </div>
-    </div>
 
     {#if isCatChannel(portForm.channel)}
       <div class="row">

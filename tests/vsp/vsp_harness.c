@@ -34,7 +34,7 @@
  *   failed               times the connector reported failure -> ok <n>
  *   quit                 destroy the vsp and exit             -> ok
  *
- * usage: vsp_harness <devname> [maxcon]
+ * usage: vsp_harness <devname>
  * env:   VSP_HARNESS_PTT=rts|dtr|both, VSP_HARNESS_PTT_SOCKET, VSP_HARNESS_LOG,
  *        VSP_HARNESS_LOGLEVEL
  */
@@ -430,7 +430,7 @@ int main(int argc, char **argv) {
 	int bufsize = SOCK_BUF_SIZE;
 
 	if(argc < 2) {
-		fprintf(stderr, "usage: %s <devname> [maxcon]\n", argv[0]);
+		fprintf(stderr, "usage: %s <devname>\n", argv[0]);
 		return 2;
 	}
 
@@ -482,7 +482,6 @@ int main(int argc, char **argv) {
 	cspec.fd_data = sv[1];
 	cspec.fd_ptt = sv[1];
 	cspec.vsp.devname = argv[1];
-	cspec.vsp.maxcon = argc > 2 ? atoi(argv[2]) : 4;
 	cspec.on_fail = on_fail;
 	cspec.on_fail_data = &h;
 

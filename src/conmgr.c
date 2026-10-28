@@ -50,7 +50,6 @@ struct connector {
 	struct proc_rotator *rot;
 	char *devname;
 	char *tag;		// router owner tag: VSP device name, "tcp:<port>"
-	int maxcon;
 	int ptt_rts;
 	int ptt_dtr;
 	int remote_access;
@@ -186,13 +185,11 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 			goto fail;
 		}
 		ctr->devname = w_strdup(cfg->vsp.devname);
-		ctr->maxcon = cfg->vsp.maxcon;
 		ctr->ptt_rts = cfg->vsp.ptt_rts;
 		ctr->ptt_dtr = cfg->vsp.ptt_dtr;
 		ctr->remote_access = 0;
 	} else if(ctr->type == CON_TCP) {
 		ctr->devname = cfg->tcp.port ? w_strdup(cfg->tcp.port) : NULL;
-		ctr->maxcon = cfg->tcp.maxcon;
 		ctr->ptt_rts = 0;
 		ctr->ptt_dtr = 0;
 		ctr->remote_access = cfg->tcp.remote_access;
@@ -425,7 +422,6 @@ void conmgr_foreach(struct conmgr *conmgr, conmgr_iter_cb cb, void *user_data) {
 		info.channel = ctr->channel;
 		info.type = ctr->type;
 		info.devname = ctr->devname;
-		info.maxcon = ctr->maxcon;
 		info.ptt_rts = ctr->ptt_rts;
 		info.ptt_dtr = ctr->ptt_dtr;
 		info.remote_access = ctr->remote_access;

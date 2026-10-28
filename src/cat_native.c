@@ -21,7 +21,6 @@
 #include "cat_ybin.h"
 #include "app_ctx.h"
 #include "channel.h"
-#include "conmgr.h"
 #include "device.h"
 #include "eventbus.h"
 #include "events.h"
@@ -265,7 +264,6 @@ struct cat_native {
 	// it first sends data.
 	struct app_ctx *ctx;
 	int clients_fd[CAT_MAX_CLIENTS];	// -1: free
-	int connectors;			// on the channel, last count
 	int multi;			// more than one, with a decoder: taking turns
 	int civ_resend;			// configured, see CATN_RESEND_QUIET
 	ev_timer resend_timer;
@@ -640,19 +638,6 @@ static void catn_turn_timer_cb(struct ev_loop *loop, struct ev_timer *w, int rev
 	catn_turn_check(w->data);
 }
 
-// Connectors with more than one session share one data stream: their applications can't be
-// told apart.
-static void catn_check_maxcon_cb(const struct con_info *info, void *user_data) {
-	struct cat_native *cn = user_data;
-
-	if(info->channel != cn->channel || info->maxcon <= 1 || !info->serial || strcmp(info->serial, cn->serial))
-		return;
-	warn("%s %s native CAT: %s%s accepts %d connections. mhuxd can't tell the applications sharing it "
-	     "apart, nor take turns between them: give each application a port of its own", cn->serial,
-	     radio_str(cn->radio), info->type == CON_TCP ? "TCP port " : "/dev/mhuxd/",
-	     info->devname ? info->devname : "?", info->maxcon);
-}
-
 // Connectors that don't take transceive / AI (forward_unsolicited false): the radio data is
 // routed, so these frames can be held back from them. Needs a decoder.
 static void catn_filter_update(struct cat_native *cn) {
@@ -679,11 +664,6 @@ static void catn_multi_update(struct cat_native *cn) {
 	int multi = n > 1 && catn_has_decoder(cn);
 
 	catn_filter_update(cn);
-	if(n != cn->connectors) {
-		cn->connectors = n;
-		if(cn->ctx)
-			conmgr_foreach(app_ctx_get_conmgr(cn->ctx), catn_check_maxcon_cb, cn);
-	}
 	if(multi != cn->multi) {
 		cn->multi = multi;
 		if(multi) {

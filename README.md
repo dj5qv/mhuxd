@@ -298,11 +298,11 @@ directly, e.g. WSJTX configured like in the "WSJTX direct" example above.
   the other's (a few ten ms), so they don't collide on the CI-V bus. Echo and answers go only to
   the application that sent the command, CI-V transceive and Auto Information to all (unless
   switched off for a port, see "Transceive / AI" below). Without an answer within 0.5 s, mhuxd
-  gives the command up and lets the next application go on. Keep "Max Connections" at 1 on
-  these ports: applications sharing a port can't be told apart (mhuxd warns in the log). An
-  application that only listens on its port, to follow the frequency from another
-  application's polls, gets only transceive and AI messages this way; the decoded radio state
-  is available from mhuxd's REST API and WebSocket instead.
+  gives the command up and lets the next application go on. A port takes one application at a
+  time: applications sharing a port couldn't be told apart. An application that only listens
+  on its port, to follow the frequency from another application's polls, gets only
+  transceive and AI messages this way; the decoded radio state is available from mhuxd's REST
+  API and WebSocket instead.
 - "Transceive / AI" (per port, when adding a CAT port, on by default): switched off, the port
   doesn't get CI-V transceive and Auto Information messages, only the answers to its own
   commands. Hamlib and rigctld don't cope well with transceive messages between their
