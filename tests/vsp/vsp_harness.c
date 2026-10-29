@@ -32,7 +32,9 @@
  *   shutdown             close the router end                 -> ok
  *   pttrecv              take what the PTT socket received    -> data <hex>
  *   failed               times the connector reported failure -> ok <n>
- *   quit                 destroy the vsp and exit             -> ok
+ *   client               the application the connector reported
+ *                                        -> ok <pid> <uid> <program> | ok none
+ *   quit                destroy the vsp and exit             -> ok
  *
  * usage: vsp_harness <devname>
  * env:   VSP_HARNESS_PTT=rts|dtr|both, VSP_HARNESS_PTT_SOCKET, VSP_HARNESS_LOG,
@@ -50,6 +52,7 @@
 #include <ev.h>
 #include "conmgr.h"
 #include "con_vsp.h"
+#include "con_client.h"
 #include "logger.h"
 
 /* Keep the socket buffers small so a client can fill them without shifting
@@ -71,6 +74,8 @@ struct harness {
 	int reading;
 	int ptt_fd;		/* router end of a separate PTT socket, -1: PTT shares router_fd */
 	int failed;		/* connector_spec on_fail calls */
+	int has_client;		/* last connector_spec on_client call */
+	struct con_client client;
 
 	ev_io w_router_in;
 	ev_io w_router_out;
@@ -230,6 +235,13 @@ static void on_fail(void *user_data) {
 	h->failed++;
 }
 
+static void on_client(void *user_data, const struct con_client *client) {
+	struct harness *h = user_data;
+	h->has_client = client != NULL;
+	if(client)
+		h->client = *client;
+}
+
 static void router_out_cb(struct ev_loop *loop, ev_io *w, int revents) {
 	(void)loop; (void)revents;
 	struct harness *h = w->data;
@@ -379,6 +391,13 @@ static void handle_cmd(struct harness *h, char *line) {
 	} else if(!strcmp(line, "failed")) {
 		reply("ok %d", h->failed);
 
+	} else if(!strcmp(line, "client")) {
+		/* the program last, it may contain a space */
+		if(h->has_client)
+			reply("ok %d %d %s", h->client.pid, h->client.uid, h->client.program);
+		else
+			reply("ok none");
+
 	} else if(!strcmp(line, "quit")) {
 		reply("ok");
 		ev_break(h->loop, EVBREAK_ALL);
@@ -484,6 +503,8 @@ int main(int argc, char **argv) {
 	cspec.vsp.devname = argv[1];
 	cspec.on_fail = on_fail;
 	cspec.on_fail_data = &h;
+	cspec.on_client = on_client;
+	cspec.on_client_data = &h;
 
 	/* VSP_HARNESS_PTT=rts|dtr|both maps the modem lines to PTT, so the PTT byte
 	 * path can be tested. fd_ptt aliases fd_data here, as it does for a connector

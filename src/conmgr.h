@@ -47,6 +47,12 @@ struct con_cfg {
 // sockets. It is not called from *_destroy().
 typedef void (*con_fail_cb)(void *user_data);
 
+struct con_client;
+
+// Called by a connector when an application connects, and with client NULL when it leaves.
+// Not called from *_destroy(), and not for the application a failing connector drops.
+typedef void (*con_client_cb)(void *user_data, const struct con_client *client);
+
 struct connector_spec {
 	struct ev_loop *loop;
 	int fd_data;
@@ -55,6 +61,8 @@ struct connector_spec {
 	struct con_tcp_cfg tcp;
 	con_fail_cb on_fail;
 	void *on_fail_data;
+	con_client_cb on_client;
+	void *on_client_data;
 };
 
 enum con_status {
@@ -94,6 +102,8 @@ void conmgr_foreach(struct conmgr *conmgr, conmgr_iter_cb cb, void *user_data);
 // A connector that is not registered (it failed to start) is CON_STATUS_FAILED, too.
 enum con_status conmgr_get_status(struct conmgr *conmgr, int id);
 const char *conmgr_status_str(enum con_status status);
+// The application on the port, NULL if there is none.
+const struct con_client *conmgr_get_client(struct conmgr *conmgr, int id);
 // Keep a new connector from getting this id, e.g. for a configured connector that has not been created.
 void conmgr_reserve_id(struct conmgr *conmgr, int id);
 

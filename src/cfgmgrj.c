@@ -26,6 +26,7 @@
 #include "mhsm.h"
 #include "channel.h"
 #include "conmgr.h"
+#include "con_client.h"
 #include "con_vsp.h"
 #include "rigctld_client.h"
 #include "rigctld_proc.h"
@@ -1528,7 +1529,7 @@ json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj) {
     json_array_foreach(json_object_get(root, "devices"), didx, d)
         json_object_del(d, "firmware");
 
-    // Decorate connectors with runtime status for the UI.
+    // Decorate connectors with runtime status and the application on the port for the UI.
     // We deep copy the connectors list so we don't save runtime status to the config file.
     json_t *connectors = json_object_get(root, "connectors");
     if(connectors && json_is_array(connectors) && cfgmgrj->conmgr) {
@@ -1542,6 +1543,8 @@ json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj) {
             int id = json_get_int(c, "id", 0);
             enum con_status status = conmgr_get_status(cfgmgrj->conmgr, id);
             json_object_set_new(c, "status", json_string(conmgr_status_str(status)));
+            const struct con_client *client = conmgr_get_client(cfgmgrj->conmgr, id);
+            json_object_set_new(c, "client", client ? con_client_json(client) : json_null());
         }
     }
 

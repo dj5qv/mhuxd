@@ -61,7 +61,9 @@ the next one with a leftover device node.
 All tests pass. Any failure is a real one — there are no known-issue tests left.
 
 `smoke_roundtrip` and `poll_pollin` validate the rig itself, `second_open_busy` checks
-that a port takes one application; the rest are regression tests for findings in
+that a port takes one application, `client_reported` that the connector reports who
+opened the port (the process also when a worker thread opened it, user and program)
+and when it left; the rest are regression tests for findings in
 `docs/review_con_vsp.md`:
 
 | Test | Covers |
@@ -166,6 +168,7 @@ file so it cannot corrupt the stream.
 | `stopreading` | stop draining the router end | `ok` |
 | `resume` | resume draining | `ok` |
 | `shutdown` | close the router end | `ok` |
+| `client` | the application the connector reported | `ok <pid> <uid> <program>` or `ok none` |
 | `quit` | destroy the vsp and exit | `ok` |
 
 The socketpair buffers are set to 1 kB so backpressure happens after a few

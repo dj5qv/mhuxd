@@ -1,4 +1,6 @@
 <script>
+  import { displayPortChannel, deviceNameForSerial } from './ports.js';
+
   /** @type {Array} */
   export let connectors = [];
   /** @type {Array} */
@@ -53,11 +55,6 @@
     return devType?.flags || [];
   };
 
-  const deviceNameForSerial = (serial) => {
-    const dev = devices.find((d) => d.serial === serial);
-    return dev?.name || serial || '—';
-  };
-
   const channelOptionsForSerial = (serial) => {
     if (!serial) return [];
     const flags = keyerFlagsForSerial(serial);
@@ -73,13 +70,6 @@
     if (flags.includes('HAS_MCP_SUPPORT')) opts.push('MCP');
     if (flags.includes('HAS_ROTATOR_SUPPORT')) opts.push('ROTATOR');
     return opts;
-  };
-
-  const displayPortChannel = (channel) => {
-    if (!channel) return '—';
-    if (channel === 'R1') return 'CAT1';
-    if (channel === 'R2') return 'CAT2';
-    return channel;
   };
 
   const isCatChannel = (channel) => ['CAT1', 'CAT2'].includes(displayPortChannel(channel));
@@ -218,14 +208,13 @@
 </script>
 
 <section class="section">
-  <div class="section-title">Port List</div>
+  <div class="section-title">Port Config</div>
   <div class="panel table ports-grid">
     <div class="table-header">
       <div></div>
       <div>ID</div>
       <div>Type</div>
       <div>Port / Device</div>
-      <div>Status</div>
       <div>Remote Access</div>
       <div>RTS-PTT</div>
       <div>DTR-PTT</div>
@@ -250,12 +239,11 @@
           <div>{c.id ?? '—'}</div>
           <div>{c.type || '—'}</div>
           <div>{c.devname || '—'}</div>
-          <div class={c.status === 'failed' ? 'text-error' : ''}>{c.status || '—'}</div>
           <div>{c.type === 'TCP' ? checkMark(c.remote_access) : '—'}</div>
           <div>{c.type === 'VSP' ? checkMark(c.ptt_rts) : '—'}</div>
           <div>{c.type === 'VSP' ? checkMark(c.ptt_dtr) : '—'}</div>
           <div>{isCatChannel(c.channel) ? checkMark(c.forward_unsolicited ?? true) : '—'}</div>
-          <div>{deviceNameForSerial(c.serial)}</div>
+          <div>{deviceNameForSerial(devices, c.serial)}</div>
           <div>{c.serial || '—'}</div>
           <div>{displayPortChannel(c.channel)}</div>
         </div>

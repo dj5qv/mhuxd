@@ -350,7 +350,25 @@
           "type": "string",
           "enum": ["ok", "failed"]
         },
-        "maxcon": {"type": "integer", "minimum": 1},
+        "client": {
+          "description": "runtime: the application on the port, null if none",
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["since"],
+              "properties": {
+                "since": {"type": "integer", "description": "connect time, seconds since the epoch"},
+                "pid": {"type": "integer", "description": "VSP: process that opened the port"},
+                "uid": {"type": "integer", "description": "VSP, and TCP from the same host"},
+                "user": {"type": "string"},
+                "program": {"type": "string", "description": "VSP: program, a script with its interpreter"},
+                "peer": {"type": "string", "description": "TCP: client address and port"}
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
         "ptt_rts": {
           "oneOf": [
             {"type": "boolean"},

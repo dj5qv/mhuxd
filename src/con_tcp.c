@@ -16,6 +16,7 @@
 #include "buffer.h"
 #include "pglist.h"
 #include "conmgr.h"
+#include "con_client.h"
 #include "net.h"
 #include "ptt_byte.h"
 
@@ -46,6 +47,8 @@ struct ctcp {
 
 	struct ev_loop *loop;
 	char *devname;
+	con_client_cb on_client;
+	void *on_client_data;
 	unsigned int is_ptt_channel : 1;
 };
 
@@ -58,6 +61,7 @@ struct ctcp_session {
 	ev_io w_out;
 	struct buffer buf_out;
 	struct buffer buf_in;
+	struct con_client client;
 	unsigned int ptt_status : 1;
 };
 
@@ -125,6 +129,10 @@ static void rem_session(struct ctcp_session *cs) {
 	ctcp->open_cnt--;
 	PG_Remove(&cs->node);
 	free(cs);
+
+	// Not from ctcp_destroy()
+	if(ctcp->state == MHUXD_IO_OPEN && ctcp->on_client)
+		ctcp->on_client(ctcp->on_client_data, NULL);
 }
 
 static void data_in_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
@@ -290,6 +298,8 @@ static void client_out_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	(void)loop; (void)revents;
 	struct ctcp *ctcp = w->data;
+	struct con_client client;
+	char who[160];
 	int fd;
 
 	if(ctcp_is_terminal(ctcp)) {
@@ -303,9 +313,15 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 		return;
 	}
 
+	con_client_from_socket(&client, fd);
+
 	// One application per port: applications sharing a port couldn't be told apart.
 	if(ctcp->open_cnt) {
-		info("rejecting connect, %s is already in use", ctcp->devname);
+		const struct ctcp_session *holder = (void*)PG_FIRSTENTRY(&ctcp->session_list);
+		char holder_str[160];
+		info("rejecting connect from %s, %s is in use by %s",
+		     con_client_str(&client, who, sizeof(who)), ctcp->devname,
+		     holder ? con_client_str(&holder->client, holder_str, sizeof(holder_str)) : "?");
 		fd_close(&fd);
 		return;
 	}
@@ -316,6 +332,7 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 	struct ctcp_session *cs = w_calloc(1, sizeof(*cs));
 	cs->ctcp = ctcp;
 	cs->fd = fd;
+	cs->client = client;
 	ev_io_init(&cs->w_in, client_in_cb, fd, EV_READ);
 	ev_io_init(&cs->w_out, client_out_cb, fd, EV_WRITE);
 	ctcp_watch_start(ctcp, &cs->w_in);
@@ -326,7 +343,9 @@ static void lsnr_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
 
 	PG_AddTail(&ctcp->session_list, &cs->node);
 
-	info("incoming connection on %s", ctcp->devname);
+	info("incoming connection on %s from %s", ctcp->devname, con_client_str(&client, who, sizeof(who)));
+	if(ctcp->on_client)
+		ctcp->on_client(ctcp->on_client_data, &client);
 }
 
 
@@ -400,6 +419,8 @@ struct ctcp *ctcp_create(const struct connector_spec *cpsec, uint8_t is_ptt_chan
 	ctcp->lsnr_v6 = lsnr_v6;
 	ctcp->lsnr_v4 = lsnr_v4;
 	ctcp->fd_data = cpsec->fd_data;
+	ctcp->on_client = cpsec->on_client;
+	ctcp->on_client_data = cpsec->on_client_data;
 	ctcp->state = MHUXD_IO_OPEN;
 
 	ev_io_init(&ctcp->w_data_in, data_in_cb, ctcp->fd_data, EV_READ);

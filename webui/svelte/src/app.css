@@ -320,11 +320,25 @@ h1 {
     3.75rem
     4.375rem
     9.375rem
-    5rem
     6.875rem
     5rem
     5rem
     7.5rem
+    11.25rem
+    9.375rem
+    5rem;
+  column-gap: 0.75rem;
+}
+
+.port-list-grid .table-header,
+.port-list-grid .table-row {
+  min-width: max-content;
+  grid-template-columns:
+    3.75rem
+    4.375rem
+    9.375rem
+    5rem
+    minmax(17.5rem, 1fr)
     11.25rem
     9.375rem
     5rem;

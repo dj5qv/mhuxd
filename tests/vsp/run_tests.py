@@ -234,6 +234,14 @@ class Harness:
         """How often the connector called its on_fail callback."""
         return int(self.cmd("failed").split()[1])
 
+    def client(self):
+        """(pid, uid, program) the connector reported with on_client, None when
+        it reported the client gone or nothing yet."""
+        parts = self.cmd("client").split(" ", 3)
+        if parts[1] == "none":
+            return None
+        return int(parts[1]), int(parts[2]), parts[3] if len(parts) > 3 else ""
+
     def shutdown(self):
         """Close the router end of the data socket, as the router does when it
         gives up on a connector. The connector sees EOF."""
@@ -561,6 +569,45 @@ def t_second_open(h):
         os.close(fd)
 
     os.close(h.open_client(nonblock=True))
+
+
+@test("client_reported")
+def t_client(h):
+    """The connector reports who opened the port: the process, also when a
+    worker thread opened it (the CUSE request carries the thread id), the user
+    and the program. Closing reports the client gone."""
+    require(h.client() is None, "client reported before any open")
+
+    box = {}
+
+    def opener():
+        box["tid"] = threading.get_native_id()
+        box["fd"] = h.open_client(nonblock=True)
+
+    t = threading.Thread(target=opener)
+    t.start()
+    t.join()
+    fd = box["fd"]
+    try:
+        require(box["tid"] != os.getpid(), "opener thread runs with the process id")
+        cl = h.client()
+        require(cl is not None, "no client reported after the open")
+        pid, uid, program = cl
+        require(pid == os.getpid(),
+                "pid %d reported, expected the process %d, not the thread %d"
+                % (pid, os.getpid(), box["tid"]))
+        require(uid == os.geteuid(), "uid %d reported, expected %d" % (uid, os.geteuid()))
+        script = os.path.basename(sys.argv[0])
+        require(script in program,
+                "program %r reported, expected it to name %s" % (program, script))
+    finally:
+        os.close(fd)
+
+    # The release request follows the close asynchronously.
+    deadline = time.time() + TIMEOUT
+    while h.client() is not None and time.time() < deadline:
+        time.sleep(0.01)
+    require(h.client() is None, "client still reported after the close")
 
 
 @test("overrun_is_counted")

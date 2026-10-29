@@ -25,6 +25,7 @@
 #include "logger.h"
 #include "buffer.h"
 #include "conmgr.h"
+#include "con_client.h"
 #include "ptt_byte.h"
 
 #define MOD_ID "vsp"
@@ -60,6 +61,8 @@ struct vsp {
 	int force_cuse_fail_once;
 	con_fail_cb on_fail;
 	void *on_fail_data;
+	con_client_cb on_client;
+	void *on_client_data;
 	unsigned int dbg_cb_after_terminal;
 	unsigned int dbg_watch_invalid_fd;
 	uint8_t session_ids[MAX_VSP_SESSIONS];
@@ -72,7 +75,7 @@ struct vsp_session {
 	int16_t id;
 	int is_readable :1;
 
-	int client_pid;
+	struct con_client client;
 	struct buffer buf_out;  // VSP -> client app
 	struct buffer buf_in;   // client app -> VSP
 
@@ -495,7 +498,7 @@ static void data_in_cb (struct ev_loop *loop, struct ev_io *w, int revents) {
 			// session scanned after this one and end the read loop early.
 			if(n > avail) {
 				warn("%s not enough buffer space available (%zd/%zd) client pid %d",
-				     vsp->devname, n, avail, vs->client_pid);
+				     vsp->devname, n, avail, vs->client.pid);
 				// Same meaning as a tty driver that cannot push into the flip
 				// buffer: count the bytes dropped, TIOCGICOUNT reports them.
 				vs->sis.buf_overrun += n - avail;
@@ -630,16 +633,24 @@ static void free_session_id(struct vsp *vsp, int16_t id) {
 static void dv_open(fuse_req_t req, struct fuse_file_info *fi)
 {
 	struct vsp *vsp = fuse_req_userdata(req);
+	const struct fuse_ctx *ctx = fuse_req_ctx(req);
+	struct con_client client;
+	char who[160];
 	int err = 0;
 	int16_t id;
-	info("%s req open", vsp->devname);
+
+	// The opener waits in open() meanwhile, it is still there to look at.
+	con_client_from_process(&client, ctx->pid, ctx->uid);
 
 	id = get_free_session_id(vsp);
 
 	// One application per port: applications sharing a port couldn't be told apart.
 	if(vsp->open_cnt || id == -1) {
-		warn("%s open by pid %d failed, port is already open!",
-		vsp->devname, fuse_req_ctx(req)->pid);
+		const struct vsp_session *holder = (void*)PG_FIRSTENTRY(&vsp->session_list);
+		char holder_str[160];
+		warn("%s open by %s failed, port is in use by %s!", vsp->devname,
+		     con_client_str(&client, who, sizeof(who)),
+		     holder ? con_client_str(&holder->client, holder_str, sizeof(holder_str)) : "?");
 		err = EBUSY;
 		if(id != -1)
 			free_session_id(vsp, id);
@@ -654,9 +665,13 @@ static void dv_open(fuse_req_t req, struct fuse_file_info *fi)
 	vs->is_readable = (fi->flags & O_ACCMODE) != O_WRONLY;
 	ev_timer_init(&vs->w_read_timer, read_timer_cb, 0., 0.);
 	vs->w_read_timer.data = vs;
-	vs->client_pid = fuse_req_ctx(req)->pid;;
+	vs->client = client;
 
 	PG_AddTail(&vsp->session_list, &vs->node);
+
+	info("%s opened by %s", vsp->devname, con_client_str(&client, who, sizeof(who)));
+	if(vsp->on_client)
+		vsp->on_client(vsp->on_client_data, &client);
 
  out:
         if(!err)
@@ -671,7 +686,7 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 {
         struct vsp *vsp = fuse_req_userdata(req);
         int err = 0;
-        info("%s req release", vsp->devname);
+	char who[160];
 
 	struct vsp_session *vs = find_vs(vsp, fi->fh);
 	if(vs == NULL) {
@@ -679,6 +694,8 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 		err("attempt to close a non-existent connection!");
 		goto out;
 	}
+
+	info("%s closed by %s", vsp->devname, con_client_str(&vs->client, who, sizeof(who)));
 
 	if(vs->ptt_status == PTT_ON_BYTE) {
 		uint8_t state = PTT_OFF_BYTE;
@@ -716,6 +733,9 @@ static void dv_release(fuse_req_t req, struct fuse_file_info *fi)
 	if(vs->ph)
 		fuse_pollhandle_destroy(vs->ph);
 	free(vs);
+
+	if(vsp->on_client)
+		vsp->on_client(vsp->on_client_data, NULL);
 
 //	if(!vsp->open_cnt)
 //		ev_io_stop(vsp->loop, &vsp->w_data_in);
@@ -1263,6 +1283,8 @@ struct vsp *vsp_create(const struct connector_spec *cspec) {
 	vsp->fd_ptt = cspec->fd_ptt;
 	vsp->on_fail = cspec->on_fail;
 	vsp->on_fail_data = cspec->on_fail_data;
+	vsp->on_client = cspec->on_client;
+	vsp->on_client_data = cspec->on_client_data;
 	vsp->force_cuse_fail_once = env_enabled("MHUXD_VSP_FORCE_CUSE_FAIL_ONCE");
 	if(vsp->force_cuse_fail_once)
 		warn("%s fault injection enabled: first CUSE channel read will fail", vsp->devname);

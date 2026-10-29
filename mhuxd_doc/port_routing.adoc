@@ -9,12 +9,12 @@ Alternatively mhuxd also offers TCP/IP network ports (IPv4 and IPv6).
 Ports persist even when the keyer is switched off or unplugged. Applications can keep them open meanwhile.
 
 === Port Page
-To access the port page select tab “Daemon”, menu “Ports”. The first section, “Port List”, shows the configured ports. With a new mhuxd installation this list is empty. Ports can be removed here by selecting them and pushing the “Remove” button.
+To access the port page select tab “Daemon”, menu “Ports”. The first section, “Port Config”, shows the configured ports with their settings. With a new mhuxd installation this list is empty. Ports can be removed here by selecting them and pushing the “Remove” button.
 
-.Port list with ports for a micro KEYER III
+.Port Config with ports for a micro KEYER III
 image::mhuxd_ports_page.png[]
 
-The *Status* column shows “ok”, or “failed” when mhuxd couldn't create the port (e.g. the TCP port number is in use; the log file tells why). The *Transceive / AI* column applies to CAT ports, see below.
+The *Transceive / AI* column applies to CAT ports, see below. Whether a port works and which application has it open is shown in the Port List on the Summary page, see <<the_webui>>.
 
 To create a port press the “Add” button. A dialog opens in which you choose the port type, the keyer to route to, the destination channel and the type-specific options described below. There are 2 types of ports available:
 

@@ -14,6 +14,7 @@ OBJDIR   ?= $(BUILDDIR)/src
 
 OBJS = \
 	$(OBJDIR)/mhuxd-con_vsp.o \
+	$(OBJDIR)/mhuxd-con_client.o \
 	$(OBJDIR)/mhuxd-buffer.o \
 	$(OBJDIR)/mhuxd-pglist.o \
 	$(OBJDIR)/mhuxd-util.o \

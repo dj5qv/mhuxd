@@ -25,6 +25,7 @@
 #include "devmgr.h"
 #include "con_vsp.h"
 #include "con_tcp.h"
+#include "con_client.h"
 #include "proc_mcp.h"
 #include "proc_rotator.h"
 #include "mhcontrol.h"
@@ -55,6 +56,8 @@ struct connector {
 	int remote_access;
 	int no_unsolicited;
 	int failed;		// the instance stopped working, see con_failed()
+	int has_client;
+	struct con_client client;
 	eventbus_t *ebus;
 };
 
@@ -74,6 +77,23 @@ void conmgr_destroy(struct conmgr *conmgr) {
 	free(conmgr);
 }
 
+static void publish_client(struct connector *ctr) {
+	if(ctr->ebus)
+		eventbus_publish(ctr->ebus, EV_CON_CLIENT, &(struct ev_con_client) {
+		    .connector_id = ctr->id,
+		    .client = ctr->has_client ? &ctr->client : NULL,
+		});
+}
+
+static void con_client_changed(void *user_data, const struct con_client *client) {
+	struct connector *ctr = user_data;
+
+	ctr->has_client = client != NULL;
+	if(client)
+		ctr->client = *client;
+	publish_client(ctr);
+}
+
 // The connector is kept, so its id stays taken and deleting the port works as usual. It
 // has closed its ends of the router sockets, the router finds out by itself and closes
 // its ends after reading what is left, a PTT off among it.
@@ -81,6 +101,11 @@ static void con_failed(void *user_data) {
 	struct connector *ctr = user_data;
 
 	ctr->failed = 1;
+	// It has dropped its application.
+	if(ctr->has_client) {
+		ctr->has_client = 0;
+		publish_client(ctr);
+	}
 	if(ctr->ebus)
 		eventbus_publish(ctr->ebus, EV_CON_STATUS, &(struct ev_con_status) {
 		    .connector_id = ctr->id,
@@ -230,6 +255,8 @@ int conmgr_create_con_cfg(struct app_ctx *app_ctx, const struct con_cfg *cfg, in
 	cspec.tcp = cfg->tcp;
 	cspec.on_fail = con_failed;
 	cspec.on_fail_data = ctr;
+	cspec.on_client = con_client_changed;
+	cspec.on_client_data = ctr;
 	ctr->ebus = app_ctx_get_eventbus(app_ctx);
 
 	if(ctr->type == CON_VSP && (cfg->vsp.ptt_rts || cfg->vsp.ptt_dtr)) {
@@ -448,5 +475,16 @@ enum con_status conmgr_get_status(struct conmgr *conmgr, int id) {
 
 const char *conmgr_status_str(enum con_status status) {
 	return status == CON_STATUS_OK ? "ok" : "failed";
+}
+
+const struct con_client *conmgr_get_client(struct conmgr *conmgr, int id) {
+	if(!conmgr)
+		return NULL;
+	struct connector *ctr;
+	PG_SCANLIST(&conmgr->connector_list, ctr) {
+		if(ctr->id == id)
+			return ctr->has_client ? &ctr->client : NULL;
+	}
+	return NULL;
 }
 

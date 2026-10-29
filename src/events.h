@@ -14,6 +14,7 @@
 struct device;
 struct mh_router;
 struct mhc_radio_info;
+struct con_client;
 
 // Event Types
 enum app_event_type {
@@ -23,6 +24,7 @@ enum app_event_type {
     EV_RADIO_INFO,        // Radio info (frequency, mode) from rig mode sync changed or timed out
     EV_CAT_MONITOR,       // One line of the native CAT monitor
     EV_KEYER_FLAGS,       // Keyer input flags changed (PTT, footswitch, lockout)
+    EV_CON_CLIENT,        // An application connected to a connector or left it
     EV_MAX                // Keep as last
 };
 
@@ -42,6 +44,11 @@ struct ev_keyer_mode {
 struct ev_con_status {
     int connector_id;
     int status;                          // enum con_status, conmgr.h
+};
+
+struct ev_con_client {
+    int connector_id;
+    const struct con_client *client;     // con_client.h, NULL: the application left
 };
 
 struct ev_radio_info {

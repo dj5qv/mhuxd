@@ -33,5 +33,12 @@
 ## configuration, /api/v1/config/connectors reports the same status
 {"type":"connector_status","id":3,"status":"failed"}
 
+## an application opened a port (connector), or left it (client null). VSP: process
+## that opened it, TCP: peer address, uid/user only for a peer on the same host.
+## /api/v1/config/connectors reports the same as "client" of each connector
+{"type":"connector_client","id":3,"client":{"since":1793233825,"pid":4711,"uid":1000,"user":"mattes","program":"wsjtx"}}
+{"type":"connector_client","id":4,"client":{"since":1793233830,"uid":1000,"user":"mattes","peer":"127.0.0.1:53422"}}
+{"type":"connector_client","id":3,"client":null}
+
 ## native CAT monitor, one trace line (rig_mode_sync.radios.r1.monitor on), format: tests/cat/README.md
 {"type":"cat_monitor","serial":"D2UL4ED0","radio":1,"line":"19:38:56.479 R fe fe e0 94 25 00 00 40 07 14 00 fd  # reply, applied: rx=14074000 unsel=? mode=? split=? keyer=?"}

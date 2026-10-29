@@ -28,7 +28,7 @@ The window is divided into three areas:
 
 The Daemon tab groups settings that are not specific to a single keyer:
 
-* *Summary* – mhuxd version, host name, process id, log file and current log level, plus the *Keyer List* (see below).
+* *Summary* – mhuxd version, host name, process id, log file and current log level, plus the *Keyer List* and the *Port List* (see below).
 * *Ports* – create and route virtual serial ports and TCP network ports (see <<port_routing>>).
 * *Settings* – set the log level (CRIT, ERROR, WARN, INFO, DEBUG0, DEBUG1). The log level is stored and overrides the `-l` command line option.
 
@@ -37,6 +37,14 @@ The Daemon tab groups settings that are not specific to a single keyer:
 The Keyer List shows every keyer mhuxd knows, with name, serial number, firmware version and status. mhuxd remembers a keyer and its settings, including its ports, after it has been unplugged.
 
 To remove a keyer from the configuration, unplug it, select it in the list and press *Remove*. All settings of the keyer and its ports are discarded. When the keyer is plugged in again, it shows up with default settings. A keyer that is connected can't be removed.
+
+==== Port List
+
+The Port List shows every configured port with its status and the application using it. The ports are set up on the Ports page, see <<port_routing>>.
+
+The *Status* column shows “ok”, or “failed” when mhuxd couldn't create the port or the port stopped working (e.g. the TCP port number is in use; the log file tells why).
+
+The *Client* column shows the application that has the port open, a port takes one application at a time. For a VSP it is the program, its process ID and the user it runs as, e.g. `wsjtx (PID 4711, mattes)`. A script is shown with its interpreter, e.g. `python3 myscript.py`. For a TCP port it is the address and port the connection comes from, plus the user for a connection from the same computer, e.g. `127.0.0.1:53422 (mattes)`. Which program made a TCP connection mhuxd can't tell, that would take permission to look into the processes of other users. Hover over the entry to see since when the application is connected.
 
 === Keyer tabs
 

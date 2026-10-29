@@ -1,5 +1,6 @@
 <script>
   import StatusDot from './StatusDot.svelte';
+  import { displayPortChannel, deviceNameForSerial, clientLabel, clientTitle } from './ports.js';
 
   /** @type {object|null} */
   export let runtime = null;
@@ -7,6 +8,8 @@
   export let daemonCfg = null;
   /** @type {Array} */
   export let devices = [];
+  /** @type {Array} */
+  export let connectors = [];
   /** @type {function} */
   export let fwString = () => '';
   /** @type {function} */
@@ -136,4 +139,36 @@
   {#if removeStatus}
     <div class={`inline-status ${removeStatusKind === 'error' ? 'error' : ''}`}>{removeStatus}</div>
   {/if}
+</section>
+
+<section class="section">
+  <div class="section-title">Port List</div>
+  <div class="panel table port-list-grid">
+    <div class="table-header">
+      <div>ID</div>
+      <div>Type</div>
+      <div>Port / Device</div>
+      <div>Status</div>
+      <div>Client</div>
+      <div>Destination Name</div>
+      <div>Destination Serial</div>
+      <div>Channel</div>
+    </div>
+    {#if connectors.length === 0}
+      <div class="table-empty">No ports configured.</div>
+    {:else}
+      {#each connectors as c, i}
+        <div class={`table-row ${i % 2 ? 'alt' : ''}`}>
+          <div>{c.id ?? '—'}</div>
+          <div>{c.type || '—'}</div>
+          <div>{c.devname || '—'}</div>
+          <div class={c.status === 'failed' ? 'text-error' : ''}>{c.status || '—'}</div>
+          <div title={clientTitle(c.client)}>{clientLabel(c.client)}</div>
+          <div>{deviceNameForSerial(devices, c.serial)}</div>
+          <div>{c.serial || '—'}</div>
+          <div>{displayPortChannel(c.channel)}</div>
+        </div>
+      {/each}
+    {/if}
+  </div>
 </section>

@@ -159,6 +159,12 @@
       c.id === data.id ? { ...c, status: data.status } : c
     );
   });
+  // An application opened a port (client) or left it (client null).
+  const unsubConClient = onWsEvent('connector_client', (data) => {
+    connectors = connectors.map((c) =>
+      c.id === data.id ? { ...c, client: data.client } : c
+    );
+  });
   const unsubUsb = onWsEvent('usb_connection', (data) => {
     console.log('USB Event:', data);
   });
@@ -195,6 +201,7 @@
     unsubStatus();
     unsubRemoved();
     unsubConStatus();
+    unsubConClient();
     unsubUsb();
   });
 
@@ -310,7 +317,7 @@
         <div class="error">{error}</div>
       {:else}
         {#if activeTab === 'daemon' && activeMenu === 'summary'}
-          <HomeSummary {runtime} {daemonCfg} {devices} {fwString} {reloadData} />
+          <HomeSummary {runtime} {daemonCfg} {devices} {connectors} {fwString} {reloadData} />
         {:else if activeTab === 'daemon' && activeMenu === 'ports'}
           <DaemonPorts {connectors} {keyers} {devices} {metadata} {reloadData} />
         {:else if activeTab === 'daemon' && activeMenu === 'settings'}
