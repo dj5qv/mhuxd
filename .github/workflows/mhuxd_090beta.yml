@@ -2,9 +2,9 @@ name: mhuxd_090beta
 
 on:
   push:
-    branches: [ "v0.90beta" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "v0.90beta" ]
+    branches: [ "master" ]
 
 jobs:
   build:
