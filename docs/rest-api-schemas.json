@@ -113,7 +113,8 @@
       "required": ["serial", "name"],
       "properties": {
         "serial": {"type": "string"},
-        "name": {"type": "string"},
+        "name": {"type": "string", "description": "Custom name, by default the serial number."},
+        "model": {"type": "string"},
         "status": {"type": "string"},
         "verFwMajor": {"type": "integer"},
         "verFwMinor": {"type": "integer"},
@@ -149,6 +150,10 @@
       "properties": {
         "serial": {"type": "string"},
         "type": {"type": "integer"},
+        "name": {
+          "type": ["string", "null"],
+          "description": "Custom name, up to 32 characters. Missing if the keyer has none. Writing null or an empty string removes it."
+        },
         "channel": {"type": "object"},
         "param": {"type": "object"},
         "ptt": {"$ref": "#/$defs/PttConfig"},

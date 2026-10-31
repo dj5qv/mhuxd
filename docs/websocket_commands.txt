@@ -23,6 +23,10 @@
 
 ### Websocket events mhuxd -> client (besides status, mode_change, device_removed)
 
+## a keyer got a name through the REST API. name is what /api/v1/devices reports,
+## the serial number for a keyer without a custom name
+{"type":"device_renamed","serial":"D2UL4ED0","name":"Shack"}
+
 ## radio info from rig mode sync (rigctld or native) changed, or timed out (valid false)
 {"type":"radio_info","serial":"D2UL4ED0","radio":1,"valid":true,"source":"native","rxFreq":14074000,"txFreq":14074000,"vfoAFreq":14074000,"vfoBFreq":28153130,"mode":"PKTUSB","keyerMode":"DIGITAL"}
 

@@ -23,6 +23,7 @@
 #include "mhinfo.h"
 #include "mhcontrol.h"
 #include "device.h"
+#include "devmgr.h"
 #include "cfgmgrj.h"
 #include "util.h"
 #include "version.h"
@@ -637,7 +638,8 @@ static int cb_devices(struct http_connection *hcon, const char *path, const char
 			const struct mh_info *mhi = mhc_get_mhinfo(dev->ctl);
 			json_t *device = json_object();
 			json_object_set_new(device, "serial", json_string(dev->serial ? dev->serial : ""));
-			json_object_set_new(device, "name", json_string(mhi->type_str));
+			json_object_set_new(device, "name", json_string(dmgr_device_name(dev)));
+			json_object_set_new(device, "model", json_string(mhi->type_str));
 			json_object_set_new(device, "status", json_string(mhc_state_str(mhc_get_state(dev->ctl))));
 			json_object_set_new(device, "verFwMajor", json_integer((json_int_t)mhi->ver_fw_major));
 			json_object_set_new(device, "verFwMinor", json_integer((json_int_t)mhi->ver_fw_minor));
@@ -815,6 +817,50 @@ static int cb_config_connector(struct http_connection *hcon, const char *path, c
 	return send_empty(hcon, 200);
 }
 
+/* Unlike other settings a keyer name is checked up front, a user has to learn why it was refused.
+ * Returns 0 if the names are fine, otherwise -1 after responding with the error. */
+static int check_device_names(struct restapi *api, struct http_connection *hcon, json_t *devices) {
+	size_t i;
+	json_t *device;
+	json_array_foreach(devices, i, device) {
+		json_t *name = json_object_get(device, "name");
+		const char *serial = json_string_value(json_object_get(device, "serial"));
+		if(!name || !serial)
+			continue;
+		switch(cfgmgrj_check_device_name(api->cfgmgrj, serial, name)) {
+		case 0:
+			break;
+		case -EEXIST:
+			send_json_error(hcon, 409, "Another keyer already has this name.");
+			return -1;
+		default:
+			send_json_error(hcon, 400, "Invalid name. Use up to 32 characters, without surrounding spaces.");
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static void broadcast_device_names(struct restapi *api, json_t *devices) {
+	size_t i;
+	json_t *device;
+	json_array_foreach(devices, i, device) {
+		const char *serial = json_string_value(json_object_get(device, "serial"));
+		const struct device *dev = serial ? app_ctx_get_device(api->ctx, serial) : NULL;
+		if(!dev || !json_object_get(device, "name"))
+			continue;
+
+		json_t *event = json_object();
+		if(event) {
+			json_object_set_new(event, "type", json_string("device_renamed"));
+			json_object_set_new(event, "serial", json_string(serial));
+			json_object_set_new(event, "name", json_string(dmgr_device_name(dev)));
+			broadcast_event(api, event);
+			json_decref(event);
+		}
+	}
+}
+
 static int cb_config_devices(struct http_connection *hcon, const char *path, const char *query,
 		 const char *body, uint32_t body_len, void *data) {
 	(void)path; (void)query;
@@ -833,7 +879,14 @@ static int cb_config_devices(struct http_connection *hcon, const char *path, con
 	if(!root)
 		return send_empty(hcon, 400);
 
+	json_t *devices = json_object_get(root, "devices");
+	if(check_device_names(api, hcon, devices)) {
+		json_decref(root);
+		return 0;
+	}
+
 	int failed = cfgmgrj_apply_json(api->cfgmgrj, root) != 0 || cfgmgrj_save_cfg(api->cfgmgrj) != 0;
+	broadcast_device_names(api, devices);
 	json_decref(root);
 	if(failed)
 		return send_empty(hcon, 500);
@@ -907,7 +960,13 @@ static int cb_config_device(struct http_connection *hcon, const char *path, cons
 	json_t *root = json_object();
 	json_object_set_new(root, "devices", devices);
 
+	if(check_device_names(api, hcon, devices)) {
+		json_decref(root);
+		return 0;
+	}
+
 	int failed = !root || cfgmgrj_apply_json(api->cfgmgrj, root) != 0 || cfgmgrj_save_cfg(api->cfgmgrj) != 0;
+	broadcast_device_names(api, devices);
 	json_decref(root);
 	if(failed)
 		return send_empty(hcon, 500);

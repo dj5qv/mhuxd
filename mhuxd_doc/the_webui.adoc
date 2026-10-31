@@ -34,9 +34,11 @@ The Daemon tab groups settings that are not specific to a single keyer:
 
 ==== Keyer List
 
-The Keyer List shows every keyer mhuxd knows, with name, serial number, firmware version and status. mhuxd remembers a keyer and its settings, including its ports, after it has been unplugged.
+The Keyer List shows every keyer mhuxd knows, with name, model, serial number, firmware version and status. mhuxd remembers a keyer and its settings, including its ports, after it has been unplugged. The menu button at the end of each row offers *Rename* and *Remove*.
 
-To remove a keyer from the configuration, unplug it, select it in the list and press *Remove*. All settings of the keyer and its ports are discarded. When the keyer is plugged in again, it shows up with default settings. A keyer that is connected can't be removed.
+*Rename* gives a keyer a name of your choice, which helps to tell keyers of the same model apart. Keyers without a custom name go by their serial number. The name shows up on the keyer's tab and in the port lists; it is stored by mhuxd, not in the keyer. Type the name in the list and press Enter to save it, or Esc to cancel. A name can have up to 32 characters. It must differ from the names and serial numbers of the other keyers, regardless of upper and lower case. Saving an empty name goes back to the serial number.
+
+To remove a keyer from the configuration, unplug it and choose *Remove*. All settings of the keyer and its ports are discarded. When the keyer is plugged in again, it shows up with default settings. A keyer that is connected can't be removed.
 
 ==== Port List
 

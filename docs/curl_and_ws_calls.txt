@@ -4,6 +4,13 @@
   # Remove a keyer together with its ports. Refused with 409 while the keyer is plugged in.
 curl -X DELETE http://localhost:5052/api/v1/config/devices/SM_DEMO_SM_1
 
+  # Name a keyer. Up to 32 characters without surrounding spaces, refused with 400 otherwise.
+  # Refused with 409 if another keyer has this name or serial number, ignoring case.
+  # "" or null go back to the default name, the serial number.
+curl -X PATCH http://localhost:5052/api/v1/config/devices/SM_DEMO_SM_1 \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "Shack"}'
+
 ## SM / SMD
   # Add an item to Antenna List
 

@@ -153,6 +153,12 @@
     configDevices = configDevices.filter((d) => d.serial !== data.serial);
     connectors = connectors.filter((c) => c.serial !== data.serial);
   });
+  // A keyer got a new name, possibly from another client.
+  const unsubRenamed = onWsEvent('device_renamed', (data) => {
+    devices = devices.map((d) =>
+      d.serial === data.serial ? { ...d, name: data.name } : d
+    );
+  });
   // A port stopped working. It keeps its settings, only the status changes.
   const unsubConStatus = onWsEvent('connector_status', (data) => {
     connectors = connectors.map((c) =>
@@ -200,6 +206,7 @@
     disconnectWs();
     unsubStatus();
     unsubRemoved();
+    unsubRenamed();
     unsubConStatus();
     unsubConClient();
     unsubUsb();
@@ -214,6 +221,7 @@
           serial: cfg.serial,
           type: cfg.type,
           name: dev.name || cfg.serial,
+          model: dev.model || '',
           status: dev.status || '',
           radios: dev.radios || []
         };
@@ -223,6 +231,7 @@
       serial: dev.serial,
       type: null,
       name: dev.name || dev.serial,
+      model: dev.model || '',
       status: dev.status || '',
       radios: dev.radios || []
     }));

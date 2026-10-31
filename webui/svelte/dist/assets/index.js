@@ -96,6 +96,9 @@ function destroy_each(iterations, detaching) {
 function element(name) {
   return document.createElement(name);
 }
+function svg_element(name) {
+  return document.createElementNS("http://www.w3.org/2000/svg", name);
+}
 function text(data) {
   return document.createTextNode(data);
 }
@@ -108,6 +111,12 @@ function empty() {
 function listen(node, event, handler, options) {
   node.addEventListener(event, handler, options);
   return () => node.removeEventListener(event, handler, options);
+}
+function stop_propagation(fn) {
+  return function(event) {
+    event.stopPropagation();
+    return fn.call(this, event);
+  };
 }
 function self(fn) {
   return function(event) {
@@ -325,6 +334,11 @@ function ensure_array_like(array_like_or_iterator) {
 function destroy_block(block, lookup) {
   block.d(1);
   lookup.delete(block.key);
+}
+function outro_and_destroy_block(block, lookup) {
+  transition_out(block, 1, 1, () => {
+    lookup.delete(block.key);
+  });
 }
 function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, lookup, node, destroy, create_each_block2, next, get_context) {
   let o = old_blocks.length;
@@ -1377,6 +1391,10 @@ const deviceNameForSerial = (devices, serial) => {
   const dev = devices.find((d) => d.serial === serial);
   return (dev == null ? void 0 : dev.name) || serial || "—";
 };
+const keyerLabel = (keyer) => {
+  const extra = [keyer.model, keyer.name !== keyer.serial && keyer.serial].filter(Boolean).join(", ");
+  return extra ? `${keyer.name} (${extra})` : keyer.name;
+};
 const clientLabel = (client) => {
   if (!client) return "—";
   const name = client.program || client.peer || "unknown";
@@ -1389,30 +1407,34 @@ const clientLabel = (client) => {
 const clientTitle = (client) => (client == null ? void 0 : client.since) ? `connected since ${new Date(client.since * 1e3).toLocaleString()}` : "";
 function get_each_context$2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[15] = list[i];
-  child_ctx[17] = i;
+  child_ctx[35] = list[i];
+  child_ctx[37] = i;
   return child_ctx;
 }
 function get_each_context_1$2(ctx, list, i) {
   const child_ctx = ctx.slice();
-  child_ctx[18] = list[i];
-  child_ctx[17] = i;
+  child_ctx[38] = list[i];
+  child_ctx[37] = i;
   return child_ctx;
 }
 function create_else_block_1$2(ctx) {
+  let each_blocks = [];
+  let each_1_lookup = /* @__PURE__ */ new Map();
   let each_1_anchor;
   let current;
   let each_value_1 = ensure_array_like(
     /*devices*/
     ctx[2]
   );
-  let each_blocks = [];
+  const get_key = (ctx2) => (
+    /*d*/
+    ctx2[38].serial
+  );
   for (let i = 0; i < each_value_1.length; i += 1) {
-    each_blocks[i] = create_each_block_1$2(get_each_context_1$2(ctx, each_value_1, i));
+    let child_ctx = get_each_context_1$2(ctx, each_value_1, i);
+    let key = get_key(child_ctx);
+    each_1_lookup.set(key, each_blocks[i] = create_each_block_1$2(key, child_ctx));
   }
-  const out = (i) => transition_out(each_blocks[i], 1, 1, () => {
-    each_blocks[i] = null;
-  });
   return {
     c() {
       for (let i = 0; i < each_blocks.length; i += 1) {
@@ -1430,29 +1452,14 @@ function create_else_block_1$2(ctx) {
       current = true;
     },
     p(ctx2, dirty) {
-      if (dirty & /*devices, fwString, selectedSerials, isRemovable, removing, toggleSelection*/
-      1652) {
+      if (dirty[0] & /*devices, menuSerial, toggleMenu, fwString, renameSaving, renameValue, onRenameKeydown, commitRename, renameSerial*/
+      6363252) {
         each_value_1 = ensure_array_like(
           /*devices*/
           ctx2[2]
         );
-        let i;
-        for (i = 0; i < each_value_1.length; i += 1) {
-          const child_ctx = get_each_context_1$2(ctx2, each_value_1, i);
-          if (each_blocks[i]) {
-            each_blocks[i].p(child_ctx, dirty);
-            transition_in(each_blocks[i], 1);
-          } else {
-            each_blocks[i] = create_each_block_1$2(child_ctx);
-            each_blocks[i].c();
-            transition_in(each_blocks[i], 1);
-            each_blocks[i].m(each_1_anchor.parentNode, each_1_anchor);
-          }
-        }
         group_outros();
-        for (i = each_value_1.length; i < each_blocks.length; i += 1) {
-          out(i);
-        }
+        each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_1, each_1_lookup, each_1_anchor.parentNode, outro_and_destroy_block, create_each_block_1$2, each_1_anchor, get_each_context_1$2);
         check_outros();
       }
     },
@@ -1464,7 +1471,6 @@ function create_else_block_1$2(ctx) {
       current = true;
     },
     o(local) {
-      each_blocks = each_blocks.filter(Boolean);
       for (let i = 0; i < each_blocks.length; i += 1) {
         transition_out(each_blocks[i]);
       }
@@ -1474,11 +1480,13 @@ function create_else_block_1$2(ctx) {
       if (detaching) {
         detach(each_1_anchor);
       }
-      destroy_each(each_blocks, detaching);
+      for (let i = 0; i < each_blocks.length; i += 1) {
+        each_blocks[i].d(detaching);
+      }
     }
   };
 }
-function create_if_block_2$3(ctx) {
+function create_if_block_3$3(ctx) {
   let div;
   return {
     c() {
@@ -1499,25 +1507,148 @@ function create_if_block_2$3(ctx) {
     }
   };
 }
-function create_each_block_1$2(ctx) {
-  let div5;
-  let div0;
+function create_else_block_2$2(ctx) {
+  let t_value = (
+    /*d*/
+    (ctx[38].name || /*d*/
+    ctx[38].serial || "—") + ""
+  );
+  let t;
+  return {
+    c() {
+      t = text(t_value);
+    },
+    m(target, anchor) {
+      insert(target, t, anchor);
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*devices*/
+      4 && t_value !== (t_value = /*d*/
+      (ctx2[38].name || /*d*/
+      ctx2[38].serial || "—") + "")) set_data(t, t_value);
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(t);
+      }
+    }
+  };
+}
+function create_if_block_4$3(ctx) {
   let input;
-  let input_checked_value;
-  let input_disabled_value;
-  let input_title_value;
+  let input_placeholder_value;
+  let input_aria_label_value;
+  let mounted;
+  let dispose;
+  function keydown_handler(...args) {
+    return (
+      /*keydown_handler*/
+      ctx[26](
+        /*d*/
+        ctx[38],
+        ...args
+      )
+    );
+  }
+  function blur_handler() {
+    return (
+      /*blur_handler*/
+      ctx[27](
+        /*d*/
+        ctx[38]
+      )
+    );
+  }
+  return {
+    c() {
+      input = element("input");
+      attr(input, "class", "input keyer-name-input");
+      attr(input, "type", "text");
+      attr(input, "maxlength", "32");
+      attr(input, "placeholder", input_placeholder_value = /*d*/
+      ctx[38].serial);
+      attr(input, "title", "Enter to save, Esc to cancel. Empty: use the serial number.");
+      attr(input, "aria-label", input_aria_label_value = `Name of keyer ${/*d*/
+      ctx[38].serial}`);
+      input.readOnly = /*renameSaving*/
+      ctx[12];
+    },
+    m(target, anchor) {
+      insert(target, input, anchor);
+      set_input_value(
+        input,
+        /*renameValue*/
+        ctx[11]
+      );
+      if (!mounted) {
+        dispose = [
+          listen(
+            input,
+            "input",
+            /*input_input_handler*/
+            ctx[25]
+          ),
+          action_destroyer(
+            /*focusAndSelect*/
+            ctx[19].call(null, input)
+          ),
+          listen(input, "keydown", keydown_handler),
+          listen(input, "blur", blur_handler)
+        ];
+        mounted = true;
+      }
+    },
+    p(new_ctx, dirty) {
+      ctx = new_ctx;
+      if (dirty[0] & /*devices*/
+      4 && input_placeholder_value !== (input_placeholder_value = /*d*/
+      ctx[38].serial)) {
+        attr(input, "placeholder", input_placeholder_value);
+      }
+      if (dirty[0] & /*devices*/
+      4 && input_aria_label_value !== (input_aria_label_value = `Name of keyer ${/*d*/
+      ctx[38].serial}`)) {
+        attr(input, "aria-label", input_aria_label_value);
+      }
+      if (dirty[0] & /*renameSaving*/
+      4096) {
+        input.readOnly = /*renameSaving*/
+        ctx[12];
+      }
+      if (dirty[0] & /*renameValue*/
+      2048 && input.value !== /*renameValue*/
+      ctx[11]) {
+        set_input_value(
+          input,
+          /*renameValue*/
+          ctx[11]
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(input);
+      }
+      mounted = false;
+      run_all(dispose);
+    }
+  };
+}
+function create_each_block_1$2(key_1, ctx) {
+  let div6;
+  let div0;
   let t0;
   let div1;
   let t1_value = (
     /*d*/
-    (ctx[18].name || "Device") + ""
+    (ctx[38].model || "—") + ""
   );
   let t1;
   let t2;
   let div2;
   let t3_value = (
     /*d*/
-    (ctx[18].serial || "—") + ""
+    (ctx[38].serial || "—") + ""
   );
   let t3;
   let t4;
@@ -1526,7 +1657,7 @@ function create_each_block_1$2(ctx) {
     /*fwString*/
     ctx[4](
       /*d*/
-      ctx[18]
+      ctx[38]
     ) + ""
   );
   let t5;
@@ -1535,31 +1666,52 @@ function create_each_block_1$2(ctx) {
   let statusdot;
   let t7_value = (
     /*d*/
-    (ctx[18].status || "—") + ""
+    (ctx[38].status || "—") + ""
   );
   let t7;
   let t8;
+  let div5;
+  let button;
+  let svg;
+  let path;
+  let button_aria_label_value;
+  let button_aria_expanded_value;
+  let t9;
+  let div6_class_value;
   let current;
   let mounted;
   let dispose;
-  function change_handler() {
+  function select_block_type_1(ctx2, dirty) {
+    if (
+      /*renameSerial*/
+      ctx2[6] === /*d*/
+      ctx2[38].serial
+    ) return create_if_block_4$3;
+    return create_else_block_2$2;
+  }
+  let current_block_type = select_block_type_1(ctx);
+  let if_block = current_block_type(ctx);
+  statusdot = new StatusDot({ props: { status: (
+    /*d*/
+    ctx[38].status
+  ) } });
+  function click_handler(...args) {
     return (
-      /*change_handler*/
-      ctx[13](
+      /*click_handler*/
+      ctx[28](
         /*d*/
-        ctx[18]
+        ctx[38],
+        ...args
       )
     );
   }
-  statusdot = new StatusDot({ props: { status: (
-    /*d*/
-    ctx[18].status
-  ) } });
   return {
+    key: key_1,
+    first: null,
     c() {
-      div5 = element("div");
+      div6 = element("div");
       div0 = element("div");
-      input = element("input");
+      if_block.c();
       t0 = space();
       div1 = element("div");
       t1 = text(t1_value);
@@ -1574,97 +1726,110 @@ function create_each_block_1$2(ctx) {
       create_component(statusdot.$$.fragment);
       t7 = text(t7_value);
       t8 = space();
-      attr(input, "type", "checkbox");
-      input.checked = input_checked_value = /*selectedSerials*/
-      ctx[5].includes(
-        /*d*/
-        ctx[18].serial
-      );
-      input.disabled = input_disabled_value = !/*isRemovable*/
-      ctx[9](
-        /*d*/
-        ctx[18]
-      ) || /*removing*/
-      ctx[6];
-      attr(input, "title", input_title_value = /*isRemovable*/
-      ctx[9](
-        /*d*/
-        ctx[18]
-      ) ? "" : "Unplug the keyer to remove it");
-      attr(div5, "class", `table-row ${/*i*/
-      ctx[17] % 2 ? "alt" : ""}`);
+      div5 = element("div");
+      button = element("button");
+      svg = svg_element("svg");
+      path = svg_element("path");
+      t9 = space();
+      attr(div0, "class", "keyer-name");
+      attr(path, "d", "M2 4h12M2 8h12M2 12h12");
+      attr(path, "stroke", "currentColor");
+      attr(path, "stroke-width", "1.5");
+      attr(svg, "viewBox", "0 0 16 16");
+      attr(svg, "width", "14");
+      attr(svg, "height", "14");
+      attr(svg, "aria-hidden", "true");
+      attr(button, "class", "btn keyer-menu-button");
+      attr(button, "type", "button");
+      attr(button, "title", "Keyer actions");
+      attr(button, "aria-label", button_aria_label_value = `Actions for keyer ${/*d*/
+      ctx[38].name || /*d*/
+      ctx[38].serial}`);
+      attr(button, "aria-expanded", button_aria_expanded_value = /*menuSerial*/
+      ctx[5] === /*d*/
+      ctx[38].serial);
+      attr(div6, "class", div6_class_value = `table-row ${/*i*/
+      ctx[37] % 2 ? "alt" : ""}`);
+      this.first = div6;
     },
     m(target, anchor) {
-      insert(target, div5, anchor);
-      append(div5, div0);
-      append(div0, input);
-      append(div5, t0);
-      append(div5, div1);
+      insert(target, div6, anchor);
+      append(div6, div0);
+      if_block.m(div0, null);
+      append(div6, t0);
+      append(div6, div1);
       append(div1, t1);
-      append(div5, t2);
-      append(div5, div2);
+      append(div6, t2);
+      append(div6, div2);
       append(div2, t3);
-      append(div5, t4);
-      append(div5, div3);
+      append(div6, t4);
+      append(div6, div3);
       append(div3, t5);
-      append(div5, t6);
-      append(div5, div4);
+      append(div6, t6);
+      append(div6, div4);
       mount_component(statusdot, div4, null);
       append(div4, t7);
-      append(div5, t8);
+      append(div6, t8);
+      append(div6, div5);
+      append(div5, button);
+      append(button, svg);
+      append(svg, path);
+      append(div6, t9);
       current = true;
       if (!mounted) {
-        dispose = listen(input, "change", change_handler);
+        dispose = listen(button, "click", stop_propagation(click_handler));
         mounted = true;
       }
     },
     p(new_ctx, dirty) {
       ctx = new_ctx;
-      if (!current || dirty & /*selectedSerials, devices*/
-      36 && input_checked_value !== (input_checked_value = /*selectedSerials*/
-      ctx[5].includes(
-        /*d*/
-        ctx[18].serial
-      ))) {
-        input.checked = input_checked_value;
+      if (current_block_type === (current_block_type = select_block_type_1(ctx)) && if_block) {
+        if_block.p(ctx, dirty);
+      } else {
+        if_block.d(1);
+        if_block = current_block_type(ctx);
+        if (if_block) {
+          if_block.c();
+          if_block.m(div0, null);
+        }
       }
-      if (!current || dirty & /*devices, removing*/
-      68 && input_disabled_value !== (input_disabled_value = !/*isRemovable*/
-      ctx[9](
-        /*d*/
-        ctx[18]
-      ) || /*removing*/
-      ctx[6])) {
-        input.disabled = input_disabled_value;
-      }
-      if (!current || dirty & /*devices*/
-      4 && input_title_value !== (input_title_value = /*isRemovable*/
-      ctx[9](
-        /*d*/
-        ctx[18]
-      ) ? "" : "Unplug the keyer to remove it")) {
-        attr(input, "title", input_title_value);
-      }
-      if ((!current || dirty & /*devices*/
+      if ((!current || dirty[0] & /*devices*/
       4) && t1_value !== (t1_value = /*d*/
-      (ctx[18].name || "Device") + "")) set_data(t1, t1_value);
-      if ((!current || dirty & /*devices*/
+      (ctx[38].model || "—") + "")) set_data(t1, t1_value);
+      if ((!current || dirty[0] & /*devices*/
       4) && t3_value !== (t3_value = /*d*/
-      (ctx[18].serial || "—") + "")) set_data(t3, t3_value);
-      if ((!current || dirty & /*fwString, devices*/
+      (ctx[38].serial || "—") + "")) set_data(t3, t3_value);
+      if ((!current || dirty[0] & /*fwString, devices*/
       20) && t5_value !== (t5_value = /*fwString*/
       ctx[4](
         /*d*/
-        ctx[18]
+        ctx[38]
       ) + "")) set_data(t5, t5_value);
       const statusdot_changes = {};
-      if (dirty & /*devices*/
+      if (dirty[0] & /*devices*/
       4) statusdot_changes.status = /*d*/
-      ctx[18].status;
+      ctx[38].status;
       statusdot.$set(statusdot_changes);
-      if ((!current || dirty & /*devices*/
+      if ((!current || dirty[0] & /*devices*/
       4) && t7_value !== (t7_value = /*d*/
-      (ctx[18].status || "—") + "")) set_data(t7, t7_value);
+      (ctx[38].status || "—") + "")) set_data(t7, t7_value);
+      if (!current || dirty[0] & /*devices*/
+      4 && button_aria_label_value !== (button_aria_label_value = `Actions for keyer ${/*d*/
+      ctx[38].name || /*d*/
+      ctx[38].serial}`)) {
+        attr(button, "aria-label", button_aria_label_value);
+      }
+      if (!current || dirty[0] & /*menuSerial, devices*/
+      36 && button_aria_expanded_value !== (button_aria_expanded_value = /*menuSerial*/
+      ctx[5] === /*d*/
+      ctx[38].serial)) {
+        attr(button, "aria-expanded", button_aria_expanded_value);
+      }
+      if (!current || dirty[0] & /*devices*/
+      4 && div6_class_value !== (div6_class_value = `table-row ${/*i*/
+      ctx[37] % 2 ? "alt" : ""}`)) {
+        attr(div6, "class", div6_class_value);
+      }
     },
     i(local) {
       if (current) return;
@@ -1677,11 +1842,116 @@ function create_each_block_1$2(ctx) {
     },
     d(detaching) {
       if (detaching) {
-        detach(div5);
+        detach(div6);
       }
+      if_block.d();
       destroy_component(statusdot);
       mounted = false;
       dispose();
+    }
+  };
+}
+function create_if_block_2$3(ctx) {
+  let div;
+  let button0;
+  let t1;
+  let button1;
+  let t2;
+  let button1_disabled_value;
+  let button1_title_value;
+  let mounted;
+  let dispose;
+  return {
+    c() {
+      div = element("div");
+      button0 = element("button");
+      button0.textContent = "Rename";
+      t1 = space();
+      button1 = element("button");
+      t2 = text("Remove");
+      attr(button0, "type", "button");
+      attr(button1, "type", "button");
+      button1.disabled = button1_disabled_value = !/*isRemovable*/
+      ctx[14](
+        /*menuDevice*/
+        ctx[13]
+      ) || /*removing*/
+      ctx[7];
+      attr(button1, "title", button1_title_value = /*isRemovable*/
+      ctx[14](
+        /*menuDevice*/
+        ctx[13]
+      ) ? "" : "Unplug the keyer to remove it");
+      attr(div, "class", "keyer-menu");
+      attr(
+        div,
+        "style",
+        /*menuStyle*/
+        ctx[10]
+      );
+    },
+    m(target, anchor) {
+      insert(target, div, anchor);
+      append(div, button0);
+      append(div, t1);
+      append(div, button1);
+      append(button1, t2);
+      if (!mounted) {
+        dispose = [
+          listen(
+            button0,
+            "click",
+            /*click_handler_1*/
+            ctx[29]
+          ),
+          listen(
+            button1,
+            "click",
+            /*click_handler_2*/
+            ctx[30]
+          ),
+          action_destroyer(
+            /*focusFirstButton*/
+            ctx[18].call(null, div)
+          )
+        ];
+        mounted = true;
+      }
+    },
+    p(ctx2, dirty) {
+      if (dirty[0] & /*menuDevice, removing*/
+      8320 && button1_disabled_value !== (button1_disabled_value = !/*isRemovable*/
+      ctx2[14](
+        /*menuDevice*/
+        ctx2[13]
+      ) || /*removing*/
+      ctx2[7])) {
+        button1.disabled = button1_disabled_value;
+      }
+      if (dirty[0] & /*menuDevice*/
+      8192 && button1_title_value !== (button1_title_value = /*isRemovable*/
+      ctx2[14](
+        /*menuDevice*/
+        ctx2[13]
+      ) ? "" : "Unplug the keyer to remove it")) {
+        attr(button1, "title", button1_title_value);
+      }
+      if (dirty[0] & /*menuStyle*/
+      1024) {
+        attr(
+          div,
+          "style",
+          /*menuStyle*/
+          ctx2[10]
+        );
+      }
+    },
+    d(detaching) {
+      if (detaching) {
+        detach(div);
+      }
+      mounted = false;
+      run_all(dispose);
     }
   };
 }
@@ -1693,26 +1963,26 @@ function create_if_block_1$3(ctx) {
     c() {
       div = element("div");
       t = text(
-        /*removeStatus*/
-        ctx[7]
+        /*keyerStatus*/
+        ctx[8]
       );
-      attr(div, "class", div_class_value = `inline-status ${/*removeStatusKind*/
-      ctx[8] === "error" ? "error" : ""}`);
+      attr(div, "class", div_class_value = `inline-status ${/*keyerStatusKind*/
+      ctx[9] === "error" ? "error" : ""}`);
     },
     m(target, anchor) {
       insert(target, div, anchor);
       append(div, t);
     },
     p(ctx2, dirty) {
-      if (dirty & /*removeStatus*/
-      128) set_data(
+      if (dirty[0] & /*keyerStatus*/
+      256) set_data(
         t,
-        /*removeStatus*/
-        ctx2[7]
+        /*keyerStatus*/
+        ctx2[8]
       );
-      if (dirty & /*removeStatusKind*/
-      256 && div_class_value !== (div_class_value = `inline-status ${/*removeStatusKind*/
-      ctx2[8] === "error" ? "error" : ""}`)) {
+      if (dirty[0] & /*keyerStatusKind*/
+      512 && div_class_value !== (div_class_value = `inline-status ${/*keyerStatusKind*/
+      ctx2[9] === "error" ? "error" : ""}`)) {
         attr(div, "class", div_class_value);
       }
     },
@@ -1749,7 +2019,7 @@ function create_else_block$3(ctx) {
       insert(target, each_1_anchor, anchor);
     },
     p(ctx2, dirty) {
-      if (dirty & /*connectors, devices*/
+      if (dirty[0] & /*connectors, devices*/
       12) {
         each_value = ensure_array_like(
           /*connectors*/
@@ -1804,28 +2074,28 @@ function create_each_block$2(ctx) {
   let div0;
   let t0_value = (
     /*c*/
-    (ctx[15].id ?? "—") + ""
+    (ctx[35].id ?? "—") + ""
   );
   let t0;
   let t1;
   let div1;
   let t2_value = (
     /*c*/
-    (ctx[15].type || "—") + ""
+    (ctx[35].type || "—") + ""
   );
   let t2;
   let t3;
   let div2;
   let t4_value = (
     /*c*/
-    (ctx[15].devname || "—") + ""
+    (ctx[35].devname || "—") + ""
   );
   let t4;
   let t5;
   let div3;
   let t6_value = (
     /*c*/
-    (ctx[15].status || "—") + ""
+    (ctx[35].status || "—") + ""
   );
   let t6;
   let div3_class_value;
@@ -1833,7 +2103,7 @@ function create_each_block$2(ctx) {
   let div4;
   let t8_value = clientLabel(
     /*c*/
-    ctx[15].client
+    ctx[35].client
   ) + "";
   let t8;
   let div4_title_value;
@@ -1843,21 +2113,21 @@ function create_each_block$2(ctx) {
     /*devices*/
     ctx[2],
     /*c*/
-    ctx[15].serial
+    ctx[35].serial
   ) + "";
   let t10;
   let t11;
   let div6;
   let t12_value = (
     /*c*/
-    (ctx[15].serial || "—") + ""
+    (ctx[35].serial || "—") + ""
   );
   let t12;
   let t13;
   let div7;
   let t14_value = displayPortChannel(
     /*c*/
-    ctx[15].channel
+    ctx[35].channel
   ) + "";
   let t14;
   let t15;
@@ -1889,13 +2159,13 @@ function create_each_block$2(ctx) {
       t14 = text(t14_value);
       t15 = space();
       attr(div3, "class", div3_class_value = /*c*/
-      ctx[15].status === "failed" ? "text-error" : "");
+      ctx[35].status === "failed" ? "text-error" : "");
       attr(div4, "title", div4_title_value = clientTitle(
         /*c*/
-        ctx[15].client
+        ctx[35].client
       ));
       attr(div8, "class", `table-row ${/*i*/
-      ctx[17] % 2 ? "alt" : ""}`);
+      ctx[37] % 2 ? "alt" : ""}`);
     },
     m(target, anchor) {
       insert(target, div8, anchor);
@@ -1925,49 +2195,49 @@ function create_each_block$2(ctx) {
       append(div8, t15);
     },
     p(ctx2, dirty) {
-      if (dirty & /*connectors*/
+      if (dirty[0] & /*connectors*/
       8 && t0_value !== (t0_value = /*c*/
-      (ctx2[15].id ?? "—") + "")) set_data(t0, t0_value);
-      if (dirty & /*connectors*/
+      (ctx2[35].id ?? "—") + "")) set_data(t0, t0_value);
+      if (dirty[0] & /*connectors*/
       8 && t2_value !== (t2_value = /*c*/
-      (ctx2[15].type || "—") + "")) set_data(t2, t2_value);
-      if (dirty & /*connectors*/
+      (ctx2[35].type || "—") + "")) set_data(t2, t2_value);
+      if (dirty[0] & /*connectors*/
       8 && t4_value !== (t4_value = /*c*/
-      (ctx2[15].devname || "—") + "")) set_data(t4, t4_value);
-      if (dirty & /*connectors*/
+      (ctx2[35].devname || "—") + "")) set_data(t4, t4_value);
+      if (dirty[0] & /*connectors*/
       8 && t6_value !== (t6_value = /*c*/
-      (ctx2[15].status || "—") + "")) set_data(t6, t6_value);
-      if (dirty & /*connectors*/
+      (ctx2[35].status || "—") + "")) set_data(t6, t6_value);
+      if (dirty[0] & /*connectors*/
       8 && div3_class_value !== (div3_class_value = /*c*/
-      ctx2[15].status === "failed" ? "text-error" : "")) {
+      ctx2[35].status === "failed" ? "text-error" : "")) {
         attr(div3, "class", div3_class_value);
       }
-      if (dirty & /*connectors*/
+      if (dirty[0] & /*connectors*/
       8 && t8_value !== (t8_value = clientLabel(
         /*c*/
-        ctx2[15].client
+        ctx2[35].client
       ) + "")) set_data(t8, t8_value);
-      if (dirty & /*connectors*/
+      if (dirty[0] & /*connectors*/
       8 && div4_title_value !== (div4_title_value = clientTitle(
         /*c*/
-        ctx2[15].client
+        ctx2[35].client
       ))) {
         attr(div4, "title", div4_title_value);
       }
-      if (dirty & /*devices, connectors*/
+      if (dirty[0] & /*devices, connectors*/
       12 && t10_value !== (t10_value = deviceNameForSerial(
         /*devices*/
         ctx2[2],
         /*c*/
-        ctx2[15].serial
+        ctx2[35].serial
       ) + "")) set_data(t10, t10_value);
-      if (dirty & /*connectors*/
+      if (dirty[0] & /*connectors*/
       8 && t12_value !== (t12_value = /*c*/
-      (ctx2[15].serial || "—") + "")) set_data(t12, t12_value);
-      if (dirty & /*connectors*/
+      (ctx2[35].serial || "—") + "")) set_data(t12, t12_value);
+      if (dirty[0] & /*connectors*/
       8 && t14_value !== (t14_value = displayPortChannel(
         /*c*/
-        ctx2[15].channel
+        ctx2[35].channel
       ) + "")) set_data(t14, t14_value);
     },
     d(detaching) {
@@ -2042,28 +2312,24 @@ function create_fragment$4(ctx) {
   let section1;
   let div17;
   let t25;
+  let div25;
   let div24;
-  let div23;
-  let t34;
+  let t36;
   let current_block_type_index;
   let if_block0;
-  let t35;
-  let div25;
-  let button;
-  let t36;
-  let button_disabled_value;
   let t37;
   let t38;
+  let t39;
   let section2;
   let div26;
-  let t40;
+  let t41;
   let div36;
   let div35;
-  let t56;
+  let t57;
   let current;
   let mounted;
   let dispose;
-  const if_block_creators = [create_if_block_2$3, create_else_block_1$2];
+  const if_block_creators = [create_if_block_3$3, create_else_block_1$2];
   const if_blocks = [];
   function select_block_type(ctx2, dirty) {
     if (
@@ -2075,18 +2341,22 @@ function create_fragment$4(ctx) {
   current_block_type_index = select_block_type(ctx);
   if_block0 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
   let if_block1 = (
-    /*removeStatus*/
-    ctx[7] && create_if_block_1$3(ctx)
+    /*menuDevice*/
+    ctx[13] && create_if_block_2$3(ctx)
   );
-  function select_block_type_1(ctx2, dirty) {
+  let if_block2 = (
+    /*keyerStatus*/
+    ctx[8] && create_if_block_1$3(ctx)
+  );
+  function select_block_type_2(ctx2, dirty) {
     if (
       /*connectors*/
       ctx2[3].length === 0
     ) return create_if_block$4;
     return create_else_block$3;
   }
-  let current_block_type = select_block_type_1(ctx);
-  let if_block2 = current_block_type(ctx);
+  let current_block_type = select_block_type_2(ctx);
+  let if_block3 = current_block_type(ctx);
   return {
     c() {
       section0 = element("section");
@@ -2135,27 +2405,25 @@ function create_fragment$4(ctx) {
       div17 = element("div");
       div17.textContent = "Keyer List";
       t25 = space();
-      div24 = element("div");
-      div23 = element("div");
-      div23.innerHTML = `<div></div> <div>Name</div> <div>Serial</div> <div>Firmware</div> <div>Status</div>`;
-      t34 = space();
-      if_block0.c();
-      t35 = space();
       div25 = element("div");
-      button = element("button");
-      t36 = text("Remove");
+      div24 = element("div");
+      div24.innerHTML = `<div>Name</div> <div>Model</div> <div>Serial</div> <div>Firmware</div> <div>Status</div> <div></div>`;
+      t36 = space();
+      if_block0.c();
       t37 = space();
       if (if_block1) if_block1.c();
       t38 = space();
+      if (if_block2) if_block2.c();
+      t39 = space();
       section2 = element("section");
       div26 = element("div");
       div26.textContent = "Port List";
-      t40 = space();
+      t41 = space();
       div36 = element("div");
       div35 = element("div");
       div35.innerHTML = `<div>ID</div> <div>Type</div> <div>Port / Device</div> <div>Status</div> <div>Client</div> <div>Destination Name</div> <div>Destination Serial</div> <div>Channel</div>`;
-      t56 = space();
-      if_block2.c();
+      t57 = space();
+      if_block3.c();
       attr(div0, "class", "section-title");
       attr(div1, "class", "label");
       attr(div2, "class", "value");
@@ -2175,13 +2443,8 @@ function create_fragment$4(ctx) {
       attr(div16, "class", "panel");
       attr(section0, "class", "section");
       attr(div17, "class", "section-title");
-      attr(div23, "class", "table-header");
-      attr(div24, "class", "panel table keyers-grid");
-      attr(button, "class", "btn");
-      button.disabled = button_disabled_value = !/*selectedSerials*/
-      ctx[5].length || /*removing*/
-      ctx[6];
-      attr(div25, "class", "button-row");
+      attr(div24, "class", "table-header");
+      attr(div25, "class", "panel table keyers-grid");
       attr(section1, "class", "section");
       attr(div26, "class", "section-title");
       attr(div35, "class", "table-header");
@@ -2228,53 +2491,72 @@ function create_fragment$4(ctx) {
       insert(target, section1, anchor);
       append(section1, div17);
       append(section1, t25);
-      append(section1, div24);
-      append(div24, div23);
-      append(div24, t34);
-      if_blocks[current_block_type_index].m(div24, null);
-      append(section1, t35);
       append(section1, div25);
-      append(div25, button);
-      append(button, t36);
+      append(div25, div24);
+      append(div25, t36);
+      if_blocks[current_block_type_index].m(div25, null);
       append(section1, t37);
       if (if_block1) if_block1.m(section1, null);
-      insert(target, t38, anchor);
+      append(section1, t38);
+      if (if_block2) if_block2.m(section1, null);
+      insert(target, t39, anchor);
       insert(target, section2, anchor);
       append(section2, div26);
-      append(section2, t40);
+      append(section2, t41);
       append(section2, div36);
       append(div36, div35);
-      append(div36, t56);
-      if_block2.m(div36, null);
+      append(div36, t57);
+      if_block3.m(div36, null);
       current = true;
       if (!mounted) {
-        dispose = listen(
-          button,
-          "click",
-          /*removeKeyers*/
-          ctx[11]
-        );
+        dispose = [
+          listen(
+            window,
+            "click",
+            /*closeMenu*/
+            ctx[15]
+          ),
+          listen(
+            window,
+            "keydown",
+            /*onWindowKeydown*/
+            ctx[17]
+          ),
+          listen(
+            window,
+            "resize",
+            /*closeMenu*/
+            ctx[15]
+          ),
+          listen(
+            window,
+            "scroll",
+            /*closeMenu*/
+            ctx[15],
+            true
+          )
+        ];
         mounted = true;
       }
     },
-    p(ctx2, [dirty]) {
+    p(ctx2, dirty) {
       var _a2, _b2, _c2, _d2, _e2, _f2, _g2, _h2, _i2, _j2;
-      if ((!current || dirty & /*runtime*/
+      if ((!current || dirty[0] & /*runtime*/
       1) && t4_value !== (t4_value = /*runtime*/
       (((_b2 = (_a2 = ctx2[0]) == null ? void 0 : _a2.daemon) == null ? void 0 : _b2.name) || "mhuxd") + "")) set_data(t4, t4_value);
-      if ((!current || dirty & /*runtime*/
+      if ((!current || dirty[0] & /*runtime*/
       1) && t6_value !== (t6_value = /*runtime*/
       (((_d2 = (_c2 = ctx2[0]) == null ? void 0 : _c2.daemon) == null ? void 0 : _d2.version) || "—") + "")) set_data(t6, t6_value);
-      if ((!current || dirty & /*runtime*/
+      if ((!current || dirty[0] & /*runtime*/
       1) && t10_value !== (t10_value = /*runtime*/
       (((_e2 = ctx2[0]) == null ? void 0 : _e2.hostname) || "—") + "")) set_data(t10, t10_value);
-      if ((!current || dirty & /*runtime*/
+      if ((!current || dirty[0] & /*runtime*/
       1) && t14_value !== (t14_value = /*runtime*/
       (((_g2 = (_f2 = ctx2[0]) == null ? void 0 : _f2.daemon) == null ? void 0 : _g2.pid) ?? "—") + "")) set_data(t14, t14_value);
-      if ((!current || dirty & /*runtime*/
+      if ((!current || dirty[0] & /*runtime*/
       1) && t18_value !== (t18_value = /*runtime*/
       (((_i2 = (_h2 = ctx2[0]) == null ? void 0 : _h2.daemon) == null ? void 0 : _i2.logfile) || "—") + "")) set_data(t18, t18_value);
-      if ((!current || dirty & /*daemonCfg*/
+      if ((!current || dirty[0] & /*daemonCfg*/
       2) && t22_value !== (t22_value = /*daemonCfg*/
       (((_j2 = ctx2[1]) == null ? void 0 : _j2.loglevel) || "—") + "")) set_data(t22, t22_value);
       let previous_block_index = current_block_type_index;
@@ -2295,37 +2577,46 @@ function create_fragment$4(ctx) {
           if_block0.p(ctx2, dirty);
         }
         transition_in(if_block0, 1);
-        if_block0.m(div24, null);
-      }
-      if (!current || dirty & /*selectedSerials, removing*/
-      96 && button_disabled_value !== (button_disabled_value = !/*selectedSerials*/
-      ctx2[5].length || /*removing*/
-      ctx2[6])) {
-        button.disabled = button_disabled_value;
+        if_block0.m(div25, null);
       }
       if (
-        /*removeStatus*/
-        ctx2[7]
+        /*menuDevice*/
+        ctx2[13]
       ) {
         if (if_block1) {
           if_block1.p(ctx2, dirty);
         } else {
-          if_block1 = create_if_block_1$3(ctx2);
+          if_block1 = create_if_block_2$3(ctx2);
           if_block1.c();
-          if_block1.m(section1, null);
+          if_block1.m(section1, t38);
         }
       } else if (if_block1) {
         if_block1.d(1);
         if_block1 = null;
       }
-      if (current_block_type === (current_block_type = select_block_type_1(ctx2)) && if_block2) {
-        if_block2.p(ctx2, dirty);
-      } else {
-        if_block2.d(1);
-        if_block2 = current_block_type(ctx2);
+      if (
+        /*keyerStatus*/
+        ctx2[8]
+      ) {
         if (if_block2) {
+          if_block2.p(ctx2, dirty);
+        } else {
+          if_block2 = create_if_block_1$3(ctx2);
           if_block2.c();
-          if_block2.m(div36, null);
+          if_block2.m(section1, null);
+        }
+      } else if (if_block2) {
+        if_block2.d(1);
+        if_block2 = null;
+      }
+      if (current_block_type === (current_block_type = select_block_type_2(ctx2)) && if_block3) {
+        if_block3.p(ctx2, dirty);
+      } else {
+        if_block3.d(1);
+        if_block3 = current_block_type(ctx2);
+        if (if_block3) {
+          if_block3.c();
+          if_block3.m(div36, null);
         }
       }
     },
@@ -2343,18 +2634,20 @@ function create_fragment$4(ctx) {
         detach(section0);
         detach(t23);
         detach(section1);
-        detach(t38);
+        detach(t39);
         detach(section2);
       }
       if_blocks[current_block_type_index].d();
       if (if_block1) if_block1.d();
-      if_block2.d();
+      if (if_block2) if_block2.d();
+      if_block3.d();
       mounted = false;
-      dispose();
+      run_all(dispose);
     }
   };
 }
 function instance$4($$self, $$props, $$invalidate) {
+  let menuDevice;
   let { runtime = null } = $$props;
   let { daemonCfg = null } = $$props;
   let { devices = [] } = $$props;
@@ -2362,66 +2655,156 @@ function instance$4($$self, $$props, $$invalidate) {
   let { fwString = () => "" } = $$props;
   let { reloadData = async () => {
   } } = $$props;
-  let selectedSerials = [];
   let removing = false;
-  let removeStatus = "";
-  let removeStatusKind = "success";
-  let removeStatusTimer;
+  let keyerStatus = "";
+  let keyerStatusKind = "success";
+  let keyerStatusTimer;
+  let menuSerial = "";
+  let menuStyle = "";
+  let menuButton = null;
+  let renameSerial = "";
+  let renameValue = "";
+  let renameSaving = false;
   const isRemovable = (d) => d.status === "DISCONNECTED";
-  const toggleSelection = (serial) => {
-    $$invalidate(5, selectedSerials = selectedSerials.includes(serial) ? selectedSerials.filter((s) => s !== serial) : [...selectedSerials, serial]);
+  const setKeyerStatus = (message, kind = "success") => {
+    $$invalidate(8, keyerStatus = message);
+    $$invalidate(9, keyerStatusKind = kind);
+    clearTimeout(keyerStatusTimer);
+    keyerStatusTimer = setTimeout(
+      () => {
+        $$invalidate(8, keyerStatus = "");
+      },
+      5e3
+    );
   };
-  const removeKeyers = async () => {
-    if (!selectedSerials.length) return;
-    const names = selectedSerials.join(", ");
-    if (!confirm(`Remove ${names}?
-
-All settings of the keyer(s) and their ports will be discarded. A removed keyer shows up again with default settings when it gets plugged in.`)) return;
-    $$invalidate(6, removing = true);
-    $$invalidate(7, removeStatus = "");
-    $$invalidate(8, removeStatusKind = "success");
-    try {
-      await Promise.all(selectedSerials.map(async (serial) => {
-        const res = await fetch(`/api/v1/config/devices/${encodeURIComponent(serial)}`, {
-          method: "DELETE",
-          headers: { Accept: "application/json" }
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(`${serial}: ${body.error || res.status}`);
-        }
-      }));
-      $$invalidate(5, selectedSerials = []);
-      $$invalidate(7, removeStatus = "Keyer(s) removed.");
-    } catch (err) {
-      $$invalidate(7, removeStatus = (err == null ? void 0 : err.message) || "Failed to remove keyer(s).");
-      $$invalidate(8, removeStatusKind = "error");
-    } finally {
-      $$invalidate(6, removing = false);
-      await reloadData().catch(() => {
-      });
-      clearTimeout(removeStatusTimer);
-      removeStatusTimer = setTimeout(
-        () => {
-          $$invalidate(7, removeStatus = "");
-        },
-        5e3
-      );
+  const closeMenu = () => {
+    $$invalidate(5, menuSerial = "");
+  };
+  const toggleMenu = (d, event) => {
+    if (menuSerial === d.serial) {
+      closeMenu();
+      return;
+    }
+    menuButton = event.currentTarget;
+    const rect = menuButton.getBoundingClientRect();
+    $$invalidate(10, menuStyle = `top: ${rect.bottom}px; right: ${document.documentElement.clientWidth - rect.right}px;`);
+    $$invalidate(5, menuSerial = d.serial);
+  };
+  const onWindowKeydown = (event) => {
+    if (event.key === "Escape" && menuSerial) {
+      closeMenu();
+      menuButton == null ? void 0 : menuButton.focus();
     }
   };
-  const change_handler = (d) => toggleSelection(d.serial);
+  const focusFirstButton = (el) => {
+    var _a;
+    (_a = el.querySelector("button:not(:disabled)")) == null ? void 0 : _a.focus();
+  };
+  const focusAndSelect = (el) => {
+    el.focus();
+    el.select();
+  };
+  const startRename = (d) => {
+    closeMenu();
+    $$invalidate(8, keyerStatus = "");
+    $$invalidate(11, renameValue = d.name);
+    $$invalidate(6, renameSerial = d.serial);
+  };
+  const cancelRename = () => {
+    $$invalidate(6, renameSerial = "");
+  };
+  const commitRename = async (d) => {
+    if (renameSerial !== d.serial || renameSaving) return;
+    const name = renameValue.trim();
+    if (name === d.name) {
+      cancelRename();
+      return;
+    }
+    $$invalidate(12, renameSaving = true);
+    try {
+      const res = await fetch(`/api/v1/config/devices/${encodeURIComponent(d.serial)}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({ serial: d.serial, name })
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Failed to rename keyer (${res.status}).`);
+      }
+      $$invalidate(6, renameSerial = "");
+      await reloadData().catch(() => {
+      });
+    } catch (err) {
+      setKeyerStatus((err == null ? void 0 : err.message) || "Failed to rename keyer.", "error");
+    } finally {
+      $$invalidate(12, renameSaving = false);
+    }
+  };
+  const onRenameKeydown = (event, d) => {
+    if (event.key === "Enter") {
+      commitRename(d);
+    } else if (event.key === "Escape") {
+      cancelRename();
+    }
+  };
+  const removeKeyer = async (d) => {
+    closeMenu();
+    const label = d.name === d.serial ? d.serial : `${d.name} (${d.serial})`;
+    if (!confirm(`Remove ${label}?
+
+All settings of the keyer and its ports will be discarded. A removed keyer shows up again with default settings when it gets plugged in.`)) return;
+    $$invalidate(7, removing = true);
+    $$invalidate(8, keyerStatus = "");
+    try {
+      const res = await fetch(`/api/v1/config/devices/${encodeURIComponent(d.serial)}`, {
+        method: "DELETE",
+        headers: { Accept: "application/json" }
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(`${d.serial}: ${body.error || res.status}`);
+      }
+      setKeyerStatus("Keyer removed.");
+    } catch (err) {
+      setKeyerStatus((err == null ? void 0 : err.message) || "Failed to remove keyer.", "error");
+    } finally {
+      $$invalidate(7, removing = false);
+      await reloadData().catch(() => {
+      });
+    }
+  };
+  function input_input_handler() {
+    renameValue = this.value;
+    $$invalidate(11, renameValue);
+  }
+  const keydown_handler = (d, e) => onRenameKeydown(e, d);
+  const blur_handler = (d) => commitRename(d);
+  const click_handler = (d, e) => toggleMenu(d, e);
+  const click_handler_1 = () => startRename(menuDevice);
+  const click_handler_2 = () => removeKeyer(menuDevice);
   $$self.$$set = ($$props2) => {
     if ("runtime" in $$props2) $$invalidate(0, runtime = $$props2.runtime);
     if ("daemonCfg" in $$props2) $$invalidate(1, daemonCfg = $$props2.daemonCfg);
     if ("devices" in $$props2) $$invalidate(2, devices = $$props2.devices);
     if ("connectors" in $$props2) $$invalidate(3, connectors = $$props2.connectors);
     if ("fwString" in $$props2) $$invalidate(4, fwString = $$props2.fwString);
-    if ("reloadData" in $$props2) $$invalidate(12, reloadData = $$props2.reloadData);
+    if ("reloadData" in $$props2) $$invalidate(24, reloadData = $$props2.reloadData);
   };
   $$self.$$.update = () => {
-    if ($$self.$$.dirty & /*selectedSerials, devices*/
+    if ($$self.$$.dirty[0] & /*menuSerial, devices*/
     36) {
-      $$invalidate(5, selectedSerials = selectedSerials.filter((serial) => devices.some((d) => d.serial === serial && isRemovable(d))));
+      if (menuSerial && !devices.some((d) => d.serial === menuSerial)) $$invalidate(5, menuSerial = "");
+    }
+    if ($$self.$$.dirty[0] & /*renameSerial, devices*/
+    68) {
+      if (renameSerial && !devices.some((d) => d.serial === renameSerial)) $$invalidate(6, renameSerial = "");
+    }
+    if ($$self.$$.dirty[0] & /*devices, menuSerial*/
+    36) {
+      $$invalidate(13, menuDevice = devices.find((d) => d.serial === menuSerial));
     }
   };
   return [
@@ -2430,28 +2813,54 @@ All settings of the keyer(s) and their ports will be discarded. A removed keyer 
     devices,
     connectors,
     fwString,
-    selectedSerials,
+    menuSerial,
+    renameSerial,
     removing,
-    removeStatus,
-    removeStatusKind,
+    keyerStatus,
+    keyerStatusKind,
+    menuStyle,
+    renameValue,
+    renameSaving,
+    menuDevice,
     isRemovable,
-    toggleSelection,
-    removeKeyers,
+    closeMenu,
+    toggleMenu,
+    onWindowKeydown,
+    focusFirstButton,
+    focusAndSelect,
+    startRename,
+    commitRename,
+    onRenameKeydown,
+    removeKeyer,
     reloadData,
-    change_handler
+    input_input_handler,
+    keydown_handler,
+    blur_handler,
+    click_handler,
+    click_handler_1,
+    click_handler_2
   ];
 }
 class HomeSummary extends SvelteComponent {
   constructor(options) {
     super();
-    init(this, options, instance$4, create_fragment$4, safe_not_equal, {
-      runtime: 0,
-      daemonCfg: 1,
-      devices: 2,
-      connectors: 3,
-      fwString: 4,
-      reloadData: 12
-    });
+    init(
+      this,
+      options,
+      instance$4,
+      create_fragment$4,
+      safe_not_equal,
+      {
+        runtime: 0,
+        daemonCfg: 1,
+        devices: 2,
+        connectors: 3,
+        fwString: 4,
+        reloadData: 24
+      },
+      null,
+      [-1, -1]
+    );
   }
 }
 function get_each_context$1(ctx, list, i) {
@@ -3453,44 +3862,30 @@ function create_if_block_5$2(ctx) {
 }
 function create_each_block_1$1(ctx) {
   let option;
-  let t0_value = (
+  let t_value = keyerLabel(
     /*k*/
-    ctx[48].name + ""
-  );
-  let t0;
-  let t1;
-  let t2_value = (
-    /*k*/
-    ctx[48].serial + ""
-  );
-  let t2;
-  let t3;
+    ctx[48]
+  ) + "";
+  let t;
   let option_value_value;
   return {
     c() {
       option = element("option");
-      t0 = text(t0_value);
-      t1 = text(" (");
-      t2 = text(t2_value);
-      t3 = text(")");
+      t = text(t_value);
       option.__value = option_value_value = /*k*/
       ctx[48].serial;
       set_input_value(option, option.__value);
     },
     m(target, anchor) {
       insert(target, option, anchor);
-      append(option, t0);
-      append(option, t1);
-      append(option, t2);
-      append(option, t3);
+      append(option, t);
     },
     p(ctx2, dirty) {
       if (dirty[0] & /*keyers*/
-      2 && t0_value !== (t0_value = /*k*/
-      ctx2[48].name + "")) set_data(t0, t0_value);
-      if (dirty[0] & /*keyers*/
-      2 && t2_value !== (t2_value = /*k*/
-      ctx2[48].serial + "")) set_data(t2, t2_value);
+      2 && t_value !== (t_value = keyerLabel(
+        /*k*/
+        ctx2[48]
+      ) + "")) set_data(t, t_value);
       if (dirty[0] & /*keyers*/
       2 && option_value_value !== (option_value_value = /*k*/
       ctx2[48].serial)) {
@@ -35485,6 +35880,9 @@ function instance($$self, $$props, $$invalidate) {
     $$invalidate(1, configDevices = configDevices.filter((d) => d.serial !== data.serial));
     $$invalidate(12, connectors = connectors.filter((c) => c.serial !== data.serial));
   });
+  const unsubRenamed = onWsEvent("device_renamed", (data) => {
+    $$invalidate(0, devices = devices.map((d) => d.serial === data.serial ? { ...d, name: data.name } : d));
+  });
   const unsubConStatus = onWsEvent("connector_status", (data) => {
     $$invalidate(12, connectors = connectors.map((c) => c.id === data.id ? { ...c, status: data.status } : c));
   });
@@ -35528,6 +35926,7 @@ function instance($$self, $$props, $$invalidate) {
     disconnectWs();
     unsubStatus();
     unsubRemoved();
+    unsubRenamed();
     unsubConStatus();
     unsubConClient();
     unsubUsb();
@@ -35541,6 +35940,7 @@ function instance($$self, $$props, $$invalidate) {
           serial: cfg.serial,
           type: cfg.type,
           name: dev.name || cfg.serial,
+          model: dev.model || "",
           status: dev.status || "",
           radios: dev.radios || []
         };
@@ -35550,6 +35950,7 @@ function instance($$self, $$props, $$invalidate) {
       serial: dev.serial,
       type: null,
       name: dev.name || dev.serial,
+      model: dev.model || "",
       status: dev.status || "",
       radios: dev.radios || []
     }));

@@ -1078,6 +1078,12 @@ static int apply_sm_from_json(struct device *dev, json_t *sm_obj) {
     return errors;
 }
 
+int cfgmgrj_check_device_name(struct cfgmgrj *cfgmgrj, const char *serial, json_t *name_val) {
+    if(!json_is_string(name_val) && !json_is_null(name_val))
+        return -EINVAL;
+    return dmgr_check_device_name(app_ctx_get_device_manager(cfgmgrj->ctx), serial, json_string_value(name_val));
+}
+
 // Like the old cfgmgr, a setting that can't be applied doesn't keep the remaining settings
 // from being applied. Returns the number of settings that failed.
 static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
@@ -1111,6 +1117,17 @@ static int apply_device_from_json(struct cfgmgrj *cfgmgrj, json_t *device_obj) {
         type = mhc_get_type(ctl);
 
     int errors = 0;
+
+    if(json_has_key(device_obj, "name")) {
+        json_t *name_val = json_object_get(device_obj, "name");
+        int rc = cfgmgrj_check_device_name(cfgmgrj, serial, name_val);
+        if(rc == 0) {
+            dmgr_set_device_name(dev, json_string_value(name_val));
+        } else {
+            err("%s can't use this name: %s", serial, rc == -EEXIST ? "another keyer has it" : "not valid");
+            errors++;
+        }
+    }
 
     if(json_has_key(device_obj, "rig_mode_sync")) {
         json_t *rig_mode_sync_obj = json_object_get(device_obj, "rig_mode_sync");
@@ -1389,6 +1406,8 @@ static json_t *build_config_json(struct cfgmgrj *cfgmgrj) {
 
             json_object_set_new(device, "serial", json_string(dev->serial ? dev->serial : ""));
             json_object_set_new(device, "type", json_integer(mhc_get_type(dev->ctl)));
+            if(dev->name)
+                json_object_set_new(device, "name", json_string(dev->name));
 
             // Not a setting, remembered to show the firmware version while the keyer is offline.
             const struct mh_info *mhi = mhc_get_mhinfo(dev->ctl);

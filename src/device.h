@@ -14,6 +14,7 @@ struct device {
 	struct mh_control *ctl;
 	struct wkman *wkman;
 	char *serial;
+	char *name; // custom name, NULL for the default, see dmgr_device_name()
 };
 
 

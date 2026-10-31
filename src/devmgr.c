@@ -7,6 +7,8 @@
  */
 
 #include <errno.h>
+#include <string.h>
+#include <strings.h>
 #include <ev.h>
 
 #include "devmgr.h"
@@ -20,6 +22,7 @@
 #include "wkman.h"
 
 #define MOD_ID "dmr"
+#define DEVICE_NAME_MAX_CHARS 32
 
 typedef struct eventbus eventbus_t;
 
@@ -83,6 +86,7 @@ static void destroy_dev(struct device *dev) {
 	PG_Remove(&dev->node);
 	if(dev->serial)
 		free(dev->serial);
+	free(dev->name);
 	free(dev);
 }
 
@@ -214,6 +218,52 @@ struct device *dmgr_get_device(struct device_manager *dmgr, const char *serial) 
 			return d;
 	}
 	return NULL;
+}
+
+const char *dmgr_device_name(const struct device *dev) {
+	return dev->name ? dev->name : dev->serial;
+}
+
+static int is_default_name(const char *serial, const char *name) {
+	return !name || !*name || !strcmp(name, serial);
+}
+
+// The name is UTF-8, jansson checked that.
+static int is_valid_name(const char *name) {
+	size_t len = strlen(name);
+	size_t chars = 0;
+
+	if(name[0] == ' ' || name[len - 1] == ' ')
+		return 0;
+
+	for(const unsigned char *p = (const unsigned char *)name; *p; p++) {
+		if(*p < 0x20 || *p == 0x7f)
+			return 0;
+		if((*p & 0xc0) != 0x80)
+			chars++;
+	}
+	return chars <= DEVICE_NAME_MAX_CHARS;
+}
+
+int dmgr_check_device_name(struct device_manager *dmgr, const char *serial, const char *name) {
+	int is_default = is_default_name(serial, name);
+
+	if(!is_default && !is_valid_name(name))
+		return -EINVAL;
+
+	const char *wanted = is_default ? serial : name;
+	struct device *d;
+	PG_SCANLIST(&dmgr->device_list, d) {
+		if(strcmp(d->serial, serial) &&
+		   (!strcasecmp(dmgr_device_name(d), wanted) || !strcasecmp(d->serial, wanted)))
+			return -EEXIST;
+	}
+	return 0;
+}
+
+void dmgr_set_device_name(struct device *dev, const char *name) {
+	free(dev->name);
+	dev->name = is_default_name(dev->serial, name) ? NULL : w_strdup(name);
 }
 
 t_on_device_connect_cb_handle *dmgr_add_on_device_connect_cb(struct device_manager *dmgr, dmgr_device_cb cb, void *user_data) {

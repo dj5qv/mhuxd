@@ -1,5 +1,5 @@
 <script>
-  import { displayPortChannel, deviceNameForSerial } from './ports.js';
+  import { displayPortChannel, deviceNameForSerial, keyerLabel } from './ports.js';
 
   /** @type {Array} */
   export let connectors = [];
@@ -293,7 +293,7 @@
             <option value="">No keyers available</option>
           {:else}
             {#each keyers as k}
-              <option value={k.serial}>{k.name} ({k.serial})</option>
+              <option value={k.serial}>{keyerLabel(k)}</option>
             {/each}
           {/if}
         </select>

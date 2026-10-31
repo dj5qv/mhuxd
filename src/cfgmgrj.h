@@ -30,6 +30,9 @@ int cfgmgrj_remove_conn(struct cfgmgrj *cfgmgrj, int id);
 // Returns 0 on success, -ENOENT if not known, -EBUSY if still connected,
 // -EAGAIN if a config operation is in progress.
 int cfgmgrj_remove_device(struct cfgmgrj *cfgmgrj, const char *serial);
+// Check the value of a device's "name": a string, or null for the default name.
+// Returns 0 if it can be applied, -EINVAL if it is not valid, -EEXIST if another keyer has this name.
+int cfgmgrj_check_device_name(struct cfgmgrj *cfgmgrj, const char *serial, json_t *name_val);
 // Applies all settings it can, returns -1 if any of them failed.
 int cfgmgrj_apply_json(struct cfgmgrj *cfgmgrj, json_t *root);
 json_t *cfgmgrj_build_json(struct cfgmgrj *cfgmgrj);

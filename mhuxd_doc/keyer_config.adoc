@@ -3,7 +3,7 @@
 
 === Keyer Pages
 
-Mhuxd supports multiple keyers simultaneously. Therefore for each detected keyer a separate page is created in the WebUI.
+Mhuxd supports multiple keyers simultaneously. Therefore for each detected keyer a separate page is created in the WebUI. Its tab shows the name of the keyer, which is the serial number unless you rename the keyer in the Keyer List.
 
 image::mhuxd_keyer_tabs.png[]
 

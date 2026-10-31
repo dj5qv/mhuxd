@@ -14,6 +14,12 @@ export const deviceNameForSerial = (devices, serial) => {
   return dev?.name || serial || '—';
 };
 
+// "Shack (DigiKeyer II, D2UL4ED0)", "D2UL4ED0 (DigiKeyer II)" without a custom name.
+export const keyerLabel = (keyer) => {
+  const extra = [keyer.model, keyer.name !== keyer.serial && keyer.serial].filter(Boolean).join(', ');
+  return extra ? `${keyer.name} (${extra})` : keyer.name;
+};
+
 // The application on a port, see struct con_client in src/con_client.h:
 // "wsjtx (PID 4711, mattes)", "127.0.0.1:53422 (mattes)", "192.168.1.20:50112".
 export const clientLabel = (client) => {
