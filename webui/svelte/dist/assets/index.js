@@ -35071,7 +35071,7 @@ function create_if_block_5(ctx) {
   let updating_configDevices;
   let current;
   function keyerpage_configDevices_binding(value) {
-    ctx[31](value);
+    ctx[29](value);
   }
   let keyerpage_props = {
     activeSerial: (
@@ -35168,7 +35168,7 @@ function create_if_block_4(ctx) {
   let updating_daemonCfg;
   let current;
   function daemonsettings_daemonCfg_binding(value) {
-    ctx[30](value);
+    ctx[28](value);
   }
   let daemonsettings_props = {};
   if (
@@ -35452,7 +35452,7 @@ function create_fragment(ctx) {
   tabnav.$on(
     "select",
     /*select_handler*/
-    ctx[28]
+    ctx[26]
   );
   sidemenu = new SideMenu({
     props: {
@@ -35469,7 +35469,7 @@ function create_fragment(ctx) {
   sidemenu.$on(
     "select",
     /*select_handler_1*/
-    ctx[29]
+    ctx[27]
   );
   const if_block_creators = [
     create_if_block,
@@ -35675,7 +35675,6 @@ function instance($$self, $$props, $$invalidate) {
   let keyers = [];
   let loading = true;
   let error = "";
-  let lastSerial = "";
   const parseHash = () => {
     const h = location.hash.replace(/^#\/?/, "");
     const [t, m] = h.split("/");
@@ -35684,7 +35683,6 @@ function instance($$self, $$props, $$invalidate) {
   const initHash = parseHash();
   let activeTab = initHash.tab;
   let activeMenu = initHash.menu || "summary";
-  let hashRestoredMenu = !!initHash.menu;
   const baseTabs = [{ id: "daemon", label: "Daemon" }];
   const daemonMenus = [
     {
@@ -35830,7 +35828,7 @@ function instance($$self, $$props, $$invalidate) {
   const setTab = (id) => {
     $$invalidate(5, activeTab = id);
     if (id === "daemon") $$invalidate(6, activeMenu = "summary");
-    else if (id.startsWith("keyer:")) $$invalidate(6, activeMenu = "mode");
+    else if (id.startsWith("keyer:")) $$invalidate(6, activeMenu = "");
     else $$invalidate(6, activeMenu = "summary");
   };
   const refreshDeviceConfig = async (serial) => {
@@ -36011,21 +36009,16 @@ function instance($$self, $$props, $$invalidate) {
     }
     if ($$self.$$.dirty[0] & /*activeSerial, keyers, metadata*/
     140) {
-      $$invalidate(25, activeKeyerMenus = activeSerial && keyers && metadata ? visibleKeyerMenus(activeSerial) : []);
+      $$invalidate(23, activeKeyerMenus = activeSerial && keyers && metadata ? visibleKeyerMenus(activeSerial) : []);
     }
     if ($$self.$$.dirty[0] & /*loading, activeSerial, activeKeyer*/
     400) {
       if (!loading && activeSerial && !activeKeyer) setTab("daemon");
     }
-    if ($$self.$$.dirty[0] & /*activeTab, activeSerial, lastSerial, hashRestoredMenu, activeKeyerMenus*/
-    58720416) {
-      if (activeTab.startsWith("keyer:") && activeSerial && activeSerial !== lastSerial) {
-        $$invalidate(23, lastSerial = activeSerial);
-        if (hashRestoredMenu) {
-          $$invalidate(24, hashRestoredMenu = false);
-        } else {
-          $$invalidate(6, activeMenu = ((_a = activeKeyerMenus[0]) == null ? void 0 : _a.id) || "summary");
-        }
+    if ($$self.$$.dirty[0] & /*activeKeyer, metadata, activeKeyerMenus, activeMenu*/
+    8388932) {
+      if (activeKeyer && metadata && !activeKeyerMenus.some((m) => m.id === activeMenu)) {
+        $$invalidate(6, activeMenu = ((_a = activeKeyerMenus[0]) == null ? void 0 : _a.id) || "summary");
       }
     }
     if ($$self.$$.dirty[0] & /*activeMenu*/
@@ -36037,23 +36030,23 @@ function instance($$self, $$props, $$invalidate) {
       updateHash();
     }
     if ($$self.$$.dirty[0] & /*activeTab, activeMenuId, activeKeyerMenus*/
-    33554976) {
-      $$invalidate(27, activeMenuMeta = activeTab === "daemon" ? daemonMenus.find((m) => m.id === activeMenuId) || null : activeTab.startsWith("keyer:") ? activeKeyerMenus.find((m) => m.id === activeMenuId) || null : null);
+    8389152) {
+      $$invalidate(25, activeMenuMeta = activeTab === "daemon" ? daemonMenus.find((m) => m.id === activeMenuId) || null : activeTab.startsWith("keyer:") ? activeKeyerMenus.find((m) => m.id === activeMenuId) || null : null);
     }
     if ($$self.$$.dirty[0] & /*activeTab, activeKeyer, activeSerial*/
     416) {
-      $$invalidate(26, activeTabLabel = activeTab === "daemon" ? "Daemon" : activeTab.startsWith("keyer:") ? (activeKeyer == null ? void 0 : activeKeyer.name) || activeSerial || "Keyer" : "");
+      $$invalidate(24, activeTabLabel = activeTab === "daemon" ? "Daemon" : activeTab.startsWith("keyer:") ? (activeKeyer == null ? void 0 : activeKeyer.name) || activeSerial || "Keyer" : "");
     }
     if ($$self.$$.dirty[0] & /*activeMenuMeta, activeTab*/
-    134217760) {
+    33554464) {
       $$invalidate(16, activePageTitle = (activeMenuMeta == null ? void 0 : activeMenuMeta.title) || (activeTab.startsWith("keyer:") ? "Keyer" : ""));
     }
     if ($$self.$$.dirty[0] & /*activeTabLabel, activeMenuMeta*/
-    201326592) {
+    50331648) {
       $$invalidate(15, breadcrumb = activeTabLabel ? (activeMenuMeta == null ? void 0 : activeMenuMeta.label) ? `${activeTabLabel} >> ${activeMenuMeta.label}` : activeTabLabel : "");
     }
     if ($$self.$$.dirty[0] & /*activeTab, activeKeyerMenus*/
-    33554464) {
+    8388640) {
       $$invalidate(14, sideMenuItems = activeTab === "daemon" ? daemonMenus : activeTab.startsWith("keyer:") ? activeKeyerMenus : []);
     }
   };
@@ -36081,8 +36074,6 @@ function instance($$self, $$props, $$invalidate) {
     refreshDeviceConfig,
     fwString,
     reloadData,
-    lastSerial,
-    hashRestoredMenu,
     activeKeyerMenus,
     activeTabLabel,
     activeMenuMeta,

@@ -20,7 +20,6 @@
   let keyers = [];
   let loading = true;
   let error = '';
-  let lastSerial = '';
 
 
 
@@ -32,7 +31,6 @@
   const initHash = parseHash();
   let activeTab = initHash.tab;
   let activeMenu = initHash.menu || 'summary';
-  let hashRestoredMenu = !!initHash.menu;
 
   const baseTabs = [
     { id: 'daemon', label: 'Daemon' }
@@ -89,7 +87,7 @@
   const setTab = (id) => {
     activeTab = id;
     if (id === 'daemon') activeMenu = 'summary';
-    else if (id.startsWith('keyer:')) activeMenu = 'mode';
+    else if (id.startsWith('keyer:')) activeMenu = '';
     else activeMenu = 'summary';
   };
 
@@ -265,17 +263,13 @@
   // Leave the tab of a keyer that is gone.
   $: if (!loading && activeSerial && !activeKeyer) setTab('daemon');
 
-  $: activeMenuId = (activeMenu || '').toLowerCase();
-
-
-  $: if (activeTab.startsWith('keyer:') && activeSerial && activeSerial !== lastSerial) {
-    lastSerial = activeSerial;
-    if (hashRestoredMenu) {
-      hashRestoredMenu = false;
-    } else {
-      activeMenu = activeKeyerMenus[0]?.id || 'summary';
-    }
+  // Keyers differ in their menus. Open the first one unless the menu is there,
+  // as after selecting the tab or when the URL names a menu this keyer lacks.
+  $: if (activeKeyer && metadata && !activeKeyerMenus.some((m) => m.id === activeMenu)) {
+    activeMenu = activeKeyerMenus[0]?.id || 'summary';
   }
+
+  $: activeMenuId = (activeMenu || '').toLowerCase();
 
   $: activeTab, activeMenu, updateHash();
 
