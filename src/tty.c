@@ -67,6 +67,7 @@ int tty_open(const char *name) {
 
 	if(err) {
 		err_e(errno, "could not set attributes on %s!", name);
+		free(fd_node);
 		close(fd);
 		return -1;
 	}
