@@ -1,11 +1,23 @@
 mhuxd (0.90) unstable; urgency=low
-  * Clearsilver/HDF based web UI and config management deprecated now.
-  * Configuration now JSON based, with auto-migration HDF->JSON
-  * Implemented RestAPI.
-  * UI now JS/Svelte based, talking via RestAPI/JSON with mhuxd.
-  * Optionally interfacing with rigctld to track the rig mode and frequency.
-  * systemd integration
- -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 30 Aug 2026 01:00:00 +0100
+  * Configuration now JSON based, with auto-migration HDF->JSON.
+  * New JS/Svelte web UI talking to mhuxd via REST API and WebSocket.
+    The ClearSilver based web UI has been removed.
+  * Native rig mode sync: mhuxd decodes the CAT traffic on the keyer's CAT
+    port (Icom, Kenwood, Elecraft, Yaesu, Flex/ANAN) and keeps keyer mode
+    and frequency in sync, with own queries if needed.
+  * Several applications can share the radio, one port each. CAT monitor
+    in the web UI.
+  * Optionally starts and stops rigctld as the keyer goes online/offline.
+  * PTT tracked per application, released when its port closes or its TCP
+    connection drops.
+  * Custom keyer names, removing keyers from the configuration.
+  * Virtual serial ports get symlinks in /dev/serial/by-id/.
+  * micro KEYER, CW KEYER, DIGI KEYER: settings and PTT options as in
+    microHAM's router.
+  * IPv6 for the web UI and TCP connectors.
+  * systemd integration.
+  * Many virtual serial port fixes.
+ -- Matthias Moeller (DJ5QV) <dj5qv@maxec.de>  Sun, 08 Nov 2026 12:00:00 +0100
 
 mhuxd (0.56) unstable; urgency=low
   * Minor fixes

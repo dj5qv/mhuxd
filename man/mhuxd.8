@@ -1,9 +1,9 @@
-.TH mhuxd 8 "May 2013" "" "Router Daemon for microHam Keyers"
+.TH mhuxd 8 "November 2026" "mhuxd 0.90" "Router Daemon for microHam Keyers"
 
 .SH NAME
 mhuxd \- Router Daemon for microHam keyers
 
-..SH SYNOPSIS
+.SH SYNOPSIS
 .B mhuxd
 .RI [ options ]
 .br
@@ -16,10 +16,12 @@ Linux operating system only. Supported microHam keyers are:
 .PP 
     micro KEYER
     micro KEYER II
+    micro KEYER III
     DIGI KEYER
     DIGI KEYER II
     MK2R & MK2R+
     CW KEYER
+    Station Master (DeLuxe), experimental
 
 \fBMhuxd\fP provides a web interface. It allows to perform keyer 
 configuration changes including Winkey configuration. Once mhuxd 
@@ -49,7 +51,9 @@ Prints a list of available options
 \fB\-w\fR \fI<interface:port>\fR
 
 interface and port of the webserver
-(default: localhost:5052)
+(default: localhost:5052). "localhost" listens on both 127.0.0.1 and ::1,
+"*", "0.0.0.0" or "::" on all IPv4 and IPv6 addresses. A single IPv6
+address is given in brackets, e.g. [::1]:5052.
 
 .TP
 \fB\-b\fR

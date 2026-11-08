@@ -17,19 +17,30 @@
 
 - Websocket interface, providing status changes.
 
-- Can decode CAT traffic for many rigs and keeps the keyer mode and frequency in sync. Previously the keyer would have to poll 
-  the rig on it's own to keep it's status up to date, leading to inteference with applications like WSJT-X.
-
-- Native rig mode sync (Icom, Kenwood, Elecraft, newer Yaesu, Flex/ANAN): mhuxd reads the CAT traffic of the applications
-  using the keyer's CAT port and keeps keyer mode and frequency in sync with the radio.
-  If the required CAT commants don't come across, mhuxd can initiate CAT commands on its own.
+- Native rig mode sync (Icom, Kenwood, Elecraft, Yaesu, Flex/ANAN): mhuxd reads the CAT traffic of the
+  applications using the keyer's CAT port and keeps keyer mode and frequency in sync with the radio.
+  Previously the keyer had to poll the radio on its own to keep its status up to date, which can
+  interfere with applications like WSJT-X. If the applications don't send the required CAT commands,
+  mhuxd sends its own queries.
 
 - Several applications can share the radio, each on a port of its
   own: mhuxd lets them take turns and sends each answer to the application that asked. With a
   CAT monitor for troubleshooting.
 
-- Can optionally manage rigctld, if desired. Rig and keyer becomes online -> mhuxd starts rigctld. This can also be used as a "rig mode sync"
-  option, if above mentioned "Native rig mode sync" wouldn't work for your rig.
+- Can optionally manage rigctld: when the keyer comes online, mhuxd starts rigctld, and stops it
+  when the keyer goes offline. This can also be used for rig mode sync, if the native rig mode sync
+  above doesn't work for your rig.
+
+- PTT is tracked per application: if an application closes its port or its TCP connection
+  drops while it holds PTT, mhuxd releases PTT.
+
+- Keyers can be given custom names, and keyers no longer in use can be removed from the configuration.
+
+- Virtual serial ports get a symlink in /dev/serial/by-id/, so applications list them in their
+  port selection.
+
+- micro KEYER, CW KEYER and DIGI KEYER (first generation): keyer settings and PTT options now
+  match microHAM's router.
 
 - WebUI and TCP connector support IPv6 now.
 
@@ -65,6 +76,10 @@ Similar to the microHam device router, mhuxd can create virtual serial ports. Th
 ### Binary packages
 
 Binary packages are available for Debian (and derived distributions, Ubuntu, Mint). Refer to [mhuxd.dj5qv.de](https://mhuxd.dj5qv.de/) for details.
+
+Packages for Debian 12/13 and Ubuntu 22.04/24.04 (amd64 and arm64, e.g. Raspberry Pi OS 64-bit) are
+attached to each release on the [GitHub releases page](https://github.com/dj5qv/mhuxd/releases).
+Pick the one matching your distribution and install it with `sudo apt install ./mhuxd_<version>_<distribution>_<arch>.deb`.
 
 Installing from these packages is the easiest way, like almost plug & play. Everything is handled automatically: systemd integration, permissions, account creation, etc.
 

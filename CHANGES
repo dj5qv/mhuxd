@@ -1,3 +1,22 @@
+0.90
+  * configuration now JSON based, the old HDF config is migrated
+    automatically (mhuxd-state.hdf -> mhuxd-state.json)
+  * new JS/Svelte web UI, REST API and WebSocket interface; the ClearSilver
+    based web UI has been removed
+  * native rig mode sync: mhuxd decodes the CAT traffic on the keyer's CAT
+    port (Icom, Kenwood, Elecraft, Yaesu, Flex/ANAN) and keeps keyer mode
+    and frequency in sync, sending its own queries if needed
+  * several applications can share the radio, one port each; CAT monitor
+  * optionally starts and stops rigctld as the keyer goes online/offline
+  * PTT tracked per application, released when its port closes or its TCP
+    connection drops
+  * custom keyer names, removing keyers from the configuration
+  * virtual serial ports get symlinks in /dev/serial/by-id/
+  * micro KEYER, CW KEYER, DIGI KEYER: settings and PTT options as in
+    microHAM's router
+  * IPv6 for the web UI and TCP connectors
+  * systemd integration
+  * many virtual serial port fixes
 0.56
   * minor fixes
 0.55

@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([mhuxd], [0.90beta], [mhuxd@maxec.de])
+AC_INIT([mhuxd], [0.90], [mhuxd@maxec.de])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 # pkg.m4 (from pkg-config/pkgconf) must be present when running autogen.sh,

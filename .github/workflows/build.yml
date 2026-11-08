@@ -1,0 +1,121 @@
+name: build
+
+# Every push and pull request: build, run the tests, build Debian packages
+# for each distribution and architecture below.
+# Pushing a tag v<version> (e.g. v0.90) additionally creates a draft GitHub
+# release with the packages, the source tarball and the CHANGES entry for that
+# version as release notes. Review and publish the draft on GitHub.
+# make_deb.sh builds the plain release version only when the tag matches the
+# version in configure.ac and debian/changelog, snapshot versions otherwise.
+
+on:
+  push:
+    branches: [ "master" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install deps
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential pkg-config libev-dev libudev-dev libfuse-dev libjansson-dev
+    - name: autogen
+      run: ./autogen.sh
+    - name: configure
+      run: ./configure
+    - name: make
+      run: make
+    - name: make check
+      run: make check
+    - name: make distcheck
+      run: make distcheck
+    - name: Upload source tarball
+      uses: actions/upload-artifact@v7
+      with:
+        name: mhuxd-source
+        path: mhuxd-*.tar.gz
+
+  deb:
+    strategy:
+      fail-fast: false
+      matrix:
+        dist:
+          - { image: "debian:trixie",  tag: "debian13" }
+          - { image: "debian:bookworm", tag: "debian12" }
+          - { image: "ubuntu:noble",   tag: "ubuntu24.04" }
+          - { image: "ubuntu:jammy",   tag: "ubuntu22.04" }
+        arch:
+          - { name: "amd64", runner: "ubuntu-24.04" }
+          - { name: "arm64", runner: "ubuntu-24.04-arm" }
+    runs-on: ${{ matrix.arch.runner }}
+    container: ${{ matrix.dist.image }}
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+    # git first, so checkout gets a real repository (make_deb.sh reads the
+    # commit, tag and dirty state from it).
+    - name: Install git
+      run: |
+        apt-get update
+        apt-get install -y --no-install-recommends git ca-certificates
+    - uses: actions/checkout@v7
+    - name: Install build deps
+      run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        apt-get install -y --no-install-recommends build-essential dpkg-dev
+        apt-get build-dep -y ./
+    - name: Build Debian package
+      run: |
+        ./make_deb.sh
+        mkdir -p output
+        # Same file name on every distribution otherwise.
+        for f in ../mhuxd_*.deb; do
+          b=$(basename "$f" .deb)
+          mv "$f" "output/${b%_*}_${{ matrix.dist.tag }}_${b##*_}.deb"
+        done
+        ls -l output
+    - name: Upload package
+      uses: actions/upload-artifact@v7
+      with:
+        name: mhuxd-deb-${{ matrix.dist.tag }}-${{ matrix.arch.name }}
+        path: output/*.deb
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [ check, deb ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/download-artifact@v8
+      with:
+        path: assets
+        merge-multiple: true
+    - name: Create draft release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ github.ref_name }}
+      run: |
+        version=${TAG#v}
+        # The CHANGES entry: from the line "<version>" up to the next
+        # unindented line.
+        awk -v v="$version" '
+          $0 == v { found = 1; next }
+          found && /^[^ \t]/ { exit }
+          found { print }
+        ' CHANGES > notes.md
+        if [ ! -s notes.md ]; then
+          echo "No entry for $version in CHANGES" >&2
+          exit 1
+        fi
+        prerelease=
+        case "$version" in *alpha*|*beta*|*rc*) prerelease=--prerelease ;; esac
+        ls -l assets
+        gh release create "$TAG" --verify-tag --draft $prerelease \
+          --title "mhuxd $version" --notes-file notes.md assets/*

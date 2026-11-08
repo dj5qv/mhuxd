@@ -25,7 +25,7 @@ static void print_help() {
 	puts("\nUsage: " PACKAGE_NAME " [options]\n");
 	puts("    -h                  print this help and exit");
 	puts("    -w <interface:port> interface and port of the webserver");
-        puts("                        (default: " DEF_WEBUI_HOST_PORT);
+        puts("                        (default: " DEF_WEBUI_HOST_PORT ")");
 	puts("    -b                  run in background, log to logfile");
 	puts("    -l <log level>      set the initial log level");
 	puts("                        (MUTE|CRIT|ERROR|WARN|INFO|DEBUG0|DEBUG1)");
