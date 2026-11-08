@@ -47,6 +47,7 @@ jobs:
         dist:
           - { image: "debian:trixie",  tag: "debian13" }
           - { image: "debian:bookworm", tag: "debian12" }
+          - { image: "ubuntu:resolute", tag: "ubuntu26.04" }
           - { image: "ubuntu:noble",   tag: "ubuntu24.04" }
           - { image: "ubuntu:jammy",   tag: "ubuntu22.04" }
         arch:

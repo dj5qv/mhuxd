@@ -77,9 +77,11 @@ Similar to the microHam device router, mhuxd can create virtual serial ports. Th
 
 Binary packages are available for Debian (and derived distributions, Ubuntu, Mint). Refer to [mhuxd.dj5qv.de](https://mhuxd.dj5qv.de/) for details.
 
-Packages for Debian 12/13 and Ubuntu 22.04/24.04 (amd64 and arm64, e.g. Raspberry Pi OS 64-bit) are
-attached to each release on the [GitHub releases page](https://github.com/dj5qv/mhuxd/releases).
+Packages for Debian 12/13 and the Ubuntu LTS releases 22.04/24.04/26.04 (amd64 and arm64, e.g.
+Raspberry Pi OS 64-bit) are attached to each release on the
+[GitHub releases page](https://github.com/dj5qv/mhuxd/releases).
 Pick the one matching your distribution and install it with `sudo apt install ./mhuxd_<version>_<distribution>_<arch>.deb`.
+For an interim Ubuntu release (e.g. 26.10) take the package of the LTS release before it.
 
 Installing from these packages is the easiest way, like almost plug & play. Everything is handled automatically: systemd integration, permissions, account creation, etc.
 
